@@ -1,7 +1,7 @@
 kobzonaprotokol() {
 
     # ===== НАСТРОЙКИ =====
-    PROJECT_DIR="$HOME/git/kobzona"
+    PROJECT_DIR="$HOME/git/kobzone"
     SOURCE_DIR="$HOME/Документы/КОБ зона протокол"
     DEST_DIR="/mnt/Yandex.Disk/Мои Документы/БД/Обучение/План изучения ДОТУ/КОБ зона протокол"
 

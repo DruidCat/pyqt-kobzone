@@ -38,7 +38,7 @@ class MainApp:
     """Главный класс приложения"""
     
     # Константа с именем главного QML файла
-    MAIN_QML_FILE = "ru.KOBzona.qml"
+    MAIN_QML_FILE = "ru.KOBzone.qml"
     
     def __init__(self):
         self.app = QApplication(sys.argv)

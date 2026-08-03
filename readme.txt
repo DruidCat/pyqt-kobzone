@@ -1,24 +1,20 @@
-# Полный гайд: Расшифровка совещаний по ролям (M4A → текст)
+Полный гайд: Расшифровка совещаний по ролям (M4A → текст)
 
 ## Шаг 1: Подготовка системы
-
-```bash
-# Обновляем систему
+# Обновляем систему на Ubuntu 26.04.
 sudo apt update && sudo apt upgrade -y
 
 # Устанавливаем необходимые пакеты
 sudo apt install -y python3 python3-pip python3-venv ffmpeg git libavutil58 libavcodec60 libavformat60 libavdevice60 libavfilter9 libswscale7 libswresample4
 # Проверяем ffmpeg (нужен для конвертации M4A)
-ffmpeg -version
+ffmpeg --version
 
 # Качаем проект с github.
-git clone -b main git@github.com:DruidCat/pyqt-kobzona.git
-```
+git clone -b main git@github.com:DruidCat/pyqt-kobzone.git
 
-### Проверка CUDA:
-```bash
+# Проверка CUDA:
 nvidia-smi
-```
+
 Должна отобразиться ваша видеокарта и версия CUDA (12.x).
 
 Установка Python3.11 в виртуальном окружении pyenv, на котором работает WhisperX
@@ -48,13 +44,9 @@ python3 --version
 # Сделать версию по умолчанию для всех сессий, я так сделал
 pyenv global 3.11
 
----
-
 ## Шаг 2: Создание проекта и окружения
-
-```bash
 # Создаём папку проекта, в эту папку установится проект вместе с нейронкой WhisperX в виртуальном пространстве venv
-mkdir ~/git/kobzona && cd ~/git/kobzona
+mkdir ~/git/kobzone && cd ~/git/kobzone
 
 # Виртуальное окружение
 python3 -m venv venv
@@ -62,18 +54,12 @@ source venv/bin/activate
 
 # когда ты попадёшь в виртуальное пространство venv, из него можно будет выйти командой
 deactivate
-```
 
 ## Шаг 3: Установка полная всех библиотек в автоматическом режиме.
 pip install --upgrade pip
 pip install -r pipinstall.txt
-```
-
----
 
 ## Шаг 4: Токен Hugging Face (для диаризации)
-
-```bash
 # 1. Зайдите на https://huggingface.co — зарегистрируйтесь
 # 2. Примите лицензию pyannote, обязательно вводим название фирмы Dryads и сайт фирмы vc.com/DruidCat:
 #	https://huggingface.co/pyannote/speaker-diarization
@@ -84,19 +70,15 @@ pip install -r pipinstall.txt
 # 3. Создайте токен: Settings → Access Tokens → New Token (Read)
 # 4. Залогиньтесь:
 hf auth login
-# Вставьте токен когда попросит, при печатании токена не видно будет букв
-```
 
----
+# Вставьте токен когда попросит, при печатании токена не видно будет букв
 
 ## Шаг 5: Основной скрипт
-
 Создайте файл `transcribe.py`:
 Сам скрипт находится в этой же папке.
 
 ## Шаг 6: Запуск нейросети WhisperX
-
-cd ~/git/kobzana
+cd ~/git/kobzane
 source venv/bin/activate
 python transcribe.py
 
@@ -110,35 +92,20 @@ python transcribe.py
 | `.json` | Структурированные данные для обработки |
 
 ### Пример вывода `.txt`:
-```
 ============================================================
 ПРОТОКОЛ БЕСЕДЫ
 Файл: совещание_15января
-Дата расшифровки: 17.01.2025 14:30
+Дата расшифровки: 22.02.2022 11:11
 ============================================================
 
 [SPEAKER_00]: Добрый день, коллеги. Начинаем планёрку.
 [SPEAKER_01]: Здравствуйте.
 [SPEAKER_00]: Алексей, доложи по продажам за декабрь.
-[SPEAKER_01]: Итого за декабрь выручка составила сорок два миллиона.
+[SPEAKER_01]: Итого за декабрь выручка составила двадцать два миллиона.
 [SPEAKER_02]: Могу сразу по маркетингу, если не против.
 [SPEAKER_00]: Давай, Ольга.
 [SPEAKER_02]: Конверсия выросла на двенадцать процентов после новогодней акции.
 ```
 
 ---
-
-## ⚡ Оптимизации под вашу систему
-
-```python
-# Если файлы длинные (2+ часа), можно ускорить:
-BATCH_SIZE = 24          # больше = быстрее (у вас RAM хватит)
-COMPUTE_TYPE = "float16" # оптимально для RTX 50 series
-WHISPER_MODEL = "large-v3"  # лучшее качество
-
-```
-
-## Запуск из коммандной строки
-
-Редактируем .bashrc
 
