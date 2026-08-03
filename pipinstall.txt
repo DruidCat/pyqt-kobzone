@@ -1,3 +1,6 @@
+# ЗАПУСКАТЬ В ВИРТУАЛЬНОМ ПРОСТРАНСТВЕ!
+# source venv/bin/activate
+#
 # pip install -r pipinstall.txt
 # Зависимости для работы с Любимой КОБзоной
 torch
