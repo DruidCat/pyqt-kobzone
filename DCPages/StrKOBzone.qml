@@ -10,7 +10,7 @@ Item {
     property color clrTexta: "indigo"
     property color clrFona: "white"
     property color clrMenuText: "indigo"
-    property color clrMenuFon: "#f5f5f5"  // Светло-серый для кнопок
+    property color clrMenuFon: "#f5f5f5"//Светло-серый для кнопок
     
     property alias zagolovokX: tmZagolovok.x
     property alias zagolovokY: tmZagolovok.y
@@ -29,17 +29,14 @@ Item {
     property real tapZagolovokPravi: 1
     property real tapToolbarLevi: 1
     property real tapToolbarPravi: 1
-    
-    // Настройки
+    //Настройки
     anchors.fill: parent
     focus: true
-    
-    // Сигналы (исправлено название!)
+    //Сигналы
     signal clickedAnalizator()
     signal clickedRedaktor()
-    signal clickedTranskribaciya()  // ← БЫЛО clickedTranskribaciya, исправлено!
-    
-    // Функции
+    signal clickedTranskribaciya()
+    //Функции
     Keys.onPressed: (event) => {
         if (event.key === Qt.Key_Escape) {
             event.accepted = true
@@ -60,7 +57,6 @@ Item {
             event.accepted = true
         }
     }
-    
     function fnClickedEnter() {
         var vrKnopkaID = rctZona.children[tmZona.currentIndex]
         if (vrKnopkaID && typeof vrKnopkaID.fnPress === "function" && 
@@ -68,29 +64,22 @@ Item {
             vrKnopkaID.fnPress()
         }
     }
-    
-    // Заголовок (пустой)
-    Item {
+    Item {//Заголовок
         id: tmZagolovok
     }
-    
-    // Рабочая зона
-    Item {
+    Item {//Рабочая зона
         id: tmZona
         property int currentIndex: 0
-        
-        // Логотип на заднем фоне
-        Image {
+        Image {//Логотип на заднем фоне
             id: imgLogo
             anchors.centerIn: parent
             width: Math.min(parent.width * 0.6, parent.height * 0.6)
             height: width
 			source: "qrc:/resources/images/logo.png"//Используем ресурс с префиксом qrc:
             fillMode: Image.PreserveAspectFit
-            opacity: 0.3
-            visible: true// Установите true когда добавите логотип
+            opacity: 1
+            visible: true
         }
-        
         Column {
             anchors.centerIn: parent
             spacing: root.ntWidth * 2
@@ -105,9 +94,7 @@ Item {
                 Column {
                     width: parent.width
                     spacing: root.ntWidth
-                    
-                    // Кнопка "Анализатор текста"
-                    DCKnopkaOriginal {
+                    DCKnopkaOriginal {//Кнопка "Анализатор текста"
                         id: knopkaAnalizator
                         ntHeight: root.ntWidth * 2
                         ntCoff: root.ntCoff
@@ -116,21 +103,17 @@ Item {
                         clrTexta: root.clrMenuText
                         clrKnopki: (tmZona.currentIndex === 0) ? 
                             Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
-                        text: "Анализатор текста"
-                        opacityKnopki: 0.9
-                        
+                        text: "АНАЛИЗАТОР ТЕКСТА"
+                        opacityKnopki: 0.7
                         function fnPress() {
                             tmZona.currentIndex = 0
                             root.clickedAnalizator()
                         }
-                        
-                        onPressedChanged: {
+                        onPressedChanged: {//Если нажатие на кнопку изменилось, то...
                             if (pressed) fnPress()
                         }
                     }
-                    
-                    // Кнопка "Редактор текста"
-                    DCKnopkaOriginal {
+                    DCKnopkaOriginal {//Кнопка "Редактор текста"
                         id: knopkaRedaktor
                         ntHeight: root.ntWidth * 2
                         ntCoff: root.ntCoff
@@ -139,22 +122,18 @@ Item {
                         clrTexta: root.clrMenuText
                         clrKnopki: (tmZona.currentIndex === 1) ? 
                             Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
-                        text: "Редактор текста"
-                        opacityKnopki: 0.9
-                        enabled: false  // Пока не реализовано
-                        
+                        text: "РЕДАКТОР ТЕКСТА"
+                        opacityKnopki: 0.7
+                        enabled: true//Пока не реализовано
                         function fnPress() {
                             tmZona.currentIndex = 1
                             root.clickedRedaktor()
                         }
-                        
-                        onPressedChanged: {
+                        onPressedChanged: {//Если нажатие на кнопку изменилось, то...
                             if (pressed) fnPress()
                         }
                     }
-                    
-                    // Кнопка "Транскрибация"
-                    DCKnopkaOriginal {
+                    DCKnopkaOriginal {//Кнопка "Транскрибация"
                         id: knopkaTranskribaciya
                         ntHeight: root.ntWidth * 2
                         ntCoff: root.ntCoff
@@ -163,16 +142,14 @@ Item {
                         clrTexta: root.clrMenuText
                         clrKnopki: (tmZona.currentIndex === 2) ? 
                             Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
-                        text: "Транскрибация"
-                        opacityKnopki: 0.9
-                        enabled: false  // Пока не реализовано
-                        
+                        text: "ТРАНСКРИБАЦИЯ"
+                        opacityKnopki: 0.7
+                        enabled: true//Пока не реализовано
                         function fnPress() {
                             tmZona.currentIndex = 2
-                            root.clickedTranskribaciya()  // ← Исправлено!
+                            root.clickedTranskribaciya()
                         }
-                        
-                        onPressedChanged: {
+                        onPressedChanged: {//Если нажатие на кнопку изменилось, то...
                             if (pressed) fnPress()
                         }
                     }
@@ -180,9 +157,7 @@ Item {
             }
         }
     }
-    
-    // Тулбар (пустой)
-    Item {
+    Item {//Тулбар
         id: tmToolbar
     }
 }

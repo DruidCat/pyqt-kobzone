@@ -4,32 +4,28 @@ import DCPages 1.0
 
 ApplicationWindow {
     id: root
-    
-    // Основные настройки приложения
-    readonly property color clrKnopok: "indigo"
-    readonly property color clrFona: "white"
-    readonly property color clrStranic: "#f5f5f5"
-    readonly property color clrMenuText: "indigo"
-    
+    //Основные настройки приложения
+    readonly property color clrKnopok: "indigo"//Цвет кнопок.
+    readonly property color clrFona: "lightgrey"//Цвет фона.
+    readonly property color clrStranic: "#f5f5f5"//Цвет страниц светлый серый, почти белый.
+    readonly property color clrMenuText: "indigo"//Цвет текста.
+	
     property int shrift: 2
     property int ntWidth: 2 * shrift
     property int ntCoff: 8
-    
-    // Настройки окна
+    //Настройки окна
     visible: true
-    color: clrFona
-    title: "KOBzona - Анализ текста"
+    color: clrFona//Цвет краём интерфейса.
+    title: "Любимая КОБзона"//Имя приложения в заголовке.
     width: 900
     height: 700
     
-    // Навигация между страницами
-    StackView {
+    StackView {//Навигация между страницами
         id: stvStr
         anchors.fill: parent
         initialItem: pgStrKOBzone
         
-        // Главная страница (меню)
-        Stranica {
+        Stranica {//Главная страница (МЕНЮ)
             id: pgStrKOBzone
             visible: false
             ntWidth: root.ntWidth
@@ -37,7 +33,7 @@ ApplicationWindow {
             clrFona: root.clrFona
             clrTexta: root.clrKnopok
             clrRabOblasti: root.clrStranic
-            textZagolovok: "KOBzona"
+            textZagolovok: "МЕНЮ"
             zagolovokLevi: 1.3
             zagolovokPravi: 1.3
             toolbarLevi: 1.3
@@ -73,22 +69,18 @@ ApplicationWindow {
                 tapToolbarPravi: pgStrKOBzone.toolbarPravi
                 
                 onClickedAnalizator: {
-                    pgStrAnalizer.textZagolovok = "Анализатор текста"
+                    pgStrAnalizer.textZagolovok = "АНАЛИЗАТОР ТЕКСТА"
                     stvStr.push(pgStrAnalizer)
                 }
-                
                 onClickedRedaktor: {
                     console.log("Редактор текста - в разработке")
                 }
-                
                 onClickedTranskribaciya: {
                     console.log("Транскрибация - в разработке")
                 }
             }
         }
-        
-        // Страница анализатора
-        Stranica {
+        Stranica {//Страница анализатора текста
             id: pgStrAnalizer
             visible: false
             ntWidth: root.ntWidth
