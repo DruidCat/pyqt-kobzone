@@ -12,6 +12,8 @@ huggingface_hub
 PyQt6==6.10.2
 # Рабочая версия requests==2.34.2
 requests
+# Для создания ресурсов.
+PyQt6-tools
 
 # Зайдите на https://huggingface.co — зарегистрируйтесь
 # Создайте токен: Settings → Access Tokens → New Token (Read)
