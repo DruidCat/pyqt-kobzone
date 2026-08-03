@@ -1,0 +1,111 @@
+kobzonaprotokol() {
+
+    # ===== НАСТРОЙКИ =====
+    PROJECT_DIR="$HOME/git/kobzona"
+    SOURCE_DIR="$HOME/Документы/КОБ зона протокол"
+    DEST_DIR="/mnt/Yandex.Disk/Мои Документы/БД/Обучение/План изучения ДОТУ/КОБ зона протокол"
+
+    # ===== ЦВЕТА =====
+    GREEN="\e[32m"
+    YELLOW="\e[33m"
+    RED="\e[31m"
+    CYAN="\e[36m"
+    RESET="\e[0m"
+
+    echo
+    echo -e "${CYAN}🎙️  Запуск протокола Кобзона...${RESET}"
+    echo
+
+    # ===== ПРОВЕРКИ =====
+    if [ ! -d "$PROJECT_DIR" ]; then
+        echo -e "${RED}❌ Папка проекта не найдена${RESET}"
+        return 1
+    fi
+
+    if [ ! -d "$SOURCE_DIR" ]; then
+        echo -e "${RED}❌ Исходная папка не найдена${RESET}"
+        return 1
+    fi
+
+    if [ ! -d "$DEST_DIR" ]; then
+        echo -e "${RED}❌ Папка Яндекс Диска не найдена${RESET}"
+        return 1
+    fi
+
+    # ===== ВРЕМЯ СТАРТА =====
+    START_TIME=$(date +%s)
+
+    # ===== ЗАПУСК PYTHON =====
+    "$PROJECT_DIR/venv/bin/python" "$PROJECT_DIR/transcribe.py"
+
+    echo
+    echo -e "${CYAN}🔎 Поиск новых TXT файлов...${RESET}"
+
+    # ===== НАЙТИ НОВЫЕ TXT =====
+    mapfile -d '' FILES < <(find "$SOURCE_DIR" -type f -name "*.txt" -newermt "@$START_TIME" -print0)
+
+    FILE_COUNT=${#FILES[@]}
+
+    if [ "$FILE_COUNT" -eq 0 ]; then
+        echo -e "${YELLOW}ℹ️  Новых TXT файлов не найдено.${RESET}"
+        echo
+        return
+    fi
+
+    # ===== ПОДСЧЁТ ОБЩЕГО РАЗМЕРА =====
+    TOTAL_SIZE=0
+    for f in "${FILES[@]}"; do
+        SIZE=$(stat -c%s "$f")
+        TOTAL_SIZE=$((TOTAL_SIZE + SIZE))
+    done
+
+    TOTAL_MB=$(awk "BEGIN {printf \"%.2f\", $TOTAL_SIZE/1024/1024}")
+
+    echo -e "${GREEN}✅ Найдено файлов: $FILE_COUNT${RESET}"
+    echo -e "${GREEN}📦 Общий размер: ${TOTAL_MB} MB${RESET}"
+    echo
+
+    read -p "Скопировать на Яндекс Диск протоколы? (Д/Н) " copy_answer
+
+    case "$copy_answer" in
+        [ДдYy])
+
+            echo
+            echo -e "${CYAN}📂 Копирование...${RESET}"
+            echo
+
+            COPIED_COUNT=0
+
+            for file in "${FILES[@]}"; do
+                rsync -a --ignore-existing "$file" "$DEST_DIR/"
+                echo -e "   ${GREEN}✓$(basename "$file")${RESET}"
+                ((COPIED_COUNT++))
+            done
+
+            echo
+            echo -e "${GREEN}✅ Скопировано файлов: $COPIED_COUNT${RESET}"
+            echo
+
+            read -p "Синхронизировать Яндекс Диск? (Д/Н) " sync_answer
+
+            case "$sync_answer" in
+                [ДдYy])
+                    echo
+                    echo -e "${CYAN}🔄 Запуск синхронизации...${RESET}"
+                    yandex-disk sync
+                    ;;
+                *)
+                    echo
+                    echo -e "${YELLOW}✅ Завершено без синхронизации.${RESET}"
+                    ;;
+            esac
+            ;;
+
+        *)
+            echo
+            echo -e "${YELLOW}✅ Копирование отменено.${RESET}"
+            ;;
+    esac
+
+    echo
+}

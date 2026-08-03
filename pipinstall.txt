@@ -1,0 +1,17 @@
+# pip install -r pipinstall.txt
+# Зависимости для работы с Любимой КОБзоной
+torch
+torchaudio
+torchvision
+git+https://github.com/m-bain/whisperX.git
+python-docx
+huggingface_hub
+PyQt6==6.10.2
+# Рабочая версия requests==2.34.2
+requests
+
+# Зайдите на https://huggingface.co — зарегистрируйтесь
+# Создайте токен: Settings → Access Tokens → New Token (Read)
+# Залогиньтесь:
+#	hf auth login
+# Вставьте токен когда попросит, при печатании токена не видно будет букв
