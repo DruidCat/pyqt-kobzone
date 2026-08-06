@@ -1,0 +1,4 @@
+module DCMethods
+
+DCMenu 1.0 DCMenu.qml
+DCScrollbar 1.0 DCScrollbar.qml

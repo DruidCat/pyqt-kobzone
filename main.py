@@ -3,9 +3,11 @@ from pathlib import Path
 from PyQt6.QtWidgets import QApplication, QFileDialog
 from PyQt6.QtQml import QQmlApplicationEngine
 from PyQt6.QtCore import QObject, pyqtSlot, QUrl
+from PyQt6.QtGui import QFontDatabase#Шрифт
 
 from text_analyzer import TextAnalyzer
-import resources_rc # Импорт скомпилированных ресурсов
+import resources_rc
+
 
 class FileManager(QObject):
     """Управление файлами через QML"""
@@ -37,7 +39,7 @@ class FileManager(QObject):
 class MainApp:
     """Главный класс приложения"""
     
-    MAIN_QML_FILE = "ru.KOBzone.qml"  # ← Исправлено название!
+    MAIN_QML_FILE = "ru.KOBzone.qml"
     
     def __init__(self):
         self.app = QApplication(sys.argv)
@@ -46,7 +48,32 @@ class MainApp:
         self.analyzer = TextAnalyzer()
         self.file_manager = None
         
+        #Загружаем шрифт
+        self.load_custom_font()
+        
         self.setup_qml()
+    
+    def load_custom_font(self):
+        """Загрузка кастомного шрифта из ресурсов"""
+        font_id = QFontDatabase.addApplicationFont(":/resources/fonts/MesloLGSRegular.ttf")
+        
+        if font_id != -1:
+            font_families = QFontDatabase.applicationFontFamilies(font_id)
+            if font_families:
+                font_family = font_families[0]
+                print(f"✓ Шрифт загружен: {font_family}")
+                
+                # Устанавливаем как шрифт по умолчанию для приложения
+                from PyQt6.QtGui import QFont
+                self.app.setFont(QFont(font_family))
+                
+                return font_family
+            else:
+                print("✗ Ошибка: не удалось получить имя семейства шрифта")
+        else:
+            print("✗ Ошибка: не удалось загрузить шрифт")
+        
+        return None
         
     def setup_qml(self):
         """Настройка QML и связей с Python"""
@@ -59,7 +86,7 @@ class MainApp:
         print(f"✓ Добавлен путь импорта: {project_dir}")
         
         # Проверка qmldir файлов
-        for module_name in ["DCButtons", "DCPages"]:
+        for module_name in ["DCButtons", "DCPages", "DCMethods"]:
             module_path = project_dir / module_name
             qmldir_file = module_path / "qmldir"
             
@@ -67,6 +94,8 @@ class MainApp:
                 print(f"✓ Модуль {module_name}: {qmldir_file}")
             else:
                 print(f"✗ ОШИБКА: qmldir не найден для {module_name}")
+        
+        print(f"✓ Qt ресурсы загружены (resources_rc.py)")
         
         # Регистрируем объекты в QML контексте
         self.engine.rootContext().setContextProperty("analyzer", self.analyzer)

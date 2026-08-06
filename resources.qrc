@@ -1,5 +1,10 @@
 <RCC>
     <qresource prefix="/">
+		<file>resources/fonts/RuslanDisplay-Regular.ttf</file>
+		<file>resources/fonts/MesloLGMRegular.ttf</file>
+		<file>resources/fonts/MesloLGSRegular.ttf</file>
+		<file>resources/js/jsJSON.js</file>
         <file>resources/images/logo.png</file>
+        <file>resources/images/high_priestess.png</file>
     </qresource>
 </RCC>

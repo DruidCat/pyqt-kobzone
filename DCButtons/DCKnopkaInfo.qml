@@ -47,10 +47,9 @@ Item {
         anchors.centerIn: root
 
         color: {
-            if(root.enabled)//Если активирована кнопка, то...
-                tphKnopkaInfo.pressed ? Qt.darker(clrFona, root.maxDarker) : clrFona
-                //maKnopkaInfo.containsMouse ? Qt.darker(clrFona, root.maxDarker) : clrFona
-            else//Если деактивирована кнопка, то...
+            if(!root.enabled)//Если активирована кнопка, то...
+				"transparent"
+			else
                 Qt.darker(clrFona, root.minDarker)
         }
         border.color: {

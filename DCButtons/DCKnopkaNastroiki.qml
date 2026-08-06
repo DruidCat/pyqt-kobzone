@@ -48,9 +48,8 @@ Item {
 
         color: {
             if(root.enabled)//Если активирована кнопка, то...
-                tphKnopkaNastroiki.pressed ? Qt.darker(clrFona, root.maxDarker) : clrFona
-                //maKnopkaNastroiki.containsMouse ? Qt.darker(clrFona, root.maxDarker) : clrFona
-            else//Если деактивирована кнопка, то...
+				"transparent"
+			else
                 Qt.darker(clrFona, root.minDarker)
         }
         Rectangle{

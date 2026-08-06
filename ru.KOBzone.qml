@@ -4,30 +4,50 @@ import DCPages 1.0
 
 ApplicationWindow {
     id: root
-    //Основные настройки приложения
-    readonly property color clrKnopok: "indigo"//Цвет кнопок.
-    readonly property color clrFona: "lightgrey"//Цвет фона.
-    readonly property color clrStranic: "#f5f5f5"//Цвет страниц светлый серый, почти белый.
-    readonly property color clrMenuText: "indigo"//Цвет текста.
-	
+    
+    // Основные настройки приложения
+    readonly property color clrKnopok: "#2d4288"//Индиго
+    readonly property color clrFona: "lightgrey"
+    readonly property color clrStranic: "#f5f5f5"
+    readonly property color clrMenuText: "#2d4288"//Индиго
+    
     property int shrift: 2
     property int ntWidth: 2 * shrift
     property int ntCoff: 8
-    //Настройки окна
-    visible: true
-    color: clrFona//Цвет краём интерфейса.
-    title: "Любимая КОБзона"//Имя приложения в заголовке.
-    width: 900
-    height: 700
     
-    StackView {//Навигация между страницами
+    // Настройки окна
+    visible: true
+    color: clrFona
+    title: "Любимая КОБзона"
+    width: 1100
+    height: 500
+    
+    Component.onCompleted: {
+        stvStr.currentItem.forceActiveFocus()
+        console.log("✓ Приложение запущено")
+        console.log("✓ Используется шрифт:", font.family)
+    }
+    
+    StackView {
         id: stvStr
         anchors.fill: parent
         initialItem: pgStrKOBzone
+        focus: true
+
+        onCurrentItemChanged: {
+            if (currentItem) {
+                console.log("Смена страницы, передаём фокус")
+                Qt.callLater(function() {
+                    currentItem.forceActiveFocus()
+                    console.log("Фокус установлен на:", currentItem)
+                })
+            }
+        }
         
-        Stranica {//Главная страница (МЕНЮ)
+        Stranica {
             id: pgStrKOBzone
             visible: false
+            focus: true
             ntWidth: root.ntWidth
             ntCoff: root.ntCoff
             clrFona: root.clrFona
@@ -39,6 +59,16 @@ ApplicationWindow {
             toolbarLevi: 1.3
             toolbarPravi: 1.3
             
+            onVisibleChanged: {
+                if (visible) {
+                    console.log("pgStrKOBzone стала видимой")
+                    Qt.callLater(function() {
+                        tmKOBzone.forceActiveFocus()
+                        console.log("Фокус передан на tmKOBzone")
+                    })
+                }
+            }
+
             StrKOBzone {
                 id: tmKOBzone
                 ntWidth: pgStrKOBzone.ntWidth
@@ -69,6 +99,7 @@ ApplicationWindow {
                 tapToolbarPravi: pgStrKOBzone.toolbarPravi
                 
                 onClickedAnalizator: {
+                    console.log("Переход на анализатор")
                     pgStrAnalizer.textZagolovok = "АНАЛИЗАТОР ТЕКСТА"
                     stvStr.push(pgStrAnalizer)
                 }
@@ -80,9 +111,11 @@ ApplicationWindow {
                 }
             }
         }
-        Stranica {//Страница анализатора текста
+        
+        Stranica {
             id: pgStrAnalizer
             visible: false
+            focus: true
             ntWidth: root.ntWidth
             ntCoff: root.ntCoff
             clrFona: root.clrFona
@@ -93,6 +126,15 @@ ApplicationWindow {
             toolbarLevi: 1.3
             toolbarPravi: 1.3
             
+            onVisibleChanged: {
+                if (visible) {
+                    Qt.callLater(function() {
+                        tmAnalizer.forceActiveFocus()
+						console.log("Фокус передан на tmAnalizer")
+                    })
+                }
+            }
+
             StrAnalizer {
                 id: tmAnalizer
                 ntWidth: pgStrAnalizer.ntWidth
@@ -122,8 +164,12 @@ ApplicationWindow {
                 tapToolbarLevi: pgStrAnalizer.toolbarLevi
                 tapToolbarPravi: pgStrAnalizer.toolbarPravi
                 
-                onClickedNazad: stvStr.pop()
-                
+                onClickedNazad: {
+                    stvStr.pop()
+                    Qt.callLater(function() {
+                        stvStr.currentItem.forceActiveFocus()
+                    })
+                }
                 onSignalToolbar: function(strToolbar) {
                     pgStrAnalizer.textToolbar = strToolbar
                 }
