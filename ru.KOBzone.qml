@@ -15,10 +15,8 @@ ApplicationWindow {
     property int ntWidth: 2 * shrift
     property int ntCoff: 8
  	
-	property string pythonVersion: "N/A"
-    property string qtVersion: "N/A"
-	property string appVersion: Qt.application.version  // Способ 1
-    property string appFullVersion: appInfo.fullVersion  // Способ 2
+	property string pythonVersion: pythonInfo.pythonVersion//Из Python грузится версия Python
+    property string qtVersion: qtInfo.qtVersion//Из Python грузится версия Qt
     // Настройки окна
     visible: true
     color: clrFona
@@ -30,16 +28,6 @@ ApplicationWindow {
         stvStr.currentItem.forceActiveFocus()
         console.log("✓ Приложение запущено")
         console.log("✓ Используется шрифт:", font.family)
-		if (pythonInfo === null || qtInfo === null) {
-			console.error("ОШИБКА: pythonInfo или qtInfo не зарегистрированы!")
-		}
-		else{
-			root.pythonVersion = pythonInfo.pythonVersion
-    		root.qtVersion = qtInfo.qtVersion
-		}
-		console.log("✓ Версия (Qt):", appVersion)
-        console.log("✓ Версия (Git):", appFullVersion)
-        console.log("✓ Git Hash:", appInfo.gitHash)
     }
     
     StackView {

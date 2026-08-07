@@ -58,64 +58,6 @@ class QtInfo(QObject):
         return str(QT_VERSION_MINOR)
 
 
-class AppInfo(QObject):
-    """Информация о приложении"""
-    
-    versionChanged = pyqtSignal()
-    gitHashChanged = pyqtSignal()
-    
-    def __init__(self):
-        super().__init__()
-        self._version = self._get_version()
-        self._git_hash = self._get_git_hash()
-    
-    def _get_version(self):
-        """Получает версию из git или fallback"""
-        try:
-            import subprocess
-            result = subprocess.run(
-                ['git', 'describe', '--tags', '--always'],
-                capture_output=True,
-                text=True,
-                timeout=1,
-                cwd=Path(__file__).parent
-            )
-            if result.returncode == 0:
-                return result.stdout.strip()
-        except:
-            pass
-        return "1.0.0-dev"
-    
-    def _get_git_hash(self):
-        """Получает короткий hash коммита"""
-        try:
-            import subprocess
-            result = subprocess.run(
-                ['git', 'rev-parse', '--short', 'HEAD'],
-                capture_output=True,
-                text=True,
-                timeout=1,
-                cwd=Path(__file__).parent
-            )
-            if result.returncode == 0:
-                return result.stdout.strip()
-        except:
-            pass
-        return "unknown"
-    
-    @pyqtProperty(str, notify=versionChanged)
-    def version(self):
-        return self._version
-    
-    @pyqtProperty(str, notify=gitHashChanged)
-    def gitHash(self):
-        return self._git_hash
-    
-    @pyqtProperty(str, notify=versionChanged)
-    def fullVersion(self):
-        return f"{self._version} ({self._git_hash})"
-
-
 class FileManager(QObject):
     """Управление файлами через QML"""
     
@@ -146,23 +88,37 @@ class FileManager(QObject):
                 self.content_callback(f"[Ошибка загрузки: {str(e)}]")
 
 
+def _get_git_version():
+    """Получает версию из git"""
+    try:
+        import subprocess
+        result = subprocess.run(
+            ['git', 'describe', '--tags', '--always'],
+            capture_output=True,
+            text=True,
+            timeout=1,
+            cwd=Path(__file__).parent
+        )
+        if result.returncode == 0:
+            return result.stdout.strip()
+    except:
+        pass
+    return "1.0.0-dev"
 class MainApp:
     """Главный класс приложения"""
     
     MAIN_QML_FILE = "ru.KOBzone.qml"
     APP_NAME = "KOBzone"
     APP_ORGANIZATION = "DruidCat"
+    APP_VERSION = _get_git_version()  # Автоматическая версия
     
     def __init__(self):
         self.app = QApplication(sys.argv)
         
-        # Создаём AppInfo для получения версии
-        self.app_info = AppInfo()
-        
         # Устанавливаем метаданные приложения
         self.app.setApplicationName(self.APP_NAME)
         self.app.setOrganizationName(self.APP_ORGANIZATION)
-        self.app.setApplicationVersion(self.app_info.version)
+        self.app.setApplicationVersion(self.APP_VERSION)
         
         self.engine = QQmlApplicationEngine()
         
@@ -228,10 +184,9 @@ class MainApp:
         self.engine.rootContext().setContextProperty("analyzer", self.analyzer)
         self.engine.rootContext().setContextProperty("pythonInfo", self.python_info)
         self.engine.rootContext().setContextProperty("qtInfo", self.qt_info)
-        self.engine.rootContext().setContextProperty("appInfo", self.app_info)
         self.engine.rootContext().setContextProperty("window", self.file_manager)
         
-        print(f"✓ Все контекстные свойства установлены (версия: {self.app_info.version})")
+        print(f"✓ Все контекстные свойства установлены (версия: {self.APP_VERSION})")
         
         # Загружаем главный QML файл
         qml_file = project_dir / self.MAIN_QML_FILE
