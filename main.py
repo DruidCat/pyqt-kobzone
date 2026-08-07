@@ -2,15 +2,124 @@ import sys
 from pathlib import Path
 from PyQt6.QtWidgets import QApplication, QFileDialog
 from PyQt6.QtQml import QQmlApplicationEngine
-from PyQt6.QtCore import QObject, pyqtSlot, QUrl
-from PyQt6.QtGui import QFontDatabase#Шрифт
+from PyQt6.QtCore import QObject, pyqtSlot, QUrl, pyqtProperty, pyqtSignal
+from PyQt6.QtGui import QFontDatabase, QFont
 
 from text_analyzer import TextAnalyzer
 import resources_rc
 
 
+class PythonInfo(QObject):
+    """Предоставляет информацию о версии Python"""
+    
+    pythonVersionChanged = pyqtSignal()
+    pythonImplementationChanged = pyqtSignal()
+    pythonExecutableChanged = pyqtSignal()
+    
+    def __init__(self):
+        super().__init__()
+    
+    @pyqtProperty(str, notify=pythonVersionChanged)
+    def pythonVersion(self):
+        return sys.version
+    
+    @pyqtProperty(str, notify=pythonImplementationChanged)
+    def pythonImplementation(self):
+        return sys.implementation.name
+
+    @pyqtProperty(str, notify=pythonExecutableChanged)
+    def pythonExecutable(self):
+        return sys.executable
+
+
+class QtInfo(QObject):
+    """Предоставляет информацию о версии Qt"""
+    
+    qtVersionChanged = pyqtSignal()
+    qtMajorVersionChanged = pyqtSignal()
+    qtMinorVersionChanged = pyqtSignal()
+    
+    def __init__(self):
+        super().__init__()
+    
+    @pyqtProperty(str, notify=qtVersionChanged)
+    def qtVersion(self):
+        from PyQt6.QtCore import QT_VERSION_STR
+        return QT_VERSION_STR
+    
+    @pyqtProperty(str, notify=qtMajorVersionChanged)
+    def qtMajorVersion(self):
+        from PyQt6.QtCore import QT_VERSION_MAJOR
+        return str(QT_VERSION_MAJOR)
+    
+    @pyqtProperty(str, notify=qtMinorVersionChanged)
+    def qtMinorVersion(self):
+        from PyQt6.QtCore import QT_VERSION_MINOR
+        return str(QT_VERSION_MINOR)
+
+
+class AppInfo(QObject):
+    """Информация о приложении"""
+    
+    versionChanged = pyqtSignal()
+    gitHashChanged = pyqtSignal()
+    
+    def __init__(self):
+        super().__init__()
+        self._version = self._get_version()
+        self._git_hash = self._get_git_hash()
+    
+    def _get_version(self):
+        """Получает версию из git или fallback"""
+        try:
+            import subprocess
+            result = subprocess.run(
+                ['git', 'describe', '--tags', '--always'],
+                capture_output=True,
+                text=True,
+                timeout=1,
+                cwd=Path(__file__).parent
+            )
+            if result.returncode == 0:
+                return result.stdout.strip()
+        except:
+            pass
+        return "1.0.0-dev"
+    
+    def _get_git_hash(self):
+        """Получает короткий hash коммита"""
+        try:
+            import subprocess
+            result = subprocess.run(
+                ['git', 'rev-parse', '--short', 'HEAD'],
+                capture_output=True,
+                text=True,
+                timeout=1,
+                cwd=Path(__file__).parent
+            )
+            if result.returncode == 0:
+                return result.stdout.strip()
+        except:
+            pass
+        return "unknown"
+    
+    @pyqtProperty(str, notify=versionChanged)
+    def version(self):
+        return self._version
+    
+    @pyqtProperty(str, notify=gitHashChanged)
+    def gitHash(self):
+        return self._git_hash
+    
+    @pyqtProperty(str, notify=versionChanged)
+    def fullVersion(self):
+        return f"{self._version} ({self._git_hash})"
+
+
 class FileManager(QObject):
     """Управление файлами через QML"""
+    
+    fileLoaded = pyqtSignal(str)
     
     def __init__(self, content_callback):
         super().__init__()
@@ -31,6 +140,7 @@ class FileManager(QObject):
                 with open(file_path, 'r', encoding='utf-8') as f:
                     content = f.read()
                 self.content_callback(content)
+                self.fileLoaded.emit(file_path)
             except Exception as e:
                 print(f"Ошибка при загрузке файла: {e}")
                 self.content_callback(f"[Ошибка загрузки: {str(e)}]")
@@ -40,15 +150,28 @@ class MainApp:
     """Главный класс приложения"""
     
     MAIN_QML_FILE = "ru.KOBzone.qml"
+    APP_NAME = "KOBzone"
+    APP_ORGANIZATION = "DruidCat"
     
     def __init__(self):
         self.app = QApplication(sys.argv)
+        
+        # Создаём AppInfo для получения версии
+        self.app_info = AppInfo()
+        
+        # Устанавливаем метаданные приложения
+        self.app.setApplicationName(self.APP_NAME)
+        self.app.setOrganizationName(self.APP_ORGANIZATION)
+        self.app.setApplicationVersion(self.app_info.version)
+        
         self.engine = QQmlApplicationEngine()
         
         self.analyzer = TextAnalyzer()
         self.file_manager = None
+        self.python_info = None
+        self.qt_info = None
         
-        #Загружаем шрифт
+        # Загружаем шрифт
         self.load_custom_font()
         
         self.setup_qml()
@@ -62,11 +185,7 @@ class MainApp:
             if font_families:
                 font_family = font_families[0]
                 print(f"✓ Шрифт загружен: {font_family}")
-                
-                # Устанавливаем как шрифт по умолчанию для приложения
-                from PyQt6.QtGui import QFont
                 self.app.setFont(QFont(font_family))
-                
                 return font_family
             else:
                 print("✗ Ошибка: не удалось получить имя семейства шрифта")
@@ -80,7 +199,6 @@ class MainApp:
         
         project_dir = Path(__file__).parent
         
-        # Добавляем пути к модулям
         self.engine.addImportPath(str(project_dir))
         
         print(f"✓ Добавлен путь импорта: {project_dir}")
@@ -97,8 +215,23 @@ class MainApp:
         
         print(f"✓ Qt ресурсы загружены (resources_rc.py)")
         
-        # Регистрируем объекты в QML контексте
+        # Создаём временный callback
+        def temp_callback(text):
+            print(f"[Ранний вызов FileManager]")
+        
+        # Создаём ВСЕ объекты ДО загрузки QML
+        self.python_info = PythonInfo()
+        self.qt_info = QtInfo()
+        self.file_manager = FileManager(temp_callback)
+        
+        # Регистрируем ВСЕ объекты ПЕРЕД загрузкой QML
         self.engine.rootContext().setContextProperty("analyzer", self.analyzer)
+        self.engine.rootContext().setContextProperty("pythonInfo", self.python_info)
+        self.engine.rootContext().setContextProperty("qtInfo", self.qt_info)
+        self.engine.rootContext().setContextProperty("appInfo", self.app_info)
+        self.engine.rootContext().setContextProperty("window", self.file_manager)
+        
+        print(f"✓ Все контекстные свойства установлены (версия: {self.app_info.version})")
         
         # Загружаем главный QML файл
         qml_file = project_dir / self.MAIN_QML_FILE
@@ -117,10 +250,9 @@ class MainApp:
         
         print("✓ QML успешно загружен")
         
-        # Получаем корневой объект
+        # Обновляем callback после загрузки QML
         root = self.engine.rootObjects()[0]
         
-        # Callback для обновления contentArea
         def update_content(text):
             content_area = root.findChild(QObject, "contentArea")
             if content_area:
@@ -128,8 +260,7 @@ class MainApp:
             else:
                 print("✗ contentArea не найден")
         
-        self.file_manager = FileManager(update_content)
-        self.engine.rootContext().setContextProperty("window", self.file_manager)
+        self.file_manager.content_callback = update_content
     
     def run(self):
         """Запуск приложения"""

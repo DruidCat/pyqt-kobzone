@@ -31,7 +31,8 @@ Item {
     property real tapToolbarPravi: 1
     property string strInstrukciya: "obavtore"
     property bool isFileDialogFailVibor: true;//true - выбор файлов, false - выбор папки
-    property bool isAdmin: false;//НЕ ИЗМЕНЯТЬ ЭТОТ ФЛАГ.
+	property string pythonVersion: "3.11";//Это версия Python, которая придёт из вне
+	property string qtVersion: "6.8";//Это версия Qt которая приходит из вне.
     property bool isMobile: false//true - мобильная платформа.
     //Настройки.
 	anchors.fill: parent//Растянется по Родителю.
@@ -355,10 +356,10 @@ Item {
 					<body>
 <p><center><font color=\"white\">.<img src = \"qrc:/resources/images/logo_small.png\">.</font></center></p>
 <p><center>Приложение: <b>Любимая КОБзона</b></center></p>
-<p><center>Версия: <b>")+ Qt.application.version +qsTr("</b></center></p>
+<p><center>Версия: <b>")+ Qt.application.version + qsTr("</b></center></p>
 <p><center>Сайт: <a href=\"https://vk.ru/druidcat\">DruidCat</a></center></p>
-<p><center>Приложение использует PyQt ") + "6.10" + ("</b></center></p>
-<p><center>Приложение использует Python ") + "3.11" + ("</b></center></p>
+<p><center>Приложение использует Qt ") + root.qtVersion + qsTr("</b></center></p>
+<p><center>Приложение использует Python ") + root.pythonVersion + qsTr("</b></center></p>
 <p><center>Приложение использует LM Studio для работы с языковыми моделями</b></center></p>
 <p><center>Лицензия: <b>GPLv3</b></center></p>
 <p><center>Git URL: <a href=\"https://github.com/DruidCat/pyqt-kobzone\">\
@@ -406,7 +407,7 @@ github.com/DruidCat/pyqt-kobzone</a></center></p>
                 <html>
                     <body>
 <p><center><img src = \"qrc:/resources/images/Qt_logo_2016.png\"></center></p>
-<p>This program uses PyQt version 6.10.</p>
+<p>This program uses Qt version ") + root.qtVersion + qsTr(".</p>
 <p>Qt is a C++ toolkit for cross-platform application development.</p>
 <p>Qt provides single-source portability across all major desktop operating systems. It is also available \
 for embedded Linux and other embedded and mobile operating systems.</p>
