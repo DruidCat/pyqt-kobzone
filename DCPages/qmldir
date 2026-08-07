@@ -2,5 +2,6 @@ module DCPages
 
 Stranica 1.0 Stranica.qml
 StrAnalizer 1.0 StrAnalizer.qml
+StrInstrukciya 1.0 StrInstrukciya.qml
 StrKOBzone 1.0 StrKOBzone.qml
 

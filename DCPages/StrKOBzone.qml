@@ -42,6 +42,7 @@ Item {
     signal clickedAnalizator()
     signal clickedRedaktor()
     signal clickedTranskribaciya()
+	signal clickedInfo()//Сигнал нажатия кнопки Информация
     
     Component.onCompleted: {
         knopkiMassiv = [knopkaAnalizator, knopkaRedaktor, knopkaTranskribaciya]
@@ -58,6 +59,11 @@ Item {
                 // Если меню закрыто, ничего не делаем (можно добавить другую логику)
                 event.accepted = true
             }
+		} else if (event.key === Qt.Key_F1){
+			if (!menuMenu.visible) {
+			   fnClickedInfo()	
+            }
+            event.accepted = true
         } else if (event.key === Qt.Key_Up || event.key === Qt.Key_K) {
             // Навигация работает только если меню закрыто
             if (!menuMenu.visible) {
@@ -67,8 +73,7 @@ Item {
                 
                 fnScrollKnopok(false)
             }
-            event.accepted = true
-            
+            event.accepted = true 
         } else if (event.key === Qt.Key_Down || event.key === Qt.Key_J) {
             // Навигация работает только если меню закрыто
             if (!menuMenu.visible) {
@@ -124,9 +129,8 @@ Item {
         // Функция нажатия на кнопку Меню настройки
         // Пока ничего не делает
     }
-	function fnClickedInfo() {
-        // Функция нажатия на кнопку Помощь
-        // Пока ничего не делает
+	function fnClickedInfo() {// Функция нажатия на кнопку Помощь
+        root.clickedInfo();//Сигнал излучаем, что нажата кнопка Описание.
     }
     
     function fnToggleMenu() {
@@ -238,7 +242,7 @@ Item {
                         // Кнопка "Анализатор текста"
                         DCKnopkaOriginal {
                             id: knopkaAnalizator
-                            ntHeight: root.ntWidth * 2
+                            ntHeight: root.ntWidth * 1.4
                             ntCoff: root.ntCoff
                             anchors.left: parent.left
                             anchors.right: parent.right
@@ -246,7 +250,7 @@ Item {
                             clrTexta: root.clrMenuText
                             clrKnopki: (root.currentIndex === 0) ?
                                 Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
-                            text: "Анализатор текста"
+                            text: "Нейро Анализ Документов"
                             opacityKnopki: 0.9
                             
                             function fnPress() {
@@ -268,14 +272,14 @@ Item {
                         // Кнопка "Редактор текста"
                         DCKnopkaOriginal {
                             id: knopkaRedaktor
-                            ntHeight: root.ntWidth * 2
+                            ntHeight: root.ntWidth * 1.4
                             ntCoff: root.ntCoff
                             anchors.left: parent.left
                             anchors.right: parent.right
                             clrTexta: root.clrMenuText
                             clrKnopki: (root.currentIndex === 1) ?
                                 Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
-                            text: "Редактор текста"
+                            text: "Исправление Текста"
                             opacityKnopki: 0.9
                             enabled: true
                             
@@ -296,7 +300,7 @@ Item {
                         // Кнопка "Транскрибация"
                         DCKnopkaOriginal {
                             id: knopkaTranskribaciya
-                            ntHeight: root.ntWidth * 2
+                            ntHeight: root.ntWidth * 1.4
                             ntCoff: root.ntCoff
                             anchors.left: parent.left
                             anchors.right: parent.right
