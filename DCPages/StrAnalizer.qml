@@ -35,6 +35,7 @@ Item {
     // Сигналы
     signal clickedNazad()
     signal signalToolbar(var strToolbar)
+	signal clickedInfo()//Сигнал нажатия кнопки Информация
     
     // Настройки
     anchors.fill: parent
@@ -61,6 +62,12 @@ Item {
                 event.accepted = true
             }
         }        
+		if (event.key === Qt.Key_F1){
+			if (!menuMenu.visible) {
+			   fnClickedInfo()	
+            }
+            event.accepted = true
+		}
         if (event.key === Qt.Key_Up || event.key === Qt.Key_K) {
             // Скролл вверх
             if (!menuMenu.visible) {// Навигация работает только если меню закрыто
@@ -124,7 +131,7 @@ Item {
 	function fnClickedInfo() {
         // Функция нажатия на кнопку Помощь
         // Пока ничего не делает
-		console.log("ПОМОЩЬ")
+        root.clickedInfo();//Сигнал излучаем, что нажата кнопка Описание.
     }
 	function fnClickedLoad() {
 		window.load_file()

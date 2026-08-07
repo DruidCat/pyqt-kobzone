@@ -265,7 +265,7 @@ Item {
             ListModel {//Список всех инструкций: ключ, название, заголовок)
                 id: mdlInstrukcii
                 ListElement { key: "hotkey"; title: "Горячие клавиши"; zagolovok: "ГОРЯЧИЕ КЛАВИШИ" }
-                ListElement { key: "pdf"; title: "менторPDF"; zagolovok: "ИНСТРУКЦИЯ ПО МЕНТОРPDF" }
+                ListElement { key: "analiz"; title: "Анализ документов"; zagolovok: "ИНСТРУКЦИЯ ПО АНАЛИЗУ ДОКУМЕНТОВ" }
                 ListElement { key: "menu"; title: "Меню"; zagolovok: "ОПИСАНИЕ НАСТРОЕК МЕНЮ" }
                 ListElement { key: "oprilojenii"; title: "О приложении"; zagolovok: "О ПРИЛОЖЕНИИ" }
                 ListElement { key: "oqt"; title: "О Qt"; zagolovok: "О QT" }
@@ -593,7 +593,7 @@ See <a href=\"http://qt.io\">qt.io</a> for more information.</p>
                     </body>
                 </html>"
             );
-        } else if(strKluch === "pdf"){//Если это Инструкция mentorPDF, то...
+        } else if(strKluch === "analiz"){//Если это Инструкция по Анализу Документов, то...
             txdZona.text = qsTr("
                 <html>
                     <body>

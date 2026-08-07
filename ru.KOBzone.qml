@@ -174,6 +174,10 @@ ApplicationWindow {
                         stvStr.currentItem.forceActiveFocus()
                     })
                 }
+				onClickedInfo: {
+                    tmStrInstrukciya.strInstrukciya = "analiz"
+                    stvStr.push(pgStrInstrukciya)//Переходим на страницу инструкций Анализа Документа
+                }
                 onSignalToolbar: function(strToolbar) {
                     pgStrAnalizer.textToolbar = strToolbar
                 }
