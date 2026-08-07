@@ -339,6 +339,7 @@ Item {
     }
     Component.onCompleted: {//Когда страница отрисовалась, то...
         fnInstrukciya(root.strInstrukciya)//Функция загружающая заголовок и инструкцию по ключу.
+		txdZona.fnFocus()//Фокусируем, для листания инструкции по горячим клавишам.
     }
     function fnInstrukciya(strKluch){//Функция загружающая заголовок и инструкцию по ключу.
         root.strInstrukciya = strKluch

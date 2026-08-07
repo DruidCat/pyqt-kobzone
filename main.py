@@ -104,6 +104,7 @@ def _get_git_version():
     except:
         pass
     return "1.0.0-dev"
+
 class MainApp:
     """Главный класс приложения"""
     

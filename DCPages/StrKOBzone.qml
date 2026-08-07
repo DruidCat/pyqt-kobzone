@@ -239,10 +239,10 @@ Item {
                         anchors.leftMargin: root.ntWidth * root.ntCoff
                         spacing: root.ntWidth
                         
-                        // Кнопка "Анализатор текста"
+                        // Кнопка "Нейро анализ документа"
                         DCKnopkaOriginal {
                             id: knopkaAnalizator
-                            ntHeight: root.ntWidth * 1.4
+                            ntHeight: root.ntWidth * 1.1
                             ntCoff: root.ntCoff
                             anchors.left: parent.left
                             anchors.right: parent.right
@@ -250,7 +250,7 @@ Item {
                             clrTexta: root.clrMenuText
                             clrKnopki: (root.currentIndex === 0) ?
                                 Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
-                            text: "Нейро Анализ Документов"
+                            text: "НЕЙРО АНАЛИЗ ДОКУМЕНТОВ"
                             opacityKnopki: 0.9
                             
                             function fnPress() {
@@ -269,17 +269,17 @@ Item {
                             }
                         }
                         
-                        // Кнопка "Редактор текста"
+                        // Кнопка "Исправление текста"
                         DCKnopkaOriginal {
                             id: knopkaRedaktor
-                            ntHeight: root.ntWidth * 1.4
+                            ntHeight: root.ntWidth * 1.1
                             ntCoff: root.ntCoff
                             anchors.left: parent.left
                             anchors.right: parent.right
                             clrTexta: root.clrMenuText
                             clrKnopki: (root.currentIndex === 1) ?
                                 Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
-                            text: "Исправление Текста"
+                            text: "ИСПРАВЛЕНИЕ ТЕКСТА"
                             opacityKnopki: 0.9
                             enabled: true
                             
@@ -300,14 +300,14 @@ Item {
                         // Кнопка "Транскрибация"
                         DCKnopkaOriginal {
                             id: knopkaTranskribaciya
-                            ntHeight: root.ntWidth * 1.4
+                            ntHeight: root.ntWidth * 1.1
                             ntCoff: root.ntCoff
                             anchors.left: parent.left
                             anchors.right: parent.right
                             clrTexta: root.clrMenuText
                             clrKnopki: (root.currentIndex === 2) ?
                                 Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
-                            text: "Транскрибация"
+                            text: "ТРАНСКРИБАЦИЯ"
                             opacityKnopki: 0.9
                             enabled: true
                             

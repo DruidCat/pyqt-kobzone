@@ -15,8 +15,8 @@ ApplicationWindow {
     property int ntWidth: 2 * shrift
     property int ntCoff: 8
  	
-	property string pythonVersion: pythonInfo.pythonVersion//Из Python грузится версия Python
-    property string qtVersion: qtInfo.qtVersion//Из Python грузится версия Qt
+	property string pythonVersion: "N/A"
+    property string qtVersion: "N/A"
     // Настройки окна
     visible: true
     color: clrFona
@@ -28,6 +28,9 @@ ApplicationWindow {
         stvStr.currentItem.forceActiveFocus()
         console.log("✓ Приложение запущено")
         console.log("✓ Используется шрифт:", font.family)
+		//загружаем данные из python
+		root.pythonVersion = pythonInfo.pythonVersion
+    	root.qtVersion = qtInfo.qtVersion
     }
     
     StackView {
@@ -45,7 +48,6 @@ ApplicationWindow {
                 })
             }
         }
-        
         Stranica {
             id: pgStrKOBzone
             visible: false
@@ -140,7 +142,6 @@ ApplicationWindow {
                     })
                 }
             }
-
             StrAnalizer {
                 id: tmAnalizer
                 ntWidth: pgStrAnalizer.ntWidth
@@ -194,15 +195,6 @@ ApplicationWindow {
             ntWidth: root.ntWidth; ntCoff: root.ntCoff
             clrFona: root.clrFona; clrTexta: root.clrKnopok; clrRabOblasti: root.clrStranic
             zagolovokLevi: 1.3; zagolovokPravi: 1.3; toolbarLevi: 1.3; toolbarPravi: 1.3
-
-			onVisibleChanged: {
-                if (visible) {
-                    Qt.callLater(function() {
-                        tmStrInstrukciya.forceActiveFocus()
-						console.log("Фокус передан на tmStrInstrukciya")
-                    })
-                }
-            }
             StrInstrukciya {
                 id: tmStrInstrukciya
                 ntWidth: pgStrInstrukciya.ntWidth; ntCoff: pgStrInstrukciya.ntCoff
