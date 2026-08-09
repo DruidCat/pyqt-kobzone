@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/">
+		<file>DCMethods/DCProgress.qml</file>
 		<file>resources/fonts/RuslanDisplay-Regular.ttf</file>
 		<file>resources/fonts/MesloLGMRegular.ttf</file>
 		<file>resources/fonts/MesloLGSRegular.ttf</file>

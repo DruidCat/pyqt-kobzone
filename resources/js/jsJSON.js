@@ -23,14 +23,18 @@ var vrMenuAnalizer = [
 			},
 			{
 				"nomer": "3",
+                "menu": qsTr("Сохранить результат")
+			},
+			{
+				"nomer": "4",
                 "menu": qsTr("Настройки")
 			},
             {
-                "nomer": "4",
+                "nomer": "5",
                 "menu": qsTr("Помощь")
             },
 			{
-                "nomer": "5",
+                "nomer": "6",
                 "menu": qsTr("Выход")
 			}
 ]

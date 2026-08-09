@@ -5,7 +5,7 @@ from PyQt6.QtQml import QQmlApplicationEngine
 from PyQt6.QtCore import QObject, pyqtSlot, QUrl, pyqtProperty, pyqtSignal
 from PyQt6.QtGui import QFontDatabase, QFont
 
-from text_analyzer import TextAnalyzer
+from DCAnalizer import TextAnalyzer
 import resources_rc
 
 
@@ -61,11 +61,12 @@ class QtInfo(QObject):
 class FileManager(QObject):
     """Управление файлами через QML"""
     
-    fileLoaded = pyqtSignal(str)
+    fileLoaded = pyqtSignal(str, str)  # Изменено: добавлен путь к файлу
     
-    def __init__(self, content_callback):
+    def __init__(self, content_callback, filename_callback):
         super().__init__()
         self.content_callback = content_callback
+        self.filename_callback = filename_callback
     
     @pyqtSlot()
     def load_file(self):
@@ -82,7 +83,8 @@ class FileManager(QObject):
                 with open(file_path, 'r', encoding='utf-8') as f:
                     content = f.read()
                 self.content_callback(content)
-                self.fileLoaded.emit(file_path)
+                self.filename_callback(file_path)  # Новая строка
+                self.fileLoaded.emit(content, file_path)
             except Exception as e:
                 print(f"Ошибка при загрузке файла: {e}")
                 self.content_callback(f"[Ошибка загрузки: {str(e)}]")
@@ -105,13 +107,14 @@ def _get_git_version():
         pass
     return "1.0.0-dev"
 
+
 class MainApp:
     """Главный класс приложения"""
     
     MAIN_QML_FILE = "ru.KOBzone.qml"
     APP_NAME = "KOBzone"
     APP_ORGANIZATION = "DruidCat"
-    APP_VERSION = _get_git_version()  # Автоматическая версия
+    APP_VERSION = _get_git_version()
     
     def __init__(self):
         self.app = QApplication(sys.argv)
@@ -172,14 +175,17 @@ class MainApp:
         
         print(f"✓ Qt ресурсы загружены (resources_rc.py)")
         
-        # Создаём временный callback
-        def temp_callback(text):
-            print(f"[Ранний вызов FileManager]")
+        # Создаём временные callbacks
+        def temp_content_callback(text):
+            print(f"[Ранний вызов FileManager - content]")
+        
+        def temp_filename_callback(path):
+            print(f"[Ранний вызов FileManager - filename]")
         
         # Создаём ВСЕ объекты ДО загрузки QML
         self.python_info = PythonInfo()
         self.qt_info = QtInfo()
-        self.file_manager = FileManager(temp_callback)
+        self.file_manager = FileManager(temp_content_callback, temp_filename_callback)
         
         # Регистрируем ВСЕ объекты ПЕРЕД загрузкой QML
         self.engine.rootContext().setContextProperty("analyzer", self.analyzer)
@@ -206,7 +212,7 @@ class MainApp:
         
         print("✓ QML успешно загружен")
         
-        # Обновляем callback после загрузки QML
+        # Обновляем callbacks после загрузки QML
         root = self.engine.rootObjects()[0]
         
         def update_content(text):
@@ -216,7 +222,12 @@ class MainApp:
             else:
                 print("✗ contentArea не найден")
         
+        def update_filename(path):
+            self.analyzer.setCurrentFilename(path)
+            print(f"✓ Установлено имя файла: {Path(path).name}")
+        
         self.file_manager.content_callback = update_content
+        self.file_manager.filename_callback = update_filename
     
     def run(self):
         """Запуск приложения"""
