@@ -7,7 +7,6 @@ import DCMethods 1.0
 
 Item {
     id: root
-    
     // Свойства
     property int ntWidth: 2
     property int ntCoff: 8
@@ -38,7 +37,7 @@ Item {
     
     property real rlProgress: 0
     property real rlLoader: 1
-    property real prozrachZona: 1.0
+    property real prozrachZona: 0.9
 	//Свойства для управления состоянием транскрибации
 	property bool isTranscribing: false
 	property int currentFile: 0
@@ -54,8 +53,7 @@ Item {
     DCSettings {//Объект настроек
         id: settings
     }
-    //Обработка горячих клавиш
-    Keys.onPressed: (event) => {
+    Keys.onPressed: (event) => {//Обработка горячих клавиш
         if (event.modifiers & Qt.AltModifier) {
             if (event.key === Qt.Key_Left) {
                 console.log("Alt+Left: возврат назад")
@@ -132,6 +130,36 @@ Item {
             }
         }
     }
+	Timer {//ТАЙМЕР анимации логотипа
+        id: tmrLogo
+        interval: 47
+        running: false
+        repeat: true
+        property bool blLogo: false
+        onTriggered: {
+            if (blLogo) {
+                imgLogo.scale += 0.02
+                if (imgLogo.scale >= 1.3)
+                    blLogo = false
+            } else {
+                imgLogo.scale -= 0.02
+                if (imgLogo.scale <= 0.7)
+                    blLogo = true
+            }
+        }
+        onRunningChanged: {
+            if (running) {
+                imgLogo.opacity = 0.5
+                //imgLogo.opacity = 1.0
+                imgLogo.visible = true
+                
+            } else {
+                imgLogo.scale = 1.0
+                imgLogo.opacity = 0.0
+                imgLogo.visible = false
+            }
+        }
+    }
 	function fnClickedNazad() {
 		if (isTranscribing) {
 			// Показать диалог подтверждения остановки
@@ -159,18 +187,15 @@ Item {
 		
 		txdZona.strCopy = ""
 		txdZona.text = ""
-		// Запускаем транскрибацию через Python бэкенд PyTranscriber.py
+		//Запускаем транскрибацию через Python бэкенд PyTranscriber.py
 		transcriber.start(settings.audioPath, settings.textPath)
 	}
-    
     function fnClickedPutAudio() {
         folderDialogAudio.open()
     }
-    
     function fnClickedPutText() {
         folderDialogText.open()
     }
-    
     function fnToggleMenu() {
         if (menuMenu.visible) {
             menuMenu.visible = false
@@ -178,7 +203,6 @@ Item {
             menuMenu.visible = true
         }
     }
-    
     function fnCloseMenuIfOpen() {
         if (menuMenu.visible) {
             menuMenu.visible = false
@@ -191,14 +215,11 @@ Item {
         txtAudioPath.text = settings.audioPath
         txtTextPath.text = settings.textPath
     }
-	//Connections для транскрибера
-	Connections {
+	Connections {//Connections для транскрибера
 		target: transcriber
-
 		function onTranscriptionStarted() {
 			console.log("✓ Транскрибация начата")
 			root.isTranscribing = true
-			root.prozrachZona = 0.5
 			ldrProgress.active = true
 
 			knopkaInfo.visible = false
@@ -211,17 +232,15 @@ Item {
 			btnTextBrowse.enabled = false
 			txtAudioPath.enabled = false
 			txtTextPath.enabled = false
-		}
 
+			tmrLogo.running = true
+		}
 		function onTranscriptionFinished(success, message) {
 			console.log("✓ Транскрибация завершена:", message)
 			root.isTranscribing = false
-			root.prozrachZona = 1.0
-
 			if (ldrProgress.item) {
 				ldrProgress.item.progress = 100
 			}
-
 			Qt.callLater(function() {
 				ldrProgress.active = false
 
@@ -235,6 +254,8 @@ Item {
 				btnTextBrowse.enabled = true
 				txtAudioPath.enabled = true
 				txtTextPath.enabled = true
+				
+				tmrLogo.running = false
 			})
 
 			if (success) {
@@ -244,13 +265,11 @@ Item {
 			}
 			txdZona.text = txdZona.strCopy
 		}
-
 		function onLogMessage(message) {
-			// Добавляем сообщение в лог
+			//Добавляем сообщение в лог
 			txdZona.strCopy += message + "\n"
 			txdZona.text = txdZona.strCopy
 		}
-
 		function onProgressUpdate(current, total) {
 			console.log(`Прогресс: ${current}/${total}`)
 
@@ -264,23 +283,21 @@ Item {
 			}
 		}
 	}
-    // Диалог выбора папки для аудио
-    Platform.FolderDialog {
+    Platform.FolderDialog {//Диалог выбора папки для аудио
         id: folderDialogAudio
         title: "Выберите папку с аудиофайлами"
         folder: Platform.StandardPaths.writableLocation(Platform.StandardPaths.MusicLocation)
         
         onAccepted: {
             var path = folderDialogAudio.folder.toString()
-            // Убираем "file://" из начала пути
+            //Убираем "file://" из начала пути
             path = path.replace(/^file:\/\//, "")
             settings.audioPath = path
             txtAudioPath.text = path
             console.log("✓ Аудио папка:", path)
         }
     }
-    // Диалог выбора папки для текстов
-    Platform.FolderDialog {
+    Platform.FolderDialog {//Диалог выбора папки для текстов
         id: folderDialogText
         title: "Выберите папку для сохранения результатов"
         folder: Platform.StandardPaths.writableLocation(Platform.StandardPaths.DocumentsLocation)
@@ -293,7 +310,7 @@ Item {
             console.log("✓ Текст папка:", path)
         }
     }
-    Item {// Заголовок
+    Item {//Заголовок
         id: tmZagolovok
         DCKnopkaNazad {
             id: knopkaNazad
@@ -355,9 +372,35 @@ Item {
 			}
 		}
     }
-    Item {// Рабочая зона
+    Item {//Рабочая зона
         id: tmZona
         clip: true
+		Image {//ЛОГОТИП
+            id: imgLogo
+            anchors.centerIn: tmZona
+            width: 200
+            height: 200
+            source: "qrc:/resources/images/logo.png"
+            fillMode: Image.PreserveAspectFit
+            opacity: 0.0
+            visible: false
+            z: -1
+            scale: 1.0
+			/*
+            Behavior on scale {
+                NumberAnimation {
+                    duration: 110
+                    easing.type: Easing.InOutQuad
+                }
+            }
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: 300
+                    easing.type: Easing.InOutQuad
+                }
+            }
+			*/
+        }
         Flickable {
             id: flcZona
             anchors.fill: parent
@@ -382,7 +425,7 @@ Item {
                 bottomPadding: root.ntCoff * 2
                 leftPadding: root.ntCoff * 2
                 rightPadding: root.ntCoff * 2
-                DCKnopkaOriginal {// Кнопка "Транскрибация"
+                DCKnopkaOriginal {//Кнопка "Транскрибация"
                     id: btnTranscribe
                     text: "🎙️ Транскрибация"
                     ntHeight: root.ntWidth
@@ -399,7 +442,7 @@ Item {
                         }
                     }
                 }
-                Text {// Путь к аудио
+                Text {//Путь к аудио
                     text: "Путь к аудио файлам:"
                     font.pixelSize: root.ntWidth/2 * root.ntCoff
                     color: root.clrTexta
@@ -418,6 +461,7 @@ Item {
                         placeholderText: "Путь к папке с аудиофайлами"
                         selectByMouse: true
                         color: root.clrTexta
+            			opacity: root.prozrachZona
                         
                         background: Rectangle {
                             color: "white"
@@ -447,9 +491,7 @@ Item {
                         }
                     }
                 }
-                
-                // Путь сохранения результатов
-                Text {
+                Text {//Путь сохранения результатов
                     text: "Путь сохранения результатов:"
                     font.pixelSize: root.ntWidth/2 * root.ntCoff
                     color: root.clrTexta
@@ -469,6 +511,7 @@ Item {
                         placeholderText: "Путь к папке для сохранения результатов"
                         selectByMouse: true
                         color: root.clrTexta
+            			opacity: root.prozrachZona
                         
                         background: Rectangle {
                             color: "white"
@@ -498,16 +541,13 @@ Item {
                         }
                     }
                 }
-                
-                // Прогресс транскрибации
-                Text {
+                Text {//Прогресс транскрибации
                     text: "Прогресс транскрибации:"
                     font.pixelSize: root.ntWidth/2 * root.ntCoff
                     color: root.clrTexta
 					font.bold: true//Жирный текст.
                     width: parent.width - parent.leftPadding - parent.rightPadding
                 }
-                
                 Rectangle {
                     id: rctTextEdit
                     width: parent.width - parent.leftPadding - parent.rightPadding
@@ -517,7 +557,6 @@ Item {
                     color: "transparent"
                     radius: root.ntCoff / 2
                     clip: true
-                    
                     DCTextEdit {
                         id: txdZona
                         property string strCopy: ""
@@ -537,9 +576,7 @@ Item {
                 }
             }
         }
-        
-        // Скроллбар
-        DCScrollbar {
+        DCScrollbar {//Скроллбар
             id: scbScrollbar
             flick: flcZona
             anchors.right: tmZona.right
@@ -574,7 +611,6 @@ Item {
             
             onClicked: function(ntNomer, strMenu) {
                 menuMenu.visible = false
-                
                 if (ntNomer === 1) {
                     fnClickedTranscribe()
                 } else if (ntNomer === 2) {
@@ -589,7 +625,6 @@ Item {
                     Qt.quit()
                 }
             }
-            
             onVisibleChanged: {
                 if (!visible) {
                     root.forceActiveFocus()
@@ -605,7 +640,6 @@ Item {
             anchors.fill: tmToolbar
             source: "qrc:/DCMethods/DCProgress.qml"
             active: false
-            
             onLoaded: {
                 ldrProgress.item.ntWidth = root.ntWidth
                 ldrProgress.item.ntCoff = root.ntCoff
@@ -649,7 +683,7 @@ Item {
             }
         }
     }
-    MouseArea {// MouseArea для возврата фокуса
+    MouseArea {//MouseArea для возврата фокуса
         anchors.fill: parent
         z: -1
         propagateComposedEvents: true

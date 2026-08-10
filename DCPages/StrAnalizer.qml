@@ -5,8 +5,7 @@ import DCMethods 1.0
 
 Item {
     id: root
-    
-    // Свойства (без изменений)
+    //Свойства
     property int ntWidth: 2
     property int ntCoff: 8
     property color clrTexta: "indigo"
@@ -36,36 +35,31 @@ Item {
     property real rlProgress: 0
     property real rlLoader: 1
     property real prozrachZona: 1.0
-    
-    // Сигналы
+	//Настройки
+    anchors.fill: parent
+    focus: true
+    //Сигналы
     signal clickedNazad()
     signal signalToolbar(var strToolbar)
     signal clickedInfo()
-    
-    // Настройки
-    anchors.fill: parent
-    focus: true
-    
-    // ТАЙМЕР анимации логотипа
-    Timer {
+    //Методы
+    Timer {//ТАЙМЕР анимации логотипа
         id: tmrLogo
         interval: 110
         running: false
         repeat: true
-        property bool blLogoTMK: false
-        
+        property bool blLogo: false
         onTriggered: {
-            if (blLogoTMK) {
+            if (blLogo) {
                 imgLogo.scale += 0.02
                 if (imgLogo.scale >= 1.3)
-                    blLogoTMK = false
+                    blLogo = false
             } else {
                 imgLogo.scale -= 0.02
                 if (imgLogo.scale <= 0.7)
-                    blLogoTMK = true
+                    blLogo = true
             }
         }
-        
         onRunningChanged: {
             if (running) {
                 imgLogo.opacity = 1.0
@@ -98,9 +92,7 @@ Item {
             }
         }
     }
-
-	// CONNECTIONS для прогресса
-	Connections {
+	Connections {//CONNECTIONS для прогресса
 		target: analyzer
 		
 		function onAnalysisStarted() {
@@ -108,7 +100,6 @@ Item {
 			root.rlProgress = 0
 			tmrLogo.running = true
 		}
-		
 		function onAnalysisFinished() {
 			console.log("✓ Анализ завершён")
 			
@@ -120,7 +111,6 @@ Item {
 				tmrLogo.running = false
 			})
 		}
-		
 		function onChunkStarted(ntCurrent, ntTotal) {
 			console.log(`Чанк ${ntCurrent}/${ntTotal} начал обрабатываться`)
 			
@@ -128,7 +118,6 @@ Item {
 				ldrProgress.item.text = `${ntCurrent}/${ntTotal + 1}`
 			}
 		}
-		
 		function onChunkFinished(ntCurrent, ntTotal) {
 			console.log(`Чанк ${ntCurrent}/${ntTotal} завершён`)
 			
@@ -142,9 +131,7 @@ Item {
 				ldrProgress.item.text = `${ntCurrent}/${ntTotal + 1}`
 			}
 		}
-		
-		// ← НОВЫЙ обработчик финального анализа
-		function onFinalAnalysisStarted() {
+		function onFinalAnalysisStarted() {//Обработчик финального анализа
 			console.log("✓ Начался финальный анализ")
 			
 			if (ldrProgress.item) {
@@ -152,9 +139,7 @@ Item {
 			}
 		}
 	}	
-    
-    // Обработка горячих клавиш (без изменений)
-    Keys.onPressed: (event) => {
+    Keys.onPressed: (event) => {//Обработка горячих клавиш
         if (event.modifiers & Qt.AltModifier) {
             if (event.key === Qt.Key_Left) {
                 console.log("Alt+Left: возврат назад")
@@ -163,7 +148,14 @@ Item {
                 return
             }
         }
-        
+        if (event.modifiers & Qt.ControlModifier) {
+            if (event.key === Qt.Key_S) {
+                if (!menuMenu.visible && btnSaveResult.enabled) {
+                    fnClickedSave()
+                }
+                event.accepted = true
+            }
+        }
         if (event.key === Qt.Key_Escape) {
             if (menuMenu.visible) {
                 menuMenu.visible = false
@@ -171,16 +163,12 @@ Item {
             } else {
                 event.accepted = true
             }
-        }
-        
-        if (event.key === Qt.Key_F1) {
+        } else if (event.key === Qt.Key_F1) {
             if (!menuMenu.visible) {
                 fnClickedInfo()    
             }
             event.accepted = true
-        }
-        
-        if (event.key === Qt.Key_Up || event.key === Qt.Key_K) {
+        } else if (event.key === Qt.Key_Up || event.key === Qt.Key_K) {
             if (!menuMenu.visible) {
                 var ltNoviY = flcZona.contentY - 50
                 if (ltNoviY < 0)
@@ -226,36 +214,23 @@ Item {
             event.accepted = true
         }
         
-        if (event.modifiers & Qt.ControlModifier) {
-            if (event.key === Qt.Key_S) {
-                if (!menuMenu.visible && btnSaveResult.enabled) {
-                    fnClickedSave()
-                }
-                event.accepted = true
-            }
-        }
     }
     
     function fnClickedMenu() {
         console.log("НАСТРОЙКИ")
     }
-    
     function fnClickedInfo() {
         root.clickedInfo()
     }
-    
     function fnClickedLoad() {
         window.load_file()
     }
-    
     function fnClickedAnalizer() {
         analyzer.analyze(contentArea.text, promptField.text)
     }
-    
     function fnClickedSave() {
         analyzer.saveResult()
     }
-    
     function fnToggleMenu() {
         if (menuMenu.visible) {
             menuMenu.visible = false
@@ -263,7 +238,6 @@ Item {
             menuMenu.visible = true
         }
     }
-    
     function fnCloseMenuIfOpen() {
         if (menuMenu.visible) {
             menuMenu.visible = false
@@ -271,64 +245,47 @@ Item {
         }
         return false
     }
-    
-    // ← НОВАЯ ФУНКЦИЯ: конвертация Markdown в HTML
-    function fnMarkdownToHtml(markdown) {
+    function fnMarkdownToHtml(markdown) {//Функция конвертация Markdown в HTML
         if (!markdown) return ""
         
         let html = markdown
-        
-        // Заголовки: ### Заголовок → <h3>Заголовок</h3>
+        //Заголовки: ### Заголовок → <h3>Заголовок</h3>
         html = html.replace(/^### (.+)$/gm, '<h3 style="color: #2d4288; margin-top: 16px; margin-bottom: 8px;">$1</h3>')
         html = html.replace(/^## (.+)$/gm, '<h2 style="color: #2d4288; margin-top: 20px; margin-bottom: 10px;">$1</h2>')
         html = html.replace(/^# (.+)$/gm, '<h1 style="color: #2d4288; margin-top: 24px; margin-bottom: 12px;">$1</h1>')
-        
-        // Жирный текст: **текст** → <b>текст</b>
+        //Жирный текст: **текст** → <b>текст</b>
         html = html.replace(/\*\*(.+?)\*\*/g, '<b style="color: #1a237e;">$1</b>')
-        
-        // Курсив: *текст* → <i>текст</i>
+        //Курсив: *текст* → <i>текст</i>
         html = html.replace(/\*(.+?)\*/g, '<i>$1</i>')
-        
-        // Зачёркнутый: ~~текст~~ → <s>текст</s>
+        //Зачёркнутый: ~~текст~~ → <s>текст</s>
         html = html.replace(/~~(.+?)~~/g, '<s>$1</s>')
-        
-        // Код: `код` → <code>код</code>
+        //Код: `код` → <code>код</code>
         html = html.replace(/`(.+?)`/g, '<code style="background-color: #f5f5f5; padding: 2px 4px; border-radius: 3px; color: #c7254e;">$1</code>')
-        
-        // Списки: - элемент → <ul><li>элемент</li></ul>
+        //Списки: - элемент → <ul><li>элемент</li></ul>
         html = html.replace(/^- (.+)$/gm, '<li>$1</li>')
         html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul style="margin-left: 20px;">$&</ul>')
-        
-        // Нумерованные списки: 1. элемент → <ol><li>элемент</li></ol>
+        //Нумерованные списки: 1. элемент → <ol><li>элемент</li></ol>
         html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
         html = html.replace(/(<li>.*<\/li>\n?)+/g, function(match) {
             if (match.includes('<ul>')) return match
             return '<ol style="margin-left: 20px;">' + match + '</ol>'
         })
-        
-        // Цитаты: > текст → <blockquote>текст</blockquote>
+        //Цитаты: > текст → <blockquote>текст</blockquote>
         html = html.replace(/^> (.+)$/gm, '<blockquote style="border-left: 4px solid #2d4288; padding-left: 12px; margin-left: 0; color: #666;">$1</blockquote>')
-        
-        // Горизонтальная линия: --- → <hr>
+        //Горизонтальная линия: --- → <hr>
         html = html.replace(/^---$/gm, '<hr style="border: none; border-top: 2px solid #e0e0e0; margin: 16px 0;">')
-        
-        // Переносы строк: двойной перенос → <br><br>
+        //Переносы строк: двойной перенос → <br><br>
         html = html.replace(/\n\n/g, '<br><br>')
-        
-        // Ссылки: [текст](url) → <a href="url">текст</a>
+        //Ссылки: [текст](url) → <a href="url">текст</a>
         html = html.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" style="color: #2196F3; text-decoration: underline;">$1</a>')
         
         return '<p style="margin: 0; line-height: 1.6;">' + html + '</p>'
     }
-    
     Component.onCompleted: {
         root.forceActiveFocus()
     }
-    
-    // Заголовок
-    Item {
+    Item {//Заголовок
         id: tmZagolovok
-        
         DCKnopkaNazad {
             id: knopkaNazad
             ntWidth: root.ntWidth
@@ -342,7 +299,6 @@ Item {
             
             onClicked: root.clickedNazad()
         }
-        
         DCKnopkaMenu {
             id: knopkaMenu
             ntWidth: root.ntWidth
@@ -362,14 +318,10 @@ Item {
             }
         }
     }
-    
-    // Рабочая зона
-    Item {
+    Item {//Рабочая зона
         id: tmZona
         clip: true
-        
-        // ЛОГОТИП
-        Image {
+        Image {//ЛОГОТИП
             id: imgLogo
             anchors.centerIn: tmZona
             width: 200
@@ -395,7 +347,6 @@ Item {
                 }
             }
         }
-        
         Flickable {
             id: flcZona
             anchors.fill: parent
