@@ -35,7 +35,7 @@ class AnalyzerWorker(QThread):
             self.finished.emit(f"[Критическая ошибка: {str(e)}]")
 
 
-class TextAnalyzer(QObject):
+class DCAnalyzer(QObject):
     resultReady = pyqtSignal(str)
     fileSaved = pyqtSignal(str)
     chunkStarted = pyqtSignal(int, int)

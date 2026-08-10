@@ -110,9 +110,11 @@ ApplicationWindow {
                 onClickedRedaktor: {
                     console.log("Редактор текста - в разработке")
                 }
-                onClickedTranskribaciya: {
-                    console.log("Транскрибация - в разработке")
-                }
+				onClickedTranskribaciya: {
+					console.log("Переход на транскрибацию")
+					pgStrTranscribe.textZagolovok = "ТРАНСКРИБАЦИЯ"
+					stvStr.push(pgStrTranscribe)
+				}
 				onClickedInfo: {
                     tmStrInstrukciya.strInstrukciya = "oprilojenii"
                     stvStr.push(pgStrInstrukciya)//Переходим на страницу Инструкции Меню
@@ -186,6 +188,76 @@ ApplicationWindow {
                 }
             }
         }
+		Stranica {
+			id: pgStrTranscribe
+			visible: false
+			focus: true
+			ntWidth: root.ntWidth
+			ntCoff: root.ntCoff
+			clrFona: root.clrFona
+			clrTexta: root.clrKnopok
+			clrRabOblasti: root.clrStranic
+			textZagolovok: "ТРАНСКРИБАЦИЯ"
+			zagolovokLevi: 1.3
+			zagolovokPravi: 1.3
+			toolbarLevi: 1.3
+			toolbarPravi: 1.3
+
+			onVisibleChanged: {
+				if (visible) {
+					Qt.callLater(function() {
+						tmTranscribe.forceActiveFocus()
+						console.log("Фокус передан на tmTranscribe")
+					})
+				}
+			}
+
+			StrTranscribe {
+				id: tmTranscribe
+				ntWidth: pgStrTranscribe.ntWidth
+				ntCoff: pgStrTranscribe.ntCoff
+				clrTexta: pgStrTranscribe.clrTexta
+				clrFona: pgStrTranscribe.clrRabOblasti
+				clrMenuText: root.clrMenuText
+				clrMenuFon: pgStrTranscribe.clrFona
+
+				zagolovokX: pgStrTranscribe.rctStrZagolovok.x
+				zagolovokY: pgStrTranscribe.rctStrZagolovok.y
+				zagolovokWidth: pgStrTranscribe.rctStrZagolovok.width
+				zagolovokHeight: pgStrTranscribe.rctStrZagolovok.height
+
+				zonaX: pgStrTranscribe.rctStrZona.x
+				zonaY: pgStrTranscribe.rctStrZona.y
+				zonaWidth: pgStrTranscribe.rctStrZona.width
+				zonaHeight: pgStrTranscribe.rctStrZona.height
+
+				toolbarX: pgStrTranscribe.rctStrToolbar.x
+				toolbarY: pgStrTranscribe.rctStrToolbar.y
+				toolbarWidth: pgStrTranscribe.rctStrToolbar.width
+				toolbarHeight: pgStrTranscribe.rctStrToolbar.height
+
+				tapZagolovokLevi: pgStrTranscribe.zagolovokLevi
+				tapZagolovokPravi: pgStrTranscribe.zagolovokPravi
+				tapToolbarLevi: pgStrTranscribe.toolbarLevi
+				tapToolbarPravi: pgStrTranscribe.toolbarPravi
+
+				onClickedNazad: {
+					stvStr.pop()
+					Qt.callLater(function() {
+						stvStr.currentItem.forceActiveFocus()
+					})
+				}
+
+				onClickedInfo: {
+					tmStrInstrukciya.strInstrukciya = "transcribe"
+					stvStr.push(pgStrInstrukciya)
+				}
+
+				onSignalToolbar: function(strToolbar) {
+					pgStrTranscribe.textToolbar = strToolbar
+				}
+			}
+		}
 		Stranica {//Инструкция
         /////////////////////////
         ///И Н С Т Р У К Ц И Я///

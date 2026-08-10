@@ -147,8 +147,8 @@ Item {
                 if(imyaMenu == "orfograf")//Если это редактор Орфографии, то...
 					lsvMenu.model = JSMenu.vrMenuOrfograf;//Перегружаем модель ListView с новыми данными.
                 else{
-                    if(imyaMenu == "transkribaciya")//Это транскрибация аудио в текст
-                        lsvMenu.model = JSMenu.vrMenuTranckribaciya;//Перегружаем модель ListView с данными
+                    if(imyaMenu == "transcribe")//Это транскрибация аудио в текст
+                        lsvMenu.model = JSMenu.vrMenuTranscribe;//Перегружаем модель ListView с данными
                 }
             }
 		}

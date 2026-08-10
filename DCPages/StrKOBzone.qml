@@ -43,7 +43,7 @@ Item {
     signal clickedRedaktor()
     signal clickedTranskribaciya()
 	signal clickedInfo()//Сигнал нажатия кнопки Информация
-    
+
     Component.onCompleted: {
         knopkiMassiv = [knopkaAnalizator, knopkaRedaktor, knopkaTranskribaciya]
     }

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Транскрибер v5.4
+Транскрибер v5.6 (интеграция с PyQt6)
 """
 
 # ============================================================
@@ -44,7 +44,14 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 # ============================================================
-# КЛАСС АНИМАЦИИ ПРОГРЕССА
+# ОПРЕДЕЛЕНИЕ РЕЖИМА ЗАПУСКА
+# ============================================================
+
+# ← НОВОЕ: Проверяем, запущен ли скрипт через GUI
+IS_GUI_MODE = os.environ.get('TRANSCRIBE_GUI_MODE', '0') == '1'
+
+# ============================================================
+# КЛАСС АНИМАЦИИ ПРОГРЕССА (только для терминала)
 # ============================================================
 
 class Spinner:
@@ -56,12 +63,12 @@ class Spinner:
         self.message = message
         self.running = False
         self.thread = None
+        self.enabled = not IS_GUI_MODE
     
     def _spin(self):
         """Внутренний метод для вращения"""
         while self.running:
             char = self.spinner_chars[self.idx % len(self.spinner_chars)]
-            # Выводим на одной строке с возвратом каретки
             sys.stdout.write(f'\r  {char} {self.message}')
             sys.stdout.flush()
             self.idx += 1
@@ -69,17 +76,25 @@ class Spinner:
     
     def start(self):
         """Запуск анимации"""
+        if not self.enabled:
+            print(f"  {self.message}", flush=True)
+            return
+        
         self.running = True
         self.thread = threading.Thread(target=self._spin, daemon=True)
         self.thread.start()
     
     def stop(self, final_message=None):
         """Остановка анимации"""
+        if not self.enabled:
+            if final_message:
+                print(f"  ✓ {final_message}", flush=True)
+            return
+        
         self.running = False
         if self.thread:
             self.thread.join()
         
-        # Очищаем строку и выводим финальное сообщение
         if final_message:
             sys.stdout.write(f'\r  ✓ {final_message}\n')
         else:
@@ -87,7 +102,7 @@ class Spinner:
         sys.stdout.flush()
 
 # ============================================================
-# НАСТРОЙКИ
+# НАСТРОЙКИ (с поддержкой переменных окружения)
 # ============================================================
 
 DEVICE = "cuda"
@@ -98,9 +113,15 @@ BATCH_SIZE = 16
 MIN_SPEAKERS = 2
 MAX_SPEAKERS = 5
 
-from pathlib import Path
-INPUT_DIR = str(Path.home() / "Музыка" / "КОБ зона протокол")
-OUTPUT_DIR = str(Path.home() / "Документы" / "КОБ зона протокол")
+INPUT_DIR = os.environ.get(
+    'TRANSCRIBE_INPUT_DIR',
+    str(Path.home() / "Музыка" / "КОБ зона протокол")
+)
+
+OUTPUT_DIR = os.environ.get(
+    'TRANSCRIBE_OUTPUT_DIR',
+    str(Path.home() / "Документы" / "КОБ зона протокол")
+)
 
 SUPPORTED_FORMATS = [
     '.m4a', '.M4A', '.arm', '.ARM', '.mp3', '.MP3',
@@ -201,11 +222,11 @@ def transcribe_with_diarization(audio_path: str, language: str = "ru"):
     
     audio = whisperx.load_audio(audio_path)
 
-    # Нормализация громкости (усиливаем тихие участки)
+    # Нормализация громкости
     import numpy as np
     audio_max = np.abs(audio).max()
     if audio_max > 0:
-        audio = audio / audio_max * 0.95  # Нормализуем до 95% максимума
+        audio = audio / audio_max * 0.95
     
     try:
         result = model.transcribe(audio, batch_size=BATCH_SIZE, language=language)
@@ -420,7 +441,7 @@ def save_results(result: dict, filename: str, processing_time: float):
 
             f.write(f"[{start}] {text}\n")
     
-    print(f"  💾 TXT: {txt_path}")
+    print(f"  💾 TXT: {txt_path}", flush=True)
     
     # JSON
     json_path = os.path.join(OUTPUT_DIR, f"{filename}.json")
@@ -450,76 +471,78 @@ def save_results(result: dict, filename: str, processing_time: float):
             ]
         }, f, ensure_ascii=False, indent=2)
     
-    print(f"  💾 JSON: {json_path}")
+    print(f"  💾 JSON: {json_path}", flush=True)
 
 def process_file(audio_path: Path, index: int, total: int):
     """Обработка одного файла"""
     filename = audio_path.stem
     file_ext = audio_path.suffix
     
-    print(f"\n{'='*70}")
-    print(f"📂 ({index}/{total}) {filename}{file_ext}")
-    print(f"{'='*70}")
+    print(f"\n{'='*70}", flush=True)
+    print(f"📂 ({index}/{total}) {filename}{file_ext}", flush=True)
+    print(f"{'='*70}", flush=True)
 
     file_start_time = time.time()
 
     wav_path = os.path.join(OUTPUT_DIR, f"{filename}_temp.wav")
     
     if not convert_audio_to_wav(str(audio_path), wav_path, file_ext):
-        print(f"  ❌ Ошибка конвертации")
+        print(f"  ❌ Ошибка конвертации", flush=True)
         return
 
     try:
         result = transcribe_with_diarization(wav_path)
         processing_time = time.time() - file_start_time
         
-        print(f"\n  💾 Сохранение результатов...")
+        print(f"\n  💾 Сохранение результатов...", flush=True)
         save_results(result, filename, processing_time)
         
         speakers_stats = calculate_speaker_stats(result)
-        print(f"\n  📊 Статистика:")
+        print(f"\n  📊 Статистика:", flush=True)
         for speaker in sorted(speakers_stats.keys()):
             stats = speakers_stats[speaker]
-            print(f"     {speaker}: {stats['segments']} реплик, {stats['words']} слов, {format_time(stats['time'])}")
+            print(f"     {speaker}: {stats['segments']} реплик, {stats['words']} слов, {format_time(stats['time'])}", flush=True)
         
-        print(f"\n  ⏱️  Обработано за: {format_duration(processing_time)}")
-        print(f"  ✅ Готово!")
+        print(f"\n  ⏱️  Обработано за: {format_duration(processing_time)}", flush=True)
+        print(f"  ✅ Готово!", flush=True)
 
     except Exception as e:
-        print(f"\n  ❌ Ошибка: {e}")
+        print(f"\n  ❌ Ошибка: {e}", flush=True)
         import traceback
         traceback.print_exc()
     finally:
         if os.path.exists(wav_path):
             os.remove(wav_path)
 
-
 def main():
-    print(f"\n{'='*70}")
-    print(f"🎙️  КОБ зона протокол")
-    print(f"{'='*70}\n")
+    print(f"\n{'='*70}", flush=True)
+    print(f"🎙️  КОБ зона протокол", flush=True)
+    print(f"{'='*70}\n", flush=True)
 
     script_start_time = time.time()
 
     os.makedirs(INPUT_DIR, exist_ok=True)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
+    
+    print(f"📁 Папка с аудио: {INPUT_DIR}", flush=True)
+    print(f"💾 Папка результатов: {OUTPUT_DIR}\n", flush=True)
 
     all_files, new_files = get_audio_files(Path(INPUT_DIR), OUTPUT_DIR)
     
     if not all_files:
-        print(f"⚠️  Аудиофайлы не найдены в {INPUT_DIR}/")
+        print(f"⚠️  Аудиофайлы не найдены в {INPUT_DIR}/", flush=True)
         return
 
     already_processed = len(all_files) - len(new_files)
     
-    print(f"📁 Всего файлов: {len(all_files)}")
+    print(f"📁 Всего файлов: {len(all_files)}", flush=True)
     if already_processed > 0:
-        print(f"   ✓ Уже обработано: {already_processed}")
-        print(f"   🆕 Новых файлов: {len(new_files)}")
+        print(f"   ✓ Уже обработано: {already_processed}", flush=True)
+        print(f"   🆕 Новых файлов: {len(new_files)}", flush=True)
     
     if not new_files:
-        print(f"\n✅ Все файлы уже обработаны!")
-        print(f"   Результаты в: {os.path.abspath(OUTPUT_DIR)}")
+        print(f"\n✅ Все файлы уже обработаны!", flush=True)
+        print(f"   Результаты в: {os.path.abspath(OUTPUT_DIR)}", flush=True)
         return
     
     by_format = {}
@@ -527,26 +550,25 @@ def main():
         ext = f.suffix.lower()
         by_format.setdefault(ext, []).append(f)
     
-    print(f"\nФайлы к обработке ({len(new_files)}):")
+    print(f"\nФайлы к обработке ({len(new_files)}):", flush=True)
     for ext in sorted(by_format.keys()):
         files = by_format[ext]
         total_size = sum(f.stat().st_size for f in files) / (1024**2)
-        print(f"   {ext.upper()}: {len(files)} файл(ов), {total_size:.1f} МБ")
+        print(f"   {ext.upper()}: {len(files)} файл(ов), {total_size:.1f} МБ", flush=True)
     
-    print()
+    print(flush=True)
     for f in new_files:
-        print(f"   • {f.name} ({f.stat().st_size/1024**2:.1f} МБ)")
+        print(f"   • {f.name} ({f.stat().st_size/1024**2:.1f} МБ)", flush=True)
 
     if torch.cuda.is_available():
-        print(f"\n🖥️  {torch.cuda.get_device_name(0)}")
+        print(f"\n🖥️  {torch.cuda.get_device_name(0)}", flush=True)
 
-    print(f"\n🔑 Токен HuggingFace...")
+    print(f"\n🔑 Токен HuggingFace...", flush=True)
     if get_hf_token():
-        print(f"   ✓")
+        print(f"   ✓", flush=True)
     else:
-        print(f"   ❌ Выполните: hf auth login")
+        print(f"   ❌ Выполните: huggingface-cli login", flush=True)
         return
-
 
     total_files = len(new_files)
 
@@ -555,15 +577,14 @@ def main():
 
     total_time = time.time() - script_start_time
 
-    print(f"\n{'='*70}")
-    print(f"🎉 ВСЕ ФАЙЛЫ ОБРАБОТАНЫ ЗА: {format_duration(total_time)}")
-    print(f"{'='*70}")
-    print(f"Результаты: {os.path.abspath(OUTPUT_DIR)}")
-    print(f"{'='*70}\n")
-
+    print(f"\n{'='*70}", flush=True)
+    print(f"🎉 ВСЕ ФАЙЛЫ ОБРАБОТАНЫ ЗА: {format_duration(total_time)}", flush=True)
+    print(f"{'='*70}", flush=True)
+    print(f"Результаты: {os.path.abspath(OUTPUT_DIR)}", flush=True)
+    print(f"{'='*70}\n", flush=True)
 
 if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print(f"\n⚠️ Прервано пользователем")
+        print(f"\n⚠️ Прервано пользователем", flush=True)

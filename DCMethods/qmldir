@@ -3,4 +3,6 @@ module DCMethods
 DCMenu 1.0 DCMenu.qml
 DCProgress 1.0 DCProgress.qml
 DCScrollbar 1.0 DCScrollbar.qml
+DCSettings 1.0 DCSettings.qml
 DCTextEdit 1.0 DCTextEdit.qml
+DCVopros 1.0 DCVopros.qml

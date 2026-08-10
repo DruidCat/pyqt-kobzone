@@ -60,25 +60,30 @@ var vrMenuOrfograf = [
                 "menu": qsTr("Выход")
 			}
 ]
-var vrMenuTranskribaciya = [
-            {
-                "nomer": "1",
-                "menu": qsTr("Добавить")
-            },
-            {
-                "nomer": "2",
-                "menu": qsTr("Старт")
-            },
-            {
-                "nomer": "3",
-                "menu": qsTr("Без рамки")
-            },
-            {
-                "nomer": "4",
-                "menu": qsTr("Рамка 16:9")
-            },
-            {
-                "nomer": "5",
-                "menu": qsTr("Выход")
-            }
+var vrMenuTranscribe = [
+    {
+        "nomer": "1",
+        "menu": qsTr("Транскрибация")
+    },
+    {
+        "nomer": "2",
+        "menu": qsTr("Путь к аудио")
+    },
+    {
+        "nomer": "3",
+        "menu": qsTr("Путь сохранения")
+    },
+    {
+        "nomer": "4",
+        "menu": qsTr("Настройки")
+    },
+    {
+        "nomer": "5",
+        "menu": qsTr("Помощь")
+    },
+    {
+        "nomer": "6",
+        "menu": qsTr("Выход")
+    }
 ]
+

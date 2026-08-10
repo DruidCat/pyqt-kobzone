@@ -5,7 +5,8 @@ from PyQt6.QtQml import QQmlApplicationEngine
 from PyQt6.QtCore import QObject, pyqtSlot, QUrl, pyqtProperty, pyqtSignal
 from PyQt6.QtGui import QFontDatabase, QFont
 
-from DCAnalizer import TextAnalyzer
+from DCPages.PyAnalizer import DCAnalyzer
+from DCPages.PyTranscribe import DCTranscribe
 import resources_rc
 
 
@@ -61,7 +62,7 @@ class QtInfo(QObject):
 class FileManager(QObject):
     """Управление файлами через QML"""
     
-    fileLoaded = pyqtSignal(str, str)  # Изменено: добавлен путь к файлу
+    fileLoaded = pyqtSignal(str, str)
     
     def __init__(self, content_callback, filename_callback):
         super().__init__()
@@ -83,7 +84,7 @@ class FileManager(QObject):
                 with open(file_path, 'r', encoding='utf-8') as f:
                     content = f.read()
                 self.content_callback(content)
-                self.filename_callback(file_path)  # Новая строка
+                self.filename_callback(file_path)
                 self.fileLoaded.emit(content, file_path)
             except Exception as e:
                 print(f"Ошибка при загрузке файла: {e}")
@@ -126,7 +127,8 @@ class MainApp:
         
         self.engine = QQmlApplicationEngine()
         
-        self.analyzer = TextAnalyzer()
+        self.analyzer = DCAnalyzer()
+        self.transcriber = DCTranscribe()  # ← НОВЫЙ ОБЪЕКТ
         self.file_manager = None
         self.python_info = None
         self.qt_info = None
@@ -187,8 +189,9 @@ class MainApp:
         self.qt_info = QtInfo()
         self.file_manager = FileManager(temp_content_callback, temp_filename_callback)
         
-        # Регистрируем ВСЕ объекты ПЕРЕД загрузкой QML
+        # ← РЕГИСТРИРУЕМ ТРАНСКРИБЕР
         self.engine.rootContext().setContextProperty("analyzer", self.analyzer)
+        self.engine.rootContext().setContextProperty("transcriber", self.transcriber)
         self.engine.rootContext().setContextProperty("pythonInfo", self.python_info)
         self.engine.rootContext().setContextProperty("qtInfo", self.qt_info)
         self.engine.rootContext().setContextProperty("window", self.file_manager)

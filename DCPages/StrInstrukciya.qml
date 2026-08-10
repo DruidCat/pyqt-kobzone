@@ -270,7 +270,7 @@ Item {
                 ListElement { key: "menu"; title: "Меню"; zagolovok: "ОПИСАНИЕ НАСТРОЕК МЕНЮ" }
                 ListElement { key: "oprilojenii"; title: "О приложении"; zagolovok: "О ПРИЛОЖЕНИИ" }
                 ListElement { key: "oqt"; title: "О Qt"; zagolovok: "О QT" }
-                ListElement { key: "filedialog"; title: "Проводник"; zagolovok: "ИНСТРУКЦИЯ ПО ПРОВОДНИКУ" }
+                ListElement { key: "transcribe"; title: "Транскрибация"; zagolovok: "ИНСТРУКЦИЯ ПО ТРАНСКРИБАЦИИ" }
                 ListElement { key: "katalog"; title: "Каталог документов";
                                                     zagolovok: "ИНСТРУКЦИЯ ПО СОЗДАНИЮ КАТАЛОГА ДОКУМЕНТОВ" }
                 ListElement { key: "jurnal"; title: "Журнал"; zagolovok: "ИНСТРУКЦИЯ ПО ЖУРНАЛУ" }
@@ -379,7 +379,7 @@ github.com/DruidCat/pyqt-kobzone</a></center></p>
 					</body>
                 </html>"
             );
-        } else if(strKluch === "filedialog"){//Если это Инструкция Проводника, то...
+        } else if(strKluch === "transcribe"){//Если это Инструкция Транскрибации, то...
             txdZona.text = qsTr("
                 <html>
                     <body>
