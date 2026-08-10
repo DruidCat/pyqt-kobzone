@@ -128,7 +128,7 @@ class MainApp:
         self.engine = QQmlApplicationEngine()
         
         self.analyzer = DCAnalyzer()
-        self.transcriber = DCTranscribe()  # ← НОВЫЙ ОБЪЕКТ
+        self.transcriber = DCTranscribe()
         self.file_manager = None
         self.python_info = None
         self.qt_info = None
@@ -189,7 +189,7 @@ class MainApp:
         self.qt_info = QtInfo()
         self.file_manager = FileManager(temp_content_callback, temp_filename_callback)
         
-        # ← РЕГИСТРИРУЕМ ТРАНСКРИБЕР
+        # РЕГИСТРИРУЕМ КОНТЕКСТНЫЕ СВОЙСТВА.
         self.engine.rootContext().setContextProperty("analyzer", self.analyzer)
         self.engine.rootContext().setContextProperty("transcriber", self.transcriber)
         self.engine.rootContext().setContextProperty("pythonInfo", self.python_info)

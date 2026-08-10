@@ -11,6 +11,8 @@ Item {
     // Свойства
     property int ntWidth: 2
     property int ntCoff: 8
+	property int ntHeight: ntWidth*ntCoff+ntCoff//Высота виджетов, в которых будет распологаться текст
+	property real pixelHeight: (ntHeight - ntCoff) * 0.7//В пикселях примерно размер шрифта
     property color clrTexta: "indigo"
     property color clrFona: "white"
     property color clrMenuText: "indigo"
@@ -37,27 +39,22 @@ Item {
     property real rlProgress: 0
     property real rlLoader: 1
     property real prozrachZona: 1.0
-
-	//свойства для управления состоянием
+	//Свойства для управления состоянием транскрибации
 	property bool isTranscribing: false
 	property int currentFile: 0
 	property int totalFiles: 0
-
-    // Настройки
+    //Настройки
     anchors.fill: parent
-    focus: true
-    
-    // Объект настроек
-    DCSettings {
-        id: settings
-    }
-    
-    // Сигналы
+    focus: true 
+    //Сигналы
     signal clickedNazad()
     signal clickedInfo()
     signal signalToolbar(var strToolbar)
-    
-    // Обработка горячих клавиш
+	//Методы
+    DCSettings {//Объект настроек
+        id: settings
+    }
+    //Обработка горячих клавиш
     Keys.onPressed: (event) => {
         if (event.modifiers & Qt.AltModifier) {
             if (event.key === Qt.Key_Left) {
@@ -67,7 +64,6 @@ Item {
                 return
             }
         }
-        
         if (event.key === Qt.Key_Escape) {
             if (menuMenu.visible) {
                 menuMenu.visible = false
@@ -76,14 +72,12 @@ Item {
                 event.accepted = true
             }
         }
-        
         if (event.key === Qt.Key_F1) {
             if (!menuMenu.visible) {
                 fnClickedInfo()    
             }
             event.accepted = true
         }
-        
         if (event.key === Qt.Key_Up || event.key === Qt.Key_K) {
             if (!menuMenu.visible) {
                 var ltNoviY = flcZona.contentY - 50
@@ -129,7 +123,6 @@ Item {
             }
             event.accepted = true
         }
-        
         if (event.modifiers & Qt.ControlModifier) {
             if (event.key === Qt.Key_T) {
                 if (!menuMenu.visible && btnTranscribe.enabled) {
@@ -152,25 +145,21 @@ Item {
     function fnClickedMenu() {
         console.log("НАСТРОЙКИ")
     }
-    
     function fnClickedInfo() {
         root.clickedInfo()
     }
-    
 	function fnClickedTranscribe() {
 		if (isTranscribing) {
 			console.log("⚠️ Транскрибация уже запущена")
 			return
 		}
-		
 		console.log("🎙️ Запуск транскрибации...")
 		console.log("  Аудио:", settings.audioPath)
 		console.log("  Текст:", settings.textPath)
 		
 		txdZona.strCopy = ""
 		txdZona.text = ""
-		
-		// Запускаем транскрибацию через Python бэкенд
+		// Запускаем транскрибацию через Python бэкенд PyTranscriber.py
 		transcriber.start(settings.audioPath, settings.textPath)
 	}
     
@@ -197,13 +186,11 @@ Item {
         }
         return false
     }
-    
     Component.onCompleted: {
         root.forceActiveFocus()
         txtAudioPath.text = settings.audioPath
         txtTextPath.text = settings.textPath
     }
-
 	//Connections для транскрибера
 	Connections {
 		target: transcriber
@@ -277,7 +264,6 @@ Item {
 			}
 		}
 	}
-
     // Диалог выбора папки для аудио
     Platform.FolderDialog {
         id: folderDialogAudio
@@ -293,7 +279,6 @@ Item {
             console.log("✓ Аудио папка:", path)
         }
     }
-    
     // Диалог выбора папки для текстов
     Platform.FolderDialog {
         id: folderDialogText
@@ -308,11 +293,8 @@ Item {
             console.log("✓ Текст папка:", path)
         }
     }
-    
-    // Заголовок
-    Item {
+    Item {// Заголовок
         id: tmZagolovok
-        
         DCKnopkaNazad {
             id: knopkaNazad
             ntWidth: root.ntWidth
@@ -326,7 +308,6 @@ Item {
             
             onClicked: fnClickedNazad()
         }
-        
         DCKnopkaMenu {
             id: knopkaMenu
             ntWidth: root.ntWidth
@@ -345,7 +326,6 @@ Item {
                 }
             }
         }
-
 		DCVopros {
 			id: stopDialog
 			ntWidth: root.ntWidth
@@ -370,18 +350,14 @@ Item {
 				transcriber.stop()
 				stopDialog.visible = false
 			}
-			
 			onClickedOtmena: {
 				stopDialog.visible = false
 			}
 		}
     }
-    
-    // Рабочая зона
-    Item {
+    Item {// Рабочая зона
         id: tmZona
         clip: true
-        
         Flickable {
             id: flcZona
             anchors.fill: parent
@@ -398,18 +374,15 @@ Item {
                     easing.type: Easing.InOutQuad
                 }
             }
-            
             Column {
                 id: clmnContent
                 width: flcZona.width - scbScrollbar.width
-                spacing: root.ntCoff * 2
+                //spacing: root.ntCoff//Расстояние между элементами по вертикали.
                 topPadding: root.ntCoff * 2
                 bottomPadding: root.ntCoff * 2
                 leftPadding: root.ntCoff * 2
                 rightPadding: root.ntCoff * 2
-                
-                // Кнопка "Транскрибация"
-                DCKnopkaOriginal {
+                DCKnopkaOriginal {// Кнопка "Транскрибация"
                     id: btnTranscribe
                     text: "🎙️ Транскрибация"
                     ntHeight: root.ntWidth
@@ -418,24 +391,21 @@ Item {
                     clrTexta: root.clrFona
                     anchors.left: parent.left
                     anchors.right: parent.right
-                    anchors.leftMargin: 0
-                    anchors.rightMargin: 0
-                    
+                    anchors.leftMargin: root.ntCoff * 2
+                    anchors.rightMargin: root.ntCoff * 2
                     onClicked: {
                         if (!fnCloseMenuIfOpen()) {
                             fnClickedTranscribe()
                         }
                     }
                 }
-                
-                // Путь к аудио
-                Text {
-                    text: "Путь к аудио протоколам:"
-                    font.pixelSize: root.ntWidth * root.ntCoff
+                Text {// Путь к аудио
+                    text: "Путь к аудио файлам:"
+                    font.pixelSize: root.ntWidth/2 * root.ntCoff
                     color: root.clrTexta
+					font.bold: true//Жирный текст.
                     width: parent.width - parent.leftPadding - parent.rightPadding
                 }
-                
                 Row {
                     width: parent.width - parent.leftPadding - parent.rightPadding
                     spacing: root.ntCoff
@@ -443,6 +413,8 @@ Item {
                     TextField {
                         id: txtAudioPath
                         width: parent.width - btnAudioBrowse.width - parent.spacing
+						height: root.ntHeight
+						font.pixelSize: root.pixelHeight//Имперический размер шрифта.
                         placeholderText: "Путь к папке с аудиофайлами"
                         selectByMouse: true
                         color: root.clrTexta
@@ -479,8 +451,9 @@ Item {
                 // Путь сохранения результатов
                 Text {
                     text: "Путь сохранения результатов:"
-                    font.pixelSize: root.ntWidth * root.ntCoff
+                    font.pixelSize: root.ntWidth/2 * root.ntCoff
                     color: root.clrTexta
+					font.bold: true//Жирный текст.
                     width: parent.width - parent.leftPadding - parent.rightPadding
                 }
                 
@@ -491,6 +464,8 @@ Item {
                     TextField {
                         id: txtTextPath
                         width: parent.width - btnTextBrowse.width - parent.spacing
+						height: root.ntHeight
+						font.pixelSize: root.pixelHeight//Имперический размер шрифта.
                         placeholderText: "Путь к папке для сохранения результатов"
                         selectByMouse: true
                         color: root.clrTexta
@@ -527,8 +502,9 @@ Item {
                 // Прогресс транскрибации
                 Text {
                     text: "Прогресс транскрибации:"
-                    font.pixelSize: root.ntWidth * root.ntCoff
+                    font.pixelSize: root.ntWidth/2 * root.ntCoff
                     color: root.clrTexta
+					font.bold: true//Жирный текст.
                     width: parent.width - parent.leftPadding - parent.rightPadding
                 }
                 
@@ -581,9 +557,7 @@ Item {
                 }
             }
         }
-        
-        // Всплывающее меню DCMenu
-        DCMenu {
+        DCMenu {//Всплывающее меню DCMenu
             id: menuMenu
             visible: false
             ntWidth: root.ntWidth
@@ -603,20 +577,15 @@ Item {
                 
                 if (ntNomer === 1) {
                     fnClickedTranscribe()
-                }
-                if (ntNomer === 2) {
+                } else if (ntNomer === 2) {
                     fnClickedPutAudio()
-                }
-                if (ntNomer === 3) {
+                } else if (ntNomer === 3) {
                     fnClickedPutText()
-                }
-                if (ntNomer === 4) {
+                } else if (ntNomer === 4) {
                     fnClickedMenu()
-                }
-                if (ntNomer === 5) {
+                } else if (ntNomer === 5) {
                     fnClickedInfo()
-                }
-                if (ntNomer === 6) {
+                } else if (ntNomer === 6) {
                     Qt.quit()
                 }
             }
@@ -628,14 +597,10 @@ Item {
             }
         }
     }
-    
-    // Тулбар
-    Item {
+    Item {//Тулбар
         id: tmToolbar
         clip: true
-        
-        // LOADER для DCProgress
-        Loader {
+        Loader {//LOADER для DCProgress
             id: ldrProgress
             anchors.fill: tmToolbar
             source: "qrc:/DCMethods/DCProgress.qml"
@@ -649,7 +614,6 @@ Item {
                 ldrProgress.item.radius = root.ntCoff / 4
             }
         }
-        
         DCKnopkaInfo {
             id: knopkaInfo
             ntWidth: root.ntWidth
@@ -668,7 +632,6 @@ Item {
                 }
             }
         }
-        
         DCKnopkaNastroiki {
             id: knopkaNastroiki
             ntWidth: root.ntWidth
@@ -686,9 +649,7 @@ Item {
             }
         }
     }
-    
-    // MouseArea для возврата фокуса
-    MouseArea {
+    MouseArea {// MouseArea для возврата фокуса
         anchors.fill: parent
         z: -1
         propagateComposedEvents: true
