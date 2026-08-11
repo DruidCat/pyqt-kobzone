@@ -39,9 +39,9 @@ Item {
     property real rlLoader: 1
     property real prozrachZona: 0.9
 	//Свойства для управления состоянием транскрибации
-	property bool isTranscribing: false
-	property int currentFile: 0
-	property int totalFiles: 0
+	property bool isTranscribing: false//true - транскрибация началась.
+	property int tekushiAudioFail: 0//Текущий аудио файл в обработке.
+	property int kolichestvoAudioFailov: 0//общее количество обрабатываемых файлов
     //Настройки
     anchors.fill: parent
     focus: true 
@@ -56,10 +56,17 @@ Item {
     Keys.onPressed: (event) => {//Обработка горячих клавиш
         if (event.modifiers & Qt.AltModifier) {
             if (event.key === Qt.Key_Left) {
-                console.log("Alt+Left: возврат назад")
                 fnClickedNazad()
                 event.accepted = true
                 return
+            }
+        }
+		if (event.modifiers & Qt.ControlModifier) {
+            if (event.key === Qt.Key_T) {
+                if (!menuMenu.visible && knopkaTranscribe.enabled) {
+                    fnClickedTranscribe()
+                }
+                event.accepted = true
             }
         }
         if (event.key === Qt.Key_Escape) {
@@ -69,14 +76,12 @@ Item {
             } else {
                 event.accepted = true
             }
-        }
-        if (event.key === Qt.Key_F1) {
+        } else if (event.key === Qt.Key_F1) {
             if (!menuMenu.visible) {
                 fnClickedInfo()    
             }
             event.accepted = true
-        }
-        if (event.key === Qt.Key_Up || event.key === Qt.Key_K) {
+        } else if (event.key === Qt.Key_Up || event.key === Qt.Key_K) {
             if (!menuMenu.visible) {
                 var ltNoviY = flcZona.contentY - 50
                 if (ltNoviY < 0)
@@ -120,15 +125,7 @@ Item {
                 flcZona.contentY = flcZona.contentHeight - flcZona.height
             }
             event.accepted = true
-        }
-        if (event.modifiers & Qt.ControlModifier) {
-            if (event.key === Qt.Key_T) {
-                if (!menuMenu.visible && btnTranscribe.enabled) {
-                    fnClickedTranscribe()
-                }
-                event.accepted = true
-            }
-        }
+        } 
     }
 	Timer {//ТАЙМЕР анимации логотипа
         id: tmrLogo
@@ -149,23 +146,47 @@ Item {
         }
         onRunningChanged: {
             if (running) {
-                imgLogo.opacity = 0.5
-                //imgLogo.opacity = 1.0
-                imgLogo.visible = true
-                
+				knopkaMenu.enabled = false
+				knopkaTranscribe.enabled = false
+				knopkaAudioPut.enabled = false
+				knopkaTextPut.enabled = false
+				txfAudioPut.enabled = false
+				txfTextPut.enabled = false
+				knopkaInfo.visible = false
+				knopkaNastroiki.visible = false
+
+				ldrProgress.active = true
             } else {
-                imgLogo.scale = 1.0
-                imgLogo.opacity = 0.0
-                imgLogo.visible = false
+                imgLogo.scale = 1.0//Восстанавливаем масштаб логотипа 1
+				if (ldrProgress.item) ldrProgress.item.progress = 100
+				tmrProgress.running = true//Запускаем таймер отображения 100% прогресса и политику кнопок
             }
         }
     }
+	Timer {//ТАЙМЕР, чтоб можно было увидеть 100% прогресса призавершении.
+        id: tmrProgress
+        interval: 1100; running: false; repeat: false
+        onTriggered: {
+			ldrProgress.active = false
+
+			knopkaMenu.visible = true
+			knopkaMenu.enabled = true//Включаем кнопку, чтоб она нажималась
+			knopkaNazad.visible = true
+			knopkaNazad.enabled = true//Включаем кнопку, чтоб она нажималась
+			knopkaTranscribe.enabled = true
+			knopkaAudioPut.enabled = true//Включаем кнопку, чтоб она нажималась
+			knopkaTextPut.enabled = true//Включаем кнопку, чтоб она нажималась
+			txfAudioPut.enabled = true
+			txfTextPut.enabled = true
+            knopkaInfo.visible = true
+			knopkaNastroiki.visible = true
+        }
+	}
 	function fnClickedNazad() {
-		if (isTranscribing) {
-			// Показать диалог подтверждения остановки
-			console.log("⚠️ Попытка выхода во время транскрибации")
-			// TODO: Добавить DCVopros для подтверждения
-			transcriber.stop()
+		if (isTranscribing) {//Если транскрибация идёт, то...
+			knopkaNazad.visible = false//Невидимая кнопка, чтоб она не нажималась, при нажатии Отмены.
+			knopkaMenu.visible = false// Невидимая кнопка, чтоб она не нажималась, при нажатии Ок.
+			stopDialog.visible = true//Выдаём вопрос об остановке транскрибации.
 		} else {
 			root.clickedNazad()
 		}
@@ -176,21 +197,22 @@ Item {
     function fnClickedInfo() {
         root.clickedInfo()
     }
-	function fnClickedTranscribe() {
-		if (isTranscribing) {
-			console.log("⚠️ Транскрибация уже запущена")
-			return
+	function fnClickedTranscribe() {//Функция нажатия кнопки начала транскрибации.
+		if (!isTranscribing) {//Если транскрибация не запущена, то...
+			txdZona.strCopy = ""//Очищаем переменную Прогресса транскрибации.
+			txdZona.text = ""//Очищаем зону отображения прогресса транскрибации.
+			transcriber.start(dcReestr.audio_put, dcReestr.text_put)//Запускаем через бэкенд PyTranscriber.py	
 		}
-		txdZona.strCopy = ""
-		txdZona.text = ""
-		//Запускаем транскрибацию через Python бэкенд PyTranscriber.py
-		transcriber.start(dcReestr.audio_put, dcReestr.text_put)
+	}
+	function fnStopTranscriber() {//Функция Остановки транскрибации.
+		root.isTranscribing = false//возвращаем флаг, что транскрибация окончилась.	
+		tmrLogo.running = false//Отключаем анимацию логотипа и активируем политику кнопок.
 	}
     function fnClickedPutAudio() {
-        folderDialogAudio.open()
+        dialogAudio.open()
     }
     function fnClickedPutText() {
-        folderDialogText.open()
+        dialogText.open()
     }
     function fnToggleMenu() {
         if (menuMenu.visible) {
@@ -208,98 +230,65 @@ Item {
     }
     Component.onCompleted: {
         root.forceActiveFocus()
-        txtTextPath.text = dcReestr.text_put
-        txtAudioPath.text = dcReestr.audio_put
+        txfTextPut.text = dcReestr.text_put
+        txfAudioPut.text = dcReestr.audio_put
     }
 	Connections {//Connections для транскрибера
 		target: transcriber
-		function onTranscriptionStarted() {
-			root.isTranscribing = true
-			ldrProgress.active = true
-
-			knopkaInfo.visible = false
-			knopkaNastroiki.visible = false
-			knopkaMenu.enabled = false
-			knopkaNazad.enabled = false
-
-			btnTranscribe.enabled = false
-			btnAudioBrowse.enabled = false
-			btnTextBrowse.enabled = false
-			txtAudioPath.enabled = false
-			txtTextPath.enabled = false
-
-			tmrLogo.running = true
+		function onTranscriptionStarted() {//Функция начала работы скрипта DCTranscribe.py
+			root.isTranscribing = true//Взводим флаг, что транскрибация началась.
+			tmrLogo.running = true//Запускаем анимацию логотипа и политику кнопок.
 		}
-		function onTranscriptionFinished(success, message) {
-			root.isTranscribing = false
-			if (ldrProgress.item) {
-				ldrProgress.item.progress = 100
-			}
-			Qt.callLater(function() {
-				ldrProgress.active = false
-
-				knopkaInfo.visible = true
-				knopkaNastroiki.visible = true
-				knopkaMenu.enabled = true
-				knopkaNazad.enabled = true
-
-				btnTranscribe.enabled = true
-				btnAudioBrowse.enabled = true
-				btnTextBrowse.enabled = true
-				txtAudioPath.enabled = true
-				txtTextPath.enabled = true
-				
-				tmrLogo.running = false
-			})
+		function onTranscriptionFinished(success, message) {//Функция окончания работы скрипта DCTranscribe.py
+			fnStopTranscriber()//Останавливаем транскрибацию.	
 			if (!success) {//Если ошибка, то...
 				txdZona.strCopy += "\n❌ Ошибка: " + message + "\n"
 				txdZona.text = txdZona.strCopy
 			}
 		}
-		function onLogMessage(message) {
+		function onLogMessage(message) {//Функция выводящая в Прогресс сообщения скрипта DCTranscribe.py
 			//Добавляем сообщение в лог
-			txdZona.strCopy += message + "\n"
-			txdZona.text = txdZona.strCopy
+			txdZona.strCopy += message + "\n"//Собираю сообщения в переменную.
+			txdZona.text = txdZona.strCopy//Отображаю в "Прогрессе транскрибации" сообщения со скрипта.
 		}
-		function onProgressUpdate(current, total) {
-			console.log(`Прогресс: ${current}/${total}`)
-
-			root.currentFile = current
-			root.totalFiles = total
-
+		function onProgressUpdate(current, total) {//Функция обновления прогресса из python
+			current = current - 1//Обязательно, чтоб с 0 прогресс начинался.
+			root.tekushiAudioFail = current
+			root.kolichestvoAudioFailov = total
 			if (ldrProgress.item) {
-				var progress = (current / (total + 1)) * 100
-				ldrProgress.item.progress = progress
-				ldrProgress.item.text = `${current}/${total + 1}`
+				var progress = (current / (total)) * 100
+				ldrProgress.total = root.kolichestvoAudioFailov//Пересчёт скорости смещения полосы.
+				ldrProgress.item.progress = progress//Перемещение на позицию пропорции.
+				ldrProgress.item.text = `${current}/${total}`//Отображаем прогресс по середине полосы.
 			}
 		}
 	}
 	FolderDialog {//Диалог выбора папки для аудио
-		id: folderDialogAudio
+		id: dialogAudio
 		title: "Выберите папку с аудио файлами"
 		currentFolder: {//Используем сохранённый путь из настроек, или стандартную домашнюю папку
 			if (dcReestr.audio_put !== "") return "file://" + dcReestr.audio_put
 			else return StandardPaths.writableLocation(StandardPaths.MusicLocation)
 		}
 		onAccepted: {
-			var path = selectedFolder.toString()
-			path = path.replace(/^file:\/\//, "")//Убираем "file://" из начала пути
-			dcReestr.audio_put = path
-			txtAudioPath.text = path
+			var vtPut = selectedFolder.toString()
+			vtPut = vtPut.replace(/^file:\/\//, "")//Убираем "file://" из начала пути
+			dcReestr.audio_put = vtPut
+			txfAudioPut.text = vtPut
 		}
 	}
 	FolderDialog {//Диалог выбора папки для текстовых файлов
-		id: folderDialogText
+		id: dialogText
 		title: "Выберите папку для текстовых файлов"
 		currentFolder: {//Используем сохранённый путь из настроек, или стандартную домашнюю папку
 			if (dcReestr.text_put !== "") return "file://" + dcReestr.text_put
 			else return StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
 		}
 		onAccepted: {
-			var path = selectedFolder.toString()
-			path = path.replace(/^file:\/\//, "")//Убираем "file://" из начала пути
-			dcReestr.text_put = path
-			txtTextPath.text = path
+			var vtPut = selectedFolder.toString()
+			vtPut = vtPut.replace(/^file:\/\//, "")//Убираем "file://" из начала пути
+			dcReestr.text_put = vtPut
+			txfTextPut.text = vtPut
 		}
 	}	
     Item {//Заголовок
@@ -344,7 +333,7 @@ Item {
 			anchors.left: tmZagolovok.left
 			anchors.right: tmZagolovok.right
 			
-			text: qsTr("Остановить транскрибацию?")
+			text: qsTr("ОСТАНОВИТЬ ТРАНСКРИБАЦИЮ?")
 			visible: false
 			
 			clrFona: "red"
@@ -356,11 +345,16 @@ Item {
 			tapKnopkaOk: root.tapZagolovokPravi
 			
 			onClickedOk: {
-				transcriber.stop()
-				stopDialog.visible = false
+				stopDialog.visible = false//Делаем невидимый диалог
+        		root.forceActiveFocus()//Переводим фокус на основное окно, чтоб работали горячие кнопки.
+				transcriber.stop()//Останавливаем принудительно транскрибацию.
+				fnStopTranscriber()//Останавливаем транскрибацию.
 			}
 			onClickedOtmena: {
-				stopDialog.visible = false
+				stopDialog.visible = false//Делаем невидимый диалог.
+        		root.forceActiveFocus()//Переводим фокус на основное окно, чтоб работали горячие кнопки.
+				knopkaNazad.visible = true//видимая кнопка, чтоб она нажималась
+				knopkaMenu.visible = true// видимая кнопка, чтоб она нажималась
 			}
 		}
     }
@@ -374,8 +368,8 @@ Item {
             height: 200
             source: "qrc:/resources/images/logo.png"
             fillMode: Image.PreserveAspectFit
-            opacity: 0.0
-            visible: false
+            opacity: 0.5
+            visible: true
             z: -1
             scale: 1.0
 			/*
@@ -411,14 +405,14 @@ Item {
             }
             Column {
                 id: clmnContent
-                width: flcZona.width - scbScrollbar.width
+                width: flcZona.width - dcScrollbar.width
                 //spacing: root.ntCoff//Расстояние между элементами по вертикали.
                 topPadding: root.ntCoff * 2
                 bottomPadding: root.ntCoff * 2
                 leftPadding: root.ntCoff * 2
                 rightPadding: root.ntCoff * 2
                 DCKnopkaOriginal {//Кнопка "Транскрибация"
-                    id: btnTranscribe
+                    id: knopkaTranscribe
                     text: "🎙️ Транскрибация"
                     ntHeight: root.ntWidth
                     ntCoff: root.ntCoff
@@ -446,8 +440,8 @@ Item {
                     spacing: root.ntCoff
                     
                     TextField {
-                        id: txtAudioPath
-                        width: parent.width - btnAudioBrowse.width - parent.spacing
+                        id: txfAudioPut
+                        width: parent.width - knopkaAudioPut.width - parent.spacing
 						height: root.ntHeight
 						font.pixelSize: root.pixelHeight//Имперический размер шрифта.
                         placeholderText: "Путь к папке с аудиофайлами"
@@ -465,7 +459,7 @@ Item {
                     }
                     
                     DCKnopkaOriginal {
-                        id: btnAudioBrowse
+                        id: knopkaAudioPut
                         text: "..."
                         ntHeight: root.ntWidth
                         ntCoff: root.ntCoff
@@ -493,8 +487,8 @@ Item {
                     spacing: root.ntCoff
                     
                     TextField {
-                        id: txtTextPath
-                        width: parent.width - btnTextBrowse.width - parent.spacing
+                        id: txfTextPut
+                        width: parent.width - knopkaTextPut.width - parent.spacing
 						height: root.ntHeight
 						font.pixelSize: root.pixelHeight//Имперический размер шрифта.
                         placeholderText: "Путь к папке для сохранения результатов"
@@ -512,7 +506,7 @@ Item {
                     }
                     
                     DCKnopkaOriginal {
-                        id: btnTextBrowse
+                        id: knopkaTextPut
                         text: "..."
                         ntHeight: root.ntWidth
                         ntCoff: root.ntCoff
@@ -563,7 +557,7 @@ Item {
             }
         }
         DCScrollbar {//Скроллбар
-            id: scbScrollbar
+            id: dcScrollbar
             flick: flcZona
             anchors.right: tmZona.right
             anchors.top: tmZona.top
@@ -589,7 +583,7 @@ Item {
             anchors.right: tmZona.right
             anchors.bottom: tmZona.bottom
             anchors.bottomMargin: root.ntWidth
-            anchors.rightMargin: scbScrollbar.width
+            anchors.rightMargin: dcScrollbar.width
             pctFona: 0.90
             clrTexta: root.clrMenuText
             clrFona: root.clrMenuFon
@@ -626,13 +620,19 @@ Item {
             anchors.fill: tmToolbar
             source: "qrc:/DCMethods/DCProgress.qml"
             active: false
+			property int total: 1//Переменная, хранящая количество файлов на обработку
+			property int interval: 2200//Интервал между смещением полосы.
             onLoaded: {
                 ldrProgress.item.ntWidth = root.ntWidth
                 ldrProgress.item.ntCoff = root.ntCoff
                 ldrProgress.item.clrProgress = root.clrTexta
                 ldrProgress.item.clrTexta = "grey"
                 ldrProgress.item.radius = root.ntCoff / 4
+				ldrProgress.item.msInterval = ldrProgress.interval//Пауза между смещением.
             }
+			onTotalChanged: {//Если переменная изменилась, то происходит пересчёт скорости смещения.
+				ldrProgress.item.msInterval = interval * total//Чем больше файлов, тем медленней движется.
+			}
         }
         DCKnopkaInfo {
             id: knopkaInfo

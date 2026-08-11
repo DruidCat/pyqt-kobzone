@@ -9,6 +9,7 @@ Item {
     property alias clrProgress: rctProgress.color//цвет фона
     property alias clrTexta: txtProgress.color//цвет фона
     property alias running: tmrProgress.running//флаг который запускает таймер пролосы прогресса.
+	property int msInterval: 1100//Интервал времени, когда на однин пункт сдвигается полоса.
     property real progress: 0//Свойство прогресса от 0 до 100
     property alias text: txtProgress.text
     //Настройки.
@@ -55,18 +56,10 @@ Item {
         width: 1; height: root.height
         anchors.top: root.top; anchors.left: root.left
         color: "orange"; radius: 1
-
-		// ← ДОБАВЛЕНА АНИМАЦИЯ (в 2 раза медленнее = 220ms вместо 110ms)
-        Behavior on width {
-            NumberAnimation {
-                duration: 220
-                easing.type: Easing.InOutQuad
-            }
-        }
     }
     Timer {
         id: tmrProgress
-        interval: 1100; repeat: true; running: true
+        interval: root.msInterval; repeat: true; running: true
         onTriggered: {//Срабатывает таймер.
             if(root.progress <= 100)//Если меньше 100%
                 root.progress += 1;//+1
