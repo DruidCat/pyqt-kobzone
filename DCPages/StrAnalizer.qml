@@ -34,7 +34,6 @@ Item {
     property int logoRazmer: 22
     property real rlProgress: 0
     property real rlLoader: 1
-    property real prozrachZona: 1.0
 	//Настройки
     anchors.fill: parent
     focus: true
@@ -45,7 +44,7 @@ Item {
     //Методы
     Timer {//ТАЙМЕР анимации логотипа
         id: tmrLogo
-        interval: 110
+        interval: 47
         running: false
         repeat: true
         property bool blLogo: false
@@ -62,9 +61,6 @@ Item {
         }
         onRunningChanged: {
             if (running) {
-                imgLogo.opacity = 1.0
-                imgLogo.visible = true
-                root.prozrachZona = 0.5
                 ldrProgress.active = true
                 
                 knopkaInfo.visible = false
@@ -72,14 +68,11 @@ Item {
                 knopkaMenu.enabled = false
                 knopkaNazad.enabled = false
                 
-                btnLoadFile.enabled = false
-                btnAnalyze.enabled = false
-                btnSaveResult.enabled = false
+                knopkaZagruzit.enabled = false
+                knopkaAnaliz.enabled = false
+                knopkaSohranit.enabled = false
             } else {
                 imgLogo.scale = 1.0
-                imgLogo.opacity = 0.0
-                imgLogo.visible = false
-                root.prozrachZona = 1.0
                 ldrProgress.active = false
                 
                 knopkaInfo.visible = true
@@ -87,8 +80,8 @@ Item {
                 knopkaMenu.enabled = true
                 knopkaNazad.enabled = true
                 
-                btnLoadFile.enabled = true
-                btnAnalyze.enabled = contentArea.text.trim() !== ""
+                knopkaZagruzit.enabled = true
+                knopkaAnaliz.enabled = contentArea.text.trim() !== ""
             }
         }
     }
@@ -142,7 +135,6 @@ Item {
     Keys.onPressed: (event) => {//Обработка горячих клавиш
         if (event.modifiers & Qt.AltModifier) {
             if (event.key === Qt.Key_Left) {
-                console.log("Alt+Left: возврат назад")
                 root.clickedNazad()
                 event.accepted = true
                 return
@@ -150,7 +142,7 @@ Item {
         }
         if (event.modifiers & Qt.ControlModifier) {
             if (event.key === Qt.Key_S) {
-                if (!menuMenu.visible && btnSaveResult.enabled) {
+                if (!menuMenu.visible && knopkaSohranit.enabled) {
                     fnClickedSave()
                 }
                 event.accepted = true
@@ -213,7 +205,6 @@ Item {
             }
             event.accepted = true
         }
-        
     }
     
     function fnClickedMenu() {
@@ -232,11 +223,8 @@ Item {
         analyzer.saveResult()
     }
     function fnToggleMenu() {
-        if (menuMenu.visible) {
-            menuMenu.visible = false
-        } else {
-            menuMenu.visible = true
-        }
+        if (menuMenu.visible) menuMenu.visible = false
+        else menuMenu.visible = true
     }
     function fnCloseMenuIfOpen() {
         if (menuMenu.visible) {
@@ -296,7 +284,6 @@ Item {
             clrFona: root.clrFona
             tapHeight: root.ntWidth * root.ntCoff + root.ntCoff
             tapWidth: tapHeight * root.tapZagolovokLevi
-            
             onClicked: root.clickedNazad()
         }
         DCKnopkaMenu {
@@ -310,7 +297,6 @@ Item {
             clrFona: root.clrFona
             tapHeight: root.ntWidth * root.ntCoff + root.ntCoff
             tapWidth: tapHeight * root.tapZagolovokPravi
-            
             onClicked: {
                 if (!fnCloseMenuIfOpen()) {
                     fnClickedMenu()
@@ -328,24 +314,24 @@ Item {
             height: 200
             source: "qrc:/resources/images/logo.png"
             fillMode: Image.PreserveAspectFit
-            opacity: 0.0
-            visible: false
+            opacity: 0.4
+            visible: true
             z: -1
             scale: 1.0
-            
+			/*
             Behavior on scale {
                 NumberAnimation {
                     duration: 110
                     easing.type: Easing.InOutQuad
                 }
             }
-            
             Behavior on opacity {
                 NumberAnimation {
                     duration: 300
                     easing.type: Easing.InOutQuad
                 }
             }
+			*/
         }
         Flickable {
             id: flcZona
@@ -355,7 +341,7 @@ Item {
             clip: true
             interactive: true
             boundsBehavior: Flickable.StopAtBounds
-            opacity: root.prozrachZona
+            opacity: 0.9//ГЛАВНАЯ ПРОЗРАЧНОСТЬ!!!
             
             Behavior on opacity {
                 NumberAnimation {
@@ -366,43 +352,41 @@ Item {
             
             Column {
                 id: clmnContent
-                width: flcZona.width - scbScrollbar.width
-                spacing: root.ntCoff * 2
+                width: flcZona.width - dcScrollbar.width
+                spacing: root.ntCoff/2//Расстояние между элементами по вертикали.
                 topPadding: root.ntCoff * 2
                 bottomPadding: root.ntCoff * 2
                 leftPadding: root.ntCoff * 2
                 rightPadding: root.ntCoff * 2
-                
-                // Кнопка загрузки файла
-                DCKnopkaOriginal {
-                    id: btnLoadFile
+                DCKnopkaOriginal {//Кнопка загрузки файла
+                    id: knopkaZagruzit
                     text: "📁 Загрузить документы"
                     ntHeight: root.ntWidth
                     ntCoff: root.ntCoff
                     clrKnopki: root.clrTexta    
                     clrTexta: root.clrFona
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    
+					anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2
+                    anchors.rightMargin: root.ntCoff * 2
                     onClicked: {
                         if (!fnCloseMenuIfOpen()) {
                             fnClickedLoad()
                         }
                     }
                 }
-                
-                // Содержимое файла
-                Text {
+                Text {//Содержимое файла
                     text: "Содержимое файла:"
-                    font.pixelSize: root.ntWidth * root.ntCoff
+                    font.pixelSize: root.ntWidth/2 * root.ntCoff
                     color: root.clrTexta
+					font.bold: true//Жирный текст.
                     width: parent.width - parent.leftPadding - parent.rightPadding
                 }
-                
                 Rectangle {
                     id: rctContentArea
                     width: parent.width - parent.leftPadding - parent.rightPadding
                     height: 180
-                    color: "white"
+                    color: "transparent"
                     border.color: root.clrTexta
                     border.width: 1
                     radius: root.ntCoff / 2
@@ -431,7 +415,6 @@ Item {
                             onTextChanged: analyzer.setTextContent(text)
                         }
                     }
-                    
                     DCScrollbar {
                         id: scbContentArea
                         flick: flcContentArea
@@ -445,72 +428,65 @@ Item {
                         radius: 1
                     }
                 }
-                
-                // Промт для модели
-                Text {
+                Text {//Промт для модели
                     text: "Промт для модели:"
-                    font.pixelSize: root.ntWidth * root.ntCoff
+                    font.pixelSize: root.ntWidth/2 * root.ntCoff
                     color: root.clrTexta
+					font.bold: true//Жирный текст.
                     width: parent.width - parent.leftPadding - parent.rightPadding
                 }
-                
                 TextField {
                     id: promptField
                     width: parent.width - parent.leftPadding - parent.rightPadding
                     placeholderText: "Проанализируй этот текст и выдели основные темы"
                     selectByMouse: true
                     color: root.clrTexta
-                    
                     background: Rectangle {
-                        color: "white"
+                        color: "transparent"
                         border.color: root.clrTexta
                         border.width: 1
                         radius: root.ntCoff / 2
                     }
-                    
                     Keys.onReturnPressed: {
                         if (contentArea.text.trim() !== "") {
                             analyzer.analyze(contentArea.text, promptField.text)
                         }
                     }
                 }
-                
-                // Кнопка анализа
-                DCKnopkaOriginal {
-                    id: btnAnalyze
+                DCKnopkaOriginal {//Кнопка анализа
+                    id: knopkaAnaliz
                     text: "🚀 Анализировать"
                     ntHeight: root.ntWidth
                     ntCoff: root.ntCoff
                     clrKnopki: "#2196F3"
                     clrTexta: root.clrFona
                     enabled: contentArea.text.trim() !== ""
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    
+					anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2
+                    anchors.rightMargin: root.ntCoff * 2
                     onClicked: {
                         if (!fnCloseMenuIfOpen()) {
                             fnClickedAnalizer()
                         }
                     }
                 }
-                
-                // Результат
-                Text {
+                Text {//Результат
                     text: "Результат:"
-                    font.pixelSize: root.ntWidth * root.ntCoff
+                    font.pixelSize: root.ntWidth/2 * root.ntCoff
                     color: root.clrTexta
+					font.bold: true//Жирный текст.
                     width: parent.width - parent.leftPadding - parent.rightPadding
                 }
-                
                 Rectangle {
                     id: rctResultArea
                     width: parent.width - parent.leftPadding - parent.rightPadding
                     height: 300
-                    color: "#f9f9f9"
+                    color: "transparent"
                     border.color: root.clrTexta
                     border.width: 1
                     radius: root.ntCoff / 2
                     clip: true
-                    
                     Flickable {
                         id: flcResultArea
                         anchors.fill: parent
@@ -521,32 +497,28 @@ Item {
                         clip: true
                         interactive: true
                         boundsBehavior: Flickable.StopAtBounds
-                        
-                        // ← ИЗМЕНЕНО: TextArea.flickable на Text с HTML
-                        TextArea.flickable: TextArea {
+                        TextArea.flickable: TextArea {//TextArea.flickable на Text с HTML
                             id: resultArea
                             readOnly: true
                             wrapMode: TextArea.Wrap
                             selectByMouse: true
                             placeholderText: "Результат анализа появится здесь..."
                             color: root.clrTexta
-                            background: null
-                            textFormat: TextEdit.RichText  // ← ВКЛЮЧАЕМ HTML
-                            
+							background: null
+							textFormat: TextEdit.RichText//ВКЛЮЧАЕМ HTML
                             Connections {
                                 target: analyzer
                                 function onResultReady(result) {
-                                    // ← Конвертируем Markdown в HTML
+                                    //Конвертируем Markdown в HTML
                                     resultArea.text = root.fnMarkdownToHtml(result)
                                     
-                                    btnSaveResult.enabled = (result !== "" && 
+                                    knopkaSohranit.enabled = (result !== "" && 
                                                             result !== "Анализируется..." &&
                                                             !result.startsWith("Ошибка:"))
                                 }
                             }
                         }
                     }
-                    
                     DCScrollbar {
                         id: scbResultArea
                         flick: flcResultArea
@@ -560,24 +532,23 @@ Item {
                         radius: 1
                     }
                 }
-                
-                // Кнопка сохранения результата
-                DCKnopkaOriginal {
-                    id: btnSaveResult
+                DCKnopkaOriginal {//Кнопка сохранения результата
+                    id: knopkaSohranit
                     text: "💾 Сохранить результат"
                     ntHeight: root.ntWidth
                     ntCoff: root.ntCoff
                     clrKnopki: "#4CAF50"
                     clrTexta: root.clrFona
                     enabled: false
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    
+					anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2
+                    anchors.rightMargin: root.ntCoff * 2
                     onClicked: {
                         if (!fnCloseMenuIfOpen()) {
                             fnClickedSave()
                         }
                     }
-                    
                     Connections {
                         target: analyzer
                         function onFileSaved(path) {
@@ -592,10 +563,8 @@ Item {
                 }
             }
         }
-        
-        // Скроллбар основной области
-        DCScrollbar {
-            id: scbScrollbar
+        DCScrollbar {// Скроллбар основной области
+            id: dcScrollbar
             flick: flcZona
             anchors.right: tmZona.right
             anchors.top: tmZona.top
@@ -604,17 +573,13 @@ Item {
             clrPolzunokOn: root.clrTexta
             width: root.ntWidth * root.ntCoff
             radius: 1
-            opacity: root.prozrachZona
-            
             Behavior on opacity {
                 NumberAnimation {
                     duration: 300
                 }
             }
         }
-        
-        // Всплывающее меню DCMenu
-        DCMenu {
+        DCMenu {//Всплывающее меню DCMenu
             id: menuMenu
             visible: false
             ntWidth: root.ntWidth
@@ -623,7 +588,7 @@ Item {
             anchors.right: tmZona.right
             anchors.bottom: tmZona.bottom
             anchors.bottomMargin: root.ntWidth
-            anchors.rightMargin: scbScrollbar.width
+            anchors.rightMargin: dcScrollbar.width
             pctFona: 0.90
             clrTexta: root.clrMenuText
             clrFona: root.clrMenuFon
@@ -634,24 +599,18 @@ Item {
                 
                 if (ntNomer === 1) {
                     fnClickedLoad()
-                }
-                if (ntNomer === 2) {
+                } else if (ntNomer === 2) {
                     fnClickedAnalizer()
-                }
-                if (ntNomer === 3) {
+                } else if (ntNomer === 3) {
                     fnClickedSave()
-                }
-                if (ntNomer === 4) {
+                } else if (ntNomer === 4) {
                     fnClickedMenu()
-                }
-                if (ntNomer === 5) {
+                } else if (ntNomer === 5) {
                     fnClickedInfo()
-                }
-                if (ntNomer === 6) {
+                } else if (ntNomer === 6) {
                     Qt.quit()
                 }
             }
-            
             onVisibleChanged: {
                 if (!visible) {
                     root.forceActiveFocus()
@@ -659,28 +618,24 @@ Item {
             }
         }
     }
-    
-    // Тулбар
-    Item {
+    Item {//Тулбар
         id: tmToolbar
         clip: true
-        
-        // LOADER для DCProgress
+        //LOADER для DCProgress
         Loader {
             id: ldrProgress
             anchors.fill: tmToolbar
             source: "qrc:/DCMethods/DCProgress.qml"
             active: false
-            
             onLoaded: {
                 ldrProgress.item.ntWidth = root.ntWidth
                 ldrProgress.item.ntCoff = root.ntCoff
                 ldrProgress.item.clrProgress = root.clrTexta
                 ldrProgress.item.clrTexta = "grey"
                 ldrProgress.item.radius = root.ntCoff / 4
+				ldrProgress.item.msInterval = 2200
             }
         }
-        
         DCKnopkaInfo {
             id: knopkaInfo
             ntWidth: root.ntWidth
@@ -692,14 +647,12 @@ Item {
             visible: true
             tapHeight: root.ntWidth * root.ntCoff + root.ntCoff
             tapWidth: tapHeight * root.tapToolbarLevi
-            
             onClicked: {
                 if (!fnCloseMenuIfOpen()) {
                     fnClickedInfo()
                 }
             }
         }
-        
         DCKnopkaNastroiki {
             id: knopkaNastroiki
             ntWidth: root.ntWidth
@@ -711,15 +664,12 @@ Item {
             blVert: true
             tapHeight: root.ntWidth * root.ntCoff + root.ntCoff
             tapWidth: tapHeight * root.tapToolbarPravi
-            
             onClicked: {
                 fnToggleMenu()
             }
         }
     }
-    
-    // MouseArea для возврата фокуса
-    MouseArea {
+    MouseArea {//MouseArea для возврата фокуса
         anchors.fill: parent
         z: -1
         propagateComposedEvents: true
