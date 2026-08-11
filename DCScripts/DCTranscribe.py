@@ -47,7 +47,7 @@ from pathlib import Path
 # ОПРЕДЕЛЕНИЕ РЕЖИМА ЗАПУСКА
 # ============================================================
 
-# ← НОВОЕ: Проверяем, запущен ли скрипт через GUI
+# Проверяем, запущен ли скрипт через GUI
 IS_GUI_MODE = os.environ.get('TRANSCRIBE_GUI_MODE', '0') == '1'
 
 # ============================================================
@@ -515,10 +515,6 @@ def process_file(audio_path: Path, index: int, total: int):
             os.remove(wav_path)
 
 def main():
-    print(f"\n{'='*70}", flush=True)
-    print(f"🎙️  КОБ зона протокол", flush=True)
-    print(f"{'='*70}\n", flush=True)
-
     script_start_time = time.time()
 
     os.makedirs(INPUT_DIR, exist_ok=True)

@@ -4,15 +4,14 @@ import QtCore
 QtObject {
     id: root
 	//Свойства с привязкой к настройкам
-    property string audioPath: ""
-    property string textPath: ""
+    property string audio_put: ""
+    property string text_put: ""
 	//Объект настроек (автоматическое сохранение)
     property Settings settings: Settings {
         category: "Transcribe"
-        property alias audioPath: root.audioPath
-        property alias textPath: root.textPath
+        property alias audio_put: root.audio_put
+        property alias text_put: root.text_put
     }
-
     Component.onCompleted: {//Инициализация значений по умолчанию
         //Получаем стандартные пути через QtCore.StandardPaths
         const cnDomPut = StandardPaths.writableLocation(StandardPaths.HomeLocation)
@@ -21,14 +20,11 @@ QtObject {
         //Возвращаемся на домашнюю директорию, если стандартные пути не найдены
         musicPut = musicPut !== "" ? musicPut : cnDomPut
         docPut = docPut !== "" ? docPut : cnDomPut
-        if (audioPath === "") {//Если настройки ёще были записаны, то...
-            audioPath = musicPut
+        if (audio_put === "") {//Если настройки ёще были записаны, то...
+            audio_put = musicPut
         }
-        if (textPath === "") {//Если настройки ёще были записаны, то...
-            textPath = docPut
+        if (text_put === "") {//Если настройки ёще были записаны, то...
+            text_put = docPut
         }
-        console.log("✓ Настройки загружены:")
-        console.log("  Аудио:", audioPath)
-        console.log("  Текст:", textPath)
     }
 }

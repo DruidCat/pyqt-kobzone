@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Controls
+import QtCore
 import QtQuick.Dialogs
-import Qt.labs.platform as Platform
 import DCButtons 1.0
 import DCMethods 1.0
 
@@ -51,7 +51,7 @@ Item {
     signal signalToolbar(var strToolbar)
 	//Методы
     DCSettings {//Объект настроек
-        id: settings
+        id: dcReestr
     }
     Keys.onPressed: (event) => {//Обработка горячих клавиш
         if (event.modifiers & Qt.AltModifier) {
@@ -181,14 +181,10 @@ Item {
 			console.log("⚠️ Транскрибация уже запущена")
 			return
 		}
-		console.log("🎙️ Запуск транскрибации...")
-		console.log("  Аудио:", settings.audioPath)
-		console.log("  Текст:", settings.textPath)
-		
 		txdZona.strCopy = ""
 		txdZona.text = ""
 		//Запускаем транскрибацию через Python бэкенд PyTranscriber.py
-		transcriber.start(settings.audioPath, settings.textPath)
+		transcriber.start(dcReestr.audio_put, dcReestr.text_put)
 	}
     function fnClickedPutAudio() {
         folderDialogAudio.open()
@@ -212,13 +208,12 @@ Item {
     }
     Component.onCompleted: {
         root.forceActiveFocus()
-        txtAudioPath.text = settings.audioPath
-        txtTextPath.text = settings.textPath
+        txtTextPath.text = dcReestr.text_put
+        txtAudioPath.text = dcReestr.audio_put
     }
 	Connections {//Connections для транскрибера
 		target: transcriber
 		function onTranscriptionStarted() {
-			console.log("✓ Транскрибация начата")
 			root.isTranscribing = true
 			ldrProgress.active = true
 
@@ -236,7 +231,6 @@ Item {
 			tmrLogo.running = true
 		}
 		function onTranscriptionFinished(success, message) {
-			console.log("✓ Транскрибация завершена:", message)
 			root.isTranscribing = false
 			if (ldrProgress.item) {
 				ldrProgress.item.progress = 100
@@ -257,13 +251,10 @@ Item {
 				
 				tmrLogo.running = false
 			})
-
-			if (success) {
-				txdZona.strCopy += "\n✅ Транскрибация успешно завершена!\n"
-			} else {
+			if (!success) {//Если ошибка, то...
 				txdZona.strCopy += "\n❌ Ошибка: " + message + "\n"
+				txdZona.text = txdZona.strCopy
 			}
-			txdZona.text = txdZona.strCopy
 		}
 		function onLogMessage(message) {
 			//Добавляем сообщение в лог
@@ -283,33 +274,34 @@ Item {
 			}
 		}
 	}
-    Platform.FolderDialog {//Диалог выбора папки для аудио
-        id: folderDialogAudio
-        title: "Выберите папку с аудиофайлами"
-        folder: Platform.StandardPaths.writableLocation(Platform.StandardPaths.MusicLocation)
-        
-        onAccepted: {
-            var path = folderDialogAudio.folder.toString()
-            //Убираем "file://" из начала пути
-            path = path.replace(/^file:\/\//, "")
-            settings.audioPath = path
-            txtAudioPath.text = path
-            console.log("✓ Аудио папка:", path)
-        }
-    }
-    Platform.FolderDialog {//Диалог выбора папки для текстов
-        id: folderDialogText
-        title: "Выберите папку для сохранения результатов"
-        folder: Platform.StandardPaths.writableLocation(Platform.StandardPaths.DocumentsLocation)
-        
-        onAccepted: {
-            var path = folderDialogText.folder.toString()
-            path = path.replace(/^file:\/\//, "")
-            settings.textPath = path
-            txtTextPath.text = path
-            console.log("✓ Текст папка:", path)
-        }
-    }
+	FolderDialog {//Диалог выбора папки для аудио
+		id: folderDialogAudio
+		title: "Выберите папку с аудио файлами"
+		currentFolder: {//Используем сохранённый путь из настроек, или стандартную домашнюю папку
+			if (dcReestr.audio_put !== "") return "file://" + dcReestr.audio_put
+			else return StandardPaths.writableLocation(StandardPaths.MusicLocation)
+		}
+		onAccepted: {
+			var path = selectedFolder.toString()
+			path = path.replace(/^file:\/\//, "")//Убираем "file://" из начала пути
+			dcReestr.audio_put = path
+			txtAudioPath.text = path
+		}
+	}
+	FolderDialog {//Диалог выбора папки для текстовых файлов
+		id: folderDialogText
+		title: "Выберите папку для текстовых файлов"
+		currentFolder: {//Используем сохранённый путь из настроек, или стандартную домашнюю папку
+			if (dcReestr.text_put !== "") return "file://" + dcReestr.text_put
+			else return StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
+		}
+		onAccepted: {
+			var path = selectedFolder.toString()
+			path = path.replace(/^file:\/\//, "")//Убираем "file://" из начала пути
+			dcReestr.text_put = path
+			txtTextPath.text = path
+		}
+	}	
     Item {//Заголовок
         id: tmZagolovok
         DCKnopkaNazad {
@@ -461,17 +453,14 @@ Item {
                         placeholderText: "Путь к папке с аудиофайлами"
                         selectByMouse: true
                         color: root.clrTexta
-            			opacity: root.prozrachZona
-                        
                         background: Rectangle {
-                            color: "white"
+                            color: "transparent"
                             border.color: root.clrTexta
                             border.width: 1
                             radius: root.ntCoff / 2
                         }
-                        
                         onTextChanged: {
-                            settings.audioPath = text
+                            dcReestr.audio_put = text
                         }
                     }
                     
@@ -511,17 +500,14 @@ Item {
                         placeholderText: "Путь к папке для сохранения результатов"
                         selectByMouse: true
                         color: root.clrTexta
-            			opacity: root.prozrachZona
-                        
                         background: Rectangle {
-                            color: "white"
+                            color: "transparent"
                             border.color: root.clrTexta
                             border.width: 1
                             radius: root.ntCoff / 2
                         }
-                        
                         onTextChanged: {
-                            settings.textPath = text
+                            dcReestr.text_put = text
                         }
                     }
                     
