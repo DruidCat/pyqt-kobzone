@@ -1,38 +1,32 @@
 import QtQuick
-
-import QtCore//Qt.labs.settings 1.0
-import Qt.labs.platform as Platform
-
+import QtCore
+//DCSettings - виджет сохранения настроек в реестр.
 QtObject {
     id: root
-    
-    // Свойства с привязкой к настройкам
+	//Свойства с привязкой к настройкам
     property string audioPath: ""
     property string textPath: ""
-    
-    // Объект настроек (автоматическое сохранение)
+	//Объект настроек (автоматическое сохранение)
     property Settings settings: Settings {
         category: "Transcribe"
-        
         property alias audioPath: root.audioPath
         property alias textPath: root.textPath
     }
-    
-    // Метод для получения домашней директории
-    function getHomeDir() {
-        return Platform.StandardPaths.writableLocation(Platform.StandardPaths.HomeLocation)
-    }
-    
-    // Инициализация значений по умолчанию
-    Component.onCompleted: {
-        if (audioPath === "") {
-            audioPath = getHomeDir() + "/Музыка"
+
+    Component.onCompleted: {//Инициализация значений по умолчанию
+        //Получаем стандартные пути через QtCore.StandardPaths
+        const cnDomPut = StandardPaths.writableLocation(StandardPaths.HomeLocation)
+        let musicPut = StandardPaths.writableLocation(StandardPaths.MusicLocation)
+        let docPut = StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
+        //Возвращаемся на домашнюю директорию, если стандартные пути не найдены
+        musicPut = musicPut !== "" ? musicPut : cnDomPut
+        docPut = docPut !== "" ? docPut : cnDomPut
+        if (audioPath === "") {//Если настройки ёще были записаны, то...
+            audioPath = musicPut
         }
-        
-        if (textPath === "") {
-            textPath = getHomeDir() + "/Документы"
+        if (textPath === "") {//Если настройки ёще были записаны, то...
+            textPath = docPut
         }
-        console.log("Домашняя директория", getHomeDir())
         console.log("✓ Настройки загружены:")
         console.log("  Аудио:", audioPath)
         console.log("  Текст:", textPath)
