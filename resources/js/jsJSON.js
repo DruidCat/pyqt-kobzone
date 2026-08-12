@@ -15,7 +15,7 @@
 var vrMenuAnalizer = [
 			{
 				"nomer": "1",
-                "menu": qsTr("Добавить документы")
+                "menu": qsTr("Загрузить документы")
 			},
 			{
 				"nomer": "2",
