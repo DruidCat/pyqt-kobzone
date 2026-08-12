@@ -67,7 +67,7 @@ var vrMenuTranscribe = [
     },
     {
         "nomer": "2",
-        "menu": qsTr("Путь к аудио")
+        "menu": qsTr("Путь к аудиофайлам")
     },
     {
         "nomer": "3",
@@ -75,14 +75,18 @@ var vrMenuTranscribe = [
     },
     {
         "nomer": "4",
-        "menu": qsTr("Настройки")
+        "menu": qsTr("Открыть результаты")
     },
     {
         "nomer": "5",
-        "menu": qsTr("Помощь")
+        "menu": qsTr("Настройки")
     },
     {
         "nomer": "6",
+        "menu": qsTr("Помощь")
+    },
+    {
+        "nomer": "7",
         "menu": qsTr("Выход")
     }
 ]

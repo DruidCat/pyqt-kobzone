@@ -208,12 +208,15 @@ Item {
 		root.isTranscribing = false//возвращаем флаг, что транскрибация окончилась.	
 		tmrLogo.running = false//Отключаем анимацию логотипа и активируем политику кнопок.
 	}
-    function fnClickedPutAudio() {
+    function fnClickedPutAudio(){//Функция открытия диалога выбора папки с аудио файлами.
         dialogAudio.open()
     }
-    function fnClickedPutText() {
+    function fnClickedPutText(){//Функция открытия диалога выбора папки для результатов работы.
         dialogText.open()
     }
+	function fnClickedOtkrit(){//Функция открытия результатов транскрибации.
+		console.log("ОТКРЫТЬ РЕЗУЛЬТАТЫ РАБОТЫ.")
+	}
     function fnToggleMenu() {
         if (menuMenu.visible) {
             menuMenu.visible = false
@@ -429,7 +432,7 @@ Item {
                     }
                 }
                 Text {//Путь к аудио
-                    text: "Путь к аудио файлам:"
+                    text: "Путь к аудиофайлам:"
                     font.pixelSize: root.ntWidth/2 * root.ntCoff
                     color: root.clrTexta
 					font.bold: true//Жирный текст.
@@ -554,6 +557,23 @@ Item {
                         onPressed: fnCloseMenuIfOpen()
                     }
                 }
+				DCKnopkaOriginal {//Кнопка "Открыть результат транскрибации."
+                    id: knopkaOtkrit
+                    text: "Открыть результаты расшифровки"
+                    ntHeight: root.ntWidth
+                    ntCoff: root.ntCoff
+                    clrKnopki: root.clrTexta    
+                    clrTexta: root.clrFona
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2
+                    anchors.rightMargin: root.ntCoff * 2
+                    onClicked: {
+                        if (!fnCloseMenuIfOpen()) {
+                            fnClickedOtkrit()
+                        }
+                    }
+                }
             }
         }
         DCScrollbar {//Скроллбар
@@ -598,10 +618,12 @@ Item {
                 } else if (ntNomer === 3) {
                     fnClickedPutText()
                 } else if (ntNomer === 4) {
-                    fnClickedMenu()
+                    fnClickedOtkrit()
                 } else if (ntNomer === 5) {
-                    fnClickedInfo()
+                    fnClickedMenu()
                 } else if (ntNomer === 6) {
+                    fnClickedInfo()
+                } else if (ntNomer === 7) {
                     Qt.quit()
                 }
             }

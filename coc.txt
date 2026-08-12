@@ -1,0 +1,38 @@
+Автодополнение кода coc.nvim
+
+Установка:
+Установите Node.js 16+: https://nodejs.org/
+Добавьте в _vimrc:
+call plug#begin('~/.vim/plugged')
+Plug 'neoclide/coc.nvim', {'branch': 'release'}
+call plug#end()
+
+
+Настройка автодополнения для Python:
+: CocInstall coc-python
+
+Или для других языков:
+:CocInstall coc-clangd      " C/C++
+:CocInstall coc-html        " HTML
+:CocInstall coc-css         " CSS
+:CocInstall coc-json        " JSON
+:CocInstall coc-java        " Java
+:CocInstall coc-qml 		" QML
+
+Базовая настройка в vimrc
+" Автодополнение по Tab
+inoremap <silent><expr> <TAB>
+      \ coc#pum#visible() ? coc#pum#next(1) :
+      \ CheckBackspace() ? "\<Tab>" :
+      \ coc#refresh()
+
+inoremap <expr><S-TAB> coc#pum#visible() ? coc#pum#prev(1) : "\<C-h>"
+
+" Подтверждение выбора по Enter
+inoremap <silent><expr> <CR> coc#pum#visible() ? coc#pum#confirm()
+                              \: "\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"
+
+function! CheckBackspace() abort
+  let col = col('.') - 1
+  return !col || getline('.')[col - 1]  =~# '\s'
+endfunction
