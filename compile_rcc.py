@@ -33,6 +33,42 @@ def get_rcc_path():
     if os.path.isfile(venv_candidate):
         return venv_candidate
 
+    # 4. ДОБАВЛЕНО: Специфичные пути для Linux
+    if not is_windows:
+        linux_paths = [
+            '/usr/lib/qt6/libexec',      # Ваш путь
+            '/usr/lib/qt6/bin',
+            '/usr/lib/x86_64-linux-gnu/qt6/libexec',
+            '/usr/lib/x86_64-linux-gnu/qt6/bin',
+            '/usr/local/lib/qt6/libexec',
+            '/usr/local/lib/qt6/bin',
+            '/opt/qt6/libexec',
+            '/opt/qt6/bin',
+            '/usr/share/qt6/libexec',
+            '/usr/share/qt6/bin'
+        ]
+        for path in linux_paths:
+            candidate = os.path.join(path, rcc_name)
+            if os.path.isfile(candidate):
+                return candidate
+
+    # 5. ДОБАВЛЕНО: Попытка найти через which в оболочке
+    try:
+        result = subprocess.run(['which', rcc_name], capture_output=True, text=True)
+        if result.returncode == 0 and result.stdout.strip():
+            return result.stdout.strip()
+    except:
+        pass
+
+    # 6. ДОБАВЛЕНО: Поиск через find (может быть медленно, но надежно)
+    try:
+        result = subprocess.run(['find', '/usr', '-name', rcc_name, '-type', 'f', '-print', '-quit'], 
+                              capture_output=True, text=True)
+        if result.returncode == 0 and result.stdout.strip():
+            return result.stdout.strip()
+    except:
+        pass
+
     return None
 
 def compile_with_binary():
@@ -47,9 +83,23 @@ def compile_with_binary():
     if not rcc:
         print("❌ Критическая ошибка: утилита rcc не найдена в системе!")
         print("   Убедитесь, что PyQt6/PySide6 установлены корректно.")
+        print("\n   Попробуйте установить rcc с помощью:")
+        print("   sudo apt update")
+        print("   sudo apt install qt6-tools-dev qt6-tools-dev-tools")
+        print("   или")
+        print("   pip install pyqt6-tools")
         return False
         
     print(f"ℹ️  Найден rcc: {rcc}")
+    
+    # Проверка версии rcc для отладки
+    try:
+        version_cmd = [rcc, '-version']
+        result = subprocess.run(version_cmd, capture_output=True, text=True)
+        if result.stdout:
+            print(f"ℹ️  Версия rcc: {result.stdout.strip()}")
+    except:
+        pass
     
     # Используем бинарный формат. 
     # ВАЖНО: --compress-algo zlib гарантирует, что PyQt6 на Windows сможет прочитать файл
@@ -62,6 +112,7 @@ def compile_with_binary():
     ]
     
     try:
+        print(f"ℹ️  Выполняется команда: {' '.join(cmd)}")
         subprocess.run(cmd, check=True)
         
         if os.path.exists('resources.rcc'):
@@ -76,7 +127,7 @@ def qInitResources():
     resource_path = os.path.join(os.path.dirname(__file__), 'resources.rcc')
     
     # КРИТИЧНО ДЛЯ WINDOWS: Заменяем обратные слеши на прямые
-    resource_path = resource_path.replace("\\\\", "/")
+    resource_path = resource_path.replace("\\\\", "/").replace("\\\\", "/")
     
     if os.path.exists(resource_path):
         # Обязательно проверяем, что Qt действительно загрузил ресурсы
