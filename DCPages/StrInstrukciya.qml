@@ -266,8 +266,8 @@ Item {
             ListModel {//Список всех инструкций: ключ, название, заголовок)
                 id: mdlInstrukcii
                 ListElement { key: "hotkey"; title: "Горячие клавиши"; zagolovok: "ГОРЯЧИЕ КЛАВИШИ" }
-                ListElement { key: "analiz"; title: "Анализ документов"; zagolovok: "ИНСТРУКЦИЯ ПО АНАЛИЗУ ДОКУМЕНТОВ" }
-                ListElement { key: "menu"; title: "Меню"; zagolovok: "ОПИСАНИЕ НАСТРОЕК МЕНЮ" }
+                ListElement { key: "analizer"; title: "Анализ документов"; zagolovok: "ИНСТРУКЦИЯ ПО АНАЛИЗУ ДОКУМЕНТОВ" }
+                ListElement { key: "set_kobzone"; title: "Настройки приложения"; zagolovok: "НАСТРОЙКИ ПРИЛОЖЕНИЯ" }
                 ListElement { key: "oprilojenii"; title: "О приложении"; zagolovok: "О ПРИЛОЖЕНИИ" }
                 ListElement { key: "oqt"; title: "О Qt"; zagolovok: "О QT" }
                 ListElement { key: "transcribe"; title: "Транскрибация"; zagolovok: "ИНСТРУКЦИЯ ПО ТРАНСКРИБАЦИИ" }
@@ -528,7 +528,7 @@ See <a href=\"http://qt.io\">qt.io</a> for more information.</p>
 <p><b>[Стрелка вниз]</b> или <b>[J]</b> - Листание текста вниз.</p>
 <p><b>[PgUp]</b> - Страница вверх.</p>
 <p><b>[PgDn]</b> - Страница вниз.</p>");
-        } else if(strKluch === "menu"){
+        } else if(strKluch === "set_kobzone"){
             txdZona.text = qsTr("
                 <html>
                     <body>")
@@ -604,7 +604,7 @@ See <a href=\"http://qt.io\">qt.io</a> for more information.</p>
                     </body>
                 </html>"
             );
-        } else if(strKluch === "analiz"){//Если это Инструкция по Анализу Документов, то...
+        } else if(strKluch === "analizer"){//Если это Инструкция по Анализу Документов, то...
             txdZona.text = qsTr("
                 <html>
                     <body>

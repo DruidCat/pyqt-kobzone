@@ -39,8 +39,9 @@ Item {
     focus: true
     //Сигналы
     signal clickedNazad()
-    signal signalToolbar(var strToolbar)
+	signal clickedSettings()
     signal clickedInfo()
+    signal signalToolbar(var strToolbar)
     //Методы
     Timer {//ТАЙМЕР анимации логотипа
         id: tmrLogo
@@ -161,7 +162,7 @@ Item {
     }
     
     function fnClickedMenu() {
-        console.log("НАСТРОЙКИ")
+		root.clickedSettings()//Сигнал излучает открытие настроек.
     }
     function fnClickedInfo() {
         root.clickedInfo()

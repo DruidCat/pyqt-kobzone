@@ -149,6 +149,10 @@ Item {
                 else{
                     if(imyaMenu == "transcribe")//Это транскрибация аудио в текст
                         lsvMenu.model = JSMenu.vrMenuTranscribe;//Перегружаем модель ListView с данными
+					else{
+						if(imyaMenu == "settings")//Это настройки
+							lsvMenu.model = JSMenu.vrSettings;//Перегружаем модель ListView с данными
+					}
                 }
             }
 		}

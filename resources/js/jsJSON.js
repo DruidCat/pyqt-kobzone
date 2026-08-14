@@ -90,4 +90,13 @@ var vrMenuTranscribe = [
         "menu": qsTr("Выход")
     }
 ]
-
+var vrSettings = [
+			{
+				"nomer": "1",
+                "menu": qsTr("Помощь")
+			},
+			{
+				"nomer": "2",
+                "menu": qsTr("Выход")
+			}
+]

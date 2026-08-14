@@ -166,7 +166,7 @@ class MainApp:
         print(f"✓ Добавлен путь импорта: {project_dir}")
         
         # Проверка qmldir файлов
-        for module_name in ["DCButtons", "DCPages", "DCMethods"]:
+        for module_name in ["DCButtons", "DCMethods", "DCPages", "DCSettings"]:
             module_path = project_dir / module_name
             qmldir_file = module_path / "qmldir"
             

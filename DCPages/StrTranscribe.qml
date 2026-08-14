@@ -47,6 +47,7 @@ Item {
     focus: true 
     //Сигналы
     signal clickedNazad()
+	signal clickedSettings()
     signal clickedInfo()
     signal signalToolbar(var strToolbar)
 	//Методы
@@ -192,7 +193,7 @@ Item {
 		}
 	}
     function fnClickedMenu() {
-        console.log("НАСТРОЙКИ")
+		root.clickedSettings()//Сигнал излучает открытие настроек.
     }
     function fnClickedInfo() {
         root.clickedInfo()

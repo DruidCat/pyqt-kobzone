@@ -42,6 +42,7 @@ Item {
     signal clickedAnalizator()
     signal clickedOrfograf()
     signal clickedTranskribaciya()
+	signal clickedSettings()
 	signal clickedInfo()//Сигнал нажатия кнопки Информация
 
     Component.onCompleted: {
@@ -126,22 +127,18 @@ Item {
     }
     
     function fnClickedMenu() {
-        // Функция нажатия на кнопку Меню настройки
-        // Пока ничего не делает
+		root.clickedSettings()//Сигнал излучает открытие настроек.
     }
 	function fnClickedInfo() {// Функция нажатия на кнопку Помощь
         root.clickedInfo();//Сигнал излучаем, что нажата кнопка Описание.
     }
-    
-    function fnToggleMenu() {
-        // Переключение видимости меню
+    function fnToggleMenu() {//Переключение видимости меню
         if (menuMenu.visible) {
             menuMenu.visible = false
         } else {
             menuMenu.visible = true
         }
     }
-    
     function fnCloseMenuIfOpen() {
         // Закрыть меню если оно открыто
         if (menuMenu.visible) {

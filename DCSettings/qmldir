@@ -1,0 +1,8 @@
+module DCSettings
+
+SetAnalizer 1.0 SetAnalizer.qml
+SetKOBzone 1.0 SetKOBzone.qml
+SetOrfograf 1.0 SetOrfograf.qml
+SetSettings 1.0 SetSettings.qml
+SetTranscribe 1.0 SetTranscribe.qml
+
