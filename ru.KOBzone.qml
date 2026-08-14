@@ -103,15 +103,14 @@ ApplicationWindow {
                 tapToolbarPravi: pgStrKOBzone.toolbarPravi
                 
                 onClickedAnalizator: {
-                    console.log("Переход на анализатор")
                     pgStrAnalizer.textZagolovok = "НЕЙРО АНАЛИЗ ДОКУМЕНТОВ"
                     stvStr.push(pgStrAnalizer)
                 }
-                onClickedRedaktor: {
-                    console.log("Редактор текста - в разработке")
+                onClickedOrfograf: {
+					pgStrOrfograf.textZagolovok = "ИСПРАВЛЕНИЕ ТЕКСТА"
+					stvStr.push(pgStrOrfograf)
                 }
 				onClickedTranskribaciya: {
-					console.log("Переход на транскрибацию")
 					pgStrTranscribe.textZagolovok = "ТРАНСКРИБАЦИЯ"
 					stvStr.push(pgStrTranscribe)
 				}
@@ -185,6 +184,72 @@ ApplicationWindow {
                 }
                 onSignalToolbar: function(strToolbar) {
                     pgStrAnalizer.textToolbar = strToolbar
+                }
+            }
+        }
+		Stranica {
+            id: pgStrOrfograf
+            visible: false
+            focus: true
+            ntWidth: root.ntWidth
+            ntCoff: root.ntCoff
+            clrFona: root.clrFona
+            clrTexta: root.clrKnopok
+            clrRabOblasti: root.clrStranic
+            zagolovokLevi: 1.3
+            zagolovokPravi: 1.3
+            toolbarLevi: 1.3
+            toolbarPravi: 1.3
+            
+            onVisibleChanged: {
+                if (visible) {
+                    Qt.callLater(function() {
+                        tmAnalizer.forceActiveFocus()
+						console.log("Фокус передан на tmOrfograf")
+                    })
+                }
+            }
+            StrOrfograf {
+                id: tmOrfograf
+                ntWidth: pgStrOrfograf.ntWidth
+                ntCoff: pgStrOrfograf.ntCoff
+                clrTexta: pgStrOrfograf.clrTexta
+                clrFona: pgStrOrfograf.clrRabOblasti
+                clrMenuText: root.clrMenuText
+                clrMenuFon: pgStrOrfograf.clrFona
+                
+                zagolovokX: pgStrOrfograf.rctStrZagolovok.x
+                zagolovokY: pgStrOrfograf.rctStrZagolovok.y
+                zagolovokWidth: pgStrOrfograf.rctStrZagolovok.width
+                zagolovokHeight: pgStrOrfograf.rctStrZagolovok.height
+                
+                zonaX: pgStrOrfograf.rctStrZona.x
+                zonaY: pgStrOrfograf.rctStrZona.y
+                zonaWidth: pgStrOrfograf.rctStrZona.width
+                zonaHeight: pgStrOrfograf.rctStrZona.height
+                
+                toolbarX: pgStrOrfograf.rctStrToolbar.x
+                toolbarY: pgStrOrfograf.rctStrToolbar.y
+                toolbarWidth: pgStrOrfograf.rctStrToolbar.width
+                toolbarHeight: pgStrOrfograf.rctStrToolbar.height
+                
+                tapZagolovokLevi: pgStrOrfograf.zagolovokLevi
+                tapZagolovokPravi: pgStrOrfograf.zagolovokPravi
+                tapToolbarLevi: pgStrOrfograf.toolbarLevi
+                tapToolbarPravi: pgStrOrfograf.toolbarPravi
+                
+                onClickedNazad: {
+                    stvStr.pop()
+                    Qt.callLater(function() {
+                        stvStr.currentItem.forceActiveFocus()
+                    })
+                }
+				onClickedInfo: {
+                    tmStrInstrukciya.strInstrukciya = "orfograf"
+                    stvStr.push(pgStrInstrukciya)//Переходим на страницу инструкций Проверки Орфографии
+                }
+                onSignalToolbar: function(strToolbar) {
+                    pgStrOrfograf.textToolbar = strToolbar
                 }
             }
         }

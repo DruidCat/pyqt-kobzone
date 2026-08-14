@@ -41,19 +41,19 @@ var vrMenuAnalizer = [
 var vrMenuOrfograf = [
 			{
 				"nomer": "1",
-                "menu": qsTr("Добавить")
+                "menu": qsTr("Загрузить документ")
 			},
 			{
 				"nomer": "2",
-                "menu": qsTr("Переименовать")
+                "menu": qsTr("Исправить")
 			},
 			{
 				"nomer": "3",
-                "menu": qsTr("Удалить")
+                "menu": qsTr("Настройки")
 			},
             {
                 "nomer": "4",
-                "menu": qsTr("Сортировать")
+                "menu": qsTr("Помощь")
             },
 			{
                 "nomer": "5",

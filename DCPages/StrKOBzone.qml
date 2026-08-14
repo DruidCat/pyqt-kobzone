@@ -40,7 +40,7 @@ Item {
     
     // Сигналы
     signal clickedAnalizator()
-    signal clickedRedaktor()
+    signal clickedOrfograf()
     signal clickedTranskribaciya()
 	signal clickedInfo()//Сигнал нажатия кнопки Информация
 
@@ -285,7 +285,7 @@ Item {
                             
                             function fnPress() {
                                 root.currentIndex = 1
-                                root.clickedRedaktor()
+                                root.clickedOrfograf()
                             }
                             
                             onPressedChanged: {

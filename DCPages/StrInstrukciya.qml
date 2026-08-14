@@ -274,7 +274,7 @@ Item {
                 ListElement { key: "katalog"; title: "Каталог документов";
                                                     zagolovok: "ИНСТРУКЦИЯ ПО СОЗДАНИЮ КАТАЛОГА ДОКУМЕНТОВ" }
                 ListElement { key: "jurnal"; title: "Журнал"; zagolovok: "ИНСТРУКЦИЯ ПО ЖУРНАЛУ" }
-                ListElement { key: "animaciya"; title: "Анимация"; zagolovok: "ИНСТРУКЦИЯ ПО АНИМАЦИИ" }
+                ListElement { key: "orfograf"; title: "Орфография"; zagolovok: "ИНСТРУКЦИЯ ПО ОРФОГРАФИИ" }
             }
         }
         Rectangle {//Прямоугольник ручки, за которую можно тянуть размер боковой панели, для изменения её размеров
@@ -436,7 +436,7 @@ See <a href=\"http://qt.io\">qt.io</a> for more information.</p>
                     </body>
                 </html>"
             );
-        } else if(strKluch === "animaciya"){
+        } else if(strKluch === "orfograf"){
             txdZona.text = qsTr("
                 <html>
                     <body>

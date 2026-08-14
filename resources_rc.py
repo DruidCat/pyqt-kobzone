@@ -7,7 +7,7 @@ def qInitResources():
     resource_path = os.path.join(os.path.dirname(__file__), 'resources.rcc')
     
     # КРИТИЧНО ДЛЯ WINDOWS: Заменяем обратные слеши на прямые
-    resource_path = resource_path.replace("\\", "/")
+    resource_path = resource_path.replace("\\", "/").replace("\\", "/")
     
     if os.path.exists(resource_path):
         # Обязательно проверяем, что Qt действительно загрузил ресурсы
