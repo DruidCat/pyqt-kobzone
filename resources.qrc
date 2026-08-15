@@ -1,6 +1,9 @@
 <RCC>
     <qresource prefix="/">
+		<file>DCSettings/SetAnalizer.qml</file>
 		<file>DCSettings/SetKOBzone.qml</file>
+		<file>DCSettings/SetOrfograf.qml</file>
+		<file>DCSettings/SetTranscribe.qml</file>
 		<file>DCMethods/DCProgress.qml</file>
 		<file>resources/fonts/RuslanDisplay-Regular.ttf</file>
 		<file>resources/fonts/MesloLGMRegular.ttf</file>
