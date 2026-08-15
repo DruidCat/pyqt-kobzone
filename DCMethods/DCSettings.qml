@@ -3,28 +3,36 @@ import QtCore
 //DCSettings - виджет сохранения настроек в реестр.
 QtObject {
     id: root
-	//Свойства с привязкой к настройкам
-    property string audio_put: ""
-    property string text_put: ""
+	//Свойства с привязкой к настройкам, значения по умолчанию при первом пуске приложения.
+    property string transcribe_put_audio: ""
+    property string transcribe_put_text: ""
+	property int instrukcii_shirina: 220
 	//Объект настроек (автоматическое сохранение)
     property Settings settings: Settings {
-        category: "Transcribe"
-        property alias audio_put: root.audio_put
-        property alias text_put: root.text_put
+        category: "KOBzone"
+		//Транскрибация
+        property alias transcribe_put_audio: root.transcribe_put_audio
+        property alias transcribe_put_text: root.transcribe_put_text
+		//Инструкции
+		property alias instrukcii_shirina: root.instrukcii_shirina
     }
     Component.onCompleted: {//Инициализация значений по умолчанию
         //Получаем стандартные пути через QtCore.StandardPaths
         const cnDomPut = StandardPaths.writableLocation(StandardPaths.HomeLocation)
-        let musicPut = StandardPaths.writableLocation(StandardPaths.MusicLocation)
-        let docPut = StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
+        var musicPut = StandardPaths.writableLocation(StandardPaths.MusicLocation)
+        var docPut = StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
         //Возвращаемся на домашнюю директорию, если стандартные пути не найдены
         musicPut = musicPut !== "" ? musicPut : cnDomPut
         docPut = docPut !== "" ? docPut : cnDomPut
-        if (audio_put === "") {//Если настройки ёще были записаны, то...
-            audio_put = musicPut
+        if (transcribe_put_audio === "") {//Если настройки ёще были записаны, то...
+			musicPut = musicPut.toString()//В текст переводим, чтоб replace работал
+			musicPut = musicPut.replace(/^file:\/\//, "")//Удаляем file://
+            transcribe_put_audio = musicPut//Записываем в реестр
         }
-        if (text_put === "") {//Если настройки ёще были записаны, то...
-            text_put = docPut
+        if (transcribe_put_text === "") {//Если настройки ёще были записаны, то...
+			docPut = docPut.toString()//В текст переводим, чтоб replace работал
+			docPut = docPut.replace(/^file:\/\//, "")//Удаляем file://
+            transcribe_put_text = docPut//Записываем в реестр
         }
     }
 }

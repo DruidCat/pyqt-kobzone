@@ -1,9 +1,8 @@
 ﻿import QtQuick//5.15
 import QtQuick.Controls//Drawer
-
 import DCButtons 1.0//Импортируем кнопки
 import DCMethods 1.0//Импортируем методы написанные мной.
-//Страница с отображением инструкций
+//StrInstrukciya - страница с отображением инструкций.
 Item {
     id: root
     //Свойства.
@@ -29,7 +28,7 @@ Item {
     property real tapZagolovokPravi: 1
     property real tapToolbarLevi: 1
     property real tapToolbarPravi: 1
-    property string strInstrukciya: "obavtore"
+    property string strInstrukciya: "oprilojenii"
     property bool isFileDialogFailVibor: true;//true - выбор файлов, false - выбор папки
 	property string pythonVersion: "3.11";//Это версия Python, которая придёт из вне
 	property string qtVersion: "6.8";//Это версия Qt которая приходит из вне.
@@ -40,6 +39,10 @@ Item {
     //Сигналы.
 	signal clickedNazad();//Сигнал нажатия кнопки Назад
     signal signalZagolovok(var strZagolovok);//Сигнал, когда передаём новую надпись в Заголовок.
+	//Методы
+    DCSettings {//Объект настроек
+        id: dcReestr
+    }
     //Функуции.
     Keys.onPressed: (event) => {//Это запись для Qt6, для Qt5 нужно удалить event =>
         if(event.modifiers & Qt.ControlModifier){//Если нажат "Ctrl"
@@ -121,9 +124,8 @@ Item {
         //Свойства
         property int minSidebarWidth: 200//Минимум ширины боковой панели
         property int maxSidebarWidth: root.width * 0.8//Максимум ширины боковой панели
-        property int sidebarWidth: root.isMobile//Если мобила, ширина на весь экран, если нет,то данные из Реестра
-                                   ? root.width : Math.max(minSidebarWidth, 220)
-                                   //? root.width : Math.max(minSidebarWidth, cppqml.untInstrukciyaWidth)
+        property int sidebarWidth: root.isMobile//Если мобила,ширина на весь экран,если нет,то данные из Реест
+                                   ? root.width : Math.max(minSidebarWidth, dcReestr.instrukcii_shirina)
         //Настройки
         edge: Qt.RightEdge
         modal: false
@@ -265,19 +267,26 @@ Item {
             }
             ListModel {//Список всех инструкций: ключ, название, заголовок)
                 id: mdlInstrukcii
-                ListElement { key: "hotkey"; title: "Горячие клавиши"; zagolovok: "ГОРЯЧИЕ КЛАВИШИ" }
-                ListElement { key: "analizer"; title: "Анализ документов"; zagolovok: "ИНСТРУКЦИЯ ПО АНАЛИЗУ ДОКУМЕНТОВ" }
-                ListElement { key: "set_kobzone"; title: "Настройки приложения"; zagolovok: "НАСТРОЙКИ ПРИЛОЖЕНИЯ" }
                 ListElement { key: "oprilojenii"; title: "О приложении"; zagolovok: "О ПРИЛОЖЕНИИ" }
-                ListElement { key: "oqt"; title: "О Qt"; zagolovok: "О QT" }
-                ListElement { key: "transcribe"; title: "Транскрибация"; zagolovok: "ИНСТРУКЦИЯ ПО ТРАНСКРИБАЦИИ" }
-                ListElement { key: "katalog"; title: "Каталог документов";
-                                                    zagolovok: "ИНСТРУКЦИЯ ПО СОЗДАНИЮ КАТАЛОГА ДОКУМЕНТОВ" }
-                ListElement { key: "jurnal"; title: "Журнал"; zagolovok: "ИНСТРУКЦИЯ ПО ЖУРНАЛУ" }
+				ListElement { key: "set_kobzone"; title: "Настройки приложения";
+																zagolovok: "НАСТРОЙКИ ПРИЛОЖЕНИЯ" }
+				ListElement { key: "analizer"; title: "Анализ документов";
+																zagolovok:"ИНСТРУКЦИЯ ПО АНАЛИЗУ ДОКУМЕНТОВ" }
+				ListElement { key: "set_analizer"; title: "Настройка Анализатора";
+																zagolovok: "НАСТРОЙКА АНАЛИЗАТОРА" }
                 ListElement { key: "orfograf"; title: "Орфография"; zagolovok: "ИНСТРУКЦИЯ ПО ОРФОГРАФИИ" }
+				ListElement { key: "set_orfograf"; title: "Настройка Орфография";
+																zagolovok: "НАСТРОЙКА ОРФОГРАФИИ" }
+				ListElement { key: "transcribe"; title: "Транскрибация";
+																zagolovok: "ИНСТРУКЦИЯ ПО ТРАНСКРИБАЦИИ" }
+                ListElement { key: "set_transcribe"; title: "Настройка транскрибации";
+																zagolovok: "НАСТРОЙКА ТРАНСКРИБАЦИИ" }
+                ListElement { key: "jurnal"; title: "Журнал"; zagolovok: "ИНСТРУКЦИЯ ПО ЖУРНАЛУ" }
+                ListElement { key: "hotkey"; title: "Горячие клавиши"; zagolovok: "ГОРЯЧИЕ КЛАВИШИ" }
+                ListElement { key: "oqt"; title: "О Qt"; zagolovok: "О QT" }
             }
         }
-        Rectangle {//Прямоугольник ручки, за которую можно тянуть размер боковой панели, для изменения её размеров
+        Rectangle {//Прямоугольник ручки,за которую можно тянуть размер боковой панели,для изменения её размер
             id: rctRuchka
             anchors.top: drwSidebar.top
             anchors.right: rctSidebar.left
@@ -306,15 +315,15 @@ Item {
                 onReleased: {//Если отпустили кнопку мышки
                     drwSidebar.interactive = true;//Включаем свайп Drawer. ВАЖНО!
                     isDrag = false//При отпускании мыши Окончание перетаскивания
-                    //cppqml.untInstrukciyaWidth = drwSidebar.sidebarWidth//Записываем в реестр ширину панели.
+                    dcReestr.instrukcii_shirina = drwSidebar.sidebarWidth//Записываем в реестр ширину панели.
                 }
                 onCanceled: {
                     drwSidebar.interactive = true;//Включаем свайп Drawer. ВАЖНО!
                     isDrag = false//Окончание перетаскивания
-                    //cppqml.untInstrukciyaWidth = drwSidebar.sidebarWidth//Записываем в реестр ширину панели.
+                    dcReestr.instrukcii_shirina = drwSidebar.sidebarWidth//Записываем в реестр ширину панели.
                 }
                 onPositionChanged: (mouse) => {//Если позиция меняется, то...
-                    if (!isDrag || root.isMobile) return//Если не перетаскиваем ручку или мобильное устройство,вых
+                    if (!isDrag || root.isMobile) return//Если не перетаск. ручку или мобильное устройство,вых
                     const dX = mouse.x - lastX//Дельта Х относительно предыдущей точки Х
                     lastX = mouse.x//Запоминаем положение мыши по Х.
                     if (dX === 0) return//Если дельта не изменилась, ничего не делаем
@@ -383,8 +392,8 @@ github.com/DruidCat/pyqt-kobzone</a></center></p>
             txdZona.text = qsTr("
                 <html>
                     <body>
-<p><b>Транскрибация</b> — это перевод устной речи из аудио в письменный текст. Приложение занимается расшифровкой \
-речи, распознаванием аудио с помощью искусственного интеллекта.</p>
+<p><b>Транскрибация</b> — это перевод устной речи из аудио в письменный текст. Приложение занимается \
+расшифровкой речи, распознаванием аудио с помощью искусственного интеллекта.</p>
 <p><b>Применение транскрибации:</b></p>
 <p>- Интервью и подкасты для статей или цитат.</p>
 <p>- Бизнес-встречи, чтобы составить протокол и зафиксировать задачи.</p>
@@ -445,10 +454,11 @@ See <a href=\"http://qt.io\">qt.io</a> for more information.</p>
 приложением захвата экрана, например ShareX. И добавить на этапе монтажа в обучающий ролик.</p>
 <p><b>ФУНКЦИОНАЛ:</b></p>
 <ol>
-<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaNazad.png\"> - Вернуться в Меню программы Ментор.</p>
+<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaNazad.png\"> - Вернуться в Меню программы \
+Ментор.</p>
 <p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaInfo.png\"> - Инструкция по анимации.</p>
-<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaSozdat.png\"> - Добавить текст, который будет увеличиваться \
-с логотипом.</p>
+<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaSozdat.png\"> - Добавить текст, который будет \
+увеличиваться с логотипом.</p>
 <p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaNastroiki.png\"> - Меню анимации.</p>
 </ol>
 <p><b>ГОРЯЧИЕ КЛАВИШИ:</b></p>
@@ -542,7 +552,7 @@ See <a href=\"http://qt.io\">qt.io</a> for more information.</p>
 <p>- краткая информация о приложении и его создатиле.</p>
 <p><b>о Qt</b></p>
 <p>- информация о фреймворке, на котором написано приложение.</p>");
-        } else if(strKluch === "katalog"){
+        } else if(strKluch === "set_transcribe"){
             txdZona.text = qsTr("
                 <html>
                     <body>
@@ -555,7 +565,8 @@ See <a href=\"http://qt.io\">qt.io</a> for more information.</p>
 <p>- задать деррикторию, в которой будет создаваться каталог с документами.</p>
 <p><b>Информационное окно копирования</b></p>
 <p>- во время создания каталога документов, можно посмотреть, какие документы и куда скопировались.</p>
-<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaInfo.png\"> - Инструкция по созданию каталога документов.</p>
+<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaInfo.png\"> - Инструкция по созданию каталога \
+документов.</p>
 <p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaNastroiki.png\"> - Меню создания каталогов.</p>
 <p><b>ГОРЯЧИЕ КЛАВИШИ:</b></p>
 <ol>
@@ -608,9 +619,9 @@ See <a href=\"http://qt.io\">qt.io</a> for more information.</p>
             txdZona.text = qsTr("
                 <html>
                     <body>
-<p><b>Нейро анализ документов</b> — это анализ больших документов по конкретному вопросу. Приложение занимается \
-тем, что с помощью искуственного интелекта читает документы и анализирует их в свете того вопроса, который \
-лично вас интерисует. Как пример, вы можете загрузить беседу после транскрибации, и спросить у ИИ \
+<p><b>Нейро анализ документов</b> — это анализ больших документов по конкретному вопросу. Приложение \
+занимается тем, что с помощью искуственного интелекта читает документы и анализирует их в свете того вопроса,\
+ который лично вас интерисует. Как пример, вы можете загрузить беседу после транскрибации, и спросить у ИИ \
 [Расскажи кратко, о чём была беседа?]. И нейросеть за вас прочитает всю беседу и выделит только важные \
 аспекты разговора.</p>
 <p><b>Применение нейро анализа документов:</b></p>
@@ -636,6 +647,47 @@ See <a href=\"http://qt.io\">qt.io</a> for more information.</p>
 <p><b>[🚀 Анализировать]</b> - Запуск процесса анализа нейросетью.</p>
 <p><b>[Результат:]</b> - По окончанию работы нейросети, здесь отобразится результа анализа документов.</p>
 <p><b>[💾 Сохранить результат]</b> - Вы можете сохранить результат анализа в текстовом файле.(Ctr+S).</p>
+</ol>
+                    </body>
+                </html>"
+            );
+        }else if(strKluch === "set_orfograf"){
+            txdZona.text = qsTr("
+                <html>
+                    <body>")
++ qsTr("<p><b>горячие клавиши</b></p>
+<p>- описание всех горячих клавиш в приложении.</p>
+<p><b>шрифт</b></p>
+<p>- [маленький] размер шрифта.</p>
+<p>- [средний] размер шрифта.</p>
+<p>- [большой] размер шрифта.</p>")
++ qsTr("<p><b>о приложении</b></p>
+<p>- краткая информация о приложении и его создатиле.</p>
+<p><b>о Qt</b></p>
+<p>- информация о фреймворке, на котором написано приложение.</p>");
+        } else if(strKluch === "set_analizer"){
+            txdZona.text = qsTr("
+                <html>
+                    <body>
+<p>Данный функционал создаёт на устройстве структурированные папки с документами как в приложении.</p>
+<p><b>Создать</b> или <img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaSozdat.png\"></p>
+<p>- запускает создание каталога документов в заданной дерриктории.</p>
+<p><b>Открыть папку</b></p>
+<p>- открывает заданную деррикторию, в которой создастся или создался каталог с документами.</p>
+<p><b>Задать папку сохранения</b></p>
+<p>- задать деррикторию, в которой будет создаваться каталог с документами.</p>
+<p><b>Информационное окно копирования</b></p>
+<p>- во время создания каталога документов, можно посмотреть, какие документы и куда скопировались.</p>
+<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaInfo.png\"> - Инструкция по созданию каталога.</p>
+<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaNastroiki.png\"> - Меню создания каталогов.</p>
+<p><b>ГОРЯЧИЕ КЛАВИШИ:</b></p>
+<ol>
+<p><b>[Ctrl N]</b> - Создать каталог документов.</p>
+<p><b>[Стрелка вверх]</b> или <b>[K]</b> - Листание текста вверх.</p>
+<p><b>[Стрелка вниз]</b> или <b>[J]</b> - Листание текста вниз.</p>
+<p><b>[PgUp]</b> - Страница вверх.</p>
+<p><b>[PgDn]</b> - Страница вниз.</p>
+<p><b>[Escape]</b> - Отмена создания каталога.</p>
 </ol>
                     </body>
                 </html>"

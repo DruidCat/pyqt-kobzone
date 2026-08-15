@@ -202,7 +202,8 @@ Item {
 		if (!isTranscribing) {//Если транскрибация не запущена, то...
 			txdZona.strCopy = ""//Очищаем переменную Прогресса транскрибации.
 			txdZona.text = ""//Очищаем зону отображения прогресса транскрибации.
-			transcriber.start(dcReestr.audio_put, dcReestr.text_put)//Запускаем через бэкенд PyTranscriber.py	
+			//Запускаем через бэкенд PyTranscriber.py	
+			transcriber.start(dcReestr.transcribe_put_audio, dcReestr.transcribe_put_text)
 		}
 	}
 	function fnStopTranscriber() {//Функция Остановки транскрибации.
@@ -234,8 +235,8 @@ Item {
     }
     Component.onCompleted: {
         root.forceActiveFocus()
-        txfTextPut.text = dcReestr.text_put
-        txfAudioPut.text = dcReestr.audio_put
+        txfTextPut.text = dcReestr.transcribe_put_text
+        txfAudioPut.text = dcReestr.transcribe_put_audio
     }
 	Connections {//Connections для транскрибера
 		target: transcriber
@@ -271,13 +272,13 @@ Item {
 		id: dialogAudio
 		title: "Выберите папку с аудио файлами"
 		currentFolder: {//Используем сохранённый путь из настроек, или стандартную домашнюю папку
-			if (dcReestr.audio_put !== "") return "file://" + dcReestr.audio_put
+			if (dcReestr.transcribe_put_audio !== "") return "file://" + dcReestr.transcribe_put_audio
 			else return StandardPaths.writableLocation(StandardPaths.MusicLocation)
 		}
 		onAccepted: {
 			var vtPut = selectedFolder.toString()
 			vtPut = vtPut.replace(/^file:\/\//, "")//Убираем "file://" из начала пути
-			dcReestr.audio_put = vtPut
+			dcReestr.transcribe_put_audio = vtPut
 			txfAudioPut.text = vtPut
 		}
 	}
@@ -285,13 +286,13 @@ Item {
 		id: dialogText
 		title: "Выберите папку для текстовых файлов"
 		currentFolder: {//Используем сохранённый путь из настроек, или стандартную домашнюю папку
-			if (dcReestr.text_put !== "") return "file://" + dcReestr.text_put
+			if (dcReestr.transcribe_put_text !== "") return "file://" + dcReestr.transcribe_put_text
 			else return StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
 		}
 		onAccepted: {
 			var vtPut = selectedFolder.toString()
 			vtPut = vtPut.replace(/^file:\/\//, "")//Убираем "file://" из начала пути
-			dcReestr.text_put = vtPut
+			dcReestr.transcribe_put_text = vtPut
 			txfTextPut.text = vtPut
 		}
 	}	
@@ -458,7 +459,7 @@ Item {
                             radius: root.ntCoff / 2
                         }
                         onTextChanged: {
-                            dcReestr.audio_put = text
+                            dcReestr.transcribe_put_audio = text
                         }
                     }
                     
@@ -505,7 +506,7 @@ Item {
                             radius: root.ntCoff / 2
                         }
                         onTextChanged: {
-                            dcReestr.text_put = text
+                            dcReestr.transcribe_put_text = text
                         }
                     }
                     
