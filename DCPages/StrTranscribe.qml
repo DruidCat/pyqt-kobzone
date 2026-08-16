@@ -411,7 +411,7 @@ Item {
             Column {
                 id: clmnContent
                 width: flcZona.width - dcScrollbar.width
-                //spacing: root.ntCoff//Расстояние между элементами по вертикали.
+                spacing: root.ntCoff / 2//Расстояние между элементами по вертикали.
                 topPadding: root.ntCoff * 2
                 bottomPadding: root.ntCoff * 2
                 leftPadding: root.ntCoff * 2
