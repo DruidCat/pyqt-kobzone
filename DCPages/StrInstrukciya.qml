@@ -388,6 +388,123 @@ github.com/DruidCat/pyqt-kobzone</a></center></p>
 					</body>
                 </html>"
             );
+        } else if(strKluch === "set_kobzone"){
+            txdZona.text = qsTr("
+                <html>
+                    <body>
+<p><b>ФУНКЦИОНАЛ:</b></p>
+<ol>
+<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaNazad.png\"> - Вернуться в главное меню \
+(Alt+стрелка влево).</p>
+<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaMenu.png\"> - Настройка процесса анализа.</p>
+<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaInfo.png\"> - Помощь по анализу(F1).</p>
+</ol>
+<p>Вы можете настраивать.</p>
+                    </body>
+                </html>"
+			); 
+        } else if(strKluch === "analizer"){//Если это Инструкция по Анализу Документов, то...
+            txdZona.text = qsTr("
+                <html>
+                    <body>
+<p><b>Нейро анализ документов</b> — это анализ больших документов по конкретному вопросу. Приложение \
+занимается тем, что с помощью искуственного интелекта читает документы и анализирует их в свете того вопроса,\
+ который лично вас интерисует. Как пример, вы можете загрузить беседу после транскрибации, и спросить у ИИ \
+[Расскажи кратко, о чём была беседа?]. И нейросеть за вас прочитает всю беседу и выделит только важные \
+аспекты разговора.</p>
+<p><b>Применение нейро анализа документов:</b></p>
+<p>- Бизнес-встречи, чтобы составить протокол и зафиксировать задачи.</p>
+<p>- Интервью и подкасты для краткого ознакомления с материалом.</p>
+<p>- Лекции и вебинары, чтобы выделить важные аспекты сказанные лектором.</p>
+<p><b>ФУНКЦИОНАЛ:</b></p>
+<ol>
+<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaNazad.png\"> - Вернуться в главное меню \
+(Alt+стрелка влево).</p>
+<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaMenu.png\"> - Настройка процесса анализа.</p>
+<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaInfo.png\"> - Помощь по анализу(F1).</p>
+<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaNastroiki.png\"> - Всплывающее меню настроек.</p>
+</ol>
+<p>Вы можете загружать несколько бесед и давать задание нейросети проанализировать их по одному конкретному \
+вопросу.</p>
+<p><b>В РАБОЧЕЙ ЗОНЕ:</b></p>
+<ol>
+<p><b>[📁 Загрузить документы]</b> - Выберите те документы, которые хотите проанализировать с помощью ИИ.</p>
+<p><b>[Список документов:]</b> - Здесь отобразятся те документы, которые вы выбрали на анализ ИИ.</p>
+<p><b>[Промт для модели:]</b> - Задайте тот уникальный и максимально подробный вопрос, который вы хотите \
+получить из тех документов, которые вы добавили на анализ нейросети.</p>
+<p><b>[🚀 Анализировать]</b> - Запуск процесса анализа нейросетью.</p>
+<p><b>[Результат:]</b> - По окончанию работы нейросети, здесь отобразится результа анализа документов.</p>
+<p><b>[💾 Сохранить результат]</b> - Вы можете сохранить результат анализа в текстовом файле.(Ctr+S).</p>
+</ol>
+                    </body>
+                </html>"
+            );
+        } else if(strKluch === "set_analizer"){
+            txdZona.text = qsTr("
+                <html>
+                    <body>
+<p><b>ФУНКЦИОНАЛ:</b></p>
+<ol>
+<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaNazad.png\"> - Вернуться в главное меню \
+(Alt+стрелка влево).</p>
+<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaMenu.png\"> - Настройка процесса анализа.</p>
+<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaInfo.png\"> - Помощь по анализу(F1).</p>
+</ol>
+<p>Вы можете настраивать.</p>
+                    </body>
+                </html>"
+			); 
+        } else if(strKluch === "orfograf"){
+            txdZona.text = qsTr("
+                <html>
+                    <body>
+<p><b>Нейро анализ документов</b> — это анализ больших документов по конкретному вопросу. Приложение \
+занимается тем, что с помощью искуственного интелекта читает документы и анализирует их в свете того вопроса,\
+ который лично вас интерисует. Как пример, вы можете загрузить беседу после транскрибации, и спросить у ИИ \
+[Расскажи кратко, о чём была беседа?]. И нейросеть за вас прочитает всю беседу и выделит только важные \
+аспекты разговора.</p>
+<p><b>Применение нейро анализа документов:</b></p>
+<p>- Бизнес-встречи, чтобы составить протокол и зафиксировать задачи.</p>
+<p>- Интервью и подкасты для краткого ознакомления с материалом.</p>
+<p>- Лекции и вебинары, чтобы выделить важные аспекты сказанные лектором.</p>
+<p><b>ФУНКЦИОНАЛ:</b></p>
+<ol>
+<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaNazad.png\"> - Вернуться в главное меню \
+(Alt+стрелка влево).</p>
+<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaMenu.png\"> - Настройка процесса анализа.</p>
+<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaInfo.png\"> - Помощь по анализу(F1).</p>
+<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaNastroiki.png\"> - Всплывающее меню настроек.</p>
+</ol>
+<p>Вы можете загружать несколько бесед и давать задание нейросети проанализировать их по одному конкретному \
+вопросу.</p>
+<p><b>В РАБОЧЕЙ ЗОНЕ:</b></p>
+<ol>
+<p><b>[📁 Загрузить документы]</b> - Выберите те документы, которые хотите проанализировать с помощью ИИ.</p>
+<p><b>[Список документов:]</b> - Здесь отобразятся те документы, которые вы выбрали на анализ ИИ.</p>
+<p><b>[Промт для модели:]</b> - Задайте тот уникальный и максимально подробный вопрос, который вы хотите \
+получить из тех документов, которые вы добавили на анализ нейросети.</p>
+<p><b>[🚀 Анализировать]</b> - Запуск процесса анализа нейросетью.</p>
+<p><b>[Результат:]</b> - По окончанию работы нейросети, здесь отобразится результа анализа документов.</p>
+<p><b>[💾 Сохранить результат]</b> - Вы можете сохранить результат анализа в текстовом файле.(Ctr+S).</p>
+</ol>
+                    </body>
+                </html>"
+            );
+        } else if(strKluch === "set_orfograf"){
+            txdZona.text = qsTr("
+                <html>
+                    <body>
+<p><b>ФУНКЦИОНАЛ:</b></p>
+<ol>
+<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaNazad.png\"> - Вернуться в главное меню \
+(Alt+стрелка влево).</p>
+<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaMenu.png\"> - Настройка процесса анализа.</p>
+<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaInfo.png\"> - Помощь по анализу(F1).</p>
+</ol>
+<p>Вы можете настраивать.</p>
+                    </body>
+                </html>"
+			);
         } else if(strKluch === "transcribe"){//Если это Инструкция Транскрибации, то...
             txdZona.text = qsTr("
                 <html>
@@ -421,62 +538,52 @@ github.com/DruidCat/pyqt-kobzone</a></center></p>
                     </body>
                 </html>"
             );
-        } else if(strKluch === "oqt"){
+        } else if(strKluch === "set_transcribe"){
             txdZona.text = qsTr("
                 <html>
                     <body>
-<p><center><img src = \"qrc:/resources/images/Qt_logo_2016.png\"></center></p>
-<p>This program uses Qt version ") + root.qtVersion + qsTr(".</p>
-<p>Qt is a C++ toolkit for cross-platform application development.</p>
-<p>Qt provides single-source portability across all major desktop operating systems. It is also available \
-for embedded Linux and other embedded and mobile operating systems.</p>
-<p>Qt is available under multiple licensing options designed to accommodate the needs of our various \
-users.</p>
-<p>Qt licensed under our commercial license agreement is appropriate for development of \
-proprietary/commercial software where you do not want to share any source code with third parties or \
-otherwise cannot comply with the terms of GNU (L)GPL.</p>
-<p>Qt licensed under GNU (L)GPL is appropriate for the development of Qt applications provided you can \
-comply with the terms and conditions of the respective licenses.</p>
-<p>Please see <a href=\"http://qt.io/licensing/\">qt.io/licensing</a> for an overview of Qt licensing.</p>
-<p>Copyright (C) 2025 The Qt Company Ltd and other contributors.</p>
-<p>Qt and the Qt logo are trademarks of The Qt Company Ltd.</p>
-<p>Qt is The Qt Company Ltd product developed as an open source project. \
-See <a href=\"http://qt.io\">qt.io</a> for more information.</p>
-                    </body>
-                </html>"
-            );
-        } else if(strKluch === "orfograf"){
-            txdZona.text = qsTr("
-                <html>
-                    <body>
-<p>Данная страница необходима для создания анимированных заставок обучающих роликов.</p>
-<p>Введёный вами текск будет увеличиваться вместе с логотипом компании. Данную анимацию можно снять \
-приложением захвата экрана, например ShareX. И добавить на этапе монтажа в обучающий ролик.</p>
 <p><b>ФУНКЦИОНАЛ:</b></p>
 <ol>
-<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaNazad.png\"> - Вернуться в Меню программы \
-Ментор.</p>
-<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaInfo.png\"> - Инструкция по анимации.</p>
-<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaSozdat.png\"> - Добавить текст, который будет \
-увеличиваться с логотипом.</p>
-<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaNastroiki.png\"> - Меню анимации.</p>
+<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaNazad.png\"> - Вернуться в главное меню \
+(Alt+стрелка влево).</p>
+<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaMenu.png\"> - Настройка процесса анализа.</p>
+<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaInfo.png\"> - Помощь по анализу(F1).</p>
+</ol>
+<p>Вы можете настраивать.</p>
+                    </body>
+                </html>"
+			);
+        } else if(strKluch === "jurnal"){//Если это Инструкция Журнал, то...
+            txdZona.text = qsTr("
+                <html>
+                    <body>
+<p>В журнале отображаются ошибки, которые возникли при работе приложения.</p>
+<p>Так же в журнале фиксируются действия пользователя, такие как создание, переименование или удаление \
+каталогов. Добавление, переименование, удаление или открытие документов.</p>
+<p>Данная активность записывается и в дальнейшем может быть просмотрена в журнале для анализа.</p>
+<p><b>ФУНКЦИОНАЛ:</b></p>
+<ol>
+<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaNazad.png\"> - Выйти из журнала.</p>
+<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaInfo.png\"> - Инструкция о журнале.</p>
+<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaPoisk.png\"> - Показать данные журнала за:</p>
+<ol>
+<p><b>[Неделя]</b> - Отображение 7 дней активности пользователя.</p>
+<p><b>[Месяц]</b> - Отображение 30 дней активности пользователя.</p>
+<p><b>[Год]</b> - Отображение 365 дней активности пользователя.</p>
+</ol>
+<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaNastroiki.png\"> - Меню журнала.</p>
 </ol>
 <p><b>ГОРЯЧИЕ КЛАВИШИ:</b></p>
 <ol>
-<p><b>[Alt Стрелка влево]</b> - Закрыть окно анимации.</p>
 <p><b>[F1]</b> - Инструкция.</p>
-<p><b>[Ctrl N]</b> или <b>[Shift I]</b> - Режим добавления текста анимации.</p>
-<p><b>[Ctrl S]</b> или <b>[Enter]</b> - Сохранить текст анимации.</p>
-<p><b>[Пробел]</b> - Старт анимации.</p>
-<p><b>[Escape]</b> - Отмена действия.</p>
-</ol>
-<p><b>МЕНЮ:</b></p>
+<p><b>[Alt Стрелка влево]</b> - Закрыть журнал.</p>
+<p><b>[Ctrl F]</b> - Сортировка по неделе, месяцу, году:</p>
 <ol>
-<p><b>[Добавить]</b> - Добавить текс, который будет увеличиваться с логотипом.</p>
-<p><b>[Старт]</b> - Старт анимации.</p>
-<p><b>[Без рамки]</b> - Без рамки.</p>
-<p><b>[Рамка 16:9]</b> - Показ рамки для съёмки видео в пропорции экрана 16:9.</p>
-<p><b>[Закрыть]</b> - Закрыть приложение Ментор.</p>
+<p><b>[Стрелка вверх]</b> - Листание элементов сортировки.</p>
+<p><b>[Стрелка вниз]</b> - Листание элементов сортировки.</p>
+<p><b>[Enter]</b> - Выбор элемента сортировки.</p>
+<p><b>[Escape]</b> - Закрыть карусель сортировки.</p>
+</ol>
 </ol>
                     </body>
                 </html>"
@@ -538,161 +645,31 @@ See <a href=\"http://qt.io\">qt.io</a> for more information.</p>
 <p><b>[Стрелка вниз]</b> или <b>[J]</b> - Листание текста вниз.</p>
 <p><b>[PgUp]</b> - Страница вверх.</p>
 <p><b>[PgDn]</b> - Страница вниз.</p>");
-        } else if(strKluch === "set_kobzone"){
-            txdZona.text = qsTr("
-                <html>
-                    <body>")
-+ qsTr("<p><b>горячие клавиши</b></p>
-<p>- описание всех горячих клавиш в приложении.</p>
-<p><b>шрифт</b></p>
-<p>- [маленький] размер шрифта.</p>
-<p>- [средний] размер шрифта.</p>
-<p>- [большой] размер шрифта.</p>")
-+ qsTr("<p><b>о приложении</b></p>
-<p>- краткая информация о приложении и его создатиле.</p>
-<p><b>о Qt</b></p>
-<p>- информация о фреймворке, на котором написано приложение.</p>");
-        } else if(strKluch === "set_transcribe"){
+        } else if(strKluch === "oqt"){
             txdZona.text = qsTr("
                 <html>
                     <body>
-<p>Данный функционал создаёт на устройстве структурированные папки с документами как в приложении.</p>
-<p><b>Создать</b> или <img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaSozdat.png\"></p>
-<p>- запускает создание каталога документов в заданной дерриктории.</p>
-<p><b>Открыть папку</b></p>
-<p>- открывает заданную деррикторию, в которой создастся или создался каталог с документами.</p>
-<p><b>Задать папку сохранения</b></p>
-<p>- задать деррикторию, в которой будет создаваться каталог с документами.</p>
-<p><b>Информационное окно копирования</b></p>
-<p>- во время создания каталога документов, можно посмотреть, какие документы и куда скопировались.</p>
-<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaInfo.png\"> - Инструкция по созданию каталога \
-документов.</p>
-<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaNastroiki.png\"> - Меню создания каталогов.</p>
-<p><b>ГОРЯЧИЕ КЛАВИШИ:</b></p>
-<ol>
-<p><b>[Ctrl N]</b> - Создать каталог документов.</p>
-<p><b>[Стрелка вверх]</b> или <b>[K]</b> - Листание текста вверх.</p>
-<p><b>[Стрелка вниз]</b> или <b>[J]</b> - Листание текста вниз.</p>
-<p><b>[PgUp]</b> - Страница вверх.</p>
-<p><b>[PgDn]</b> - Страница вниз.</p>
-<p><b>[Escape]</b> - Отмена создания каталога.</p>
-</ol>
+<p><center><img src = \"qrc:/resources/images/Qt_logo_2016.png\"></center></p>
+<p>This program uses Qt version ") + root.qtVersion + qsTr(".</p>
+<p>Qt is a C++ toolkit for cross-platform application development.</p>
+<p>Qt provides single-source portability across all major desktop operating systems. It is also available \
+for embedded Linux and other embedded and mobile operating systems.</p>
+<p>Qt is available under multiple licensing options designed to accommodate the needs of our various \
+users.</p>
+<p>Qt licensed under our commercial license agreement is appropriate for development of \
+proprietary/commercial software where you do not want to share any source code with third parties or \
+otherwise cannot comply with the terms of GNU (L)GPL.</p>
+<p>Qt licensed under GNU (L)GPL is appropriate for the development of Qt applications provided you can \
+comply with the terms and conditions of the respective licenses.</p>
+<p>Please see <a href=\"http://qt.io/licensing/\">qt.io/licensing</a> for an overview of Qt licensing.</p>
+<p>Copyright (C) 2025 The Qt Company Ltd and other contributors.</p>
+<p>Qt and the Qt logo are trademarks of The Qt Company Ltd.</p>
+<p>Qt is The Qt Company Ltd product developed as an open source project. \
+See <a href=\"http://qt.io\">qt.io</a> for more information.</p>
                     </body>
                 </html>"
             );
-        } else if(strKluch === "jurnal"){//Если это Инструкция Журнал, то...
-            txdZona.text = qsTr("
-                <html>
-                    <body>
-<p>В журнале отображаются ошибки, которые возникли при работе приложения.</p>
-<p>Так же в журнале фиксируются действия пользователя, такие как создание, переименование или удаление \
-каталогов. Добавление, переименование, удаление или открытие документов.</p>
-<p>Данная активность записывается и в дальнейшем может быть просмотрена в журнале для анализа.</p>
-<p><b>ФУНКЦИОНАЛ:</b></p>
-<ol>
-<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaNazad.png\"> - Выйти из журнала.</p>
-<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaInfo.png\"> - Инструкция о журнале.</p>
-<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaPoisk.png\"> - Показать данные журнала за:</p>
-<ol>
-<p><b>[Неделя]</b> - Отображение 7 дней активности пользователя.</p>
-<p><b>[Месяц]</b> - Отображение 30 дней активности пользователя.</p>
-<p><b>[Год]</b> - Отображение 365 дней активности пользователя.</p>
-</ol>
-<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaNastroiki.png\"> - Меню журнала.</p>
-</ol>
-<p><b>ГОРЯЧИЕ КЛАВИШИ:</b></p>
-<ol>
-<p><b>[F1]</b> - Инструкция.</p>
-<p><b>[Alt Стрелка влево]</b> - Закрыть журнал.</p>
-<p><b>[Ctrl F]</b> - Сортировка по неделе, месяцу, году:</p>
-<ol>
-<p><b>[Стрелка вверх]</b> - Листание элементов сортировки.</p>
-<p><b>[Стрелка вниз]</b> - Листание элементов сортировки.</p>
-<p><b>[Enter]</b> - Выбор элемента сортировки.</p>
-<p><b>[Escape]</b> - Закрыть карусель сортировки.</p>
-</ol>
-</ol>
-                    </body>
-                </html>"
-            );
-        } else if(strKluch === "analizer"){//Если это Инструкция по Анализу Документов, то...
-            txdZona.text = qsTr("
-                <html>
-                    <body>
-<p><b>Нейро анализ документов</b> — это анализ больших документов по конкретному вопросу. Приложение \
-занимается тем, что с помощью искуственного интелекта читает документы и анализирует их в свете того вопроса,\
- который лично вас интерисует. Как пример, вы можете загрузить беседу после транскрибации, и спросить у ИИ \
-[Расскажи кратко, о чём была беседа?]. И нейросеть за вас прочитает всю беседу и выделит только важные \
-аспекты разговора.</p>
-<p><b>Применение нейро анализа документов:</b></p>
-<p>- Бизнес-встречи, чтобы составить протокол и зафиксировать задачи.</p>
-<p>- Интервью и подкасты для краткого ознакомления с материалом.</p>
-<p>- Лекции и вебинары, чтобы выделить важные аспекты сказанные лектором.</p>
-<p><b>ФУНКЦИОНАЛ:</b></p>
-<ol>
-<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaNazad.png\"> - Вернуться в главное меню \
-(Alt+стрелка влево).</p>
-<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaMenu.png\"> - Настройка процесса анализа.</p>
-<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaInfo.png\"> - Помощь по анализу(F1).</p>
-<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaNastroiki.png\"> - Всплывающее меню настроек.</p>
-</ol>
-<p>Вы можете загружать несколько бесед и давать задание нейросети проанализировать их по одному конкретному \
-вопросу.</p>
-<p><b>В РАБОЧЕЙ ЗОНЕ:</b></p>
-<ol>
-<p><b>[📁 Загрузить документы]</b> - Выберите те документы, которые хотите проанализировать с помощью ИИ.</p>
-<p><b>[Список документов:]</b> - Здесь отобразятся те документы, которые вы выбрали на анализ ИИ.</p>
-<p><b>[Промт для модели:]</b> - Задайте тот уникальный и максимально подробный вопрос, который вы хотите \
-получить из тех документов, которые вы добавили на анализ нейросети.</p>
-<p><b>[🚀 Анализировать]</b> - Запуск процесса анализа нейросетью.</p>
-<p><b>[Результат:]</b> - По окончанию работы нейросети, здесь отобразится результа анализа документов.</p>
-<p><b>[💾 Сохранить результат]</b> - Вы можете сохранить результат анализа в текстовом файле.(Ctr+S).</p>
-</ol>
-                    </body>
-                </html>"
-            );
-        }else if(strKluch === "set_orfograf"){
-            txdZona.text = qsTr("
-                <html>
-                    <body>")
-+ qsTr("<p><b>горячие клавиши</b></p>
-<p>- описание всех горячих клавиш в приложении.</p>
-<p><b>шрифт</b></p>
-<p>- [маленький] размер шрифта.</p>
-<p>- [средний] размер шрифта.</p>
-<p>- [большой] размер шрифта.</p>")
-+ qsTr("<p><b>о приложении</b></p>
-<p>- краткая информация о приложении и его создатиле.</p>
-<p><b>о Qt</b></p>
-<p>- информация о фреймворке, на котором написано приложение.</p>");
-        } else if(strKluch === "set_analizer"){
-            txdZona.text = qsTr("
-                <html>
-                    <body>
-<p>Данный функционал создаёт на устройстве структурированные папки с документами как в приложении.</p>
-<p><b>Создать</b> или <img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaSozdat.png\"></p>
-<p>- запускает создание каталога документов в заданной дерриктории.</p>
-<p><b>Открыть папку</b></p>
-<p>- открывает заданную деррикторию, в которой создастся или создался каталог с документами.</p>
-<p><b>Задать папку сохранения</b></p>
-<p>- задать деррикторию, в которой будет создаваться каталог с документами.</p>
-<p><b>Информационное окно копирования</b></p>
-<p>- во время создания каталога документов, можно посмотреть, какие документы и куда скопировались.</p>
-<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaInfo.png\"> - Инструкция по созданию каталога.</p>
-<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaNastroiki.png\"> - Меню создания каталогов.</p>
-<p><b>ГОРЯЧИЕ КЛАВИШИ:</b></p>
-<ol>
-<p><b>[Ctrl N]</b> - Создать каталог документов.</p>
-<p><b>[Стрелка вверх]</b> или <b>[K]</b> - Листание текста вверх.</p>
-<p><b>[Стрелка вниз]</b> или <b>[J]</b> - Листание текста вниз.</p>
-<p><b>[PgUp]</b> - Страница вверх.</p>
-<p><b>[PgDn]</b> - Страница вниз.</p>
-<p><b>[Escape]</b> - Отмена создания каталога.</p>
-</ol>
-                    </body>
-                </html>"
-            );
-        }
+        } 
     }
 }
 //Любые пробелы и табы в тексте отобразятся в приложении.
