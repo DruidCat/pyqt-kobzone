@@ -51,15 +51,16 @@ Item {
     
     // Обработка клавиш на уровне root
     Keys.onPressed: (event) => {
-        if (event.key === Qt.Key_Escape) {
-            // ВАЖНО: Сначала проверяем меню
-            if (menuMenu.visible) {
-                menuMenu.visible = false
+		if (event.modifiers & Qt.AltModifier) {
+            if (event.key === Qt.Key_F) {
+                fnClickedMenu()//Функция Настройки
                 event.accepted = true
-            } else {
-                // Если меню закрыто, ничего не делаем (можно добавить другую логику)
-                event.accepted = true
+                return
             }
+        }
+        if (event.key === Qt.Key_Escape) {
+			fnClickedEscape()//Функция нажатия на клавишу Escape
+			event.accepted = true
 		} else if (event.key === Qt.Key_F1){
 			if (!menuMenu.visible) {
 			   fnClickedInfo()	
@@ -125,11 +126,18 @@ Item {
                 flcMenu.contentY = knopkaBottom - flcMenu.height
         }
     }
-    
+    function fnClickedEscape() {//Функция нажатия на клавишу Escape
+		if (menuMenu.visible) {
+			menuMenu.visible = false
+		} else {
+			//Если меню закрыто, ничего не делаем (можно добавить другую логику)
+		}
+    }
     function fnClickedMenu() {
+		fnClickedEscape()//Функция нажатия на клавишу Escape
 		root.clickedSettings()//Сигнал излучает открытие настроек.
     }
-	function fnClickedInfo() {// Функция нажатия на кнопку Помощь
+	function fnClickedInfo() {//Функция нажатия на кнопку Помощь
         root.clickedInfo();//Сигнал излучаем, что нажата кнопка Описание.
     }
     function fnToggleMenu() {//Переключение видимости меню
@@ -139,19 +147,15 @@ Item {
             menuMenu.visible = true
         }
     }
-    function fnCloseMenuIfOpen() {
-        // Закрыть меню если оно открыто
-        if (menuMenu.visible) {
-            menuMenu.visible = false
-            return true  // Возвращаем true если меню было открыто
-        }
-        return false  // Возвращаем false если меню было закрыто
+    function fnCloseMenuIfOpen() {//Закрыть меню если оно открыто
+		if (menuMenu.visible) {
+			menuMenu.visible = false
+			return true//Возвращаем true если меню было открыто
+		}
+		return false//Возвращаем false если меню было закрыто
     }
-    
-    // Заголовок
-    Item {
+    Item {//Заголовок
         id: tmZagolovok
-        
         DCKnopkaMenu {
             id: knopkaMenu
             ntWidth: root.ntWidth
@@ -164,13 +168,7 @@ Item {
             tapHeight: root.ntWidth * root.ntCoff + root.ntCoff
             tapWidth: tapHeight * root.tapZagolovokPravi
             
-            onClicked: {
-                // Если меню открыто, закрываем его
-                if (!fnCloseMenuIfOpen()) {
-                    // Если меню было закрыто, вызываем функцию
-                    fnClickedMenu()
-                }
-            }
+            onClicked: fnClickedMenu()
         }
     }
     

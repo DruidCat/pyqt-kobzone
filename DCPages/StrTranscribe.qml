@@ -60,6 +60,10 @@ Item {
                 fnClickedNazad()
                 event.accepted = true
                 return
+            } else if (event.key === Qt.Key_F) {
+                fnClickedMenu()//Функция Настройки
+                event.accepted = true
+                return
             }
         }
 		if (event.modifiers & Qt.ControlModifier) {
@@ -71,12 +75,8 @@ Item {
             }
         }
         if (event.key === Qt.Key_Escape) {
-            if (menuMenu.visible) {
-                menuMenu.visible = false
-                event.accepted = true
-            } else {
-                event.accepted = true
-            }
+			fnClickedEscape()//Функция нажатия на клавишу Escape
+			event.accepted = true
         } else if (event.key === Qt.Key_F1) {
             if (!menuMenu.visible) {
                 fnClickedInfo()    
@@ -183,17 +183,25 @@ Item {
 			knopkaNastroiki.visible = true
         }
 	}
+	function fnClickedEscape() {//Функция нажатия на клавишу Escape
+		if (menuMenu.visible) {
+			menuMenu.visible = false
+		} else {
+			//Если меню закрыто, ничего не делаем (можно добавить другую логику)
+		}
+    }
 	function fnClickedNazad() {//Функция закрытия страницы.
 		if (isTranscribing) {//Если транскрибация идёт, то...
 			knopkaNazad.visible = false//Невидимая кнопка, чтоб она не нажималась, при нажатии Отмены.
 			knopkaMenu.visible = false// Невидимая кнопка, чтоб она не нажималась, при нажатии Ок.
 			stopDialog.visible = true//Выдаём вопрос об остановке транскрибации.
 		} else {
-			menuMenu.visible = false
+			fnClickedEscape()//Функция нажатия на клавишу Escape
 			root.clickedNazad()
 		}
 	}
     function fnClickedMenu() {
+		fnClickedEscape()//Функция нажатия на клавишу Escape
 		root.clickedSettings()//Сигнал излучает открытие настроек.
     }
     function fnClickedInfo() {
