@@ -183,12 +183,13 @@ Item {
 			knopkaNastroiki.visible = true
         }
 	}
-	function fnClickedNazad() {
+	function fnClickedNazad() {//Функция закрытия страницы.
 		if (isTranscribing) {//Если транскрибация идёт, то...
 			knopkaNazad.visible = false//Невидимая кнопка, чтоб она не нажималась, при нажатии Отмены.
 			knopkaMenu.visible = false// Невидимая кнопка, чтоб она не нажималась, при нажатии Ок.
 			stopDialog.visible = true//Выдаём вопрос об остановке транскрибации.
 		} else {
+			menuMenu.visible = false
 			root.clickedNazad()
 		}
 	}

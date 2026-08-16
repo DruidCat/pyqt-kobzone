@@ -136,7 +136,7 @@ Item {
     Keys.onPressed: (event) => {//Обработка горячих клавиш
         if (event.modifiers & Qt.AltModifier) {
             if (event.key === Qt.Key_Left) {
-                root.clickedNazad()
+                fnClickedNazad()//Функция закрытия страницы.
                 event.accepted = true
                 return
             }
@@ -207,7 +207,10 @@ Item {
             event.accepted = true
         }
     }
-    
+    function fnClickedNazad() {//Функция закрытия страницы.
+		menuMenu.visible = false
+		root.clickedNazad()
+	}
     function fnClickedMenu() {
 		root.clickedSettings()//Сигнал излучает открытие настроек.
     }
@@ -285,7 +288,7 @@ Item {
             clrFona: root.clrFona
             tapHeight: root.ntWidth * root.ntCoff + root.ntCoff
             tapWidth: tapHeight * root.tapZagolovokLevi
-            onClicked: root.clickedNazad()
+            onClicked: fnClickedNazad()//Функция закрытия страницы.
         }
         DCKnopkaMenu {
             id: knopkaMenu
