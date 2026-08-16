@@ -62,9 +62,7 @@ Item {
 			fnClickedEscape()//Функция нажатия на клавишу Escape
 			event.accepted = true
 		} else if (event.key === Qt.Key_F1){
-			if (!menuMenu.visible) {
-			   fnClickedInfo()	
-            }
+			fnClickedInfo()	
             event.accepted = true
         } else if (event.key === Qt.Key_Up || event.key === Qt.Key_K) {
             // Навигация работает только если меню закрыто
@@ -138,6 +136,7 @@ Item {
 		root.clickedSettings()//Сигнал излучает открытие настроек.
     }
 	function fnClickedInfo() {//Функция нажатия на кнопку Помощь
+		fnClickedEscape()//Функция нажатия на клавишу Escape
         root.clickedInfo();//Сигнал излучаем, что нажата кнопка Описание.
     }
     function fnToggleMenu() {//Переключение видимости меню

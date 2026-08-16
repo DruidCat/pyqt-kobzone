@@ -157,9 +157,7 @@ Item {
 			fnClickedEscape()//Функция нажатия на клавишу Escape
 			event.accepted = true
         } else if (event.key === Qt.Key_F1) {
-            if (!menuMenu.visible) {
-                fnClickedInfo()    
-            }
+            fnClickedInfo()    
             event.accepted = true
         } else if (event.key === Qt.Key_Up || event.key === Qt.Key_K) {
             if (!menuMenu.visible) {
@@ -223,6 +221,7 @@ Item {
 		root.clickedSettings()//Сигнал излучает открытие настроек.
     }
     function fnClickedInfo() {
+		fnClickedEscape()//Функция нажатия на клавишу Escape
         root.clickedInfo()
     }
     function fnClickedLoad() {
