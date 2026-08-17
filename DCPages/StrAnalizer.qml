@@ -51,6 +51,78 @@ Item {
 	DCMarkdown {//Подключаем конвертер Markdown
 		id: dcMarkdown
 	}
+	Keys.onPressed: (event) => {//Обработка горячих клавиш
+        if (event.modifiers & Qt.AltModifier) {
+            if (event.key === Qt.Key_Left) {
+                fnClickedNazad()//Функция закрытия страницы.
+                event.accepted = true
+                return
+            } else if (event.key === Qt.Key_F) {
+                fnClickedMenu()//Функция открытия настроек анализа документов.
+                event.accepted = true
+                return
+            }
+        }
+        if (event.modifiers & Qt.ControlModifier) {
+            if (event.key === Qt.Key_S) {
+                if (!menuMenu.visible && knopkaSohranit.enabled) {
+                    fnClickedSave()//Функция сохранения результата анализа.
+                }
+                event.accepted = true
+            }
+        }
+        if (event.key === Qt.Key_Escape) {
+			fnClickedEscape()//Функция нажатия на клавишу Escape
+			event.accepted = true
+        } else if (event.key === Qt.Key_F1) {
+            fnClickedInfo()//Функция открытия помощи.
+            event.accepted = true
+        } else if (event.key === Qt.Key_Up || event.key === Qt.Key_K) {
+            if (!menuMenu.visible) {
+                var ltNoviY = flcZona.contentY - 50
+                if (ltNoviY < 0)
+                    ltNoviY = 0
+                flcZona.contentY = ltNoviY
+            }
+            event.accepted = true
+        } else if (event.key === Qt.Key_Down || event.key === Qt.Key_J) {
+            if (!menuMenu.visible) {
+                var ltMaxY = flcZona.contentHeight - flcZona.height
+                var ltNoviY = flcZona.contentY + 50
+                if (ltNoviY > ltMaxY)
+                    ltNoviY = ltMaxY
+                flcZona.contentY = ltNoviY
+            }    
+            event.accepted = true
+        } else if (event.key === Qt.Key_PageUp) {
+            if (!menuMenu.visible) {
+                var ltNoviY = flcZona.contentY - flcZona.height
+                if (ltNoviY < 0)
+                    ltNoviY = 0
+                flcZona.contentY = ltNoviY
+            }
+            event.accepted = true
+        } else if (event.key === Qt.Key_PageDown) {
+            if (!menuMenu.visible) {
+                var ltMaxY = flcZona.contentHeight - flcZona.height
+                var ltNoviY = flcZona.contentY + flcZona.height
+                if (ltNoviY > ltMaxY)
+                    ltNoviY = ltMaxY
+                flcZona.contentY = ltNoviY
+            }
+            event.accepted = true
+        } else if (event.key === Qt.Key_Home) {
+            if (!menuMenu.visible) {
+                flcZona.contentY = 0
+            }
+            event.accepted = true
+        } else if (event.key === Qt.Key_End) {
+            if (!menuMenu.visible) {
+                flcZona.contentY = flcZona.contentHeight - flcZona.height
+            }
+            event.accepted = true
+        }
+    }
 	FileDialog {//Диалог выбора нескольких файлов для загрузки
 		id: dialogZagruzka
 		title: "Выберите текстовые файлы для анализа"
@@ -117,15 +189,12 @@ Item {
     }
 	Connections {//CONNECTIONS для прогресса
 		target: analyzer
-		
 		function onAnalysisStarted() {
 			console.log("✓ Анализ начался")
 			root.rlProgress = 0
-			
 			//Определяем количество чанков
 			var estimated_chunks = fnEstimateChunks(contentArea.text)
 			console.log("Примерное количество чанков:", estimated_chunks)
-			
 			if (ldrProgress.item) {
 				if (estimated_chunks === 1) {
 					// Для одного чанка — показываем текст "Финальный анализ..."
@@ -135,36 +204,30 @@ Item {
 					ldrProgress.item.text = `0/${estimated_chunks + 1}`
 				}
 			}
-			
 			tmrLogo.running = true
 		}
 		function onAnalysisFinished() {
 			console.log("✓ Анализ завершён")
-			
 			if (ldrProgress.item) {
 				ldrProgress.item.progress = 100
 			}
-			
 			Qt.callLater(function() {
 				tmrLogo.running = false
 			})
 		}
 		function onChunkStarted(ntCurrent, ntTotal) {
 			console.log(`Чанк ${ntCurrent}/${ntTotal} начал обрабатываться`)
-			
 			if (ldrProgress.item && ntTotal > 1) {//Только для множественных чанков
 				ldrProgress.item.text = `${ntCurrent}/${ntTotal + 1}`
 			}
 		}	
 		function onChunkFinished(ntCurrent, ntTotal) {
 			console.log(`Чанк ${ntCurrent}/${ntTotal} завершён`)
-			
 			if (ntTotal > 1) {//Только для множественных чанков
 				// Прогресс обновляется после завершения чанка
 				// +1 резервируем для финального анализа
 				root.rlLoader = 100 / (ntTotal + 1)
 				root.rlProgress = ntCurrent * root.rlLoader
-				
 				if (ldrProgress.item) {
 					ldrProgress.item.progress = root.rlProgress
 					ldrProgress.item.text = `${ntCurrent}/${ntTotal + 1}`
@@ -173,10 +236,8 @@ Item {
 		}	
 		function onFinalAnalysisStarted() {//Обработчик финального анализа
 			console.log("✓ Начался финальный анализ")
-			
 			if (ldrProgress.item) {//Всегда показываем "Финальный анализ..."
 				ldrProgress.item.text = "Финальный анализ..."
-				
 				// Если чанков несколько — устанавливаем прогресс перед финалом
 				var estimated_chunks = fnEstimateChunks(contentArea.text)
 				if (estimated_chunks > 1 && root.rlProgress < 90) {
@@ -187,78 +248,7 @@ Item {
 			}
 		}	
 	}	
-    Keys.onPressed: (event) => {//Обработка горячих клавиш
-        if (event.modifiers & Qt.AltModifier) {
-            if (event.key === Qt.Key_Left) {
-                fnClickedNazad()//Функция закрытия страницы.
-                event.accepted = true
-                return
-            } else if (event.key === Qt.Key_F) {
-                fnClickedMenu()//Функция Настройки
-                event.accepted = true
-                return
-            }
-        }
-        if (event.modifiers & Qt.ControlModifier) {
-            if (event.key === Qt.Key_S) {
-                if (!menuMenu.visible && knopkaSohranit.enabled) {
-                    fnClickedSave()
-                }
-                event.accepted = true
-            }
-        }
-        if (event.key === Qt.Key_Escape) {
-			fnClickedEscape()//Функция нажатия на клавишу Escape
-			event.accepted = true
-        } else if (event.key === Qt.Key_F1) {
-            fnClickedInfo()    
-            event.accepted = true
-        } else if (event.key === Qt.Key_Up || event.key === Qt.Key_K) {
-            if (!menuMenu.visible) {
-                var ltNoviY = flcZona.contentY - 50
-                if (ltNoviY < 0)
-                    ltNoviY = 0
-                flcZona.contentY = ltNoviY
-            }
-            event.accepted = true
-        } else if (event.key === Qt.Key_Down || event.key === Qt.Key_J) {
-            if (!menuMenu.visible) {
-                var ltMaxY = flcZona.contentHeight - flcZona.height
-                var ltNoviY = flcZona.contentY + 50
-                if (ltNoviY > ltMaxY)
-                    ltNoviY = ltMaxY
-                flcZona.contentY = ltNoviY
-            }    
-            event.accepted = true
-        } else if (event.key === Qt.Key_PageUp) {
-            if (!menuMenu.visible) {
-                var ltNoviY = flcZona.contentY - flcZona.height
-                if (ltNoviY < 0)
-                    ltNoviY = 0
-                flcZona.contentY = ltNoviY
-            }
-            event.accepted = true
-        } else if (event.key === Qt.Key_PageDown) {
-            if (!menuMenu.visible) {
-                var ltMaxY = flcZona.contentHeight - flcZona.height
-                var ltNoviY = flcZona.contentY + flcZona.height
-                if (ltNoviY > ltMaxY)
-                    ltNoviY = ltMaxY
-                flcZona.contentY = ltNoviY
-            }
-            event.accepted = true
-        } else if (event.key === Qt.Key_Home) {
-            if (!menuMenu.visible) {
-                flcZona.contentY = 0
-            }
-            event.accepted = true
-        } else if (event.key === Qt.Key_End) {
-            if (!menuMenu.visible) {
-                flcZona.contentY = flcZona.contentHeight - flcZona.height
-            }
-            event.accepted = true
-        }
-    }
+    
 	function fnClickedEscape() {//Функция нажатия на клавишу Escape
 		if (menuMenu.visible) {
 			menuMenu.visible = false
@@ -270,15 +260,15 @@ Item {
 		fnClickedEscape()//Функция нажатия на клавишу Escape
 		root.clickedNazad()
 	}
-    function fnClickedMenu() {
+    function fnClickedMenu() {//Функция открытия настроек анализа документов.
 		fnClickedEscape()//Функция нажатия на клавишу Escape
 		root.clickedSettings()//Сигнал излучает открытие настроек.
     }
-    function fnClickedInfo() {
+    function fnClickedInfo() {//Функция открытия помощи.
 		fnClickedEscape()//Функция нажатия на клавишу Escape
         root.clickedInfo()
     }
-    function fnClickedLoad() {
+    function fnClickedLoad() {//Функция открывающая Файловый диалог загрузки файлов
 		dialogZagruzka.open()
     }
 	function fnLoadMultipleDocuments(selectedFiles) {//Загрузка нескольких документов
@@ -292,18 +282,18 @@ Item {
 		}
 		analyzer.loadMultipleDocuments(filePaths)//Вызываем метод Python для загрузки файлов
 	}	
-    function fnClickedAnalizer() {
+    function fnClickedAnalizer() {//Функция запускающая нейро анализ документов
 		analyzer.setCurrentPrompt(promptField.text)//Сохраняем промт перед анализом
         analyzer.analyze(contentArea.text, promptField.text)
     }
-    function fnClickedSave() {
+    function fnClickedSave() {//Функция сохранения результата анализа.
         analyzer.saveResult()
     }
-    function fnToggleMenu() {
+    function fnToggleMenu() {//Функция изменяет состояние всплывающего меню если открыто, закрывает и наоборот
         if (menuMenu.visible) menuMenu.visible = false
         else menuMenu.visible = true
     }
-    function fnCloseMenuIfOpen() {
+    function fnCloseMenuIfOpen() {//ЗАкрывает всплывающее меню, если оно открыто.
         if (menuMenu.visible) {
             menuMenu.visible = false
             return true
@@ -350,7 +340,7 @@ Item {
             tapWidth: tapHeight * root.tapZagolovokPravi
             onClicked: {
                 if (!fnCloseMenuIfOpen()) {
-                    fnClickedMenu()
+                    fnClickedMenu()//Функция открытия настроек анализа документов.
                 }
             }
         }
@@ -400,7 +390,6 @@ Item {
                     easing.type: Easing.InOutQuad
                 }
             }
-            
             Column {
                 id: clmnContent
                 width: flcZona.width - dcScrollbar.width
@@ -422,7 +411,7 @@ Item {
                     anchors.rightMargin: root.ntCoff * 2
                     onClicked: {
                         if (!fnCloseMenuIfOpen()) {
-                            fnClickedLoad()
+                            fnClickedLoad()//Функция открывающая Файловый диалог загрузки файлов
                         }
                     }
                 }
@@ -521,7 +510,7 @@ Item {
                     anchors.rightMargin: root.ntCoff * 2
                     onClicked: {
                         if (!fnCloseMenuIfOpen()) {
-                            fnClickedAnalizer()
+                            fnClickedAnalizer()//Функция запускающая нейро анализ документов
                         }
                     }
                 }
@@ -603,7 +592,7 @@ Item {
                     anchors.rightMargin: root.ntCoff * 2
                     onClicked: {
                         if (!fnCloseMenuIfOpen()) {
-                            fnClickedSave()
+                            fnClickedSave()//Функция сохранения результата анализа.
                         }
                     }
                     Connections {
@@ -650,20 +639,18 @@ Item {
             clrTexta: root.clrMenuText
             clrFona: root.clrMenuFon
             imyaMenu: "analizer"
-            
             onClicked: function(ntNomer, strMenu) {
                 menuMenu.visible = false
-                
                 if (ntNomer === 1) {
-                    fnClickedLoad()
+                    fnClickedLoad()//Функция открывающая Файловый диалог загрузки файлов
                 } else if (ntNomer === 2) {
-                    fnClickedAnalizer()
+                    fnClickedAnalizer()//Функция запускающая нейро анализ документов
                 } else if (ntNomer === 3) {
-                    fnClickedSave()
+                    fnClickedSave()//Функция сохранения результата анализа.
                 } else if (ntNomer === 4) {
-                    fnClickedMenu()
+                    fnClickedMenu()//Функция открытия настроек анализа документов.
                 } else if (ntNomer === 5) {
-                    fnClickedInfo()
+                    fnClickedInfo()//Функция открытия помощи.
                 } else if (ntNomer === 6) {
                     Qt.quit()
                 }
@@ -706,7 +693,7 @@ Item {
             tapWidth: tapHeight * root.tapToolbarLevi
             onClicked: {
                 if (!fnCloseMenuIfOpen()) {
-                    fnClickedInfo()
+                    fnClickedInfo()//Функция открытия помощи.
                 }
             }
         }
