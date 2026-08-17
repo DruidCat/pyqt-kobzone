@@ -45,21 +45,29 @@ Item {
     signal clickedInfo()
     signal signalToolbar(var strToolbar)
     //Методы
+	DCSettings {//Объект настроек
+        id: dcReestr
+    }
 	DCMarkdown {//Подключаем конвертер Markdown
 		id: dcMarkdown
 	}
 	FileDialog {//Диалог выбора нескольких файлов для загрузки
 		id: dialogZagruzka
 		title: "Выберите текстовые файлы для анализа"
-		currentFolder: StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
+		currentFolder: {//Используем сохранённый путь из настроек, или стандартную домашнюю папку
+			if (dcReestr.analizer_put_text !== "") return "file://" + dcReestr.analizer_put_text
+			else return StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
+		}
 		nameFilters: ["Текстовые файлы (*.txt)", "Все файлы (*)"]
 		fileMode: FileDialog.OpenFiles//Множественный выбор файлов
-		
 		onAccepted: {
 			console.log("Выбрано файлов:", selectedFiles.length)
 			fnLoadMultipleDocuments(selectedFiles)
+			var filePut = selectedFiles[0].toString()
+			filePut = filePut.replace(/^file:\/\//, "")//Убираем "file://" из начала пути
+			var papkaPut = filePut.substring(0, filePut.lastIndexOf('/'));
+			dcReestr.analizer_put_text = papkaPut
 		}
-		
 		onRejected: {
 			console.log("Загрузка файлов отменена")
 		}
@@ -274,7 +282,7 @@ Item {
 		dialogZagruzka.open()
     }
 	function fnLoadMultipleDocuments(selectedFiles) {//Загрузка нескольких документов
-		console.log("Загрузка документов:", selectedFiles)
+		console.log("Zagruzka Загрузка документов:", selectedFiles)
 		var filePaths = []//Преобразуем список URL в массив путей
 		for (var i = 0; i < selectedFiles.length; i++) {
 			var vtFail = selectedFiles[i].toString()
