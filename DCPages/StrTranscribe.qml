@@ -225,7 +225,7 @@ Item {
         dialogText.open()
     }
 	function fnClickedOtkrit(){//Функция открытия результатов транскрибации.
-		console.log("ОТКРЫТЬ РЕЗУЛЬТАТЫ РАБОТЫ.")
+		dialogOtkrit.open()
 	}
     function fnToggleMenu() {
         if (menuMenu.visible) {
@@ -303,7 +303,22 @@ Item {
 			dcReestr.transcribe_put_text = vtPut
 			txfTextPut.text = vtPut
 		}
-	}	
+	}
+	FileDialog {//Диалог открытия текстового файла для просмотра
+		id: dialogOtkrit
+		title: "Выберите текстовый файл для просмотра"
+		currentFolder: {//Используем сохранённый путь из настроек, или стандартную домашнюю папку
+			if (dcReestr.transcribe_put_text !== "") return "file://" + dcReestr.transcribe_put_text
+			else return StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
+		}
+		nameFilters: ["Текстовые файлы (*.txt)", "Все файлы (*)"]
+		fileMode: FileDialog.OpenFile//Единичный выбор файла
+		onAccepted: {
+			Qt.openUrlExternally(selectedFile);//Открыть в стороннем приложении выбранный файл.	
+		}
+		onRejected: {
+		}
+	}
     Item {//Заголовок
         id: tmZagolovok
         DCKnopkaNazad {
