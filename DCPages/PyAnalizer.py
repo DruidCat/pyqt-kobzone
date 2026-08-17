@@ -52,6 +52,8 @@ class DCAnalyzer(QObject):
         self.current_filename = ""
         self.current_prompt = ""  #хранение промта
         self.worker = None
+        self.model_name = "qwen3-coder-30b-a3b-instruct"  #Имя модели ИИ добавляем
+        self.max_context = 29000  #Укажите ваше значение из LM Studio
 
     @pyqtSlot(str, str)
     def analyze(self, text_content, prompt):
@@ -171,7 +173,7 @@ class DCAnalyzer(QObject):
             try:
                 headers = {"Content-Type": "application/json"}
                 data = {
-                    "model": "qwen2.5-coder-32b-instruct",
+                    "model": self.model_name, #Используем переменную имении ИИ модели
                     "messages": [
                         {"role": "user", "content": full_prompt}
                     ],
@@ -215,7 +217,7 @@ class DCAnalyzer(QObject):
             try:
                 headers = {"Content-Type": "application/json"}
                 data = {
-                    "model": "qwen2.5-coder-32b-instruct",
+                    "model": self.model_name, #Используем переменную имении ИИ модели
                     "messages": [
                         {"role": "user", "content": full_prompt}
                     ],
@@ -263,39 +265,56 @@ class DCAnalyzer(QObject):
         
         return "\n".join(output_parts)
 
+    def _summarize_chunk_result(self, result, max_length=1000):#Сокращаем результаты чанков, оставляя только суть
+        """Сокращает результат чанка до основных тезисов"""
+        if len(result) <= max_length:
+            return result
+        
+        # Обрезаем до max_length символов, но завершаем на точке
+        truncated = result[:max_length]
+        last_period = truncated.rfind('.')
+        
+        if last_period > max_length // 2:  # Если точка найдена во второй половине
+            return truncated[:last_period + 1] + "\n[...сокращено...]"
+        else:
+            return truncated + "...\n[...сокращено...]"
+
     def _perform_final_analysis(self, chunk_results, original_prompt, total_chunks):
         """
         Выполняет финальный анализ на основе результатов всех чанков
         """
-        # Объединяем все результаты чанков
-        combined_results = "\n\n".join([
-            f"Часть {i+1}: {result}" 
-            for i, result in enumerate(chunk_results)
-        ])
+        # ← ИЗМЕНЕНО: Сокращаем каждый результат чанка
+        summarized_results = []
+        for i, result in enumerate(chunk_results):
+            summarized = self._summarize_chunk_result(result, max_length=1500)
+            summarized_results.append(f"Часть {i+1}: {summarized}")
+        
+        combined_results = "\n\n".join(summarized_results)
         
         # Формируем промт для финального анализа
         final_prompt = f"""Ты получил анализ документа, разбитого на {total_chunks} частей.
 
-Исходный запрос был: "{original_prompt}"
+    Исходный запрос был: "{original_prompt}"
 
-Результаты анализа по частям:
+    Результаты анализа по частям:
 
-{combined_results}
+    {combined_results}
 
-Задача: На основе всех этих частичных анализов составь единый, связный итоговый анализ документа. 
-Объедини ключевые моменты, устрани дублирование, выдели главное. Ответ должен быть структурированным и понятным."""
+    Задача: На основе всех этих частичных анализов составь единый, связный итоговый анализ документа. 
+    Объедини ключевые моменты, устрани дублирование, выдели главное. Ответ должен быть структурированным и понятным."""
 
         try:
             headers = {"Content-Type": "application/json"}
             data = {
-                "model": "qwen2.5-coder-32b-instruct",
+                "model": self.model_name, #Используем переменную имении ИИ модели
                 "messages": [
                     {"role": "user", "content": final_prompt}
                 ],
                 "temperature": 0.5,
-                "max_tokens": 4000  # Для итогового анализа даём больше токенов
+                "max_tokens": 8000,
+                "n_ctx": self.max_context #Указываем размер контекста через переменную.
             }
-            
+
             response = requests.post(
                 f"{LM_STUDIO_URL}/chat/completions",
                 headers=headers,
