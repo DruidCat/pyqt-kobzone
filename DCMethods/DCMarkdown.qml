@@ -7,10 +7,10 @@ QtObject {
 		
 		let html = markdown
 		
-		//Заголовки: ### Заголовок → <h3>Заголовок</h3>
-		html = html.replace(/^### (.+)$/gm, '<h3 style="color: #2d4288; margin-top: 16px; margin-bottom: 8px;">$1</h3>')
-		html = html.replace(/^## (.+)$/gm, '<h2 style="color: #2d4288; margin-top: 20px; margin-bottom: 10px;">$1</h2>')
-		html = html.replace(/^# (.+)$/gm, '<h1 style="color: #2d4288; margin-top: 24px; margin-bottom: 12px;">$1</h1>')
+		//Заголовки: ### Заголовок → <h3>Заголовок</h3>//Обрабатываем как с пробелом, и без: #Текст и # Текст
+		html = html.replace(/^### ?(.+)$/gm, '<h3 style="color: #2d4288; margin-top: 16px; margin-bottom: 8px;">$1</h3>')
+		html = html.replace(/^## ?(.+)$/gm, '<h2 style="color: #2d4288; margin-top: 20px; margin-bottom: 10px;">$1</h2>')
+		html = html.replace(/^# ?(.+)$/gm, '<h1 style="color: #2d4288; margin-top: 24px; margin-bottom: 12px;">$1</h1>')
 		
 		//Жирный текст: **текст** → <b>текст</b>
 		html = html.replace(/\*\*(.+?)\*\*/g, '<b style="color: #1a237e;">$1</b>')
