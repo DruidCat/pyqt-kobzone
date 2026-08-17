@@ -175,45 +175,45 @@ Item {
                 knopkaSohranit.enabled = false
             } else {
                 imgLogo.scale = 1.0
-                ldrProgress.active = false
-                
-                knopkaInfo.visible = true
-                knopkaNastroiki.visible = true
-                knopkaMenu.enabled = true
-                knopkaNazad.enabled = true
-                
-                knopkaZagruzit.enabled = true
-                knopkaAnaliz.enabled = contentArea.text.trim() !== ""
+                if (ldrProgress.item) ldrProgress.item.progress = 100
+				tmrProgress.running = true//Запускаем таймер отображения 100% прогресса и политику кнопок
             }
         }
     }
+	Timer {//ТАЙМЕР, чтоб можно было увидеть 100% прогресса призавершении.
+        id: tmrProgress
+        interval: 1100; running: false; repeat: false
+        onTriggered: {
+			ldrProgress.active = false
+
+			knopkaInfo.visible = true
+			knopkaNastroiki.visible = true
+			knopkaMenu.enabled = true
+			knopkaNazad.enabled = true
+			
+			knopkaZagruzit.enabled = true
+			knopkaAnaliz.enabled = contentArea.text.trim() !== ""
+        }
+	}
 	Connections {//CONNECTIONS для прогресса
 		target: analyzer
-		function onAnalysisStarted() {
+		function onAnalysisStarted() {//Запускаем нейро анализ документов.
 			console.log("✓ Анализ начался")
 			root.rlProgress = 0
-			//Определяем количество чанков
-			var estimated_chunks = fnEstimateChunks(contentArea.text)
+			var estimated_chunks = fnEstimateChunks(contentArea.text)//Определяем количество чанков
+			ldrProgress.total = estimated_chunks//Для Пересчёт скорости смещения полосы.
 			console.log("Примерное количество чанков:", estimated_chunks)
-			if (ldrProgress.item) {
-				if (estimated_chunks === 1) {
-					// Для одного чанка — показываем текст "Финальный анализ..."
-					ldrProgress.item.text = "Финальный анализ..."
-				} else {
-					// Для нескольких чанков — показываем 0/N
-					ldrProgress.item.text = `0/${estimated_chunks + 1}`
-				}
+			tmrLogo.running = true//Запускаем анимацию логотипа и включаем политики кнопок.
+			if (ldrProgress.item) {//Если существует объект, то...
+				if (estimated_chunks === 1)//Если один чанк, то...
+					ldrProgress.item.text = "Финальный анализ..."//показываем текст "Финальный анализ..."
+				else//Если несколько чанков, то...
+					ldrProgress.item.text = `0/${estimated_chunks + 1}`//Для нескольких чанков показываем 0/N
 			}
-			tmrLogo.running = true
 		}
 		function onAnalysisFinished() {
 			console.log("✓ Анализ завершён")
-			if (ldrProgress.item) {
-				ldrProgress.item.progress = 100
-			}
-			Qt.callLater(function() {
-				tmrLogo.running = false
-			})
+			tmrLogo.running = false
 		}
 		function onChunkStarted(ntCurrent, ntTotal) {
 			console.log(`Чанк ${ntCurrent}/${ntTotal} начал обрабатываться`)
@@ -665,20 +665,24 @@ Item {
     Item {//Тулбар
         id: tmToolbar
         clip: true
-        //LOADER для DCProgress
-        Loader {
+        Loader {//LOADER для DCProgress
             id: ldrProgress
             anchors.fill: tmToolbar
             source: "qrc:/DCMethods/DCProgress.qml"
             active: false
+			property int total: 1//Переменная, хранящая количество файлов на обработку
+			property int interval: 2200//Интервал между смещением полосы.
             onLoaded: {
                 ldrProgress.item.ntWidth = root.ntWidth
                 ldrProgress.item.ntCoff = root.ntCoff
                 ldrProgress.item.clrProgress = root.clrTexta
                 ldrProgress.item.clrTexta = "grey"
                 ldrProgress.item.radius = root.ntCoff / 4
-				ldrProgress.item.msInterval = 2200
+				ldrProgress.item.msInterval = ldrProgress.interval//Пауза между смещением.
             }
+			onTotalChanged: {//Если переменная изменилась, то происходит пересчёт скорости смещения.
+				ldrProgress.item.msInterval = interval * total//Чем больше файлов, тем медленней движется.
+			}
         }
         DCKnopkaInfo {
             id: knopkaInfo
