@@ -40,9 +40,10 @@ class DCAnalyzer(QObject):
     fileSaved = pyqtSignal(str)
     chunkStarted = pyqtSignal(int, int)
     chunkFinished = pyqtSignal(int, int)
-    finalAnalysisStarted = pyqtSignal()  #начало финального анализа
+    finalAnalysisStarted = pyqtSignal() #начало финального анализа
     analysisStarted = pyqtSignal()
     analysisFinished = pyqtSignal()
+    documentsLoaded = pyqtSignal(str, int) #сигнал загрузки документов (текст, количество)
     
     def __init__(self):
         super().__init__()
@@ -90,6 +91,64 @@ class DCAnalyzer(QObject):
     def setCurrentPrompt(self, prompt):
         """Сохраняет текущий промт (вызывается из QML)"""
         self.current_prompt = prompt
+
+    @pyqtSlot(list)
+    def loadMultipleDocuments(self, file_paths):
+        """Загружает несколько текстовых файлов и объединяет их содержимое"""
+        try:
+            if not file_paths:
+                print("✗ Список файлов пуст")
+                return
+            
+            combined_content = []
+            filenames = []
+            successfully_loaded = 0
+            
+            for file_path in file_paths:
+                try:
+                    file = Path(file_path)
+                    
+                    if not file.exists() or not file.is_file():
+                        print(f"✗ Файл не найден: {file_path}")
+                        combined_content.append(f"=== Файл: {file.name} ===\n[Ошибка: файл не найден]\n")
+                        continue
+                    
+                    with open(file, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                    
+                    combined_content.append(f"=== Файл: {file.name} ===\n{content}\n")
+                    filenames.append(file.stem)
+                    successfully_loaded += 1
+                    
+                    print(f"✓ Загружен файл: {file.name} ({len(content)} символов)")
+                    
+                except Exception as e:
+                    print(f"✗ Ошибка при загрузке файла {file_path}: {e}")
+                    combined_content.append(f"=== Файл: {Path(file_path).name} ===\n[Ошибка загрузки: {str(e)}]\n")
+            
+            #Объединяем весь текст
+            full_text = "\n".join(combined_content)
+            
+            #Сохраняем в переменную класса
+            self.text_content = full_text
+            
+            #Формируем имя для сохранения результата
+            if len(filenames) == 1:
+                self.current_filename = filenames[0]
+            elif len(filenames) > 1:
+                self.current_filename = f"анализ_{len(filenames)}_файлов"
+            else:
+                self.current_filename = "анализ"
+            
+            print(f"✓ Всего загружено файлов: {successfully_loaded}/{len(file_paths)}")
+            print(f"✓ Общий размер текста: {len(full_text)} символов")
+            
+            #Излучаем сигнал для обновления QML
+            self.documentsLoaded.emit(full_text, successfully_loaded)
+            
+        except Exception as e:
+            print(f"✗ Критическая ошибка при загрузке файлов: {e}")
+            self.documentsLoaded.emit(f"[Ошибка: {str(e)}]", 0)
 
     def process_text(self, text_content, prompt, chunk_start_callback=None, 
                     chunk_finish_callback=None, final_analysis_callback=None):

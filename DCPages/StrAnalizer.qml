@@ -1,5 +1,7 @@
 ﻿import QtQuick
 import QtQuick.Controls
+import QtCore
+import QtQuick.Dialogs
 import DCButtons 1.0
 import DCMethods 1.0
 
@@ -45,6 +47,22 @@ Item {
     //Методы
 	DCMarkdown {//Подключаем конвертер Markdown
 		id: dcMarkdown
+	}
+	FileDialog {//Диалог выбора нескольких файлов для загрузки
+		id: dialogZagruzka
+		title: "Выберите текстовые файлы для анализа"
+		currentFolder: StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
+		nameFilters: ["Текстовые файлы (*.txt)", "Все файлы (*)"]
+		fileMode: FileDialog.OpenFiles//Множественный выбор файлов
+		
+		onAccepted: {
+			console.log("Выбрано файлов:", selectedFiles.length)
+			fnLoadMultipleDocuments(selectedFiles)
+		}
+		
+		onRejected: {
+			console.log("Загрузка файлов отменена")
+		}
 	}
     Timer {//ТАЙМЕР анимации логотипа
         id: tmrLogo
@@ -253,8 +271,19 @@ Item {
         root.clickedInfo()
     }
     function fnClickedLoad() {
-        window.load_file()
+		dialogZagruzka.open()
     }
+	function fnLoadMultipleDocuments(selectedFiles) {//Загрузка нескольких документов
+		console.log("Загрузка документов:", selectedFiles)
+		var filePaths = []//Преобразуем список URL в массив путей
+		for (var i = 0; i < selectedFiles.length; i++) {
+			var vtFail = selectedFiles[i].toString()
+			vtFail = vtFail.replace(/^file:\/\//, "")//Убираем "file://"
+			vtFail = decodeURIComponent(vtFail)//Декодируем URL (например, %3F → ?)
+			filePaths.push(vtFail)
+		}
+		analyzer.loadMultipleDocuments(filePaths)//Вызываем метод Python для загрузки файлов
+	}	
     function fnClickedAnalizer() {
 		analyzer.setCurrentPrompt(promptField.text)//Сохраняем промт перед анализом
         analyzer.analyze(contentArea.text, promptField.text)
@@ -531,6 +560,11 @@ Item {
                                                             result !== "Анализируется..." &&
                                                             !result.startsWith("Ошибка:"))
                                 }
+								function onDocumentsLoaded(combinedText, filesCount) {
+									contentArea.text = combinedText//Обновление contentArea при загрузке файло
+									console.log(`✓ Загружено ${filesCount} файлов в contentArea`)
+									//root.signalToolbar(`Загружено файлов: ${filesCount}`)
+								}
                             }
                         }
                     }
