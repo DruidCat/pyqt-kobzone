@@ -40,7 +40,7 @@ class DCAnalyzer(QObject):
     fileSaved = pyqtSignal(str)
     chunkStarted = pyqtSignal(int, int)
     chunkFinished = pyqtSignal(int, int)
-    finalAnalysisStarted = pyqtSignal()  # ← НОВЫЙ: начало финального анализа
+    finalAnalysisStarted = pyqtSignal()  #начало финального анализа
     analysisStarted = pyqtSignal()
     analysisFinished = pyqtSignal()
     
@@ -49,6 +49,7 @@ class DCAnalyzer(QObject):
         self.text_content = ""
         self.current_result = ""
         self.current_filename = ""
+        self.current_prompt = ""  #хранение промта
         self.worker = None
 
     @pyqtSlot(str, str)
@@ -84,6 +85,11 @@ class DCAnalyzer(QObject):
         self.current_result = result
         self.resultReady.emit(result)
         self.analysisFinished.emit()
+
+    @pyqtSlot(str)
+    def setCurrentPrompt(self, prompt):
+        """Сохраняет текущий промт (вызывается из QML)"""
+        self.current_prompt = prompt
 
     def process_text(self, text_content, prompt, chunk_start_callback=None, 
                     chunk_finish_callback=None, final_analysis_callback=None):
@@ -321,8 +327,19 @@ class DCAnalyzer(QObject):
                 return
         
         try:
+            # Формируем содержимое с промтом
+            file_content = ""
+            
+            # Добавляем промт, если он есть
+            if self.current_prompt:
+                file_content += f"ПРОМТ: {self.current_prompt}\n\n"
+                file_content += "=" * 80 + "\n\n"
+            
+            # Добавляем результат анализа
+            file_content += self.current_result
+            
             with open(full_path, 'w', encoding='utf-8') as f:
-                f.write(self.current_result)
+                f.write(file_content)
             
             print(f"✓ Результат сохранён: {full_path}")
             self.fileSaved.emit(str(full_path))

@@ -253,6 +253,7 @@ Item {
         window.load_file()
     }
     function fnClickedAnalizer() {
+		analyzer.setCurrentPrompt(promptField.text)//Сохраняем промт перед анализом
         analyzer.analyze(contentArea.text, promptField.text)
     }
     function fnClickedSave() {
@@ -481,24 +482,27 @@ Item {
 					font.bold: true//Жирный текст.
                     width: parent.width - parent.leftPadding - parent.rightPadding
                 }
-                TextField {
-                    id: promptField
-                    width: parent.width - parent.leftPadding - parent.rightPadding
-                    placeholderText: "Проанализируй этот текст и выдели основные темы"
-                    selectByMouse: true
-                    color: root.clrTexta
-                    background: Rectangle {
-                        color: "transparent"
-                        border.color: root.clrTexta
-                        border.width: 1
-                        radius: root.ntCoff / 2
-                    }
-                    Keys.onReturnPressed: {
-                        if (contentArea.text.trim() !== "") {
-                            analyzer.analyze(contentArea.text, promptField.text)
-                        }
-                    }
-                }
+				TextField {
+					id: promptField
+					width: parent.width - parent.leftPadding - parent.rightPadding
+					placeholderText: "Проанализируй этот текст и выдели основные темы"
+					selectByMouse: true
+					color: root.clrTexta
+					background: Rectangle {
+						color: "transparent"
+						border.color: root.clrTexta
+						border.width: 1
+						radius: root.ntCoff / 2
+					}
+					Keys.onReturnPressed: {
+						if (contentArea.text.trim() !== "") {
+							analyzer.analyze(contentArea.text, promptField.text)
+						}
+					}
+					onTextChanged: {
+						analyzer.setCurrentPrompt(text)//Сохраняем промт при изменении
+					}
+				}	
                 DCKnopkaOriginal {//Кнопка анализа
                     id: knopkaAnaliz
                     text: "🚀 Анализировать"
