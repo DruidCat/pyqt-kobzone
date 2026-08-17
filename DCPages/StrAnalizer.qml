@@ -54,19 +54,18 @@ Item {
 	FileDialog {//Диалог выбора нескольких файлов для загрузки
 		id: dialogZagruzka
 		title: "Выберите текстовые файлы для анализа"
-		currentFolder: {//Используем сохранённый путь из настроек, или стандартную домашнюю папку
+		currentFolder: {//Используем сохранённый путь из реестра, или стандартную домашнюю папку
 			if (dcReestr.analizer_put_text !== "") return "file://" + dcReestr.analizer_put_text
 			else return StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
 		}
 		nameFilters: ["Текстовые файлы (*.txt)", "Все файлы (*)"]
 		fileMode: FileDialog.OpenFiles//Множественный выбор файлов
 		onAccepted: {
-			console.log("Выбрано файлов:", selectedFiles.length)
-			fnLoadMultipleDocuments(selectedFiles)
-			var filePut = selectedFiles[0].toString()
+			fnLoadMultipleDocuments(selectedFiles)//Загружаем файлы в функцию.
+			var filePut = selectedFiles[0].toString()//Получаем путь для первого файла.
 			filePut = filePut.replace(/^file:\/\//, "")//Убираем "file://" из начала пути
-			var papkaPut = filePut.substring(0, filePut.lastIndexOf('/'));
-			dcReestr.analizer_put_text = papkaPut
+			var papkaPut = filePut.substring(0, filePut.lastIndexOf('/'));//Обрезаем имя файла по /
+			dcReestr.analizer_put_text = papkaPut//Записываем в реестр имя папки в реестр.
 		}
 		onRejected: {
 			console.log("Загрузка файлов отменена")
@@ -91,6 +90,7 @@ Item {
         }
         onRunningChanged: {
             if (running) {
+				root.signalToolbar("")//Очищаем перед запуском тулбар
                 ldrProgress.active = true
                 
                 knopkaInfo.visible = false
@@ -282,7 +282,7 @@ Item {
 		dialogZagruzka.open()
     }
 	function fnLoadMultipleDocuments(selectedFiles) {//Загрузка нескольких документов
-		console.log("Zagruzka Загрузка документов:", selectedFiles)
+		console.log("Загрузка документов:", selectedFiles)
 		var filePaths = []//Преобразуем список URL в массив путей
 		for (var i = 0; i < selectedFiles.length; i++) {
 			var vtFail = selectedFiles[i].toString()
@@ -571,7 +571,7 @@ Item {
 								function onDocumentsLoaded(combinedText, filesCount) {
 									contentArea.text = combinedText//Обновление contentArea при загрузке файло
 									console.log(`✓ Загружено ${filesCount} файлов в contentArea`)
-									//root.signalToolbar(`Загружено файлов: ${filesCount}`)
+									root.signalToolbar(`Загружено файлов: ${filesCount}`)
 								}
                             }
                         }
