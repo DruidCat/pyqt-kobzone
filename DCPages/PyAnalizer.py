@@ -95,15 +95,56 @@ class DCAnalyzer(QObject):
         chunks = self.split_text_into_chunks(text_content, max_tokens)
         total_chunks = len(chunks)
         
-        # ← ШАГ 1: Анализ каждого чанка
+        #Если чанк один — сразу финальный анализ
+        if total_chunks == 1:
+            if final_analysis_callback:
+                final_analysis_callback()
+            
+            # Обрабатываем единственный чанк как финальный анализ
+            full_prompt = f"{prompt}\n\nТекст:\n{chunks[0]}"
+            
+            try:
+                headers = {"Content-Type": "application/json"}
+                data = {
+                    "model": "qwen2.5-coder-32b-instruct",
+                    "messages": [
+                        {"role": "user", "content": full_prompt}
+                    ],
+                    "temperature": 0.5,
+                    "max_tokens": max_tokens - 1000
+                }
+                
+                response = requests.post(
+                    f"{LM_STUDIO_URL}/chat/completions",
+                    headers=headers,
+                    json=data,
+                    timeout=120
+                )
+                
+                if response.status_code == 200:
+                    result = response.json().get("choices", [{}])[0].get("message", {}).get("content", "Ошибка")
+                else:
+                    result = f"[Ошибка {response.status_code}: {response.text}]"
+                
+                return result
+            
+            except requests.exceptions.Timeout:
+                return "[Ошибка: таймаут при анализе]"
+            except requests.exceptions.ConnectionError:
+                return f"[Ошибка: не удалось подключиться к LM Studio. Проверьте, что сервер запущен на {LM_STUDIO_URL}]"
+            except Exception as e:
+                return f"[Ошибка при анализе: {str(e)}]"
+        
+        #Если чанков больше одного — стандартная логика
+        # ШАГ 1: Анализ каждого чанка
         chunk_results = []
         for i, chunk in enumerate(chunks):
             current_chunk = i + 1
             
             # Сигнал: чанк начал обрабатываться
             if chunk_start_callback:
-                chunk_start_callback(current_chunk, total_chunks)
-            
+                chunk_start_callback(current_chunk, total_chunks) 
+                
             full_prompt = f"{prompt}\n\nТекст (часть {current_chunk} из {total_chunks}):\n{chunk}"
             
             try:

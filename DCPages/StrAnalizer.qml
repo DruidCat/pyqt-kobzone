@@ -92,6 +92,21 @@ Item {
 		function onAnalysisStarted() {
 			console.log("✓ Анализ начался")
 			root.rlProgress = 0
+			
+			//Определяем количество чанков
+			var estimated_chunks = fnEstimateChunks(contentArea.text)
+			console.log("Примерное количество чанков:", estimated_chunks)
+			
+			if (ldrProgress.item) {
+				if (estimated_chunks === 1) {
+					// Для одного чанка — показываем текст "Финальный анализ..."
+					ldrProgress.item.text = "Финальный анализ..."
+				} else {
+					// Для нескольких чанков — показываем 0/N
+					ldrProgress.item.text = `0/${estimated_chunks + 1}`
+				}
+			}
+			
 			tmrLogo.running = true
 		}
 		function onAnalysisFinished() {
@@ -108,30 +123,40 @@ Item {
 		function onChunkStarted(ntCurrent, ntTotal) {
 			console.log(`Чанк ${ntCurrent}/${ntTotal} начал обрабатываться`)
 			
-			if (ldrProgress.item) {
+			if (ldrProgress.item && ntTotal > 1) {//Только для множественных чанков
 				ldrProgress.item.text = `${ntCurrent}/${ntTotal + 1}`
 			}
-		}
+		}	
 		function onChunkFinished(ntCurrent, ntTotal) {
 			console.log(`Чанк ${ntCurrent}/${ntTotal} завершён`)
 			
-			// Прогресс обновляется после завершения чанка
-			// +1 резервируем для финального анализа
-			root.rlLoader = 100 / (ntTotal + 1)
-			root.rlProgress = ntCurrent * root.rlLoader
-			
-			if (ldrProgress.item) {
-				ldrProgress.item.progress = root.rlProgress
-				ldrProgress.item.text = `${ntCurrent}/${ntTotal + 1}`
+			if (ntTotal > 1) {//Только для множественных чанков
+				// Прогресс обновляется после завершения чанка
+				// +1 резервируем для финального анализа
+				root.rlLoader = 100 / (ntTotal + 1)
+				root.rlProgress = ntCurrent * root.rlLoader
+				
+				if (ldrProgress.item) {
+					ldrProgress.item.progress = root.rlProgress
+					ldrProgress.item.text = `${ntCurrent}/${ntTotal + 1}`
+				}
 			}
-		}
+		}	
 		function onFinalAnalysisStarted() {//Обработчик финального анализа
 			console.log("✓ Начался финальный анализ")
 			
-			if (ldrProgress.item) {
+			if (ldrProgress.item) {//Всегда показываем "Финальный анализ..."
 				ldrProgress.item.text = "Финальный анализ..."
+				
+				// Если чанков несколько — устанавливаем прогресс перед финалом
+				var estimated_chunks = fnEstimateChunks(contentArea.text)
+				if (estimated_chunks > 1 && root.rlProgress < 90) {
+					// Доводим до ~90% перед финальным анализом
+					root.rlProgress = 90
+					ldrProgress.item.progress = 90
+				}
 			}
-		}
+		}	
 	}	
     Keys.onPressed: (event) => {//Обработка горячих клавиш
         if (event.modifiers & Qt.AltModifier) {
@@ -280,6 +305,16 @@ Item {
         
         return '<p style="margin: 0; line-height: 1.6;">' + html + '</p>'
     }
+	function fnEstimateChunks(text) {//Функция приблизительного подсчёта количества чанков
+		if (!text || text.trim() === "") return 0
+		
+		var max_tokens = 8000
+		var chars_per_token = 4
+		var chunk_size = (max_tokens * chars_per_token) / 2
+		
+		var estimated_chunks = Math.ceil(text.length / chunk_size)
+		return estimated_chunks
+	}
     Component.onCompleted: {
         root.forceActiveFocus()
     }
