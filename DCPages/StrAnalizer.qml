@@ -313,6 +313,12 @@ Item {
 	}
     Component.onCompleted: {
         root.forceActiveFocus()
+		// Передаём настройки в Python
+		analyzer.setModelSettings(
+			dcReestr.analizer_model_imya,
+			dcReestr.analizer_max_context,
+			dcReestr.analizer_temperatura
+		)
     }
     Item {//Заголовок
         id: tmZagolovok

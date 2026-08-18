@@ -4,15 +4,24 @@ import QtCore
 QtObject {
     id: root
 	//Свойства с привязкой к настройкам, значения по умолчанию при первом пуске приложения.
+	//Нейро Анализ
     property string analizer_put_text: ""
+	property string analizer_model_imya: "qwen3-coder-30b-a3b-instruct"//Имя модели ИИ добавляем
+	property int analizer_max_context: 22016//Количество токенов
+	property real analizer_temperatura: 0.5//Температура ИИ модели, чем выше, тем точнее ответ. 0-1
+	//Транскрибация
     property string transcribe_put_audio: ""
     property string transcribe_put_text: ""
+	//Инструкции
 	property int instrukcii_shirina: 220
 	//Объект настроек (автоматическое сохранение)
     property Settings settings: Settings {
         category: "KOBzone"
 		//Нейро Анализ
         property alias analizer_put_text: root.analizer_put_text
+		property alias analizer_model_imya: root.analizer_model_imya
+		property alias analizer_max_context: root.analizer_max_context
+		property alias analizer_temperatura: root.analizer_temperatura
 		//Транскрибация
         property alias transcribe_put_audio: root.transcribe_put_audio
         property alias transcribe_put_text: root.transcribe_put_text

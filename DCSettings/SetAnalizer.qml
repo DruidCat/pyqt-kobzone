@@ -187,6 +187,32 @@ Item {
 				leftPadding: root.ntCoff * 2
 				rightPadding: root.ntCoff * 2
 				//ТУТ КОНТЕНТ НАСТРОЕК
+				Text {//Промт для модели
+                    text: "Имя модели:"
+                    font.pixelSize: root.ntWidth/2 * root.ntCoff
+                    color: root.clrTexta
+					font.bold: true//Жирный текст.
+                    width: parent.width - parent.leftPadding - parent.rightPadding
+                }
+				TextField {
+					id: promptField
+					width: parent.width - parent.leftPadding - parent.rightPadding
+					placeholderText: "Напишите имя языковой модели"
+					selectByMouse: true
+					color: root.clrTexta
+					background: Rectangle {
+						color: "transparent"
+						border.color: root.clrTexta
+						border.width: 1
+						radius: root.ntCoff / 2
+					}
+					Keys.onReturnPressed: {//Если нажат Enter
+						
+					}
+					onTextChanged: {
+
+					}
+				}
 			}
 		}
 		DCScrollbar {//Скроллбар

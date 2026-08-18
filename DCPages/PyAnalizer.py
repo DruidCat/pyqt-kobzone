@@ -53,7 +53,20 @@ class DCAnalyzer(QObject):
         self.current_prompt = ""  #хранение промта
         self.worker = None
         self.model_name = "qwen3-coder-30b-a3b-instruct"  #Имя модели ИИ добавляем
-        self.max_context = 29000  #Укажите ваше значение из LM Studio
+        self.max_context = 22016  #Укажите ваше значение из LM Studio
+        self.temperature = 0.5 #Температура ИИ модели.
+
+    @pyqtSlot(str, int, float)
+    def setModelSettings(self, model_name, max_context, temperature):
+        """Устанавливает параметры модели из настроек QML"""
+        self.model_name = model_name
+        self.max_context = max_context
+        self.temperature = temperature
+        
+        print(f"✓ Настройки модели обновлены:")
+        print(f"  - Модель: {self.model_name}")
+        print(f"  - Контекст: {self.max_context} токенов")
+        print(f"  - Temperature: {self.temperature}")
 
     @pyqtSlot(str, str)
     def analyze(self, text_content, prompt):
@@ -177,7 +190,7 @@ class DCAnalyzer(QObject):
                     "messages": [
                         {"role": "user", "content": full_prompt}
                     ],
-                    "temperature": 0.5,
+                    "temperature": self.temperature,
                     "max_tokens": max_tokens - 1000
                 }
                 
@@ -221,7 +234,7 @@ class DCAnalyzer(QObject):
                     "messages": [
                         {"role": "user", "content": full_prompt}
                     ],
-                    "temperature": 0.5,
+                    "temperature": self.temperature,
                     "max_tokens": max_tokens - 1000
                 }
                 
@@ -310,7 +323,7 @@ class DCAnalyzer(QObject):
                 "messages": [
                     {"role": "user", "content": final_prompt}
                 ],
-                "temperature": 0.5,
+                "temperature": self.temperature,
                 "max_tokens": 8000,
                 "n_ctx": self.max_context #Указываем размер контекста через переменную.
             }

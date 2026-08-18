@@ -6,6 +6,7 @@ Stranica {
     id: root
     //Свойства
     property string settingsType: ""
+	property string loadedSettingsType: ""
     property var loadedComponent: null
     //Настройки страницы
     visible: false
@@ -25,24 +26,38 @@ Stranica {
 	signal clickedNazad()//Сигнал назад.
     signal clickedInfo(var strSetType)
     //Отслеживание изменений
-    onSettingsTypeChanged: {
-        console.log("SetSettings: тип изменён на", settingsType)
-        if (visible && settingsType !== "") {//загружаем только если страница видима
-            Qt.callLater(fnLoadSettingsPage)
-        }
-    }
-    onVisibleChanged: {
-        if (visible) {
-            console.log("SetSettings: страница стала видимой, тип:", settingsType)
-            if (settingsType !== "" && !loadedComponent) {//загружаем только если есть settingsType
-                Qt.callLater(fnLoadSettingsPage)
-            } else if (loadedComponent) {//Если компонент уже загружен, просто передаём фокус
-                Qt.callLater(function() {
-                    loadedComponent.forceActiveFocus()
-                })
-            }
-        }
-    }
+	onSettingsTypeChanged: {
+		console.log("SetSettings: тип изменён на", settingsType)
+		if (visible && settingsType !== "" && root.loadedSettingsType !== settingsType) {
+			Qt.callLater(fnLoadSettingsPage)
+		}
+	}
+	onVisibleChanged: {
+		if (visible) {
+			console.log("SetSettings: страница стала видимой, тип:", settingsType)
+
+			if (settingsType !== ""
+				&& (loadedComponent === null || root.loadedSettingsType !== settingsType)) {
+
+				Qt.callLater(fnLoadSettingsPage)
+
+			} else if (loadedComponent) {
+				Qt.callLater(function() {
+					loadedComponent.forceActiveFocus()
+				})
+			}
+
+		} else {
+			// Опционально: можно сбрасывать компонент при уходе со страницы.
+			// Если не хотите терять состояние — оставьте как есть.
+
+			// if (loadedComponent) {
+			//     loadedComponent.destroy()
+			//     loadedComponent = null
+			//     root.loadedSettingsType = ""
+			// }
+		}
+	}
     Component.onCompleted: {
     }
     function fnLoadSettingsPage() {//ФУНКЦИЯ ЗАГРУЗКИ КОМПОНЕНТА
@@ -54,6 +69,12 @@ Stranica {
             console.warn("⚠️ SetSettings: страница невидима, загрузка отменена")
             return
         }
+		if (loadedComponent !== null && root.loadedSettingsType === settingsType) {
+				Qt.callLater(function() {
+					loadedComponent.forceActiveFocus()
+				})
+				return
+		}
         if (root.rctStrZona.width <= 0 || root.rctStrZona.height <= 0) {
             console.warn("⚠️ Stranica ещё не отрисована, ждём visible=true...")
             return
@@ -121,6 +142,7 @@ Stranica {
             console.error("✗ Не удалось создать объект компонента")
             return
         }
+		root.loadedSettingsType = settingsType
         console.log("✓ Компонент загружен успешно:", settingsType)
         //Подключаем сигналы
         if (loadedComponent.clickedNazad) {
