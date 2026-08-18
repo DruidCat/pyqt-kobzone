@@ -32,7 +32,28 @@ ApplicationWindow {
 		root.pythonVersion = pythonInfo.pythonVersion
 		root.qtVersion = qtInfo.qtVersion
 	}
-
+	property var vrStranica
+	function fnToolbar ( pgStranica, strText){
+		root.vrStranica = pgStranica;
+		if(strText === ""){
+			tmrToolbar.running = false
+		}
+		else{
+			tmrToolbar.running = true
+		}
+		console.log("toolbar", stvStr.currentItem)
+		stvStr.currentItem.textToolbar = strText
+		//root.vrStranica.textToolbar = strText
+	}
+	Timer {//ТАЙМЕР, чтоб удалить сообщение
+        id: tmrToolbar
+        interval: 3300; running: false; repeat: false
+        onTriggered: {
+			console.log("toolbar", stvStr.currentItem)
+			stvStr.currentItem.textToolbar = ""
+			//root.vrStranica.textToolbar = ""
+        }
+	}
 	SetSettings {
 		id: pgSetSettings
 		visible: false
@@ -172,7 +193,7 @@ ApplicationWindow {
 					stvStr.push(pgStrInstrukciya)//Переходим на страницу инструкций Анализа Документа
 				}
 				onSignalToolbar: function(strToolbar) {
-					pgStrAnalizer.textToolbar = strToolbar
+					fnToolbar(pgStrAnalizer, strToolbar)
 				}
 			}
 		}
