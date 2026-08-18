@@ -4,6 +4,7 @@ import QtCore
 import QtQuick.Dialogs
 import DCButtons 1.0
 import DCMethods 1.0
+import DCSettings 1.0
 
 Item {
     id: root
@@ -201,10 +202,10 @@ Item {
 			console.log("✓ Анализ начался")
 			root.rlProgress = 0
 			var estimated_chunks = fnEstimateChunks(contentArea.text)//Определяем количество чанков
-			ldrProgress.total = estimated_chunks//Для Пересчёт скорости смещения полосы.
 			console.log("Примерное количество чанков:", estimated_chunks)
 			tmrLogo.running = true//Запускаем анимацию логотипа и включаем политики кнопок.
 			if (ldrProgress.item) {//Если существует объект, то...
+				ldrProgress.total = estimated_chunks//Для Пересчёт скорости смещения полосы.
 				if (estimated_chunks === 1)//Если один чанк, то...
 					ldrProgress.item.text = "Финальный анализ..."//показываем текст "Финальный анализ..."
 				else//Если несколько чанков, то...

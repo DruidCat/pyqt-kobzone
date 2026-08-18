@@ -2,6 +2,7 @@
 import QtQuick.Controls//Drawer
 import DCButtons 1.0//Импортируем кнопки
 import DCMethods 1.0//Импортируем методы написанные мной.
+import DCSettings 1.0//Настройки из реестра.
 //StrInstrukciya - страница с отображением инструкций.
 Item {
     id: root

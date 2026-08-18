@@ -4,6 +4,7 @@ import QtCore
 import QtQuick.Dialogs
 import DCButtons 1.0
 import DCMethods 1.0
+import DCSettings 1.0//Настройки из реестра.
 
 Item {
     id: root
