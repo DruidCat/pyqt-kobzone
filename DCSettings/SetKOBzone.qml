@@ -40,6 +40,7 @@ Item {
 	//Сигналы
 	signal clickedNazad()
 	signal clickedInfo()
+	signal clickedJurnal()
 	signal toolbar(var strToolbar)
     signal log(var strLog)
 	//Методы
@@ -131,6 +132,13 @@ Item {
 		}
 		return false
 	}
+	function fnClickedJugnal(){//Функция открывающая Журнал
+		fnClickedEscape()
+		root.clickedJurnal()
+	}
+	function fnClickedShrift(){//Функция выбора размера шрифта
+		console.log("В разработке")
+	}
 	Component.onCompleted: {
 		root.forceActiveFocus()
 	}
@@ -188,6 +196,42 @@ Item {
 				leftPadding: root.ntCoff * 2
 				rightPadding: root.ntCoff * 2
 				//ТУТ КОНТЕНТ НАСТРОЕК
+				DCKnopkaOriginal {//Кнопка открытия Журнала
+                    id: knopkaJurnal
+                    text: "📁 журнал"
+                    ntHeight: root.ntWidth
+                    ntCoff: root.ntCoff
+					anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2
+                    anchors.rightMargin: root.ntCoff * 2
+					clrTexta: root.clrMenuText
+                    clrKnopki: (root.currentIndex === 0) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    opacityKnopki: 0.9
+                    onClicked: {
+                        if (!fnCloseMenuIfOpen()) {
+                            fnClickedJugnal()//Функция открывающая Журнал
+                        }
+                    }
+                }
+				DCKnopkaOriginal {//Кнопка выбора размера шрифта
+                    id: knopkaShrift
+                    text: "📁 размер шрифта"
+                    ntHeight: root.ntWidth
+                    ntCoff: root.ntCoff
+					anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2
+                    anchors.rightMargin: root.ntCoff * 2
+					clrTexta: root.clrMenuText
+                    clrKnopki: (root.currentIndex === 0) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    opacityKnopki: 0.9
+                    onClicked: {
+                        if (!fnCloseMenuIfOpen()) {
+                            fnClickedShrift()//Функция выбора размера шрифта
+                        }
+                    }
+                }
 			}
 		}
 		DCScrollbar {//Скроллбар

@@ -2,6 +2,7 @@ module DCMethods
 
 DCMarkdown 1.0 DCMarkdown.qml
 DCMenu 1.0 DCMenu.qml
+DCPathView 1.0 DCPathView.qml
 DCProgress 1.0 DCProgress.qml
 DCScale 1.0 DCScale.qml
 DCScrollbar 1.0 DCScrollbar.qml

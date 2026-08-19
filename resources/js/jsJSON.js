@@ -100,3 +100,18 @@ var vrSettings = [
                 "menu": qsTr("Выход")
 			}
 ]
+var vrMenuJurnal = [
+            {
+                "nomer": "1",
+                "menu": qsTr("Поиск")
+            },
+            {
+                "nomer": "2",
+                "menu": qsTr("Инструкция")
+            },
+            {
+                "nomer": "3",
+                "menu": qsTr("Закрыть")
+            }
+]
+

@@ -39,6 +39,7 @@ ApplicationWindow {
 		second: 3
 		onTextChanged: {
 			vrStranica.textToolbar = dcToolbar.text//Отображаем ИМЕННО ТАК.
+			tmJurnal.strDebug = dcToolbar.text;//Загружаем логи за день.
 		}
 		onLogChanged: {
 			//Отправляем в Логи сообщение.
@@ -165,6 +166,9 @@ ApplicationWindow {
 				onClickedInfo: {
 					tmStrInstrukciya.strInstrukciya = "set_kobzone"
 					stvStr.push(pgStrInstrukciya)
+				}
+				onClickedJurnal: {
+					stvStr.push(pgStrJurnal)//Открываем Журнал
 				}
 				onToolbar: function(strToolbar) {//Если сигнал пришёл с текстом в toolbar, то...
 					dcToolbar.fnText(strToolbar)//Передаём на отображение в toolbar сообщение.
@@ -528,6 +532,57 @@ ApplicationWindow {
 				}
 				onSignalZagolovok: function(strZagolovok) {//Слот сигнала signalZagolovok с новым Заголовком.
 					pgStrInstrukciya.textZagolovok = strZagolovok;//Выставляем изменённый Заголовок.
+				}
+			}
+		}
+		Stranica {//Журнал
+		/////////////////
+		///Ж У Р Н А Л///
+		/////////////////
+			id: pgStrJurnal
+			visible: false; focus: true
+			ntWidth: root.ntWidth; ntCoff: root.ntCoff
+			clrFona: root.clrFona; clrTexta: root.clrKnopok; clrRabOblasti: root.clrStranic
+			textZagolovok: "ЖУРНАЛ"
+			zagolovokLevi: 1.3; zagolovokPravi: 1.3; toolbarLevi: 1.3; toolbarPravi: 1.3
+			onVisibleChanged: {
+				if (visible) {
+					Qt.callLater(function() {
+						tmJurnal.forceActiveFocus()
+						console.log("Фокус передан на tmJurnal")
+					})
+				}
+			}
+			StrJurnal {
+				id: tmJurnal
+				ntWidth: pgStrJurnal.ntWidth; ntCoff: pgStrJurnal.ntCoff
+				clrTexta: pgStrJurnal.clrTexta; clrFona: pgStrJurnal.clrRabOblasti
+				clrMenuText: root.clrMenuText; clrMenuFon: pgStrTranscribe.clrFona
+				zagolovokX: pgStrJurnal.rctStrZagolovok.x; zagolovokY: pgStrJurnal.rctStrZagolovok.y
+				zagolovokWidth: pgStrJurnal.rctStrZagolovok.width
+				zagolovokHeight: pgStrJurnal.rctStrZagolovok.height
+				zonaX: pgStrJurnal.rctStrZona.x; zonaY: pgStrJurnal.rctStrZona.y
+				zonaWidth: pgStrJurnal.rctStrZona.width; zonaHeight: pgStrJurnal.rctStrZona.height
+				toolbarX: pgStrJurnal.rctStrToolbar.x; toolbarY: pgStrJurnal.rctStrToolbar.y
+				toolbarWidth: pgStrJurnal.rctStrToolbar.width
+				toolbarHeight: pgStrJurnal.rctStrToolbar.height
+				tapZagolovokLevi: pgStrJurnal.zagolovokLevi; tapZagolovokPravi: pgStrJurnal.zagolovokPravi
+				tapToolbarLevi: pgStrJurnal.toolbarLevi; tapToolbarPravi: pgStrJurnal.toolbarPravi
+				onClickedNazad: {
+					stvStr.pop()//Назад страницу
+					Qt.callLater(function() {
+						stvStr.currentItem.forceActiveFocus()
+					})
+				}
+				onClickedInfo: {
+					tmStrInstrukciya.strInstrukciya = "jurnal"
+					stvStr.push(pgStrInstrukciya)
+				}
+				onToolbar: function(strToolbar) {//Если сигнал пришёл с текстом в toolbar, то...
+					dcToolbar.fnText(strToolbar)//Передаём на отображение в toolbar сообщение.
+				}
+				onLog: function (strLog) {//Если сигнал пришёл с текстом в log, то...
+					dcToolbar.fnLog(strLog)//Передаём в лог сообщение.
 				}
 			}
 		}

@@ -152,6 +152,10 @@ Item {
 					else{
 						if(imyaMenu == "settings")//Это настройки
 							lsvMenu.model = JSMenu.vrSettings;//Перегружаем модель ListView с данными
+						else{
+							if(imyaMenu == "jurnal")//Это настройки
+								lsvMenu.model = JSMenu.vrMenuJurnal;//Перегружаем модель ListView с данными
+						}
 					}
                 }
             }
