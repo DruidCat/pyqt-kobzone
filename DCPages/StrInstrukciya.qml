@@ -273,10 +273,10 @@ Item {
 																zagolovok: "НАСТРОЙКИ ПРИЛОЖЕНИЯ" }
 				ListElement { key: "analizer"; title: "Анализ документов";
 																zagolovok:"ИНСТРУКЦИЯ ПО АНАЛИЗУ ДОКУМЕНТОВ" }
-				ListElement { key: "set_analizer"; title: "Настройка Анализатора";
-																zagolovok: "НАСТРОЙКА АНАЛИЗАТОРА" }
+				ListElement { key: "set_analizer"; title: "Настройка нейро анализа";
+																zagolovok: "НАСТРОЙКА НЕЙРО АНАЛИЗА" }
                 ListElement { key: "orfograf"; title: "Орфография"; zagolovok: "ИНСТРУКЦИЯ ПО ОРФОГРАФИИ" }
-				ListElement { key: "set_orfograf"; title: "Настройка Орфография";
+				ListElement { key: "set_orfograf"; title: "Настройка орфографии";
 																zagolovok: "НАСТРОЙКА ОРФОГРАФИИ" }
 				ListElement { key: "transcribe"; title: "Транскрибация";
 																zagolovok: "ИНСТРУКЦИЯ ПО ТРАНСКРИБАЦИИ" }
