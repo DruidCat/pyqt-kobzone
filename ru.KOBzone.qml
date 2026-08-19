@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import DCMethods 1.0//Импортируем DCToolbar
 import DCPages 1.0//Импортируем страницы программы.
 import DCSettings 1.0//Импортируем страницы настроек.
 
@@ -32,27 +33,13 @@ ApplicationWindow {
 		root.pythonVersion = pythonInfo.pythonVersion
 		root.qtVersion = qtInfo.qtVersion
 	}
-	property var vrStranica
-	function fnToolbar ( pgStranica, strText){
-		root.vrStranica = pgStranica;
-		if(strText === ""){
-			tmrToolbar.running = false
+	DCToolbar {
+		id: dcToolbar
+		vrStranica: stvStr.pgStrKOBzone//Первоначальное свойство передаю
+		second: 3
+		onTextChanged: {
+			vrStranica.textToolbar = dcToolbar.text//Отображаем ИМЕННО ТАК.
 		}
-		else{
-			tmrToolbar.running = true
-		}
-		console.log("toolbar", stvStr.currentItem)
-		stvStr.currentItem.textToolbar = strText
-		//root.vrStranica.textToolbar = strText
-	}
-	Timer {//ТАЙМЕР, чтоб удалить сообщение
-        id: tmrToolbar
-        interval: 3300; running: false; repeat: false
-        onTriggered: {
-			console.log("toolbar", stvStr.currentItem)
-			stvStr.currentItem.textToolbar = ""
-			//root.vrStranica.textToolbar = ""
-        }
 	}
 	StackView {
 		id: stvStr
@@ -62,9 +49,9 @@ ApplicationWindow {
 
 		onCurrentItemChanged: {
 			if (currentItem) {
-				console.log("Смена страницы, передаём фокус")
 				Qt.callLater(function() {
 					currentItem.forceActiveFocus()
+					dcToolbar.vrStranica = currentItem;//Передаём указатель на страницу, которая открыта.
 					console.log("Фокус установлен на:", currentItem)
 				})
 			}
@@ -219,7 +206,7 @@ ApplicationWindow {
 					stvStr.push(pgStrInstrukciya)//Переходим на страницу инструкций Анализа Документа
 				}
 				onSignalToolbar: function(strToolbar) {
-					fnToolbar(pgStrAnalizer, strToolbar)
+					dcToolbar.fnText(strToolbar)
 				}
 			}
 		}
