@@ -41,7 +41,8 @@ Item {
     signal clickedNazad()
 	signal clickedSettings()
     signal clickedInfo()
-    signal signalToolbar(var strToolbar)
+	signal toolbar(var strToolbar)
+    signal log(var strLog)
     //Методы
     Timer {//ТАЙМЕР анимации логотипа
         id: tmrLogo

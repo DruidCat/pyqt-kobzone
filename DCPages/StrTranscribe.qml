@@ -50,7 +50,8 @@ Item {
     signal clickedNazad()
 	signal clickedSettings()
     signal clickedInfo()
-    signal signalToolbar(var strToolbar)
+	signal toolbar(var strToolbar)
+    signal log(var strLog)
 	//Методы
     DCSettings {//Объект настроек
         id: dcReestr

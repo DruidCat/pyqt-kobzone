@@ -44,7 +44,8 @@ Item {
     signal clickedNazad()
 	signal clickedSettings()
     signal clickedInfo()
-    signal signalToolbar(var strToolbar)
+    signal toolbar(var strToolbar)
+    signal log(var strLog)
     //Методы
 	DCSettings {//Объект настроек
         id: dcReestr
@@ -163,7 +164,7 @@ Item {
         }
         onRunningChanged: {
             if (running) {
-				root.signalToolbar("")//Очищаем перед запуском тулбар
+				root.toolbar("")//Очищаем перед запуском тулбар
                 ldrProgress.active = true
                 
                 knopkaInfo.visible = false
@@ -567,7 +568,7 @@ Item {
 								function onDocumentsLoaded(combinedText, filesCount) {
 									contentArea.text = combinedText//Обновление contentArea при загрузке файло
 									console.log(`✓ Загружено ${filesCount} файлов в contentArea`)
-									root.signalToolbar(`Загружено файлов: ${filesCount}`)
+									root.toolbar(`Загружено файлов: ${filesCount}`)
 								}
                             }
                         }
@@ -609,7 +610,7 @@ Item {
                                 console.log("Ошибка сохранения:", path)
                             } else {
                                 console.log("✓ Файл сохранён:", path)
-                                root.signalToolbar("Сохранено: " + path.split('/').pop())
+                                root.toolbar("Сохранено: " + path.split('/').pop())
                             }
                         }
                     }

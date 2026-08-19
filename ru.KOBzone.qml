@@ -40,6 +40,9 @@ ApplicationWindow {
 		onTextChanged: {
 			vrStranica.textToolbar = dcToolbar.text//Отображаем ИМЕННО ТАК.
 		}
+		onLogChanged: {
+			//Отправляем в Логи сообщение.
+		}
 	}
 	StackView {
 		id: stvStr
@@ -112,6 +115,12 @@ ApplicationWindow {
 					tmStrInstrukciya.strInstrukciya = "oprilojenii"
 					stvStr.push(pgStrInstrukciya)//Переходим на страницу Инструкции Меню
 				}
+				onToolbar: function(strToolbar) {//Если сигнал пришёл с текстом в toolbar, то...
+					dcToolbar.fnText(strToolbar)//Передаём на отображение в toolbar сообщение.
+				}
+				onLog: function (strLog) {//Если сигнал пришёл с текстом в log, то...
+					dcToolbar.fnLog(strLog)//Передаём в лог сообщение.
+				}
 			}
 		}
 		Stranica {//Настройка Любимой КОБзона
@@ -156,6 +165,12 @@ ApplicationWindow {
 				onClickedInfo: {
 					tmStrInstrukciya.strInstrukciya = "set_kobzone"
 					stvStr.push(pgStrInstrukciya)
+				}
+				onToolbar: function(strToolbar) {//Если сигнал пришёл с текстом в toolbar, то...
+					dcToolbar.fnText(strToolbar)//Передаём на отображение в toolbar сообщение.
+				}
+				onLog: function (strLog) {//Если сигнал пришёл с текстом в log, то...
+					dcToolbar.fnLog(strLog)//Передаём в лог сообщение.
 				}
 			}
 		}
@@ -205,8 +220,11 @@ ApplicationWindow {
 					tmStrInstrukciya.strInstrukciya = "analizer"
 					stvStr.push(pgStrInstrukciya)//Переходим на страницу инструкций Анализа Документа
 				}
-				onSignalToolbar: function(strToolbar) {
-					dcToolbar.fnText(strToolbar)
+				onToolbar: function(strToolbar) {//Если сигнал пришёл с текстом в toolbar, то...
+					dcToolbar.fnText(strToolbar)//Передаём на отображение в toolbar сообщение.
+				}
+				onLog: function (strLog) {//Если сигнал пришёл с текстом в log, то...
+					dcToolbar.fnLog(strLog)//Передаём в лог сообщение.
 				}
 			}
 		}
@@ -252,6 +270,12 @@ ApplicationWindow {
 				onClickedInfo: {
 					tmStrInstrukciya.strInstrukciya = "set_analizer"
 					stvStr.push(pgStrInstrukciya)
+				}
+				onToolbar: function(strToolbar) {//Если сигнал пришёл с текстом в toolbar, то...
+					dcToolbar.fnText(strToolbar)//Передаём на отображение в toolbar сообщение.
+				}
+				onLog: function (strLog) {//Если сигнал пришёл с текстом в log, то...
+					dcToolbar.fnLog(strLog)//Передаём в лог сообщение.
 				}
 			}
 		}
@@ -301,8 +325,11 @@ ApplicationWindow {
 					tmStrInstrukciya.strInstrukciya = "orfograf"
 					stvStr.push(pgStrInstrukciya)//Переходим на страницу инструкций Проверки Орфографии
 				}
-				onSignalToolbar: function(strToolbar) {
-					pgStrOrfograf.textToolbar = strToolbar
+				onToolbar: function(strToolbar) {//Если сигнал пришёл с текстом в toolbar, то...
+					dcToolbar.fnText(strToolbar)//Передаём на отображение в toolbar сообщение.
+				}
+				onLog: function (strLog) {//Если сигнал пришёл с текстом в log, то...
+					dcToolbar.fnLog(strLog)//Передаём в лог сообщение.
 				}
 			}
 		}
@@ -348,6 +375,12 @@ ApplicationWindow {
 				onClickedInfo: {
 					tmStrInstrukciya.strInstrukciya = "set_orfograf"
 					stvStr.push(pgStrInstrukciya)
+				}
+				onToolbar: function(strToolbar) {//Если сигнал пришёл с текстом в toolbar, то...
+					dcToolbar.fnText(strToolbar)//Передаём на отображение в toolbar сообщение.
+				}
+				onLog: function (strLog) {//Если сигнал пришёл с текстом в log, то...
+					dcToolbar.fnLog(strLog)//Передаём в лог сообщение.
 				}
 			}
 		}
@@ -401,8 +434,11 @@ ApplicationWindow {
 					tmStrInstrukciya.strInstrukciya = "transcribe"
 					stvStr.push(pgStrInstrukciya)
 				}
-				onSignalToolbar: function(strToolbar) {
-					pgStrTranscribe.textToolbar = strToolbar
+				onToolbar: function(strToolbar) {//Если сигнал пришёл с текстом в toolbar, то...
+					dcToolbar.fnText(strToolbar)//Передаём на отображение в toolbar сообщение.
+				}
+				onLog: function (strLog) {//Если сигнал пришёл с текстом в log, то...
+					dcToolbar.fnLog(strLog)//Передаём в лог сообщение.
 				}
 			}
 		}
@@ -448,6 +484,12 @@ ApplicationWindow {
 				onClickedInfo: {
 					tmStrInstrukciya.strInstrukciya = "set_transcribe"
 					stvStr.push(pgStrInstrukciya)
+				}
+				onToolbar: function(strToolbar) {//Если сигнал пришёл с текстом в toolbar, то...
+					dcToolbar.fnText(strToolbar)//Передаём на отображение в toolbar сообщение.
+				}
+				onLog: function (strLog) {//Если сигнал пришёл с текстом в log, то...
+					dcToolbar.fnLog(strLog)//Передаём в лог сообщение.
 				}
 			}
 		}

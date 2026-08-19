@@ -39,8 +39,9 @@ Item {
 	focus: true
 	//Сигналы
 	signal clickedNazad()
-	signal signalToolbar(var strToolbar)
 	signal clickedInfo()
+	signal toolbar(var strToolbar)
+    signal log(var strLog)
 	//Методы
 	Keys.onPressed: (event) => {
 		if (event.modifiers & Qt.AltModifier) {

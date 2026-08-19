@@ -4,8 +4,7 @@ import DCMethods 1.0
 
 Item {
     id: root
-    
-    // Свойства
+    //Свойства
     property int ntWidth: 2
     property int ntCoff: 8
     property color clrTexta: "indigo"
@@ -30,27 +29,24 @@ Item {
     property real tapZagolovokPravi: 1
     property real tapToolbarLevi: 1
     property real tapToolbarPravi: 1
-    
-    // Массив кнопок для навигации
+    //Массив кнопок для навигации
     property var knopkiMassiv: []
     property int currentIndex: 0
-    
-    // Настройки
+    //Настройки
     anchors.fill: parent
-    
-    // Сигналы
+    //Сигналы
     signal clickedAnalizator()
     signal clickedOrfograf()
     signal clickedTranskribaciya()
 	signal clickedSettings()
 	signal clickedInfo()//Сигнал нажатия кнопки Информация
-
+	signal toolbar(var strToolbar)
+    signal log(var strLog)
+	//Методы
     Component.onCompleted: {
         knopkiMassiv = [knopkaAnalizator, knopkaRedaktor, knopkaTranskribaciya]
     }
-    
-    // Обработка клавиш на уровне root
-    Keys.onPressed: (event) => {
+    Keys.onPressed: (event) => {//Обработка клавиш на уровне root
 		if (event.modifiers & Qt.AltModifier) {
             if (event.key === Qt.Key_F) {
                 fnClickedMenu()//Функция Настройки
@@ -65,8 +61,7 @@ Item {
 			fnClickedInfo()	
             event.accepted = true
         } else if (event.key === Qt.Key_Up || event.key === Qt.Key_K) {
-            // Навигация работает только если меню закрыто
-            if (!menuMenu.visible) {
+            if (!menuMenu.visible) {//Навигация работает только если меню закрыто
                 root.currentIndex--
                 if (root.currentIndex < 0)
                     root.currentIndex = knopkiMassiv.length - 1
@@ -75,8 +70,7 @@ Item {
             }
             event.accepted = true 
         } else if (event.key === Qt.Key_Down || event.key === Qt.Key_J) {
-            // Навигация работает только если меню закрыто
-            if (!menuMenu.visible) {
+            if (!menuMenu.visible) {//Навигация работает только если меню закрыто
                 root.currentIndex++
                 if (root.currentIndex >= knopkiMassiv.length)
                     root.currentIndex = 0
@@ -86,14 +80,12 @@ Item {
             event.accepted = true
             
         } else if (event.key === Qt.Key_Enter || event.key === Qt.Key_Return) {
-            // Enter работает только если меню закрыто
-            if (!menuMenu.visible) {
+            if (!menuMenu.visible) {//Enter работает только если меню закрыто
                 fnClickedEnter()
             }
             event.accepted = true
         }
     }
-    
     function fnClickedEnter() {
         if (root.currentIndex >= 0 && root.currentIndex < knopkiMassiv.length) {
             var vrKnopkaID = knopkiMassiv[root.currentIndex]
@@ -104,14 +96,11 @@ Item {
             }
         }
     }
-    
     function fnScrollKnopok(isPlus) {
         var knopkaID = knopkiMassiv[root.currentIndex]
-        
         if (!knopkaID) {
             return
         }
-        
         if (knopkaID.visible) {
             var knopkaTop = knopkaID.y
             var knopkaBottom = knopkaTop + knopkaID.height + root.ntWidth
@@ -166,13 +155,14 @@ Item {
             clrFona: root.clrFona
             tapHeight: root.ntWidth * root.ntCoff + root.ntCoff
             tapWidth: tapHeight * root.tapZagolovokPravi
-            
-            onClicked: fnClickedMenu()
+			onClicked: {
+				if (!fnCloseMenuIfOpen()) {//Если меню открыто, закрываем его
+					fnClickedMenu()
+				}
+			}
         }
     }
-    
-    // Рабочая зона
-    Item {
+    Item {//Рабочая зона
         id: tmZona
         clip: true
         
@@ -181,9 +171,7 @@ Item {
             anchors.fill: parent
             anchors.margins: root.ntCoff / 2
             color: "transparent"
-            
-            // Левый логотип
-            Rectangle {
+            Rectangle {//Левый логотип
                 id: rctLogo_1
                 width: parent.width * 0.25
                 height: parent.height
@@ -205,9 +193,7 @@ Item {
                     opacity: 0.8
                 }
             }
-            
-            // Центральное меню
-            Rectangle {
+            Rectangle {//Центральное меню
                 id: rctMenu
                 anchors.left: rctLogo_1.right
                 anchors.right: rctLogo_2.left
@@ -216,7 +202,6 @@ Item {
                 anchors.leftMargin: root.ntCoff
                 anchors.rightMargin: root.ntCoff
                 color: "transparent"
-				                
                 Flickable {
                     id: flcMenu
                     property int kolichestvoKnopok: clmnKnopki.children.length
@@ -225,16 +210,13 @@ Item {
                     contentHeight: clmnKnopki.height
                     clip: true
                     interactive: true
-                    
                     Column {
                         id: clmnKnopki
                         width: flcMenu.width - scbScrollbar.width - root.ntWidth * root.ntCoff
                         anchors.left: parent.left
                         anchors.leftMargin: root.ntWidth * root.ntCoff
                         spacing: root.ntWidth
-                        
-                        // Кнопка "Нейро анализ документа"
-                        DCKnopkaOriginal {
+                        DCKnopkaOriginal {//Кнопка "Нейро анализ документа"
                             id: knopkaAnalizator
                             ntHeight: root.ntWidth * 1.1
                             ntCoff: root.ntCoff
@@ -251,20 +233,15 @@ Item {
                                 root.currentIndex = 0
                                 root.clickedAnalizator()
                             }
-                            
                             onPressedChanged: {
                                 if (pressed) {
-                                    // Сначала закрываем меню если открыто
-                                    if (!fnCloseMenuIfOpen()) {
-                                        // Если меню было закрыто, выполняем действие
-                                        fnPress()
+                                    if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
+                                        fnPress()// Если меню было закрыто, выполняем действие
                                     }
                                 }
                             }
                         }
-                        
-                        // Кнопка "Исправление текста"
-                        DCKnopkaOriginal {
+                        DCKnopkaOriginal {//Кнопка "Исправление текста"
                             id: knopkaRedaktor
                             ntHeight: root.ntWidth * 1.1
                             ntCoff: root.ntCoff
@@ -276,12 +253,10 @@ Item {
                             text: "ИСПРАВЛЕНИЕ ТЕКСТА"
                             opacityKnopki: 0.9
                             enabled: true
-                            
                             function fnPress() {
                                 root.currentIndex = 1
                                 root.clickedOrfograf()
                             }
-                            
                             onPressedChanged: {
                                 if (pressed) {
                                     if (!fnCloseMenuIfOpen()) {
@@ -290,9 +265,7 @@ Item {
                                 }
                             }
                         }
-                        
-                        // Кнопка "Транскрибация"
-                        DCKnopkaOriginal {
+                        DCKnopkaOriginal {//Кнопка "Транскрибация"
                             id: knopkaTranskribaciya
                             ntHeight: root.ntWidth * 1.1
                             ntCoff: root.ntCoff
@@ -309,7 +282,6 @@ Item {
                                 root.currentIndex = 2
                                 root.clickedTranskribaciya()
                             }
-                            
                             onPressedChanged: {
                                 if (pressed) {
                                     if (!fnCloseMenuIfOpen()) {
@@ -320,9 +292,7 @@ Item {
                         }
                     }
                 }
-                
-                // Скроллбар
-                DCScrollbar {
+                DCScrollbar {//Скроллбар
                     id: scbScrollbar
                     flick: flcMenu
                     anchors.right: rctMenu.right
@@ -334,9 +304,7 @@ Item {
                     radius: 1
                 }
             }
-            
-            // Правый логотип
-            Rectangle {
+            Rectangle {//Правый логотип
                 id: rctLogo_2
                 width: parent.width * 0.25
                 height: parent.height
@@ -347,7 +315,6 @@ Item {
                 border.color: root.clrTexta
                 border.width: root.ntCoff / 4
                 radius: root.ntCoff / 2
-                
                 Image {
                     id: imgLogo2
                     anchors.fill: parent
@@ -359,9 +326,7 @@ Item {
                 }
             }
         }
-        
-        // Всплывающее меню DCMenu
-        DCMenu {
+        DCMenu {//Всплывающее меню DCMenu
             id: menuMenu
             visible: false
             ntWidth: root.ntWidth
@@ -375,18 +340,14 @@ Item {
             clrTexta: root.clrMenuText
             clrFona: root.clrMenuFon
             imyaMenu: "kobzone"
-            
             onClicked: function(ntNomer, strMenu) {
-                menuMenu.visible = false  // Закрываем меню после выбора
-                
+                menuMenu.visible = false//Закрываем меню после выбора
                 if (ntNomer === 1) {
                     fnClickedMenu()
-                }
-				if (ntNomer === 2) {
+                } else if (ntNomer === 2) {
                     fnClickedInfo()
-                }
-				if (ntNomer === 3) {  // Выход
-                    Qt.quit()
+                } else if (ntNomer === 3) {
+                    Qt.quit()//Выход
                 }
             }
 			onVisibleChanged: {
@@ -396,11 +357,8 @@ Item {
 			}
         }
     }
-    
-    // Тулбар
-    Item {
+    Item {//Тулбар
         id: tmToolbar
-        
         DCKnopkaInfo {
             id: knopkaInfo
             ntWidth: root.ntWidth
@@ -412,16 +370,12 @@ Item {
             visible: true
             tapHeight: root.ntWidth * root.ntCoff + root.ntCoff
             tapWidth: tapHeight * root.tapToolbarLevi
-            
             onClicked: {
-                // Если меню открыто, закрываем его
-                if (!fnCloseMenuIfOpen()) {
-                    // Если меню было закрыто, показываем информацию
-                    fnClickedInfo()
+                if (!fnCloseMenuIfOpen()) {//Если меню открыто, закрываем его
+                    fnClickedInfo()//Если меню было закрыто, показываем информацию
                 }
             }
         }
-        
         DCKnopkaNastroiki {
             id: knopkaNastroiki
             ntWidth: root.ntWidth
@@ -433,24 +387,18 @@ Item {
             blVert: true
             tapHeight: root.ntWidth * root.ntCoff + root.ntCoff
             tapWidth: tapHeight * root.tapToolbarPravi
-            
             onClicked: {
-                // Переключаем видимость меню
-                fnToggleMenu()
+                fnToggleMenu()//Переключаем видимость меню
             }
         }
     }
-    
-    // MouseArea для возврата фокуса при клике
-    MouseArea {
+    MouseArea {//MouseArea для возврата фокуса при клике
         anchors.fill: parent
         z: -1
         propagateComposedEvents: true
         onClicked: (mouse) => {
             mouse.accepted = false
-            
-            // Закрываем меню при клике на пустую область
-            if (menuMenu.visible) {
+            if (menuMenu.visible) {// Закрываем меню при клике на пустую область
                 menuMenu.visible = false
             } else {
                 root.forceActiveFocus()
