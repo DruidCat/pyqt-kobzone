@@ -54,23 +54,6 @@ ApplicationWindow {
 			//root.vrStranica.textToolbar = ""
         }
 	}
-	SetSettings {
-		id: pgSetSettings
-		visible: false
-		focus: true
-		ntWidth: root.ntWidth
-		ntCoff: root.ntCoff
-		clrFona: root.clrFona
-		clrTexta: root.clrKnopok
-		clrRabOblasti: root.clrStranic
-		onClickedNazad:{
-			stvStr.pop()
-		}
-		onClickedInfo: function(strSetType) {
-			tmStrInstrukciya.strInstrukciya = strSetType
-			stvStr.push(pgStrInstrukciya)//Переходим на страницу Инструкции
-		}
-	}	
 	StackView {
 		id: stvStr
 		anchors.fill: parent
@@ -136,12 +119,56 @@ ApplicationWindow {
 					stvStr.push(pgStrTranscribe)
 				}
 				onClickedSettings: {
-					pgSetSettings.settingsType = "set_kobzone"
-					stvStr.push(pgSetSettings)
+					stvStr.push(pgStrSetKOBzone)
 				}
 				onClickedInfo: {
 					tmStrInstrukciya.strInstrukciya = "oprilojenii"
 					stvStr.push(pgStrInstrukciya)//Переходим на страницу Инструкции Меню
+				}
+			}
+		}
+		Stranica {//Настройка Любимой КОБзона
+		///////////////////////////////////////
+		///Н А С Т Р О Й К А   К О Б З О Н А///
+		///////////////////////////////////////
+			id: pgStrSetKOBzone
+			visible: false; focus: true
+			ntWidth: root.ntWidth; ntCoff: root.ntCoff
+			clrFona: root.clrFona; clrTexta: root.clrKnopok; clrRabOblasti: root.clrStranic
+			textZagolovok: "НАСТРОЙКА ПРИЛОЖЕНИЯ"
+			zagolovokLevi: 1.3; zagolovokPravi: 1.3; toolbarLevi: 1.3; toolbarPravi: 1.3
+			onVisibleChanged: {
+				if (visible) {
+					Qt.callLater(function() {
+						tmSetKOBzone.forceActiveFocus()
+						console.log("Фокус передан на tmSetKOBzone")
+					})
+				}
+			}
+			SetKOBzone {
+				id: tmSetKOBzone
+				ntWidth: pgStrSetKOBzone.ntWidth; ntCoff: pgStrSetKOBzone.ntCoff
+				clrTexta: pgStrSetKOBzone.clrTexta; clrFona: pgStrSetKOBzone.clrRabOblasti
+				clrMenuText: root.clrMenuText; clrMenuFon: pgStrTranscribe.clrFona
+				zagolovokX: pgStrSetKOBzone.rctStrZagolovok.x; zagolovokY: pgStrSetKOBzone.rctStrZagolovok.y
+				zagolovokWidth: pgStrSetKOBzone.rctStrZagolovok.width
+				zagolovokHeight: pgStrSetKOBzone.rctStrZagolovok.height
+				zonaX: pgStrSetKOBzone.rctStrZona.x; zonaY: pgStrSetKOBzone.rctStrZona.y
+				zonaWidth: pgStrSetKOBzone.rctStrZona.width; zonaHeight: pgStrSetKOBzone.rctStrZona.height
+				toolbarX: pgStrSetKOBzone.rctStrToolbar.x; toolbarY: pgStrSetKOBzone.rctStrToolbar.y
+				toolbarWidth: pgStrSetKOBzone.rctStrToolbar.width
+				toolbarHeight: pgStrSetKOBzone.rctStrToolbar.height
+				tapZagolovokLevi: pgStrSetKOBzone.zagolovokLevi; tapZagolovokPravi: pgStrSetKOBzone.zagolovokPravi
+				tapToolbarLevi: pgStrSetKOBzone.toolbarLevi; tapToolbarPravi: pgStrSetKOBzone.toolbarPravi
+				onClickedNazad: {
+					stvStr.pop()//Назад страницу
+					Qt.callLater(function() {
+						stvStr.currentItem.forceActiveFocus()
+					})
+				}
+				onClickedInfo: {
+					tmStrInstrukciya.strInstrukciya = "set_kobzone"
+					stvStr.push(pgStrInstrukciya)
 				}
 			}
 		}
@@ -185,8 +212,7 @@ ApplicationWindow {
 					})
 				}
 				onClickedSettings: {
-					pgSetSettings.settingsType = "set_analizer"
-					stvStr.push(pgSetSettings)
+					stvStr.push(pgStrSetAnalizer)
 				}
 				onClickedInfo: {
 					tmStrInstrukciya.strInstrukciya = "analizer"
@@ -194,6 +220,51 @@ ApplicationWindow {
 				}
 				onSignalToolbar: function(strToolbar) {
 					fnToolbar(pgStrAnalizer, strToolbar)
+				}
+			}
+		}
+		Stranica {//Настройка нейро анализа 
+		///////////////////////////////////////
+		///Н А С Т Р О Й К А   А Н А Л И З А///
+		///////////////////////////////////////
+			id: pgStrSetAnalizer
+			visible: false; focus: true
+			ntWidth: root.ntWidth; ntCoff: root.ntCoff
+			clrFona: root.clrFona; clrTexta: root.clrKnopok; clrRabOblasti: root.clrStranic
+			textZagolovok: "НАСТРОЙКА НЕЙРО АНАЛИЗА"
+			zagolovokLevi: 1.3; zagolovokPravi: 1.3; toolbarLevi: 1.3; toolbarPravi: 1.3
+			onVisibleChanged: {
+				if (visible) {
+					Qt.callLater(function() {
+						tmSetAnalizer.forceActiveFocus()
+						console.log("Фокус передан на tmSetAnalizer")
+					})
+				}
+			}
+			SetAnalizer{
+				id: tmSetAnalizer
+				ntWidth: pgStrSetAnalizer.ntWidth; ntCoff: pgStrSetAnalizer.ntCoff
+				clrTexta: pgStrSetAnalizer.clrTexta; clrFona: pgStrSetAnalizer.clrRabOblasti
+				clrMenuText: root.clrMenuText; clrMenuFon: pgStrTranscribe.clrFona
+				zagolovokX: pgStrSetAnalizer.rctStrZagolovok.x; zagolovokY: pgStrSetAnalizer.rctStrZagolovok.y
+				zagolovokWidth: pgStrSetAnalizer.rctStrZagolovok.width
+				zagolovokHeight: pgStrSetAnalizer.rctStrZagolovok.height
+				zonaX: pgStrSetAnalizer.rctStrZona.x; zonaY: pgStrSetAnalizer.rctStrZona.y
+				zonaWidth: pgStrSetAnalizer.rctStrZona.width; zonaHeight: pgStrSetAnalizer.rctStrZona.height
+				toolbarX: pgStrSetAnalizer.rctStrToolbar.x; toolbarY: pgStrSetAnalizer.rctStrToolbar.y
+				toolbarWidth: pgStrSetAnalizer.rctStrToolbar.width
+				toolbarHeight: pgStrSetAnalizer.rctStrToolbar.height
+				tapZagolovokLevi: pgStrSetAnalizer.zagolovokLevi; tapZagolovokPravi: pgStrSetAnalizer.zagolovokPravi
+				tapToolbarLevi: pgStrSetAnalizer.toolbarLevi; tapToolbarPravi: pgStrSetAnalizer.toolbarPravi
+				onClickedNazad: {
+					stvStr.pop()//Назад страницу
+					Qt.callLater(function() {
+						stvStr.currentItem.forceActiveFocus()
+					})
+				}
+				onClickedInfo: {
+					tmStrInstrukciya.strInstrukciya = "set_analizer"
+					stvStr.push(pgStrInstrukciya)
 				}
 			}
 		}
@@ -237,8 +308,7 @@ ApplicationWindow {
 					})
 				}
 				onClickedSettings: {
-					pgSetSettings.settingsType = "set_orfograf"
-					stvStr.push(pgSetSettings)
+					stvStr.push(pgStrSetOrfograf)
 				}
 				onClickedInfo: {
 					tmStrInstrukciya.strInstrukciya = "orfograf"
@@ -246,6 +316,51 @@ ApplicationWindow {
 				}
 				onSignalToolbar: function(strToolbar) {
 					pgStrOrfograf.textToolbar = strToolbar
+				}
+			}
+		}
+		Stranica {//Настройка орфографии
+		/////////////////////////////////////////////
+		///Н А С Т Р О Й К А   О Р Ф О Г Р А Ф И И///
+		/////////////////////////////////////////////
+			id: pgStrSetOrfograf
+			visible: false; focus: true
+			ntWidth: root.ntWidth; ntCoff: root.ntCoff
+			clrFona: root.clrFona; clrTexta: root.clrKnopok; clrRabOblasti: root.clrStranic
+			textZagolovok: "НАСТРОЙКА ОРФОГРАФИИ"
+			zagolovokLevi: 1.3; zagolovokPravi: 1.3; toolbarLevi: 1.3; toolbarPravi: 1.3
+			onVisibleChanged: {
+				if (visible) {
+					Qt.callLater(function() {
+						tmSetOrfograf.forceActiveFocus()
+						console.log("Фокус передан на tmSetOrfograf")
+					})
+				}
+			}
+			SetOrfograf{
+				id: tmSetOrfograf
+				ntWidth: pgStrSetOrfograf.ntWidth; ntCoff: pgStrSetOrfograf.ntCoff
+				clrTexta: pgStrSetOrfograf.clrTexta; clrFona: pgStrSetOrfograf.clrRabOblasti
+				clrMenuText: root.clrMenuText; clrMenuFon: pgStrTranscribe.clrFona
+				zagolovokX: pgStrSetOrfograf.rctStrZagolovok.x; zagolovokY: pgStrSetOrfograf.rctStrZagolovok.y
+				zagolovokWidth: pgStrSetOrfograf.rctStrZagolovok.width
+				zagolovokHeight: pgStrSetOrfograf.rctStrZagolovok.height
+				zonaX: pgStrSetOrfograf.rctStrZona.x; zonaY: pgStrSetOrfograf.rctStrZona.y
+				zonaWidth: pgStrSetOrfograf.rctStrZona.width; zonaHeight: pgStrSetOrfograf.rctStrZona.height
+				toolbarX: pgStrSetOrfograf.rctStrToolbar.x; toolbarY: pgStrSetOrfograf.rctStrToolbar.y
+				toolbarWidth: pgStrSetOrfograf.rctStrToolbar.width
+				toolbarHeight: pgStrSetOrfograf.rctStrToolbar.height
+				tapZagolovokLevi: pgStrSetOrfograf.zagolovokLevi; tapZagolovokPravi: pgStrSetOrfograf.zagolovokPravi
+				tapToolbarLevi: pgStrSetOrfograf.toolbarLevi; tapToolbarPravi: pgStrSetOrfograf.toolbarPravi
+				onClickedNazad: {
+					stvStr.pop()//Назад страницу
+					Qt.callLater(function() {
+						stvStr.currentItem.forceActiveFocus()
+					})
+				}
+				onClickedInfo: {
+					tmStrInstrukciya.strInstrukciya = "set_orfograf"
+					stvStr.push(pgStrInstrukciya)
 				}
 			}
 		}
@@ -293,8 +408,7 @@ ApplicationWindow {
 					})
 				}
 				onClickedSettings: {
-					pgSetSettings.settingsType = "set_transcribe"
-					stvStr.push(pgSetSettings)
+					stvStr.push(pgStrSetTranscribe)
 				}
 				onClickedInfo: {
 					tmStrInstrukciya.strInstrukciya = "transcribe"
@@ -302,6 +416,51 @@ ApplicationWindow {
 				}
 				onSignalToolbar: function(strToolbar) {
 					pgStrTranscribe.textToolbar = strToolbar
+				}
+			}
+		}
+		Stranica {//Настройка транскрибации
+		///////////////////////////////////////////////////
+		///Н А С Т Р О Й К А   Т Р А Н С К Р И Б А Ц И И///
+		///////////////////////////////////////////////////
+			id: pgStrSetTranscribe
+			visible: false; focus: true
+			ntWidth: root.ntWidth; ntCoff: root.ntCoff
+			clrFona: root.clrFona; clrTexta: root.clrKnopok; clrRabOblasti: root.clrStranic
+			textZagolovok: "НАСТРОЙКА ТРАНСКРИБАЦИИ"
+			zagolovokLevi: 1.3; zagolovokPravi: 1.3; toolbarLevi: 1.3; toolbarPravi: 1.3
+			onVisibleChanged: {
+				if (visible) {
+					Qt.callLater(function() {
+						tmSetTranscribe.forceActiveFocus()
+						console.log("Фокус передан на tmSetTranscribe")
+					})
+				}
+			}
+			SetTranscribe{
+				id: tmSetTranscribe
+				ntWidth: pgStrSetTranscribe.ntWidth; ntCoff: pgStrSetTranscribe.ntCoff
+				clrTexta: pgStrSetTranscribe.clrTexta; clrFona: pgStrSetTranscribe.clrRabOblasti
+				clrMenuText: root.clrMenuText; clrMenuFon: pgStrTranscribe.clrFona
+				zagolovokX: pgStrSetTranscribe.rctStrZagolovok.x; zagolovokY: pgStrSetTranscribe.rctStrZagolovok.y
+				zagolovokWidth: pgStrSetTranscribe.rctStrZagolovok.width
+				zagolovokHeight: pgStrSetTranscribe.rctStrZagolovok.height
+				zonaX: pgStrSetTranscribe.rctStrZona.x; zonaY: pgStrSetTranscribe.rctStrZona.y
+				zonaWidth: pgStrSetTranscribe.rctStrZona.width; zonaHeight: pgStrSetTranscribe.rctStrZona.height
+				toolbarX: pgStrSetTranscribe.rctStrToolbar.x; toolbarY: pgStrSetTranscribe.rctStrToolbar.y
+				toolbarWidth: pgStrSetTranscribe.rctStrToolbar.width
+				toolbarHeight: pgStrSetTranscribe.rctStrToolbar.height
+				tapZagolovokLevi: pgStrSetTranscribe.zagolovokLevi; tapZagolovokPravi: pgStrSetTranscribe.zagolovokPravi
+				tapToolbarLevi: pgStrSetTranscribe.toolbarLevi; tapToolbarPravi: pgStrSetTranscribe.toolbarPravi
+				onClickedNazad: {
+					stvStr.pop()//Назад страницу
+					Qt.callLater(function() {
+						stvStr.currentItem.forceActiveFocus()
+					})
+				}
+				onClickedInfo: {
+					tmStrInstrukciya.strInstrukciya = "set_transcribe"
+					stvStr.push(pgStrInstrukciya)
 				}
 			}
 		}
