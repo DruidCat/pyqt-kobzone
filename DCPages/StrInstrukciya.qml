@@ -269,8 +269,8 @@ Item {
             ListModel {//Список всех инструкций: ключ, название, заголовок)
                 id: mdlInstrukcii
                 ListElement { key: "oprilojenii"; title: "О приложении"; zagolovok: "О ПРИЛОЖЕНИИ" }
-				ListElement { key: "set_kobzone"; title: "Настройки приложения";
-																zagolovok: "НАСТРОЙКИ ПРИЛОЖЕНИЯ" }
+				ListElement { key: "set_kobzone"; title: "Настройка приложения";
+																zagolovok: "НАСТРОЙКА ПРИЛОЖЕНИЯ" }
 				ListElement { key: "analizer"; title: "Анализ документов";
 																zagolovok:"ИНСТРУКЦИЯ ПО АНАЛИЗУ ДОКУМЕНТОВ" }
 				ListElement { key: "set_analizer"; title: "Настройка нейро анализа";
