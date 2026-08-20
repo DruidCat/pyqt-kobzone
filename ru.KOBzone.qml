@@ -11,7 +11,9 @@ ApplicationWindow {
 	readonly property color clrFona: "lightgrey"
 	readonly property color clrStranic: "#f5f5f5"
 	readonly property color clrMenuText: "#2d4288"//Индиго
-    
+	readonly property int logoRazmer: 22//Размер Логотита в приложении.
+	readonly property string logoImya: "kobzone"//Имя логотипа в DCLogo
+
 	property int shrift: 2//1 - маленький, 2 - средний, 3 - большой
 	property int ntWidth: 2 * shrift
 	property int ntCoff: 8
@@ -97,6 +99,7 @@ ApplicationWindow {
 				toolbarHeight: pgStrKOBzone.rctStrToolbar.height
 				tapZagolovokLevi: pgStrKOBzone.zagolovokLevi; tapZagolovokPravi: pgStrKOBzone.zagolovokPravi
 				tapToolbarLevi: pgStrKOBzone.toolbarLevi; tapToolbarPravi: pgStrKOBzone.toolbarPravi
+				logoRazmer: root.logoRazmer; logoImya: root.logoImya
 				onClickedAnalizator: {
 					pgStrAnalizer.textZagolovok = "НЕЙРО АНАЛИЗ ДОКУМЕНТОВ"
 					stvStr.push(pgStrAnalizer)
@@ -157,6 +160,7 @@ ApplicationWindow {
 				toolbarHeight: pgStrSetKOBzone.rctStrToolbar.height
 				tapZagolovokLevi: pgStrSetKOBzone.zagolovokLevi; tapZagolovokPravi: pgStrSetKOBzone.zagolovokPravi
 				tapToolbarLevi: pgStrSetKOBzone.toolbarLevi; tapToolbarPravi: pgStrSetKOBzone.toolbarPravi
+				logoRazmer: root.logoRazmer; logoImya: root.logoImya
 				onClickedNazad: {
 					stvStr.pop()//Назад страницу
 					Qt.callLater(function() {
@@ -211,6 +215,7 @@ ApplicationWindow {
 				toolbarHeight: pgStrAnalizer.rctStrToolbar.height
                 tapZagolovokLevi: pgStrAnalizer.zagolovokLevi; tapZagolovokPravi: pgStrAnalizer.zagolovokPravi
                 tapToolbarLevi: pgStrAnalizer.toolbarLevi; tapToolbarPravi: pgStrAnalizer.toolbarPravi
+				logoRazmer: root.logoRazmer; logoImya: root.logoImya
 				onClickedNazad: {
 					stvStr.pop()
 					Qt.callLater(function() {
@@ -265,6 +270,7 @@ ApplicationWindow {
 				toolbarHeight: pgStrSetAnalizer.rctStrToolbar.height
 				tapZagolovokLevi: pgStrSetAnalizer.zagolovokLevi; tapZagolovokPravi: pgStrSetAnalizer.zagolovokPravi
 				tapToolbarLevi: pgStrSetAnalizer.toolbarLevi; tapToolbarPravi: pgStrSetAnalizer.toolbarPravi
+				logoRazmer: root.logoRazmer; logoImya: root.logoImya
 				onClickedNazad: {
 					stvStr.pop()//Назад страницу
 					Qt.callLater(function() {
@@ -316,6 +322,7 @@ ApplicationWindow {
 				toolbarHeight: pgStrOrfograf.rctStrToolbar.height
                 tapZagolovokLevi: pgStrOrfograf.zagolovokLevi; tapZagolovokPravi: pgStrOrfograf.zagolovokPravi
                 tapToolbarLevi: pgStrOrfograf.toolbarLevi; tapToolbarPravi: pgStrOrfograf.toolbarPravi
+				logoRazmer: root.logoRazmer; logoImya: root.logoImya
 				onClickedNazad: {
 					stvStr.pop()
 					Qt.callLater(function() {
@@ -370,6 +377,7 @@ ApplicationWindow {
 				toolbarHeight: pgStrSetOrfograf.rctStrToolbar.height
 				tapZagolovokLevi: pgStrSetOrfograf.zagolovokLevi; tapZagolovokPravi: pgStrSetOrfograf.zagolovokPravi
 				tapToolbarLevi: pgStrSetOrfograf.toolbarLevi; tapToolbarPravi: pgStrSetOrfograf.toolbarPravi
+				logoRazmer: root.logoRazmer; logoImya: root.logoImya
 				onClickedNazad: {
 					stvStr.pop()//Назад страницу
 					Qt.callLater(function() {
@@ -424,7 +432,7 @@ ApplicationWindow {
 				tapZagolovokLevi: pgStrTranscribe.zagolovokLevi
 				tapZagolovokPravi: pgStrTranscribe.zagolovokPravi
 				tapToolbarLevi: pgStrTranscribe.toolbarLevi; tapToolbarPravi: pgStrTranscribe.toolbarPravi
-
+				logoRazmer: root.logoRazmer; logoImya: root.logoImya
 				onClickedNazad: {
 					stvStr.pop()
 					Qt.callLater(function() {
@@ -479,6 +487,7 @@ ApplicationWindow {
 				toolbarHeight: pgStrSetTranscribe.rctStrToolbar.height
 				tapZagolovokLevi: pgStrSetTranscribe.zagolovokLevi; tapZagolovokPravi: pgStrSetTranscribe.zagolovokPravi
 				tapToolbarLevi: pgStrSetTranscribe.toolbarLevi; tapToolbarPravi: pgStrSetTranscribe.toolbarPravi
+				logoRazmer: root.logoRazmer; logoImya: root.logoImya
 				onClickedNazad: {
 					stvStr.pop()//Назад страницу
 					Qt.callLater(function() {

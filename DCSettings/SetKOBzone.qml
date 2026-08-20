@@ -31,7 +31,8 @@ Item {
 	property real tapToolbarLevi: 1.3
 	property real tapToolbarPravi: 1.3
     
-	property int logoRazmer: 22
+	property int logoRazmer: 22//Размер Логотипа
+    property string logoImya: "kobzone"//Имя логотипа в DCLogo
 	property real rlProgress: 0
 	property real rlLoader: 1
 	//Настройки
@@ -160,17 +161,13 @@ Item {
 	Item {//Рабочая зона
 		id: tmZona
 		clip: true
-		Image {//Логотип на фоне
-			id: imgLogo
-			anchors.centerIn: tmZona
-			width: 200
-			height: 200
-			source: "qrc:/resources/images/logo.png"
-			fillMode: Image.PreserveAspectFit
-			opacity: 0.4
-			visible: true
+		DCLogo {//Логотип
+            id: lgLogo
+            anchors.centerIn: tmZona
+			ntCoff: root.logoRazmer
+			logoImya: root.logoImya
+			logoOpacity: 0.4
 			z: -1
-			scale: 1.0
 		}
 		Flickable {
 			id: flcZona

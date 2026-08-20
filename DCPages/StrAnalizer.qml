@@ -34,7 +34,8 @@ Item {
     property real tapToolbarLevi: 1.3
     property real tapToolbarPravi: 1.3
     
-    property int logoRazmer: 22
+    property int logoRazmer: 22//Размер Логотипа
+    property string logoImya: "kobzone"//Имя логотипа в DCLogo
     property real rlProgress: 0
     property real rlLoader: 1
 	//Настройки
@@ -147,19 +148,20 @@ Item {
 	}
     Timer {//ТАЙМЕР анимации логотипа
         id: tmrLogo
-        interval: 47
+        interval: 110
         running: false
         repeat: true
         property bool blLogo: false
         onTriggered: {
-            if (blLogo) {
-                imgLogo.scale += 0.02
-                if (imgLogo.scale >= 1.3)
-                    blLogo = false
-            } else {
-                imgLogo.scale -= 0.02
-                if (imgLogo.scale <= 0.7)
-                    blLogo = true
+            if(blLogo){//Если true, то...
+                lgLogo.ntCoff++;
+                if(lgLogo.ntCoff >= root.logoRazmer)
+                    blLogo = false;
+            }
+            else{
+                lgLogo.ntCoff--;
+                if(lgLogo.ntCoff <= 1)
+                    blLogo = true;
             }
         }
         onRunningChanged: {
@@ -176,7 +178,7 @@ Item {
                 knopkaAnaliz.enabled = false
                 knopkaSohranit.enabled = false
             } else {
-                imgLogo.scale = 1.0
+				lgLogo.ntCoff = root.logoRazmer//Задаём размер логотипа.
                 if (ldrProgress.item) ldrProgress.item.progress = 100
 				tmrProgress.running = true//Запускаем таймер отображения 100% прогресса и политику кнопок
             }
@@ -356,32 +358,14 @@ Item {
     Item {//Рабочая зона
         id: tmZona
         clip: true
-        Image {//ЛОГОТИП
-            id: imgLogo
+        DCLogo {//Логотип
+            id: lgLogo
             anchors.centerIn: tmZona
-            width: 200
-            height: 200
-            source: "qrc:/resources/images/logo.png"
-            fillMode: Image.PreserveAspectFit
-            opacity: 0.4
-            visible: true
-            z: -1
-            scale: 1.0
-			/*
-            Behavior on scale {
-                NumberAnimation {
-                    duration: 110
-                    easing.type: Easing.InOutQuad
-                }
-            }
-            Behavior on opacity {
-                NumberAnimation {
-                    duration: 300
-                    easing.type: Easing.InOutQuad
-                }
-            }
-			*/
-        }
+			ntCoff: root.logoRazmer
+			logoImya: root.logoImya
+			logoOpacity: 0.4
+			z: -1
+		}
         Flickable {
             id: flcZona
             anchors.fill: parent

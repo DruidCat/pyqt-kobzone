@@ -29,6 +29,8 @@ Item {
     property real tapZagolovokPravi: 1
     property real tapToolbarLevi: 1
     property real tapToolbarPravi: 1
+	property int logoRazmer: 22//Размер Логотипа
+    property string logoImya: "kobzone"//Имя логотипа в DCLogo
     //Массив кнопок для навигации
     property var knopkiMassiv: []
     property int currentIndex: 0
