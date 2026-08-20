@@ -4,6 +4,11 @@ import QtCore
 QtObject {
     id: root
 	//Свойства с привязкой к настройкам, значения по умолчанию при первом пуске приложения.
+	//Любимая КОБзона
+	property int kobzone_x: 0
+	property int kobzone_y: 0
+	property int kobzone_shirina: 1100
+	property int kobzone_visota: 550
 	//Нейро Анализ
     property string analizer_put_text: ""
 	property string analizer_model_imya: "qwen3-coder-30b-a3b-instruct"//Имя модели ИИ добавляем
@@ -17,6 +22,11 @@ QtObject {
 	//Объект настроек (автоматическое сохранение)
     property Settings settings: Settings {
         category: "KOBzone"
+		//Любимая КОБзона
+		property alias kobzone_x: root.kobzone_x
+		property alias kobzone_y: root.kobzone_y
+		property alias kobzone_shirina: root.kobzone_shirina
+		property alias kobzone_visota: root.kobzone_visota
 		//Нейро Анализ
         property alias analizer_put_text: root.analizer_put_text
 		property alias analizer_model_imya: root.analizer_model_imya

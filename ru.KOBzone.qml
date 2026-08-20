@@ -20,13 +20,96 @@ ApplicationWindow {
  	
 	property string pythonVersion: "N/A"
 	property string qtVersion: "N/A"
+	property bool isMobile: {//Переменная определяющая, мобильная это платформа или нет. true - мобильная.
+        if((Qt.platform.os === "android") || (Qt.platform.os === "ios"))//Если мобильная платформа, то...
+			return true;//Это мобильная платформа.
+		else//Эсли не мобильная, то...
+			return false;//Это не мобильная платформа.
+	}
 	//Настройки окна
 	visible: true
 	color: clrFona
 	title: "Любимая КОБзона"
-	width: 1100
-	height: 550
-    
+	//width: 1100
+	//height: 550
+    x: isMobile ? 0 : dcReestr.kobzone_x//Считываем из реестра X (в бизнес-логике)
+    y: isMobile ? 0 : dcReestr.kobzone_y//Считываем из реестра Y (в бизнес-логике)
+    width: {
+        var vrWidth = Screen.desktopAvailableWidth;//Расчитываем доступную ширину экрана
+        if(isMobile)//Если мобильная платформа, то...
+            return vrWidth;//Масимально возможная ширина.
+        else
+            return dcReestr.kobzone_shirina;//Считываем из реестра ширину окна.
+    }
+    height: {
+        var vrHeight = Screen.desktopAvailableHeight//Расчитываем доступную высоту экрана
+        if(isMobile)//Если мобильная платформа, то...
+            return vrHeight;//Масимально возможная ширина.
+        else
+            return dcReestr.kobzone_visota;//Считываем из реестра высоту окна.
+    }
+    minimumWidth: {//Минимальная ширина не для мобильных платформ.
+        if(!isMobile)//Если не мобильная платформа, то...
+            return ntWidth*ntCoff*12.4;//Расчёт по виджету DCSpinBox и DCScale.
+    }
+    minimumHeight: {//Минимальная высота не для мобильных платформ.
+        if(!isMobile)//Если не мобильная платформа, то...
+            return 330;
+    }
+    //Методы
+	DCSettings {//Объект настроек
+        id: dcReestr
+    }
+    function ensureOnScreen() {//Функция не дающая окну оказаться вне видимой области экрана
+        if (isMobile) return//Если мобильное устройство, выходим из функции.
+        // Может быть undefined до показа окна/привязки к монитору
+        var scr = root.screen
+        var a = null
+
+        if (scr && scr.availableGeometry && scr.availableGeometry.width !== undefined) {
+            a = scr.availableGeometry
+        } else if (scr && scr.geometry && scr.geometry.width !== undefined) {
+            a = scr.geometry// fallback #1
+        } else {
+            a = { x: 0, y: 0,
+                  width: Screen.desktopAvailableWidth,
+                  height: Screen.desktopAvailableHeight }//fallback #2 — первичный экран (без учёта панелей)
+        }
+        if (!a || a.width === undefined || a.height === undefined) {// Если всё ещё нет валидной геометрии, то
+            Qt.callLater(ensureOnScreen)//Через паузу попробуем позже
+            return
+        }
+        var maxX = a.x + Math.max(0, a.width  - width)
+        var maxY = a.y + Math.max(0, a.height - height)
+        var nx = Math.min(Math.max(x, a.x), maxX)
+        var ny = Math.min(Math.max(y, a.y), maxY)
+        if (nx !== x) x = nx
+        if (ny !== y) y = ny
+    }
+    onWidthChanged: {//Если Ширина поменялась, то...
+        if(!isMobile){//Если не мобильная платформа, то...
+            dcReestr.kobzone_shirina = width;//Отправляем в бизнес логику ширину окна, для обработки.
+        }
+    }
+    onHeightChanged: {//Если Высота поменялась, то...
+        if(!isMobile){//Если не мобильная платформа, то...
+            dcReestr.kobzone_visota = height;//Отправляем в бизнес логику высоту окна, для обработки.
+        }
+    }
+    onXChanged: {//Если X координата изменилась, то...
+        if (!isMobile)//Если не мобильное устройство, то...
+            dcReestr.kobzone_x = x;//Сохранение X координаты в бизнес-логику
+    }
+    onYChanged: {//Если Y координата изменилась, то...
+        if (!isMobile)//Если не мобильное устройство, то...
+            dcReestr.kobzone_y = y;//Сохранение Y координаты в бизнес-логику
+    }
+    onVisibleChanged: {//Вызывать кламп после показа окна
+        if(visible && !isMobile) Qt.callLater(ensureOnScreen)//Если видимое окно и не мобильное устройство
+    }
+    onScreenChanged: {//При смене экрана (перетаскивание между мониторами)
+        if(!isMobile) Qt.callLater(ensureOnScreen)
+    }
 	Component.onCompleted: {
 		stvStr.currentItem.forceActiveFocus()
 		console.log("✓ Используется шрифт:", font.family)
@@ -34,6 +117,7 @@ ApplicationWindow {
 		//загружаем данные из python
 		root.pythonVersion = pythonInfo.pythonVersion
 		root.qtVersion = qtInfo.qtVersion
+        if(!isMobile) Qt.callLater(ensureOnScreen)//Немного отложим, чтобы гарантированно применились размеры
 	}
 	DCToolbar {
 		id: dcToolbar
