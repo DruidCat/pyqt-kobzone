@@ -115,8 +115,8 @@ ApplicationWindow {
 		console.log("✓ Используется шрифт:", font.family)
 		console.log("✓ Приложение запущено")
 		//загружаем данные из python
-		root.pythonVersion = pythonInfo.pythonVersion
-		root.qtVersion = qtInfo.qtVersion
+		root.pythonVersion = pyPythonInfo.pythonVersion
+		root.qtVersion = pyQtInfo.qtVersion
         if(!isMobile) Qt.callLater(ensureOnScreen)//Немного отложим, чтобы гарантированно применились размеры
 	}
 	DCToolbar {

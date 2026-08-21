@@ -10,9 +10,8 @@ TODO:
 - DCJurnal, не работают клавиши вверх и вниз в карусели, перехват OnPressed: fnClickedEscape()
 - DCJurnal, сделать возможным выделять и копировать текст из логов.
 - StrKOBzone, придумать, как бы менялись логотипы по настройки из ru.KOBzone.qml
-- все объекты из Python дожны начинаться на pyИмяОбъекта.
-- compiller_rcc.py переместил в DCScripts/DCCompileRCC.py и переписал его под эту папку и vimrc изменил.
 - readme.txt переписать, установку python, pyqt под linux и windows, чтоб приложение запустилось.
+- pyFileOpener при открытии диалога появляется ошибка QWindowsNativeFileDialogBase::shellItem: SHCreateItemFromParsingName(file://c/Users/HP/Documents)) failed (═х эрщфхэ ёхЄхтющ яєЄ№.
 ПОЧИНИЛ:
 2026-08-07 Пересоздать изображения иконок в цветовой гамме приложения для инструкций.
 2026-08-07 В StrInstrukciya не работают стрелочки вверх и вниз, когда закрыта боковая панель списка инструкций
@@ -51,3 +50,5 @@ TODO:
 2026-08-21 PyAnalizer.py, analyzer.loadMultipleDocuments(filePaths) путь не кроссплатформенный, fix.
 2026-08-21 DCFileOpener.py сделал открытие файлов через python.
 2026-08-21 StrTranscribe, сделал пути кроссплатформенными для диалогов.
+2026-08-21 compiller_rcc.py переместил в DCScripts/DCCompileRCC.py и переписал его под эту папку и vimrc.
+2026-08-21 Все объекты из Python начинаются на pyИмяОбъекта.

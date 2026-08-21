@@ -54,6 +54,78 @@ Item {
 	DCMarkdown {//Подключаем конвертер Markdown
 		id: dcMarkdown
 	}
+	Connections {//CONNECTIONS для прогресса
+		target: pyAnalyzer
+		function onAnalysisStarted() {//Запускаем нейро анализ документов.
+			console.log("✓ Анализ начался")
+			root.rlProgress = 0
+			var estimated_chunks = fnEstimateChunks(contentArea.text)//Определяем количество чанков
+			console.log("Примерное количество чанков:", estimated_chunks)
+			tmrLogo.running = true//Запускаем анимацию логотипа и включаем политики кнопок.
+			if (ldrProgress.item) {//Если существует объект, то...
+				ldrProgress.total = estimated_chunks//Для Пересчёт скорости смещения полосы.
+				if (estimated_chunks === 1)//Если один чанк, то...
+					ldrProgress.item.text = "Финальный анализ..."//показываем текст "Финальный анализ..."
+				else//Если несколько чанков, то...
+					ldrProgress.item.text = `0/${estimated_chunks + 1}`//Для нескольких чанков показываем 0/N
+			}
+		}
+		function onAnalysisFinished() {
+			console.log("✓ Анализ завершён")
+			tmrLogo.running = false
+		}
+		function onChunkStarted(ntCurrent, ntTotal) {
+			console.log(`Чанк ${ntCurrent}/${ntTotal} начал обрабатываться`)
+			if (ldrProgress.item && ntTotal > 1) {//Только для множественных чанков
+				ldrProgress.item.text = `${ntCurrent}/${ntTotal + 1}`
+			}
+		}	
+		function onChunkFinished(ntCurrent, ntTotal) {
+			console.log(`Чанк ${ntCurrent}/${ntTotal} завершён`)
+			if (ntTotal > 1) {//Только для множественных чанков
+				// Прогресс обновляется после завершения чанка
+				// +1 резервируем для финального анализа
+				root.rlLoader = 100 / (ntTotal + 1)
+				root.rlProgress = ntCurrent * root.rlLoader
+				if (ldrProgress.item) {
+					ldrProgress.item.progress = root.rlProgress
+					ldrProgress.item.text = `${ntCurrent}/${ntTotal + 1}`
+				}
+			}
+		}	
+		function onFinalAnalysisStarted() {//Обработчик финального анализа
+			console.log("✓ Начался финальный анализ")
+			if (ldrProgress.item) {//Всегда показываем "Финальный анализ..."
+				ldrProgress.item.text = "Финальный анализ..."
+				// Если чанков несколько — устанавливаем прогресс перед финалом
+				var estimated_chunks = fnEstimateChunks(contentArea.text)
+				if (estimated_chunks > 1 && root.rlProgress < 90) {
+					// Доводим до ~90% перед финальным анализом
+					root.rlProgress = 90
+					ldrProgress.item.progress = 90
+				}
+			}
+		}	
+		function onFileSaved(path) {
+			if (path.startsWith("[Ошибка")) {
+				console.log("Ошибка сохранения:", path)
+			} else {
+				console.log("✓ Файл сохранён:", path)
+				root.toolbar("Сохранено: " + path.split('/').pop())
+			}
+		}
+		function onResultReady(result) {
+			resultArea.text = dcMarkdown.toHtml(result)//Конвертируем Markdown в HTML
+			knopkaSohranit.enabled = (result !== "" && 
+									result !== "Анализируется..." &&
+									!result.startsWith("Ошибка:"))
+		}
+		function onDocumentsLoaded(combinedText, filesCount) {
+			contentArea.text = combinedText//Обновление contentArea при загрузке файло
+			console.log(`✓ Загружено ${filesCount} файлов в contentArea`)
+			root.toolbar(`Загружено файлов: ${filesCount}`)
+		}
+	}
 	Keys.onPressed: (event) => {//Обработка горячих клавиш
         if (event.modifiers & Qt.AltModifier) {
             if (event.key === Qt.Key_Left) {
@@ -198,59 +270,6 @@ Item {
 			knopkaZagruzit.enabled = true
 			knopkaAnaliz.enabled = contentArea.text.trim() !== ""
         }
-	}
-	Connections {//CONNECTIONS для прогресса
-		target: analyzer
-		function onAnalysisStarted() {//Запускаем нейро анализ документов.
-			console.log("✓ Анализ начался")
-			root.rlProgress = 0
-			var estimated_chunks = fnEstimateChunks(contentArea.text)//Определяем количество чанков
-			console.log("Примерное количество чанков:", estimated_chunks)
-			tmrLogo.running = true//Запускаем анимацию логотипа и включаем политики кнопок.
-			if (ldrProgress.item) {//Если существует объект, то...
-				ldrProgress.total = estimated_chunks//Для Пересчёт скорости смещения полосы.
-				if (estimated_chunks === 1)//Если один чанк, то...
-					ldrProgress.item.text = "Финальный анализ..."//показываем текст "Финальный анализ..."
-				else//Если несколько чанков, то...
-					ldrProgress.item.text = `0/${estimated_chunks + 1}`//Для нескольких чанков показываем 0/N
-			}
-		}
-		function onAnalysisFinished() {
-			console.log("✓ Анализ завершён")
-			tmrLogo.running = false
-		}
-		function onChunkStarted(ntCurrent, ntTotal) {
-			console.log(`Чанк ${ntCurrent}/${ntTotal} начал обрабатываться`)
-			if (ldrProgress.item && ntTotal > 1) {//Только для множественных чанков
-				ldrProgress.item.text = `${ntCurrent}/${ntTotal + 1}`
-			}
-		}	
-		function onChunkFinished(ntCurrent, ntTotal) {
-			console.log(`Чанк ${ntCurrent}/${ntTotal} завершён`)
-			if (ntTotal > 1) {//Только для множественных чанков
-				// Прогресс обновляется после завершения чанка
-				// +1 резервируем для финального анализа
-				root.rlLoader = 100 / (ntTotal + 1)
-				root.rlProgress = ntCurrent * root.rlLoader
-				if (ldrProgress.item) {
-					ldrProgress.item.progress = root.rlProgress
-					ldrProgress.item.text = `${ntCurrent}/${ntTotal + 1}`
-				}
-			}
-		}	
-		function onFinalAnalysisStarted() {//Обработчик финального анализа
-			console.log("✓ Начался финальный анализ")
-			if (ldrProgress.item) {//Всегда показываем "Финальный анализ..."
-				ldrProgress.item.text = "Финальный анализ..."
-				// Если чанков несколько — устанавливаем прогресс перед финалом
-				var estimated_chunks = fnEstimateChunks(contentArea.text)
-				if (estimated_chunks > 1 && root.rlProgress < 90) {
-					// Доводим до ~90% перед финальным анализом
-					root.rlProgress = 90
-					ldrProgress.item.progress = 90
-				}
-			}
-		}	
 	}	
     
 	function fnClickedEscape() {//Функция нажатия на клавишу Escape
@@ -282,14 +301,14 @@ Item {
 			var vtFail = selectedFiles[i].toString()
 			filePaths.push(vtFail)
 		}
-		analyzer.loadMultipleDocuments(filePaths)//Вызываем метод Python для загрузки файлов
+		pyAnalyzer.loadMultipleDocuments(filePaths)//Вызываем метод Python для загрузки файлов
 	}	
     function fnClickedAnalizer() {//Функция запускающая нейро анализ документов
-		analyzer.setCurrentPrompt(promptField.text)//Сохраняем промт перед анализом
-        analyzer.analyze(contentArea.text, promptField.text)
+		pyAnalyzer.setCurrentPrompt(promptField.text)//Сохраняем промт перед анализом
+        pyAnalyzer.analyze(contentArea.text, promptField.text)
     }
     function fnClickedSave() {//Функция сохранения результата анализа.
-        analyzer.saveResult()
+        pyAnalyzer.saveResult()
     }
     function fnToggleMenu() {//Функция изменяет состояние всплывающего меню если открыто, закрывает и наоборот
         if (menuMenu.visible) menuMenu.visible = false
@@ -315,7 +334,7 @@ Item {
     Component.onCompleted: {
         root.forceActiveFocus()
 		// Передаём настройки в Python
-		analyzer.setModelSettings(
+		pyAnalyzer.setModelSettings(
 			dcReestr.analizer_model_imya,
 			dcReestr.analizer_max_context,
 			dcReestr.analizer_temperatura
@@ -442,7 +461,7 @@ Item {
                             color: root.clrTexta
                             background: null
                             
-                            onTextChanged: analyzer.setTextContent(text)
+                            onTextChanged: pyAnalyzer.setTextContent(text)
                         }
                     }
                     DCScrollbar {
@@ -479,11 +498,11 @@ Item {
 					}
 					Keys.onReturnPressed: {
 						if (contentArea.text.trim() !== "") {
-							analyzer.analyze(contentArea.text, promptField.text)
+							pyAnalyzer.analyze(contentArea.text, promptField.text)
 						}
 					}
 					onTextChanged: {
-						analyzer.setCurrentPrompt(text)//Сохраняем промт при изменении
+						pyAnalyzer.setCurrentPrompt(text)//Сохраняем промт при изменении
 					}
 				}	
                 DCKnopkaOriginal {//Кнопка анализа
@@ -538,21 +557,7 @@ Item {
                             placeholderText: "Результат анализа появится здесь..."
                             color: root.clrTexta
 							background: null
-							textFormat: TextEdit.RichText//ВКЛЮЧАЕМ HTML
-                            Connections {
-                                target: analyzer
-                                function onResultReady(result) {
-                                    resultArea.text = dcMarkdown.toHtml(result)//Конвертируем Markdown в HTML
-                                    knopkaSohranit.enabled = (result !== "" && 
-                                                            result !== "Анализируется..." &&
-                                                            !result.startsWith("Ошибка:"))
-                                }
-								function onDocumentsLoaded(combinedText, filesCount) {
-									contentArea.text = combinedText//Обновление contentArea при загрузке файло
-									console.log(`✓ Загружено ${filesCount} файлов в contentArea`)
-									root.toolbar(`Загружено файлов: ${filesCount}`)
-								}
-                            }
+							textFormat: TextEdit.RichText//ВКЛЮЧАЕМ HTML 
                         }
                     }
                     DCScrollbar {
@@ -584,18 +589,7 @@ Item {
                         if (!fnCloseMenuIfOpen()) {
                             fnClickedSave()//Функция сохранения результата анализа.
                         }
-                    }
-                    Connections {
-                        target: analyzer
-                        function onFileSaved(path) {
-                            if (path.startsWith("[Ошибка")) {
-                                console.log("Ошибка сохранения:", path)
-                            } else {
-                                console.log("✓ Файл сохранён:", path)
-                                root.toolbar("Сохранено: " + path.split('/').pop())
-                            }
-                        }
-                    }
+                    } 
                 }
             }
         }

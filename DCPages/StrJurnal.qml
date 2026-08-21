@@ -75,7 +75,7 @@ Item {
 	}
     onStrDebugChanged: {//Если переменная strDebug изменилась, то...
 		if(root.strDebug !== ""){
-			jurnal.writeLog(root.strDebug)// Записываем лог в файл через Python
+			pyJurnal.writeLog(root.strDebug)// Записываем лог в файл через Python
 			var vrGodMesyac = Qt.formatDateTime(new Date(), "yyyy-MM-dd hh:mm:ss")//Временная метка
 			txdZona.text = txdZona.text + vrGodMesyac + " " +  root.strDebug + '\n'//Добавляем данные в Журнал
 		}
@@ -157,9 +157,9 @@ Item {
                 pvPoisk.visible = false;
                 root.ntPoisk = pvPoisk.currentIndex;//Приравниваем значение к переменной.
 				var vrLogs = ""//Переменная хранящая логи сортированные.
-                if(root.ntPoisk === 0) vrLogs = jurnal.polDebugNedelya()
-                else if(root.ntPoisk === 1) vrLogs = jurnal.polDebugMesyac()
-				else if(root.ntPoisk === 2) vrLogs = jurnal.polDebugGod()
+                if(root.ntPoisk === 0) vrLogs = pyJurnal.polDebugNedelya()
+                else if(root.ntPoisk === 1) vrLogs = pyJurnal.polDebugMesyac()
+				else if(root.ntPoisk === 2) vrLogs = pyJurnal.polDebugGod()
 				txdZona.text = vrLogs//Отображаем загруженные логи
             }
             onVisibleChanged: if(!visible) txdZona.fnFocus();//Чтоб горячие кнопки листания работали.

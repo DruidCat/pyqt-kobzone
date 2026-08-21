@@ -9,7 +9,7 @@ import urllib.parse
 class DCFileOpener(QObject):
 	"""Класс для открытия файлов в системном приложении"""
 	
-	fileOpened = pyqtSignal(bool, str)  # Сигнал: успех, сообщение
+	signalFileOpened = pyqtSignal(bool, str)  # Сигнал: успех, сообщение
 	
 	def __init__(self):
 		super().__init__()
@@ -57,7 +57,7 @@ class DCFileOpener(QObject):
 		if not file.exists():
 			error_msg = f"Файл не найден: {local_path}"
 			print(f"✗ {error_msg}")
-			self.fileOpened.emit(False, error_msg)
+			self.signalFileOpened.emit(False, error_msg)
 			return False
 		
 		print(f"✓ Открытие файла: {local_path}")
@@ -72,7 +72,7 @@ class DCFileOpener(QObject):
 										  text=True)
 					if result.returncode == 0:
 						print(f"✓ Файл открыт через open (macOS)")
-						self.fileOpened.emit(True, "Файл открыт")
+						self.signalFileOpened.emit(True, "Файл открыт")
 						return True
 					else:
 						print(f"✗ Ошибка open: {result.stderr}")
@@ -82,7 +82,7 @@ class DCFileOpener(QObject):
 										  text=True)
 					if result.returncode == 0:
 						print(f"✓ Файл открыт через xdg-open (Linux)")
-						self.fileOpened.emit(True, "Файл открыт")
+						self.signalFileOpened.emit(True, "Файл открыт")
 						return True
 					else:
 						print(f"✗ Ошибка xdg-open: {result.stderr}")
@@ -91,25 +91,25 @@ class DCFileOpener(QObject):
 			elif os.name == 'nt':
 				os.startfile(str(file))
 				print(f"✓ Файл открыт через os.startfile (Windows)")
-				self.fileOpened.emit(True, "Файл открыт")
+				self.signalFileOpened.emit(True, "Файл открыт")
 				return True
 			
 			# Запасной вариант: через QDesktopServices
 			file_url_obj = QUrl.fromLocalFile(str(file))
 			if QDesktopServices.openUrl(file_url_obj):
 				print(f"✓ Файл открыт через QDesktopServices (запасной вариант)")
-				self.fileOpened.emit(True, "Файл открыт")
+				self.signalFileOpened.emit(True, "Файл открыт")
 				return True
 			
 		except Exception as e:
 			error_msg = f"Ошибка открытия файла: {e}"
 			print(f"✗ {error_msg}")
-			self.fileOpened.emit(False, error_msg)
+			self.signalFileOpened.emit(False, error_msg)
 			return False
 		
 		error_msg = "Не удалось открыть файл"
 		print(f"✗ {error_msg}")
-		self.fileOpened.emit(False, error_msg)
+		self.signalFileOpened.emit(False, error_msg)
 		return False
 	
 	@pyqtSlot(str, result=bool)
@@ -122,7 +122,7 @@ class DCFileOpener(QObject):
 		if not folder.exists() or not folder.is_dir():
 			error_msg = f"Папка не найдена: {local_path}"
 			print(f"✗ {error_msg}")
-			self.fileOpened.emit(False, error_msg)
+			self.signalFileOpened.emit(False, error_msg)
 			return False
 		
 		print(f"✓ Открытие папки: {local_path}")
@@ -136,7 +136,7 @@ class DCFileOpener(QObject):
 										  text=True)
 					if result.returncode == 0:
 						print(f"✓ Папка открыта через open (macOS)")
-						self.fileOpened.emit(True, "Папка открыта")
+						self.signalFileOpened.emit(True, "Папка открыта")
 						return True
 				else:  # Linux
 					result = subprocess.run(['xdg-open', str(folder)], 
@@ -144,30 +144,30 @@ class DCFileOpener(QObject):
 										  text=True)
 					if result.returncode == 0:
 						print(f"✓ Папка открыта через xdg-open (Linux)")
-						self.fileOpened.emit(True, "Папка открыта")
+						self.signalFileOpened.emit(True, "Папка открыта")
 						return True
 			
 			# Для Windows
 			elif os.name == 'nt':
 				os.startfile(str(folder))
 				print(f"✓ Папка открыта через os.startfile (Windows)")
-				self.fileOpened.emit(True, "Папка открыта")
+				self.signalFileOpened.emit(True, "Папка открыта")
 				return True
 			
 			# Запасной вариант: через QDesktopServices
 			folder_url_obj = QUrl.fromLocalFile(str(folder))
 			if QDesktopServices.openUrl(folder_url_obj):
 				print(f"✓ Папка открыта через QDesktopServices (запасной вариант)")
-				self.fileOpened.emit(True, "Папка открыта")
+				self.signalFileOpened.emit(True, "Папка открыта")
 				return True
 		
 		except Exception as e:
 			error_msg = f"Ошибка открытия папки: {e}"
 			print(f"✗ {error_msg}")
-			self.fileOpened.emit(False, error_msg)
+			self.signalFileOpened.emit(False, error_msg)
 			return False
 		
 		error_msg = "Не удалось открыть папку"
 		print(f"✗ {error_msg}")
-		self.fileOpened.emit(False, error_msg)
+		self.signalFileOpened.emit(False, error_msg)
 		return False

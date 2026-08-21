@@ -5,10 +5,10 @@ from PyQt6.QtQml import QQmlApplicationEngine
 from PyQt6.QtCore import QObject, pyqtSlot, QUrl, pyqtProperty, pyqtSignal
 from PyQt6.QtGui import QFontDatabase, QFont
 
-from DCPages.PyAnalizer import DCAnalyzer
-from DCPages.PyTranscribe import DCTranscribe
-from DCPages.PyJurnal import DCJurnal
-from DCScripts.DCFileOpener import DCFileOpener
+from DCPages.PyAnalizer import DCAnalyzer #Из PyAnalizer.py импортируем класс DCAnalyzer
+from DCPages.PyTranscribe import DCTranscribe #Из PyTranscribe.py импортируем класс DCTranscribe
+from DCPages.PyJurnal import DCJurnal #Из PyJurnal.py импортируем класс DCJurnal
+from DCScripts.DCFileOpener import DCFileOpener #Из DCFileOpener.py импортируем класс DCFileOpener
 import resources_rc
 
 
@@ -96,10 +96,10 @@ class MainApp:
         
         self.engine = QQmlApplicationEngine()
         
-        self.analyzer = DCAnalyzer()#Иннициализация DCAnalizer
-        self.transcriber = DCTranscribe()#Инициализация DCTranscribe
-        self.jurnal = DCJurnal()# Инициализация DCJurnal
-        self.file_opener = DCFileOpener()#Открытие файлов и папок
+        self.analyzer = DCAnalyzer()#Иннициализация class DCAnalyzer из PyAnalyzer.py
+        self.transcriber = DCTranscribe()#Инициализация class DCTranscribe из PyTranscribe.py
+        self.jurnal = DCJurnal()# Инициализация class DCJurnal из PyJurnal.py
+        self.file_opener = DCFileOpener()#Иннициализация class DCFileOpener из DCFileOpener.py
         self.python_info = None
         self.qt_info = None
         
@@ -152,12 +152,12 @@ class MainApp:
         self.qt_info = QtInfo()
         
         # РЕГИСТРИРУЕМ КОНТЕКСТНЫЕ СВОЙСТВА.
-        self.engine.rootContext().setContextProperty("analyzer", self.analyzer)
-        self.engine.rootContext().setContextProperty("transcriber", self.transcriber)
-        self.engine.rootContext().setContextProperty("jurnal", self.jurnal)#доступен в QML как "jurnal"
-        self.engine.rootContext().setContextProperty("fileOpener", self.file_opener)#доступен в QML fileOpener
-        self.engine.rootContext().setContextProperty("pythonInfo", self.python_info)
-        self.engine.rootContext().setContextProperty("qtInfo", self.qt_info)
+        self.engine.rootContext().setContextProperty("pyAnalyzer", self.analyzer)
+        self.engine.rootContext().setContextProperty("pyTranscriber", self.transcriber)
+        self.engine.rootContext().setContextProperty("pyJurnal", self.jurnal)#доступен в QML как "jurnal"
+        self.engine.rootContext().setContextProperty("pyFileOpener", self.file_opener)#в QML pyFileOpener
+        self.engine.rootContext().setContextProperty("pyPythonInfo", self.python_info)
+        self.engine.rootContext().setContextProperty("pyQtInfo", self.qt_info)
         
         print(f"✓ Все контекстные свойства установлены (версия: {self.APP_VERSION})")
         

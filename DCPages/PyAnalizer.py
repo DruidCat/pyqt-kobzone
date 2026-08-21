@@ -12,7 +12,7 @@ class AnalyzerWorker(QThread):
     finished = pyqtSignal(str)
     chunkStarted = pyqtSignal(int, int)
     chunkFinished = pyqtSignal(int, int)
-    finalAnalysisStarted = pyqtSignal()  # ← НОВЫЙ: начало финального анализа
+    finalAnalysisStarted = pyqtSignal() #начало финального анализа
     
     def __init__(self, text_content, prompt, analyzer):
         super().__init__()

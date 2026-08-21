@@ -129,6 +129,52 @@ Item {
             event.accepted = true
         } 
     }
+	Component.onCompleted: {
+        root.forceActiveFocus()
+        txfTextPut.text = dcReestr.transcribe_put_text
+        txfAudioPut.text = dcReestr.transcribe_put_audio
+    }
+	Connections {//Connections для транскрибера
+		target: pyTranscriber
+		function onTranscriptionStarted() {//Функция начала работы скрипта DCTranscribe.py
+			root.isTranscribing = true//Взводим флаг, что транскрибация началась.
+			tmrLogo.running = true//Запускаем анимацию логотипа и политику кнопок.
+		}
+		function onTranscriptionFinished(success, message) {//Функция окончания работы скрипта DCTranscribe.py
+			fnStopTranscriber()//Останавливаем транскрибацию.	
+			if (!success) {//Если ошибка, то...
+				txdZona.strCopy += "\n❌ Ошибка: " + message + "\n"
+				txdZona.text = txdZona.strCopy
+			}
+		}
+		function onLogMessage(message) {//Функция выводящая в Прогресс сообщения скрипта DCTranscribe.py
+			//Добавляем сообщение в лог
+			txdZona.strCopy += message + "\n"//Собираю сообщения в переменную.
+			txdZona.text = txdZona.strCopy//Отображаю в "Прогрессе транскрибации" сообщения со скрипта.
+		}
+		function onProgressUpdate(current, total) {//Функция обновления прогресса из python
+			current = current - 1//Обязательно, чтоб с 0 прогресс начинался.
+			root.tekushiAudioFail = current
+			root.kolichestvoAudioFailov = total
+			if (ldrProgress.item) {
+				var progress = (current / (total)) * 100
+				ldrProgress.total = root.kolichestvoAudioFailov//Пересчёт скорости смещения полосы.
+				ldrProgress.item.progress = progress//Перемещение на позицию пропорции.
+				ldrProgress.item.text = `${current}/${total}`//Отображаем прогресс по середине полосы.
+			}
+		}
+	}
+	Connections {//Connections для pyFileOpener
+		target: pyFileOpener
+		function onSignalFileOpened(success, message) {
+			if (success) {
+				root.toolbar(message)//Файл открыт
+			} else {
+				console.error("✗ Ошибка:", message)
+				root.toolbar("Ошибка: " + message)
+			}
+		}
+	}
 	Timer {//ТАЙМЕР анимации логотипа
         id: tmrLogo
         interval: 110
@@ -215,7 +261,7 @@ Item {
 			txdZona.strCopy = ""//Очищаем переменную Прогресса транскрибации.
 			txdZona.text = ""//Очищаем зону отображения прогресса транскрибации.
 			//Запускаем через бэкенд PyTranscriber.py	
-			transcriber.start(dcReestr.transcribe_put_audio, dcReestr.transcribe_put_text)
+			pyTranscriber.start(dcReestr.transcribe_put_audio, dcReestr.transcribe_put_text)
 		}
 	}
 	function fnStopTranscriber() {//Функция Остановки транскрибации.
@@ -261,53 +307,7 @@ Item {
 			}
 		}
 		return path
-	}
-    Component.onCompleted: {
-        root.forceActiveFocus()
-        txfTextPut.text = dcReestr.transcribe_put_text
-        txfAudioPut.text = dcReestr.transcribe_put_audio
-    }
-	Connections {//Connections для транскрибера
-		target: transcriber
-		function onTranscriptionStarted() {//Функция начала работы скрипта DCTranscribe.py
-			root.isTranscribing = true//Взводим флаг, что транскрибация началась.
-			tmrLogo.running = true//Запускаем анимацию логотипа и политику кнопок.
-		}
-		function onTranscriptionFinished(success, message) {//Функция окончания работы скрипта DCTranscribe.py
-			fnStopTranscriber()//Останавливаем транскрибацию.	
-			if (!success) {//Если ошибка, то...
-				txdZona.strCopy += "\n❌ Ошибка: " + message + "\n"
-				txdZona.text = txdZona.strCopy
-			}
-		}
-		function onLogMessage(message) {//Функция выводящая в Прогресс сообщения скрипта DCTranscribe.py
-			//Добавляем сообщение в лог
-			txdZona.strCopy += message + "\n"//Собираю сообщения в переменную.
-			txdZona.text = txdZona.strCopy//Отображаю в "Прогрессе транскрибации" сообщения со скрипта.
-		}
-		function onProgressUpdate(current, total) {//Функция обновления прогресса из python
-			current = current - 1//Обязательно, чтоб с 0 прогресс начинался.
-			root.tekushiAudioFail = current
-			root.kolichestvoAudioFailov = total
-			if (ldrProgress.item) {
-				var progress = (current / (total)) * 100
-				ldrProgress.total = root.kolichestvoAudioFailov//Пересчёт скорости смещения полосы.
-				ldrProgress.item.progress = progress//Перемещение на позицию пропорции.
-				ldrProgress.item.text = `${current}/${total}`//Отображаем прогресс по середине полосы.
-			}
-		}
-	}
-	Connections {//Connections для FileOpener
-		target: fileOpener
-		function onFileOpened(success, message) {
-			if (success) {
-				root.toolbar("Файл открыт")
-			} else {
-				console.error("✗ Ошибка:", message)
-				root.toolbar("Ошибка: " + message)
-			}
-		}
-	}
+	} 
 	FolderDialog {//Диалог выбора папки для аудио
 		id: dialogAudio
 		title: "Выберите папку с аудио файлами"
@@ -366,9 +366,9 @@ Item {
 		nameFilters: ["Текстовые файлы (*.txt)", "Все файлы (*)"]
 		fileMode: FileDialog.OpenFile//Единичный выбор файла
 		onAccepted: {
-			console.log("✓ Выбран файл:", selectedFile)// ← ИЗМЕНЕНО: Используем Python для открытия
-			fileOpener.openFile(selectedFile.toString())// Открываем через Python
-			//fileOpener.openFolder("file://" + dcReestr.transcribe_put_text)//Так можно открыть папку.
+			console.log("✓ Выбран файл:", selectedFile)//Используем Python для открытия
+			pyFileOpener.openFile(selectedFile.toString())// Открываем через Python
+			//pyFileOpener.openFolder("file://" + dcReestr.transcribe_put_text)//Так можно открыть папку.
 		}
 		onRejected: {
 			console.log("Выбор файла отменён")
@@ -430,7 +430,7 @@ Item {
 			onClickedOk: {
 				stopDialog.visible = false//Делаем невидимый диалог
         		root.forceActiveFocus()//Переводим фокус на основное окно, чтоб работали горячие кнопки.
-				transcriber.stop()//Останавливаем принудительно транскрибацию.
+				pyTranscriber.stop()//Останавливаем принудительно транскрибацию.
 				fnStopTranscriber()//Останавливаем транскрибацию.
 			}
 			onClickedOtmena: {
