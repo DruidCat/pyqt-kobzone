@@ -105,12 +105,16 @@ var vrMenuJurnal = [
                 "nomer": "1",
                 "menu": qsTr("Поиск")
             },
+			{
+				"nomer": "2",
+				"menu": qsTr("Очистить журнал")
+			},
             {
-                "nomer": "2",
+                "nomer": "3",
                 "menu": qsTr("Инструкция")
             },
             {
-                "nomer": "3",
+                "nomer": "4",
                 "menu": qsTr("Закрыть")
             }
 ]

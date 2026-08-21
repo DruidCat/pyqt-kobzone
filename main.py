@@ -1,12 +1,13 @@
 import sys
 from pathlib import Path
-from PyQt6.QtWidgets import QApplication, QFileDialog
+from PyQt6.QtWidgets import QApplication
 from PyQt6.QtQml import QQmlApplicationEngine
 from PyQt6.QtCore import QObject, pyqtSlot, QUrl, pyqtProperty, pyqtSignal
 from PyQt6.QtGui import QFontDatabase, QFont
 
 from DCPages.PyAnalizer import DCAnalyzer
 from DCPages.PyTranscribe import DCTranscribe
+from DCPages.PyJurnal import DCJurnal
 import resources_rc
 
 
@@ -58,39 +59,6 @@ class QtInfo(QObject):
         from PyQt6.QtCore import QT_VERSION_MINOR
         return str(QT_VERSION_MINOR)
 
-
-class FileManager(QObject):
-    """Управление файлами через QML"""
-    
-    fileLoaded = pyqtSignal(str, str)
-    
-    def __init__(self, content_callback, filename_callback):
-        super().__init__()
-        self.content_callback = content_callback
-        self.filename_callback = filename_callback
-    
-    @pyqtSlot()
-    def load_file(self):
-        """Открывает диалог выбора файла и загружает содержимое"""
-        file_path, _ = QFileDialog.getOpenFileName(
-            None,
-            "Выберите текстовый файл",
-            str(Path.home()),
-            "Текстовые файлы (*.txt);;Все файлы (*.*)"
-        )
-        
-        if file_path:
-            try:
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    content = f.read()
-                self.content_callback(content)
-                self.filename_callback(file_path)
-                self.fileLoaded.emit(content, file_path)
-            except Exception as e:
-                print(f"Ошибка при загрузке файла: {e}")
-                self.content_callback(f"[Ошибка загрузки: {str(e)}]")
-
-
 def _get_git_version():
     """Получает версию из git"""
     try:
@@ -127,9 +95,9 @@ class MainApp:
         
         self.engine = QQmlApplicationEngine()
         
-        self.analyzer = DCAnalyzer()
-        self.transcriber = DCTranscribe()
-        self.file_manager = None
+        self.analyzer = DCAnalyzer()#Иннициализация DCAnalizer
+        self.transcriber = DCTranscribe()#Инициализация DCTranscribe
+        self.jurnal = DCJurnal()# Инициализация DCJurnal
         self.python_info = None
         self.qt_info = None
         
@@ -177,24 +145,16 @@ class MainApp:
         
         print(f"✓ Qt ресурсы загружены (resources_rc.py)")
         
-        # Создаём временные callbacks
-        def temp_content_callback(text):
-            print(f"[Ранний вызов FileManager - content]")
-        
-        def temp_filename_callback(path):
-            print(f"[Ранний вызов FileManager - filename]")
-        
         # Создаём ВСЕ объекты ДО загрузки QML
         self.python_info = PythonInfo()
         self.qt_info = QtInfo()
-        self.file_manager = FileManager(temp_content_callback, temp_filename_callback)
         
         # РЕГИСТРИРУЕМ КОНТЕКСТНЫЕ СВОЙСТВА.
         self.engine.rootContext().setContextProperty("analyzer", self.analyzer)
         self.engine.rootContext().setContextProperty("transcriber", self.transcriber)
+        self.engine.rootContext().setContextProperty("jurnal", self.jurnal)#доступен в QML как "jurnal"
         self.engine.rootContext().setContextProperty("pythonInfo", self.python_info)
         self.engine.rootContext().setContextProperty("qtInfo", self.qt_info)
-        self.engine.rootContext().setContextProperty("window", self.file_manager)
         
         print(f"✓ Все контекстные свойства установлены (версия: {self.APP_VERSION})")
         
@@ -229,9 +189,6 @@ class MainApp:
             self.analyzer.setCurrentFilename(path)
             print(f"✓ Установлено имя файла: {Path(path).name}")
         
-        self.file_manager.content_callback = update_content
-        self.file_manager.filename_callback = update_filename
-    
     def run(self):
         """Запуск приложения"""
         return self.app.exec()

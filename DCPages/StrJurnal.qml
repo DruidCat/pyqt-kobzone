@@ -70,10 +70,14 @@ Item {
             }
         }
     }
+	Component.onCompleted: {
+		root.forceActiveFocus()
+	}
     onStrDebugChanged: {//Если переменная strDebug изменилась, то...
-        //txdZona.text = root.strDebug//Добавляем данные переменной в окно Журнала.
 		if(root.strDebug !== ""){
-			txdZona.text = txdZona.text + root.strDebug + '\n'//Добавляем данные переменной в окно Журнала.
+			jurnal.writeLog(root.strDebug)// Записываем лог в файл через Python
+			var vrGodMesyac = Qt.formatDateTime(new Date(), "yyyy-MM-dd hh:mm:ss")//Временная метка
+			txdZona.text = txdZona.text + vrGodMesyac + " " +  root.strDebug + '\n'//Добавляем данные в Журнал
 		}
     }
     function fnClickedNazad(){//Функция нажатия кнопки Назад
@@ -152,9 +156,11 @@ Item {
             onClicked: function(strShrift) {
                 pvPoisk.visible = false;
                 root.ntPoisk = pvPoisk.currentIndex;//Приравниваем значение к переменной.
-                if(root.ntPoisk === 0)root.strDebug = cppqml.polDebugNedelya()
-                else if(root.ntPoisk === 1) root.strDebug = cppqml.polDebugMesyac()
-                    else if(root.ntPoisk === 2) root.strDebug = cppqml.polDebugGod()
+				var vrLogs = ""//Переменная хранящая логи сортированные.
+                if(root.ntPoisk === 0) vrLogs = jurnal.polDebugNedelya()
+                else if(root.ntPoisk === 1) vrLogs = jurnal.polDebugMesyac()
+				else if(root.ntPoisk === 2) vrLogs = jurnal.polDebugGod()
+				txdZona.text = vrLogs//Отображаем загруженные логи
             }
             onVisibleChanged: if(!visible) txdZona.fnFocus();//Чтоб горячие кнопки листания работали.
         }
@@ -174,9 +180,11 @@ Item {
                 menuMenu.visible = false;//Делаем невидимым меню.
                 if(ntNomer === 1){//Поиск
                     fnClickedPoisk();//Поиск.
-                } else if(ntNomer === 2){//Информация
+                }else if(ntNomer === 2){//Очистить журнал
+                    txdZona.text = ""//Очищаем журнал
+                } else if(ntNomer === 3){//Информация
                     fnClickedInfo();//Открываем инструкцию Журнала
-                } else if(ntNomer === 3){//Закрыть.
+                } else if(ntNomer === 4){//Закрыть.
                     fnClickedNazad();//Закрываем журнал.
                 }
             }
