@@ -5,7 +5,7 @@ import QtQuick.Dialogs
 import DCButtons 1.0
 import DCMethods 1.0
 import DCSettings 1.0
-
+//StrAnalizer - страница по анализу документов или текстов через ИИ.
 Item {
     id: root
     //Свойства
@@ -56,13 +56,13 @@ Item {
 	}	
 	Connections {//CONNECTIONS для прогресса
 		target: pyAnalyzer
-		function onSigResultReady(result) {
+		function onSigResultReady(result) {//Сигнал готовности результата анализа.
 			resultArea.text = dcMarkdown.toHtml(result)//Конвертируем Markdown в HTML
 			knopkaSohranit.enabled = (result !== "" && 
 									result !== "Анализируется..." &&
 									!result.startsWith("Ошибка:"))
 		}
-		function onSigFileSaved(path) {//
+		function onSigFileSaved(path) {//Сигнал о том, что файл сохранился.
 			if (path.startsWith("[Ошибка")) {
 				console.log("Ошибка сохранения:", path)
 			} else {
@@ -73,19 +73,18 @@ Item {
 		function onSigChunkStarted(ntCurrent, ntTotal) {//Сигнал начала обработки Чанка.
 			console.log(`Чанк ${ntCurrent}/${ntTotal} начал обрабатываться`)
 			if (ldrProgress.item && ntTotal > 1) {//Только для множественных чанков
-				ldrProgress.item.text = `${ntCurrent}/${ntTotal + 1}`
+				ldrProgress.item.text = `${ntCurrent}/${ntTotal + 1}`//+1 резервируем для финального анализа
 			}
 		}
 		function onSigChunkFinished(ntCurrent, ntTotal) {//Сигнал окончания обработки Чанка.
 			console.log(`Чанк ${ntCurrent}/${ntTotal} завершён`)
 			if (ntTotal > 1) {//Только для множественных чанков
-				// Прогресс обновляется после завершения чанка
-				// +1 резервируем для финального анализа
-				root.rlLoader = 100 / (ntTotal + 1)
+				//Прогресс обновляется после завершения чанка
+				root.rlLoader = 100 / (ntTotal + 1)//+1 резервируем для финального анализа
 				root.rlProgress = ntCurrent * root.rlLoader
 				if (ldrProgress.item) {
 					ldrProgress.item.progress = root.rlProgress
-					ldrProgress.item.text = `${ntCurrent}/${ntTotal + 1}`
+					ldrProgress.item.text = `${ntCurrent}/${ntTotal + 1}`//+1 резервируем для финального анали
 				}
 			}
 		}
@@ -93,10 +92,10 @@ Item {
 			console.log("✓ Начался финальный анализ")
 			if (ldrProgress.item) {//Всегда показываем "Финальный анализ..."
 				ldrProgress.item.text = "Финальный анализ..."
-				// Если чанков несколько — устанавливаем прогресс перед финалом
+				//Если чанков несколько — устанавливаем прогресс перед финалом
 				var estimated_chunks = fnEstimateChunks(txaContent.text)
 				if (estimated_chunks > 1 && root.rlProgress < 90) {
-					// Доводим до ~90% перед финальным анализом
+					//Доводим до ~90% перед финальным анализом
 					root.rlProgress = 90
 					ldrProgress.item.progress = 90
 				}
@@ -120,7 +119,7 @@ Item {
 			console.log("✓ Анализ завершён")
 			tmrLogo.running = false
 		}	
-		function onSigDocumentsLoaded(combinedText, filesCount) {
+		function onSigDocumentsLoaded(combinedText, filesCount) {//Сигнал загрузки документов (текст, кол-во)
 			txaContent.text = combinedText//Обновление txaContent при загрузке файло
 			console.log(`✓ Загружено ${filesCount} файлов в txaContent`)
 			root.toolbar(`Загружено файлов: ${filesCount}`)
@@ -587,7 +586,7 @@ Item {
                 }
             }
         }
-        DCScrollbar {// Скроллбар основной области
+        DCScrollbar {//Скроллбар основной области
             id: dcScrollbar
             flick: flcZona
             anchors.right: tmZona.right
