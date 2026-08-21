@@ -110,6 +110,8 @@ class DCAnalyzer(QObject):
     @pyqtSlot(list)
     def loadMultipleDocuments(self, file_paths):
         """Загружает несколько текстовых файлов и объединяет их содержимое"""
+        from PyQt6.QtCore import QUrl #импорт QUrl
+        
         try:
             if not file_paths:
                 print("✗ Список файлов пуст")
@@ -121,11 +123,19 @@ class DCAnalyzer(QObject):
             
             for file_path in file_paths:
                 try:
-                    file = Path(file_path)
+                    # ← ИЗМЕНЕНО: Используем QUrl для кроссплатформенного преобразования
+                    url = QUrl(file_path)
+                    local_path = url.toLocalFile()  # Автоматически обрабатывает file:/// и платформенные пути
+                    
+                    # Если toLocalFile() вернул пустую строку, используем исходный путь
+                    if not local_path:
+                        local_path = file_path
+                    
+                    file = Path(local_path)
                     
                     if not file.exists() or not file.is_file():
                         print(f"✗ Файл не найден: {file_path}")
-                        combined_content.append(f"=== Файл: {file.name} ===\n[Ошибка: файл не найден]\n")
+                        combined_content.append(f"=== Файл: {file.name if file.name else Path(file_path).name} ===\n[Ошибка: файл не найден]\n")
                         continue
                     
                     with open(file, 'r', encoding='utf-8') as f:
@@ -141,13 +151,13 @@ class DCAnalyzer(QObject):
                     print(f"✗ Ошибка при загрузке файла {file_path}: {e}")
                     combined_content.append(f"=== Файл: {Path(file_path).name} ===\n[Ошибка загрузки: {str(e)}]\n")
             
-            #Объединяем весь текст
+            # Объединяем весь текст
             full_text = "\n".join(combined_content)
             
-            #Сохраняем в переменную класса
+            # Сохраняем в переменную класса
             self.text_content = full_text
             
-            #Формируем имя для сохранения результата
+            # Формируем имя для сохранения результата
             if len(filenames) == 1:
                 self.current_filename = filenames[0]
             elif len(filenames) > 1:
@@ -158,7 +168,7 @@ class DCAnalyzer(QObject):
             print(f"✓ Всего загружено файлов: {successfully_loaded}/{len(file_paths)}")
             print(f"✓ Общий размер текста: {len(full_text)} символов")
             
-            #Излучаем сигнал для обновления QML
+            # Излучаем сигнал для обновления QML
             self.documentsLoaded.emit(full_text, successfully_loaded)
             
         except Exception as e:

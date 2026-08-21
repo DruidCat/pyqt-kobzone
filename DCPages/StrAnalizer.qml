@@ -280,8 +280,6 @@ Item {
 		var filePaths = []//Преобразуем список URL в массив путей
 		for (var i = 0; i < selectedFiles.length; i++) {
 			var vtFail = selectedFiles[i].toString()
-			vtFail = vtFail.replace(/^file:\/\//, "")//Убираем "file://"
-			vtFail = decodeURIComponent(vtFail)//Декодируем URL (например, %3F → ?)
 			filePaths.push(vtFail)
 		}
 		analyzer.loadMultipleDocuments(filePaths)//Вызываем метод Python для загрузки файлов
