@@ -245,6 +245,23 @@ Item {
         }
         return false
     }
+	function fnUrlToLocalPath(url) {//Функция кроссплатформенного преобразования URL в путь
+		if (!url) return ""
+		var path = url.toString()
+		// Убираем file:///
+		if (path.startsWith("file:///")) {
+			path = path.substring(8)//Убираем "file:///"
+		} else if (path.startsWith("file://")) {
+			path = path.substring(7)//Убираем "file://"
+		}
+		path = decodeURIComponent(path)// Декодируем URL-кодирование (%20 → пробел, %3F → ?)
+		if (Qt.platform.os === "windows") {//Windows: если путь начинается с /C:/, убираем первый /
+			if (path.length > 2 && path[0] === '/' && path[2] === ':') {
+				path = path.substring(1)
+			}
+		}
+		return path
+	}
     Component.onCompleted: {
         root.forceActiveFocus()
         txfTextPut.text = dcReestr.transcribe_put_text
@@ -280,49 +297,83 @@ Item {
 			}
 		}
 	}
+	Connections {//Connections для FileOpener
+		target: fileOpener
+		function onFileOpened(success, message) {
+			if (success) {
+				root.toolbar("Файл открыт")
+			} else {
+				console.error("✗ Ошибка:", message)
+				root.toolbar("Ошибка: " + message)
+			}
+		}
+	}
 	FolderDialog {//Диалог выбора папки для аудио
 		id: dialogAudio
 		title: "Выберите папку с аудио файлами"
 		currentFolder: {//Используем сохранённый путь из настроек, или стандартную домашнюю папку
-			if (dcReestr.transcribe_put_audio !== "") return "file://" + dcReestr.transcribe_put_audio
+			if (dcReestr.transcribe_put_audio !== "") {
+				//Преобразуем сохранённый путь в URL
+				var savedPath = dcReestr.transcribe_put_audio
+				if (!savedPath.startsWith("file://")) {
+					savedPath = "file://" + savedPath
+				}
+				return savedPath
+			}
 			else return StandardPaths.writableLocation(StandardPaths.MusicLocation)
 		}
 		onAccepted: {
-			var vtPut = selectedFolder.toString()
-			vtPut = vtPut.replace(/^file:\/\//, "")//Убираем "file://" из начала пути
+			var vtPut = fnUrlToLocalPath(selectedFolder)//Используем кроссплатформенную функцию
 			dcReestr.transcribe_put_audio = vtPut
 			txfAudioPut.text = vtPut
+			console.log("✓ Выбрана папка аудио:", vtPut)
 		}
-	}
+	}	
 	FolderDialog {//Диалог выбора папки для текстовых файлов
 		id: dialogText
 		title: "Выберите папку для текстовых файлов"
 		currentFolder: {//Используем сохранённый путь из настроек, или стандартную домашнюю папку
-			if (dcReestr.transcribe_put_text !== "") return "file://" + dcReestr.transcribe_put_text
+			if (dcReestr.transcribe_put_text !== "") {
+				//Преобразуем сохранённый путь в URL
+				var savedPath = dcReestr.transcribe_put_text
+				if (!savedPath.startsWith("file://")) {
+					savedPath = "file://" + savedPath
+				}
+				return savedPath
+			}
 			else return StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
 		}
 		onAccepted: {
-			var vtPut = selectedFolder.toString()
-			vtPut = vtPut.replace(/^file:\/\//, "")//Убираем "file://" из начала пути
+			var vtPut = fnUrlToLocalPath(selectedFolder)//Используем кроссплатформенную функцию
 			dcReestr.transcribe_put_text = vtPut
 			txfTextPut.text = vtPut
+			console.log("✓ Выбрана папка результатов:", vtPut)
 		}
-	}
+	}	
 	FileDialog {//Диалог открытия текстового файла для просмотра
 		id: dialogOtkrit
 		title: "Выберите текстовый файл для просмотра"
 		currentFolder: {//Используем сохранённый путь из настроек, или стандартную домашнюю папку
-			if (dcReestr.transcribe_put_text !== "") return "file://" + dcReestr.transcribe_put_text
+			if (dcReestr.transcribe_put_text !== "") {
+				var savedPath = dcReestr.transcribe_put_text
+				if (!savedPath.startsWith("file://")) {
+					savedPath = "file://" + savedPath
+				}
+				return savedPath
+			}
 			else return StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
 		}
 		nameFilters: ["Текстовые файлы (*.txt)", "Все файлы (*)"]
 		fileMode: FileDialog.OpenFile//Единичный выбор файла
 		onAccepted: {
-			Qt.openUrlExternally(selectedFile);//Открыть в стороннем приложении выбранный файл.	
+			console.log("✓ Выбран файл:", selectedFile)// ← ИЗМЕНЕНО: Используем Python для открытия
+			fileOpener.openFile(selectedFile.toString())// Открываем через Python
+			//fileOpener.openFolder("file://" + dcReestr.transcribe_put_text)//Так можно открыть папку.
 		}
 		onRejected: {
+			console.log("Выбор файла отменён")
 		}
-	}
+	}	
     Item {//Заголовок
         id: tmZagolovok
         DCKnopkaNazad {

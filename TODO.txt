@@ -49,3 +49,4 @@ TODO:
 2026-08-21 DCJurnal, сделал сортировку по дню, неделе, месяцу из logs.txt
 2026-08-21 PyAnalizer.py, analyzer.loadMultipleDocuments(filePaths) путь не кроссплатформенный, fix.
 2026-08-21 DCFileOpener.py сделал открытие файлов через python.
+2026-08-21 StrTranscribe, сделал пути кроссплатформенными для диалогов.
