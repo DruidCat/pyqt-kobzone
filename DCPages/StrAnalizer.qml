@@ -53,34 +53,30 @@ Item {
     }
 	DCMarkdown {//Подключаем конвертер Markdown
 		id: dcMarkdown
-	}
+	}	
 	Connections {//CONNECTIONS для прогресса
 		target: pyAnalyzer
-		function onAnalysisStarted() {//Запускаем нейро анализ документов.
-			console.log("✓ Анализ начался")
-			root.rlProgress = 0
-			var estimated_chunks = fnEstimateChunks(contentArea.text)//Определяем количество чанков
-			console.log("Примерное количество чанков:", estimated_chunks)
-			tmrLogo.running = true//Запускаем анимацию логотипа и включаем политики кнопок.
-			if (ldrProgress.item) {//Если существует объект, то...
-				ldrProgress.total = estimated_chunks//Для Пересчёт скорости смещения полосы.
-				if (estimated_chunks === 1)//Если один чанк, то...
-					ldrProgress.item.text = "Финальный анализ..."//показываем текст "Финальный анализ..."
-				else//Если несколько чанков, то...
-					ldrProgress.item.text = `0/${estimated_chunks + 1}`//Для нескольких чанков показываем 0/N
+		function onSigResultReady(result) {
+			resultArea.text = dcMarkdown.toHtml(result)//Конвертируем Markdown в HTML
+			knopkaSohranit.enabled = (result !== "" && 
+									result !== "Анализируется..." &&
+									!result.startsWith("Ошибка:"))
+		}
+		function onSigFileSaved(path) {//
+			if (path.startsWith("[Ошибка")) {
+				console.log("Ошибка сохранения:", path)
+			} else {
+				console.log("✓ Файл сохранён:", path)
+				root.toolbar("Сохранено: " + path.split('/').pop())
 			}
 		}
-		function onAnalysisFinished() {
-			console.log("✓ Анализ завершён")
-			tmrLogo.running = false
-		}
-		function onChunkStarted(ntCurrent, ntTotal) {
+		function onSigChunkStarted(ntCurrent, ntTotal) {//Сигнал начала обработки Чанка.
 			console.log(`Чанк ${ntCurrent}/${ntTotal} начал обрабатываться`)
 			if (ldrProgress.item && ntTotal > 1) {//Только для множественных чанков
 				ldrProgress.item.text = `${ntCurrent}/${ntTotal + 1}`
 			}
-		}	
-		function onChunkFinished(ntCurrent, ntTotal) {
+		}
+		function onSigChunkFinished(ntCurrent, ntTotal) {//Сигнал окончания обработки Чанка.
 			console.log(`Чанк ${ntCurrent}/${ntTotal} завершён`)
 			if (ntTotal > 1) {//Только для множественных чанков
 				// Прогресс обновляется после завершения чанка
@@ -92,40 +88,49 @@ Item {
 					ldrProgress.item.text = `${ntCurrent}/${ntTotal + 1}`
 				}
 			}
-		}	
-		function onFinalAnalysisStarted() {//Обработчик финального анализа
+		}
+		function onSigFinalAnalysisStarted() {//Сигнал Начала финального анализа
 			console.log("✓ Начался финальный анализ")
 			if (ldrProgress.item) {//Всегда показываем "Финальный анализ..."
 				ldrProgress.item.text = "Финальный анализ..."
 				// Если чанков несколько — устанавливаем прогресс перед финалом
-				var estimated_chunks = fnEstimateChunks(contentArea.text)
+				var estimated_chunks = fnEstimateChunks(txaContent.text)
 				if (estimated_chunks > 1 && root.rlProgress < 90) {
 					// Доводим до ~90% перед финальным анализом
 					root.rlProgress = 90
 					ldrProgress.item.progress = 90
 				}
 			}
-		}	
-		function onFileSaved(path) {
-			if (path.startsWith("[Ошибка")) {
-				console.log("Ошибка сохранения:", path)
-			} else {
-				console.log("✓ Файл сохранён:", path)
-				root.toolbar("Сохранено: " + path.split('/').pop())
+		}
+		function onSigAnalysisStarted() {//Сигнал Начала анализа.
+			console.log("✓ Анализ начался")
+			root.rlProgress = 0
+			var estimated_chunks = fnEstimateChunks(txaContent.text)//Определяем количество чанков
+			console.log("Примерное количество чанков:", estimated_chunks)
+			tmrLogo.running = true//Запускаем анимацию логотипа и включаем политики кнопок.
+			if (ldrProgress.item) {//Если существует объект, то...
+				ldrProgress.total = estimated_chunks//Для Пересчёт скорости смещения полосы.
+				if (estimated_chunks === 1)//Если один чанк, то...
+					ldrProgress.item.text = "Финальный анализ..."//показываем текст "Финальный анализ..."
+				else//Если несколько чанков, то...
+					ldrProgress.item.text = `0/${estimated_chunks + 1}`//Для нескольких чанков показываем 0/N
 			}
 		}
-		function onResultReady(result) {
-			resultArea.text = dcMarkdown.toHtml(result)//Конвертируем Markdown в HTML
-			knopkaSohranit.enabled = (result !== "" && 
-									result !== "Анализируется..." &&
-									!result.startsWith("Ошибка:"))
-		}
-		function onDocumentsLoaded(combinedText, filesCount) {
-			contentArea.text = combinedText//Обновление contentArea при загрузке файло
-			console.log(`✓ Загружено ${filesCount} файлов в contentArea`)
+		function onSigAnalysisFinished() {//сигнал Анализ завершён. 
+			console.log("✓ Анализ завершён")
+			tmrLogo.running = false
+		}	
+		function onSigDocumentsLoaded(combinedText, filesCount) {
+			txaContent.text = combinedText//Обновление txaContent при загрузке файло
+			console.log(`✓ Загружено ${filesCount} файлов в txaContent`)
 			root.toolbar(`Загружено файлов: ${filesCount}`)
 		}
 	}
+	Component.onCompleted: {
+        root.forceActiveFocus()
+		pyAnalyzer.ustModelSettings(dcReestr.analizer_model_imya, dcReestr.analizer_max_context,
+			dcReestr.analizer_temperatura)//Передаём настройки в Python
+    }
 	Keys.onPressed: (event) => {//Обработка горячих клавиш
         if (event.modifiers & Qt.AltModifier) {
             if (event.key === Qt.Key_Left) {
@@ -141,7 +146,7 @@ Item {
         if (event.modifiers & Qt.ControlModifier) {
             if (event.key === Qt.Key_S) {
                 if (!menuMenu.visible && knopkaSohranit.enabled) {
-                    fnClickedSave()//Функция сохранения результата анализа.
+                    fnClickedSohranit()//Функция сохранения результата анализа.
                 }
                 event.accepted = true
             }
@@ -208,7 +213,7 @@ Item {
 		nameFilters: ["Текстовые файлы (*.txt)", "Все файлы (*)"]
 		fileMode: FileDialog.OpenFiles//Множественный выбор файлов
 		onAccepted: {
-			fnLoadMultipleDocuments(selectedFiles)//Загружаем файлы в функцию.
+			fnUstMultipleDocuments(selectedFiles)//Загружаем файлы в функцию.
 			var filePut = selectedFiles[0].toString()//Получаем путь для первого файла.
 			filePut = filePut.replace(/^file:\/\//, "")//Убираем "file://" из начала пути
 			var papkaPut = filePut.substring(0, filePut.lastIndexOf('/'));//Обрезаем имя файла по /
@@ -268,7 +273,7 @@ Item {
 			knopkaNazad.enabled = true
 			
 			knopkaZagruzit.enabled = true
-			knopkaAnaliz.enabled = contentArea.text.trim() !== ""
+			knopkaAnaliz.enabled = txaContent.text.trim() !== ""
         }
 	}	
     
@@ -291,24 +296,23 @@ Item {
 		fnClickedEscape()//Функция нажатия на клавишу Escape
         root.clickedInfo()
     }
-    function fnClickedLoad() {//Функция открывающая Файловый диалог загрузки файлов
+    function fnClickedZagruzka() {//Функция открывающая Файловый диалог загрузки файлов
 		dialogZagruzka.open()
     }
-	function fnLoadMultipleDocuments(selectedFiles) {//Загрузка нескольких документов
+	function fnUstMultipleDocuments(selectedFiles) {//Загрузка нескольких документов
 		console.log("Загрузка документов:", selectedFiles)
 		var filePaths = []//Преобразуем список URL в массив путей
 		for (var i = 0; i < selectedFiles.length; i++) {
 			var vtFail = selectedFiles[i].toString()
 			filePaths.push(vtFail)
 		}
-		pyAnalyzer.loadMultipleDocuments(filePaths)//Вызываем метод Python для загрузки файлов
+		pyAnalyzer.ustMultipleDocuments(filePaths)//Вызываем метод Python для загрузки файлов
 	}	
-    function fnClickedAnalizer() {//Функция запускающая нейро анализ документов
-		pyAnalyzer.setCurrentPrompt(promptField.text)//Сохраняем промт перед анализом
-        pyAnalyzer.analyze(contentArea.text, promptField.text)
+    function fnClickedAnaliz() {//Функция запускающая нейро анализ документов
+        pyAnalyzer.startAnaliza(txaContent.text, txfPromt.text)
     }
-    function fnClickedSave() {//Функция сохранения результата анализа.
-        pyAnalyzer.saveResult()
+    function fnClickedSohranit() {//Функция сохранения результата анализа.
+        pyAnalyzer.sohranitResult()
     }
     function fnToggleMenu() {//Функция изменяет состояние всплывающего меню если открыто, закрывает и наоборот
         if (menuMenu.visible) menuMenu.visible = false
@@ -330,16 +334,7 @@ Item {
 		
 		var estimated_chunks = Math.ceil(text.length / chunk_size)
 		return estimated_chunks
-	}
-    Component.onCompleted: {
-        root.forceActiveFocus()
-		// Передаём настройки в Python
-		pyAnalyzer.setModelSettings(
-			dcReestr.analizer_model_imya,
-			dcReestr.analizer_max_context,
-			dcReestr.analizer_temperatura
-		)
-    }
+	} 
     Item {//Заголовок
         id: tmZagolovok
         DCKnopkaNazad {
@@ -420,7 +415,7 @@ Item {
                     anchors.rightMargin: root.ntCoff * 2
                     onClicked: {
                         if (!fnCloseMenuIfOpen()) {
-                            fnClickedLoad()//Функция открывающая Файловый диалог загрузки файлов
+                            fnClickedZagruzka()//Функция открывающая Файловый диалог загрузки файлов
                         }
                     }
                 }
@@ -432,7 +427,7 @@ Item {
                     width: parent.width - parent.leftPadding - parent.rightPadding
                 }
                 Rectangle {
-                    id: rctContentArea
+                    id: rctContent
                     width: parent.width - parent.leftPadding - parent.rightPadding
                     height: 180
                     color: "transparent"
@@ -442,34 +437,33 @@ Item {
                     clip: true
                     
                     Flickable {
-                        id: flcContentArea
+                        id: flcContent
                         anchors.fill: parent
                         anchors.margins: 5
-                        anchors.rightMargin: scbContentArea.width + 5
+                        anchors.rightMargin: scbContent.width + 5
                         contentWidth: width
-                        contentHeight: contentArea.contentHeight
+                        contentHeight: txaContent.contentHeight
                         clip: true
                         interactive: true
                         boundsBehavior: Flickable.StopAtBounds
                         
                         TextArea.flickable: TextArea {
-                            id: contentArea
-                            objectName: "contentArea"
+                            id: txaContent
+                            objectName: "txaContent"
                             placeholderText: "Загрузите файл или вставьте текст..."
                             wrapMode: TextArea.Wrap
                             selectByMouse: true
                             color: root.clrTexta
                             background: null
-                            
-                            onTextChanged: pyAnalyzer.setTextContent(text)
+                            onTextChanged: pyAnalyzer.ustContentText(text)
                         }
                     }
                     DCScrollbar {
-                        id: scbContentArea
-                        flick: flcContentArea
-                        anchors.right: rctContentArea.right
-                        anchors.top: rctContentArea.top
-                        anchors.bottom: rctContentArea.bottom
+                        id: scbContent
+                        flick: flcContent
+                        anchors.right: rctContent.right
+                        anchors.top: rctContent.top
+                        anchors.bottom: rctContent.bottom
                         anchors.margins: 5
                         clrPolzunokOff: Qt.lighter(root.clrMenuFon, 1.3)
                         clrPolzunokOn: root.clrTexta
@@ -485,7 +479,7 @@ Item {
                     width: parent.width - parent.leftPadding - parent.rightPadding
                 }
 				TextField {
-					id: promptField
+					id: txfPromt
 					width: parent.width - parent.leftPadding - parent.rightPadding
 					placeholderText: "Проанализируй этот текст и выдели основные темы"
 					selectByMouse: true
@@ -497,12 +491,12 @@ Item {
 						radius: root.ntCoff / 2
 					}
 					Keys.onReturnPressed: {
-						if (contentArea.text.trim() !== "") {
-							pyAnalyzer.analyze(contentArea.text, promptField.text)
+						if (txaContent.text.trim() !== "") {
+							fnClickedAnaliz()//Функция запускающая нейро анализ документов
 						}
 					}
 					onTextChanged: {
-						pyAnalyzer.setCurrentPrompt(text)//Сохраняем промт при изменении
+						pyAnalyzer.ustPromt(text)//Сохраняем промт при изменении
 					}
 				}	
                 DCKnopkaOriginal {//Кнопка анализа
@@ -512,14 +506,14 @@ Item {
                     ntCoff: root.ntCoff
                     clrKnopki: "#2196F3"
                     clrTexta: root.clrFona
-                    enabled: contentArea.text.trim() !== ""
+                    enabled: txaContent.text.trim() !== ""
 					anchors.left: parent.left
                     anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2
                     anchors.rightMargin: root.ntCoff * 2
                     onClicked: {
                         if (!fnCloseMenuIfOpen()) {
-                            fnClickedAnalizer()//Функция запускающая нейро анализ документов
+                            fnClickedAnaliz()//Функция запускающая нейро анализ документов
                         }
                     }
                 }
@@ -587,7 +581,7 @@ Item {
                     anchors.rightMargin: root.ntCoff * 2
                     onClicked: {
                         if (!fnCloseMenuIfOpen()) {
-                            fnClickedSave()//Функция сохранения результата анализа.
+                            fnClickedSohranit()//Функция сохранения результата анализа.
                         }
                     } 
                 }
@@ -626,11 +620,11 @@ Item {
             onClicked: function(ntNomer, strMenu) {
                 menuMenu.visible = false
                 if (ntNomer === 1) {
-                    fnClickedLoad()//Функция открывающая Файловый диалог загрузки файлов
+                    fnClickedZagruzka()//Функция открывающая Файловый диалог загрузки файлов
                 } else if (ntNomer === 2) {
-                    fnClickedAnalizer()//Функция запускающая нейро анализ документов
+                    fnClickedAnaliz()//Функция запускающая нейро анализ документов
                 } else if (ntNomer === 3) {
-                    fnClickedSave()//Функция сохранения результата анализа.
+                    fnClickedSohranit()//Функция сохранения результата анализа.
                 } else if (ntNomer === 4) {
                     fnClickedMenu()//Функция открытия настроек анализа документов.
                 } else if (ntNomer === 5) {

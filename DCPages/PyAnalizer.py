@@ -7,12 +7,12 @@ from PyQt6.QtWidgets import QFileDialog
 LM_STUDIO_URL = "http://localhost:1234/v1"
 
 
-class AnalyzerWorker(QThread):
-    """Рабочий поток для анализа текста"""
-    finished = pyqtSignal(str)
-    chunkStarted = pyqtSignal(int, int)
-    chunkFinished = pyqtSignal(int, int)
-    finalAnalysisStarted = pyqtSignal() #начало финального анализа
+class DCAnalyzerWorker(QThread):
+    # Сигналы. Рабочий поток для анализа текста
+    sigFinished = pyqtSignal(str)
+    sigChunkStarted = pyqtSignal(int, int)
+    sigChunkFinished = pyqtSignal(int, int)
+    sigFinalAnalysisStarted = pyqtSignal() #начало финального анализа
     
     def __init__(self, text_content, prompt, analyzer):
         super().__init__()
@@ -26,24 +26,25 @@ class AnalyzerWorker(QThread):
             result = self.analyzer.process_text(
                 self.text_content, 
                 self.prompt,
-                chunk_start_callback=self.chunkStarted.emit,
-                chunk_finish_callback=self.chunkFinished.emit,
-                final_analysis_callback=self.finalAnalysisStarted.emit
+                chunk_start_callback=self.sigChunkStarted.emit,
+                chunk_finish_callback=self.sigChunkFinished.emit,
+                final_analysis_callback=self.sigFinalAnalysisStarted.emit
             )
-            self.finished.emit(result)
+            self.sigFinished.emit(result)
         except Exception as e:
-            self.finished.emit(f"[Критическая ошибка: {str(e)}]")
+            self.sigFinished.emit(f"[Критическая ошибка: {str(e)}]")
 
 
 class DCAnalyzer(QObject):
-    resultReady = pyqtSignal(str)
-    fileSaved = pyqtSignal(str)
-    chunkStarted = pyqtSignal(int, int)
-    chunkFinished = pyqtSignal(int, int)
-    finalAnalysisStarted = pyqtSignal() #начало финального анализа
-    analysisStarted = pyqtSignal()
-    analysisFinished = pyqtSignal()
-    documentsLoaded = pyqtSignal(str, int) #сигнал загрузки документов (текст, количество)
+    #Сигналы
+    sigResultReady = pyqtSignal(str) #Сигнал готовности результата анализа.
+    sigFileSaved = pyqtSignal(str) #Сигнал о том, что файл сохранился.
+    sigChunkStarted = pyqtSignal(int, int) #Сигнал начала обработки Чанка.
+    sigChunkFinished = pyqtSignal(int, int) #Сигнал окончания обработки Чанка.
+    sigFinalAnalysisStarted = pyqtSignal() #Сигнал начала финального анализа
+    sigAnalysisStarted = pyqtSignal() #Сигнал Начала анализа.
+    sigAnalysisFinished = pyqtSignal() #Сигнал Анализ завершён. 
+    sigDocumentsLoaded = pyqtSignal(str, int) #Сигнал загрузки документов (текст, количество)
     
     def __init__(self):
         super().__init__()
@@ -57,7 +58,7 @@ class DCAnalyzer(QObject):
         self.temperature = 0.5 #Температура ИИ модели.
 
     @pyqtSlot(str, int, float)
-    def setModelSettings(self, model_name, max_context, temperature):
+    def ustModelSettings(self, model_name, max_context, temperature):
         """Устанавливает параметры модели из настроек QML"""
         self.model_name = model_name
         self.max_context = max_context
@@ -69,10 +70,10 @@ class DCAnalyzer(QObject):
         print(f"  - Temperature: {self.temperature}")
 
     @pyqtSlot(str, str)
-    def analyze(self, text_content, prompt):
+    def startAnaliza(self, text_content, prompt):
         """Запускает анализ в отдельном потоке"""
         if not text_content.strip():
-            self.resultReady.emit("Ошибка: текст пустой")
+            self.sigResultReady.emit("Ошибка: текст пустой")
             return
         
         if not prompt.strip():
@@ -84,32 +85,30 @@ class DCAnalyzer(QObject):
             self.worker.wait()
         
         # Излучаем сигнал о начале анализа
-        self.analysisStarted.emit()
+        self.sigAnalysisStarted.emit()
         
         # Создаем новый поток
-        self.worker = AnalyzerWorker(text_content, prompt, self)
-        self.worker.finished.connect(self._on_analysis_finished)
-        self.worker.chunkStarted.connect(self.chunkStarted.emit)
-        self.worker.chunkFinished.connect(self.chunkFinished.emit)
-        self.worker.finalAnalysisStarted.connect(self.finalAnalysisStarted.emit)
+        self.worker = DCAnalyzerWorker(text_content, prompt, self)
+        self.worker.sigFinished.connect(self._on_analysis_finished)
+        self.worker.sigChunkStarted.connect(self.sigChunkStarted.emit)
+        self.worker.sigChunkFinished.connect(self.sigChunkFinished.emit)
+        self.worker.sigFinalAnalysisStarted.connect(self.sigFinalAnalysisStarted.emit)
         self.worker.start()
         
-        self.resultReady.emit("Анализируется...")
+        self.sigResultReady.emit("Анализируется...")
 
     def _on_analysis_finished(self, result):
         """Обработчик завершения анализа"""
         self.current_result = result
-        self.resultReady.emit(result)
-        self.analysisFinished.emit()
+        self.sigResultReady.emit(result)
+        self.sigAnalysisFinished.emit() #Излучаем сигнал о том, что анализ завершён
 
     @pyqtSlot(str)
-    def setCurrentPrompt(self, prompt):
-        """Сохраняет текущий промт (вызывается из QML)"""
+    def ustPromt(self, prompt): #Сохраняет текущий промт (вызывается из QML)
         self.current_prompt = prompt
 
     @pyqtSlot(list)
-    def loadMultipleDocuments(self, file_paths):
-        """Загружает несколько текстовых файлов и объединяет их содержимое"""
+    def ustMultipleDocuments(self, file_paths): #Загружает несколько текстовых файлов и объединяет их содержим
         from PyQt6.QtCore import QUrl #импорт QUrl
         
         try:
@@ -123,11 +122,11 @@ class DCAnalyzer(QObject):
             
             for file_path in file_paths:
                 try:
-                    # ← ИЗМЕНЕНО: Используем QUrl для кроссплатформенного преобразования
+                    #Используем QUrl для кроссплатформенного преобразования
                     url = QUrl(file_path)
-                    local_path = url.toLocalFile()  # Автоматически обрабатывает file:/// и платформенные пути
+                    local_path = url.toLocalFile() #Автоматически обрабатывает file:/// и платформенные пути
                     
-                    # Если toLocalFile() вернул пустую строку, используем исходный путь
+                    #Если toLocalFile() вернул пустую строку, используем исходный путь
                     if not local_path:
                         local_path = file_path
                     
@@ -151,13 +150,13 @@ class DCAnalyzer(QObject):
                     print(f"✗ Ошибка при загрузке файла {file_path}: {e}")
                     combined_content.append(f"=== Файл: {Path(file_path).name} ===\n[Ошибка загрузки: {str(e)}]\n")
             
-            # Объединяем весь текст
+            #Объединяем весь текст
             full_text = "\n".join(combined_content)
             
-            # Сохраняем в переменную класса
+            #Сохраняем в переменную класса
             self.text_content = full_text
             
-            # Формируем имя для сохранения результата
+            #Формируем имя для сохранения результата
             if len(filenames) == 1:
                 self.current_filename = filenames[0]
             elif len(filenames) > 1:
@@ -168,12 +167,12 @@ class DCAnalyzer(QObject):
             print(f"✓ Всего загружено файлов: {successfully_loaded}/{len(file_paths)}")
             print(f"✓ Общий размер текста: {len(full_text)} символов")
             
-            # Излучаем сигнал для обновления QML
-            self.documentsLoaded.emit(full_text, successfully_loaded)
+            #Излучаем сигнал для обновления QML
+            self.sigDocumentsLoaded.emit(full_text, successfully_loaded)
             
         except Exception as e:
             print(f"✗ Критическая ошибка при загрузке файлов: {e}")
-            self.documentsLoaded.emit(f"[Ошибка: {str(e)}]", 0)
+            self.sigDocumentsLoaded.emit(f"[Ошибка: {str(e)}]", 0)
 
     def process_text(self, text_content, prompt, chunk_start_callback=None, 
                     chunk_finish_callback=None, final_analysis_callback=None):
@@ -226,7 +225,7 @@ class DCAnalyzer(QObject):
                 return f"[Ошибка при анализе: {str(e)}]"
         
         #Если чанков больше одного — стандартная логика
-        # ШАГ 1: Анализ каждого чанка
+        #ШАГ 1: Анализ каждого чанка
         chunk_results = []
         for i, chunk in enumerate(chunks):
             current_chunk = i + 1
@@ -268,17 +267,17 @@ class DCAnalyzer(QObject):
             except Exception as e:
                 chunk_results.append(f"[Ошибка при обработке части {current_chunk}: {str(e)}]")
             
-            # Сигнал: чанк завершён
+            #Сигнал: чанк завершён
             if chunk_finish_callback:
                 chunk_finish_callback(current_chunk, total_chunks)
         
-        # ← ШАГ 2: Финальный анализ всех результатов
+        #ШАГ 2: Финальный анализ всех результатов
         if final_analysis_callback:
             final_analysis_callback()
         
         final_result = self._perform_final_analysis(chunk_results, prompt, total_chunks)
         
-        # ← ШАГ 3: Формируем итоговый текст
+        #ШАГ 3: Формируем итоговый текст
         output_parts = []
         
         for i, result in enumerate(chunk_results):
@@ -382,18 +381,11 @@ class DCAnalyzer(QObject):
         return chunks
 
     @pyqtSlot(str)
-    def setTextContent(self, content):
-        """Сохраняет текст (вызывается из QML)"""
+    def ustContentText(self, content): #Устанавливаем текст контента (вызывается из QML)
         self.text_content = content
 
-    @pyqtSlot(str)
-    def setCurrentFilename(self, filename):
-        """Сохраняет имя загруженного файла"""
-        self.current_filename = Path(filename).stem if filename else ""
-
     @pyqtSlot()
-    def saveResult(self):
-        """Сохранение результата в файл"""
+    def sohranitResult(self): #Сохранение результата в файл 
         if not self.current_result or self.current_result == "Анализируется...":
             print("Нечего сохранять")
             return
@@ -443,7 +435,7 @@ class DCAnalyzer(QObject):
                 f.write(file_content)
             
             print(f"✓ Результат сохранён: {full_path}")
-            self.fileSaved.emit(str(full_path))
+            self.sigFileSaved.emit(str(full_path))
         except Exception as e:
             print(f"✗ Ошибка сохранения: {e}")
-            self.fileSaved.emit(f"[Ошибка: {str(e)}]")
+            self.sigFileSaved.emit(f"[Ошибка: {str(e)}]")
