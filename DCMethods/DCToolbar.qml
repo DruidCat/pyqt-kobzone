@@ -5,15 +5,15 @@ Item {
 	property var vrStranica
 	property int second: 11
 	property string text: ""
-	property string log: ""
+	property string logs: ""
 	//Методы
 	onSecondChanged: {//Если настройка с секундами изменилась.
 		tmrText.interval = root.second * 1000
 	}
-	function fnLog(strLog){//Функция принятия логированной информации
-		root.log = "";
+	function log(strLog){//Функция принятия логированной информации
+		root.logs = "";
 		Qt.callLater(function() {
-			root.log = strLog
+			root.logs = strLog
 		})
 	}
 	function fnText(strText){//Функция отображания в toolbar сообщения с его последующим удалением

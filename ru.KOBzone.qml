@@ -112,23 +112,26 @@ ApplicationWindow {
     }
 	Component.onCompleted: {
 		stvStr.currentItem.forceActiveFocus()
-		console.log("✓ Используется шрифт:", font.family)
-		console.log("✓ Приложение запущено")
+		toolbar.log("✓ Шрифт:" + " " + font.family)
 		//загружаем данные из python
 		root.pythonVersion = pyPythonInfo.pythonVersion
 		root.qtVersion = pyQtInfo.qtVersion
         if(!isMobile) Qt.callLater(ensureOnScreen)//Немного отложим, чтобы гарантированно применились размеры
 	}
 	DCToolbar {
-		id: dcToolbar
+		id: toolbar
 		vrStranica: stvStr.pgStrKOBzone//Первоначальное свойство передаю
 		second: 3
 		onTextChanged: {
-			vrStranica.textToolbar = dcToolbar.text//Отображаем ИМЕННО ТАК.
-			tmJurnal.strDebug = dcToolbar.text;//Загружаем логи за день.
+			vrStranica.textToolbar = toolbar.text//Отображаем ИМЕННО ТАК.
+			tmJurnal.strDebug = toolbar.text;//Добавляем строчку в toolbar для записи и отображения
 		}
-		onLogChanged: {
+		onLogsChanged: {
 			//Отправляем в Логи сообщение.
+			if(logs !== ""){//Если не пустая строка, то...
+				pyConsole.log(toolbar.logs)//Отображаем в консоль.
+				//tmJurnal.strDebug = toolbar.logs;//Добавляем строчку в лог для записи и отображения
+			}
 		}
 	}
 	StackView {
@@ -141,8 +144,8 @@ ApplicationWindow {
 			if (currentItem) {
 				Qt.callLater(function() {
 					currentItem.forceActiveFocus()
-					dcToolbar.vrStranica = currentItem;//Передаём указатель на страницу, которая открыта.
-					console.log("Фокус установлен на:", currentItem)
+					toolbar.vrStranica = currentItem;//Передаём указатель на страницу, которая открыта.
+					toolbar.log("Фокус установлен на:" + " " + currentItem)
 				})
 			}
 		}
@@ -161,10 +164,11 @@ ApplicationWindow {
             
 			onVisibleChanged: {
 				if (visible) {
-					console.log("pgStrKOBzone стала видимой")
+					toolbar.log("pgStrKOBzone стала видимой")
 					Qt.callLater(function() {
 						tmKOBzone.forceActiveFocus()
-						console.log("Фокус передан на tmKOBzone")
+						toolbar.log("Фокус передан на tmKOBzone")//Передаём в лог сообщение
+						//console.log("Фокус передан на tmKOBzone")
 					})
 				}
 			}
@@ -204,10 +208,10 @@ ApplicationWindow {
 					stvStr.push(pgStrInstrukciya)//Переходим на страницу Инструкции Меню
 				}
 				onToolbar: function(strToolbar) {//Если сигнал пришёл с текстом в toolbar, то...
-					dcToolbar.fnText(strToolbar)//Передаём на отображение в toolbar сообщение.
+					toolbar.fnText(strToolbar)//Передаём на отображение в toolbar сообщение.
 				}
 				onLog: function (strLog) {//Если сигнал пришёл с текстом в log, то...
-					dcToolbar.fnLog(strLog)//Передаём в лог сообщение.
+					toolbar.log(strLog)//Передаём в лог сообщение.
 				}
 			}
 		}
@@ -225,7 +229,7 @@ ApplicationWindow {
 				if (visible) {
 					Qt.callLater(function() {
 						tmSetKOBzone.forceActiveFocus()
-						console.log("Фокус передан на tmSetKOBzone")
+						toolbar.log("Фокус передан на tmSetKOBzone")
 					})
 				}
 			}
@@ -259,10 +263,10 @@ ApplicationWindow {
 					stvStr.push(pgStrJurnal)//Открываем Журнал
 				}
 				onToolbar: function(strToolbar) {//Если сигнал пришёл с текстом в toolbar, то...
-					dcToolbar.fnText(strToolbar)//Передаём на отображение в toolbar сообщение.
+					toolbar.fnText(strToolbar)//Передаём на отображение в toolbar сообщение.
 				}
 				onLog: function (strLog) {//Если сигнал пришёл с текстом в log, то...
-					dcToolbar.fnLog(strLog)//Передаём в лог сообщение.
+					toolbar.log(strLog)//Передаём в лог сообщение.
 				}
 			}
 		}
@@ -280,7 +284,7 @@ ApplicationWindow {
 				if (visible) {
 					Qt.callLater(function() {
 						tmAnalizer.forceActiveFocus()
-						console.log("Фокус передан на tmAnalizer")
+						toolbar.log("Фокус передан на tmAnalizer")
 					})
 				}
 			}
@@ -314,10 +318,10 @@ ApplicationWindow {
 					stvStr.push(pgStrInstrukciya)//Переходим на страницу инструкций Анализа Документа
 				}
 				onToolbar: function(strToolbar) {//Если сигнал пришёл с текстом в toolbar, то...
-					dcToolbar.fnText(strToolbar)//Передаём на отображение в toolbar сообщение.
+					toolbar.fnText(strToolbar)//Передаём на отображение в toolbar сообщение.
 				}
 				onLog: function (strLog) {//Если сигнал пришёл с текстом в log, то...
-					dcToolbar.fnLog(strLog)//Передаём в лог сообщение.
+					toolbar.log(strLog)//Передаём в лог сообщение.
 				}
 			}
 		}
@@ -335,7 +339,7 @@ ApplicationWindow {
 				if (visible) {
 					Qt.callLater(function() {
 						tmSetAnalizer.forceActiveFocus()
-						console.log("Фокус передан на tmSetAnalizer")
+						toolbar.log("Фокус передан на tmSetAnalizer")
 					})
 				}
 			}
@@ -366,10 +370,10 @@ ApplicationWindow {
 					stvStr.push(pgStrInstrukciya)
 				}
 				onToolbar: function(strToolbar) {//Если сигнал пришёл с текстом в toolbar, то...
-					dcToolbar.fnText(strToolbar)//Передаём на отображение в toolbar сообщение.
+					toolbar.fnText(strToolbar)//Передаём на отображение в toolbar сообщение.
 				}
 				onLog: function (strLog) {//Если сигнал пришёл с текстом в log, то...
-					dcToolbar.fnLog(strLog)//Передаём в лог сообщение.
+					toolbar.log(strLog)//Передаём в лог сообщение.
 				}
 			}
 		}
@@ -387,7 +391,7 @@ ApplicationWindow {
 				if (visible) {
 					Qt.callLater(function() {
 						tmAnalizer.forceActiveFocus()
-						console.log("Фокус передан на tmOrfograf")
+						toolbar.log("Фокус передан на tmOrfograf")
 					})
 				}
 			}
@@ -421,10 +425,10 @@ ApplicationWindow {
 					stvStr.push(pgStrInstrukciya)//Переходим на страницу инструкций Проверки Орфографии
 				}
 				onToolbar: function(strToolbar) {//Если сигнал пришёл с текстом в toolbar, то...
-					dcToolbar.fnText(strToolbar)//Передаём на отображение в toolbar сообщение.
+					toolbar.fnText(strToolbar)//Передаём на отображение в toolbar сообщение.
 				}
 				onLog: function (strLog) {//Если сигнал пришёл с текстом в log, то...
-					dcToolbar.fnLog(strLog)//Передаём в лог сообщение.
+					toolbar.log(strLog)//Передаём в лог сообщение.
 				}
 			}
 		}
@@ -442,7 +446,7 @@ ApplicationWindow {
 				if (visible) {
 					Qt.callLater(function() {
 						tmSetOrfograf.forceActiveFocus()
-						console.log("Фокус передан на tmSetOrfograf")
+						toolbar.log("Фокус передан на tmSetOrfograf")
 					})
 				}
 			}
@@ -473,10 +477,10 @@ ApplicationWindow {
 					stvStr.push(pgStrInstrukciya)
 				}
 				onToolbar: function(strToolbar) {//Если сигнал пришёл с текстом в toolbar, то...
-					dcToolbar.fnText(strToolbar)//Передаём на отображение в toolbar сообщение.
+					toolbar.fnText(strToolbar)//Передаём на отображение в toolbar сообщение.
 				}
 				onLog: function (strLog) {//Если сигнал пришёл с текстом в log, то...
-					dcToolbar.fnLog(strLog)//Передаём в лог сообщение.
+					toolbar.log(strLog)//Передаём в лог сообщение.
 				}
 			}
 		}
@@ -495,7 +499,7 @@ ApplicationWindow {
 				if (visible) {
 					Qt.callLater(function() {
 						tmTranscribe.forceActiveFocus()
-						console.log("Фокус передан на tmTranscribe")
+						toolbar.log("Фокус передан на tmTranscribe")
 					})
 				}
 			}
@@ -531,10 +535,10 @@ ApplicationWindow {
 					stvStr.push(pgStrInstrukciya)
 				}
 				onToolbar: function(strToolbar) {//Если сигнал пришёл с текстом в toolbar, то...
-					dcToolbar.fnText(strToolbar)//Передаём на отображение в toolbar сообщение.
+					toolbar.fnText(strToolbar)//Передаём на отображение в toolbar сообщение.
 				}
 				onLog: function (strLog) {//Если сигнал пришёл с текстом в log, то...
-					dcToolbar.fnLog(strLog)//Передаём в лог сообщение.
+					toolbar.log(strLog)//Передаём в лог сообщение.
 				}
 			}
 		}
@@ -552,7 +556,7 @@ ApplicationWindow {
 				if (visible) {
 					Qt.callLater(function() {
 						tmSetTranscribe.forceActiveFocus()
-						console.log("Фокус передан на tmSetTranscribe")
+						toolbar.log("Фокус передан на tmSetTranscribe")
 					})
 				}
 			}
@@ -583,10 +587,10 @@ ApplicationWindow {
 					stvStr.push(pgStrInstrukciya)
 				}
 				onToolbar: function(strToolbar) {//Если сигнал пришёл с текстом в toolbar, то...
-					dcToolbar.fnText(strToolbar)//Передаём на отображение в toolbar сообщение.
+					toolbar.fnText(strToolbar)//Передаём на отображение в toolbar сообщение.
 				}
 				onLog: function (strLog) {//Если сигнал пришёл с текстом в log, то...
-					dcToolbar.fnLog(strLog)//Передаём в лог сообщение.
+					toolbar.log(strLog)//Передаём в лог сообщение.
 				}
 			}
 		}
@@ -642,7 +646,7 @@ ApplicationWindow {
 				if (visible) {
 					Qt.callLater(function() {
 						tmJurnal.forceActiveFocus()
-						console.log("Фокус передан на tmJurnal")
+						toolbar.log("Фокус передан на tmJurnal")
 					})
 				}
 			}
@@ -672,10 +676,10 @@ ApplicationWindow {
 					stvStr.push(pgStrInstrukciya)
 				}
 				onToolbar: function(strToolbar) {//Если сигнал пришёл с текстом в toolbar, то...
-					dcToolbar.fnText(strToolbar)//Передаём на отображение в toolbar сообщение.
+					toolbar.fnText(strToolbar)//Передаём на отображение в toolbar сообщение.
 				}
 				onLog: function (strLog) {//Если сигнал пришёл с текстом в log, то...
-					dcToolbar.fnLog(strLog)//Передаём в лог сообщение.
+					toolbar.log(strLog)//Передаём в лог сообщение.
 				}
 			}
 		}

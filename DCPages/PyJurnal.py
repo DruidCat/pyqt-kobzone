@@ -36,7 +36,7 @@ class DCJurnal(QObject):
 			with open(self.log_file, 'a', encoding='utf-8') as f:
 				f.write(log_entry)
 			
-			print(f"✓ Лог записан: {log_entry.strip()}")
+            # print(f"✓ Лог записан: {log_entry.strip()}")
 			self.logWritten.emit(log_entry.strip())
 			
 		except Exception as e:
