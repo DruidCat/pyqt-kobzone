@@ -151,6 +151,7 @@ Item {
 			//Добавляем сообщение в лог
 			txdZona.strCopy += message + "\n"//Собираю сообщения в переменную.
 			txdZona.text = txdZona.strCopy//Отображаю в "Прогрессе транскрибации" сообщения со скрипта.
+			root.log (message)//В логи
 		}
 		function onProgressUpdate(current, total) {//Функция обновления прогресса из python
 			current = current - 1//Обязательно, чтоб с 0 прогресс начинался.
@@ -304,8 +305,9 @@ Item {
 	function fnUrlToLocalPath(url) {//Функция кроссплатформенного преобразования URL в путь
 		if (!url) return ""
 		var path = url.toString()
+		console.log("PATH", path)
 		if (path.startsWith("file:///")) {//Если путь начинается с file:///
-			path = path.substring(8)//Убираем "file:///"
+			path = path.substring(7)//Убираем "file://" чтоб осталось "/" /home, /mnt и тд
 		} else if (path.startsWith("file://")) {//Если путь начинается с file://
 			path = path.substring(7)//Убираем "file://"
 		}
