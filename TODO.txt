@@ -11,9 +11,7 @@ TODO:
 - DCJurnal, сделать возможным выделять и копировать текст из логов.
 - StrKOBzone, придумать, как бы менялись логотипы по настройки из ru.KOBzone.qml
 - readme.txt переписать, установку python, pyqt под linux и windows, чтоб приложение запустилось.
-- pyFileOpener при открытии диалога появляется ошибка QWindowsNativeFileDialogBase::shellItem: SHCreateItemFromParsingName(file://c/Users/HP/Documents)) failed (═х эрщфхэ ёхЄхтющ яєЄ№.
 - заменить console.log на root.toolbar и root.log
-- file:///C:/Users/HP/git/pyqt-kobzone/DCPages/StrTranscribe.qml:562:37: QML QQuickRectangle: The current style does not support customization of this control (property: "background" item: QQuickRectangle(0x1de3e1acc10, parent=0x0, geometry=0,0 0x0)). Please customize a non-native style (such as Basic, Fusion, Material, etc). For more information, see: https://doc.qt.io/qt-6/qtquickcontrols2-customize.html#customization-reference                                                 file:///C:/Users/HP/git/pyqt-kobzone/DCPages/StrTranscribe.qml:515:37: QML QQuickRectangle: The current style does not support customization of this control (property: "background" item: QQuickRectangle(0x1de3e1af8b0, parent=0x0, geometry=0,0 0x0)). Please customize a non-native style (such as Basic, Fusion, Material, etc). For more information, see: https://doc.qt.io/qt-6/qtquickcontrols2-customize.html#customization-reference                                                 file:///C:/Users/HP/git/pyqt-kobzone/DCSettings/SetAnalizer.qml:201:18: QML QQuickRectangle: The current style does not support customization of this control (property: "background" item: QQuickRectangle(0x1de3e1af1b0, parent=0x0, geometry=0,0 0x0)). Please customize a non-native style (such as Basic, Fusion, Material, etc). For more information, see: https://doc.qt.io/qt-6/qtquickcontrols2-customize.html#customization-reference                                                file:///C:/Users/HP/git/pyqt-kobzone/DCPages/StrAnalizer.qml:486:18: QML QQuickRectangle: The current style does not support customization of this control (property: "background" item: QQuickRectangle(0x1de3e1adaf0, parent=0x0, geometry=0,0 0x0)). Please customize a non-native style (such as Basic, Fusion, Material, etc). For more information, see: https://doc.qt.io/qt-6/qtquickcontrols2-customize.html#customization-reference 
 
 ПОЧИНИЛ:
 2026-08-07 Пересоздать изображения иконок в цветовой гамме приложения для инструкций.
@@ -56,3 +54,4 @@ TODO:
 2026-08-21 compiller_rcc.py переместил в DCScripts/DCCompileRCC.py и переписал его под эту папку и vimrc.
 2026-08-21 Все объекты из Python начинаются на pyИмяОбъекта.
 2026-08-22 DCConsoleLog, сделал простой скрипт, который показывает сообщение в конслои вместо console.log
+2026-08-22 Убрал ошибки некоторые в консоли.

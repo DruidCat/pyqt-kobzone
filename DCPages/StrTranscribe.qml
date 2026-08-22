@@ -291,20 +291,32 @@ Item {
         }
         return false
     }
+	function fnPathToUrl(localPath) {//Функция кроссплатформенного преобразования пути в URL
+		if (!localPath) return ""
+		if (localPath.startsWith("file://")) return localPath//Если это уже URL — возвращаем как есть
+		//Для локальных файлов нужен формат file:///
+		if (localPath.startsWith("/")) {//Linux: /home/user/ -> file:///home/user/ (добавляем file://)
+			return "file://" + localPath//file:// + /path = file:///path
+		} else {//Windows: C:/Users/ -> file:///C:/Users/ (добавляем file:///)
+			return "file:///" + localPath//file:/// + C:/path = file:///C:/path
+		}
+	}
 	function fnUrlToLocalPath(url) {//Функция кроссплатформенного преобразования URL в путь
 		if (!url) return ""
 		var path = url.toString()
-		// Убираем file:///
-		if (path.startsWith("file:///")) {
+		if (path.startsWith("file:///")) {//Если путь начинается с file:///
 			path = path.substring(8)//Убираем "file:///"
-		} else if (path.startsWith("file://")) {
+		} else if (path.startsWith("file://")) {//Если путь начинается с file://
 			path = path.substring(7)//Убираем "file://"
 		}
-		path = decodeURIComponent(path)// Декодируем URL-кодирование (%20 → пробел, %3F → ?)
+		path = decodeURIComponent(path)//Декодируем URL-кодирование (%20 → пробел, %3F → ?)
 		if (Qt.platform.os === "windows") {//Windows: если путь начинается с /C:/, убираем первый /
 			if (path.length > 2 && path[0] === '/' && path[2] === ':') {
 				path = path.substring(1)
 			}
+		}
+		if (Qt.platform.os !== "windows" && path.startsWith("//")) {//Linux-убираем двойной слеш,если появился
+			path = path.substring(1)
 		}
 		return path
 	} 
@@ -313,12 +325,7 @@ Item {
 		title: "Выберите папку с аудио файлами"
 		currentFolder: {//Используем сохранённый путь из настроек, или стандартную домашнюю папку
 			if (dcReestr.transcribe_put_audio !== "") {
-				//Преобразуем сохранённый путь в URL
-				var savedPath = dcReestr.transcribe_put_audio
-				if (!savedPath.startsWith("file://")) {
-					savedPath = "file://" + savedPath
-				}
-				return savedPath
+				return fnPathToUrl(dcReestr.transcribe_put_audio)//Преобразуем сохранённый путь в URL
 			}
 			else return StandardPaths.writableLocation(StandardPaths.MusicLocation)
 		}
@@ -334,12 +341,7 @@ Item {
 		title: "Выберите папку для текстовых файлов"
 		currentFolder: {//Используем сохранённый путь из настроек, или стандартную домашнюю папку
 			if (dcReestr.transcribe_put_text !== "") {
-				//Преобразуем сохранённый путь в URL
-				var savedPath = dcReestr.transcribe_put_text
-				if (!savedPath.startsWith("file://")) {
-					savedPath = "file://" + savedPath
-				}
-				return savedPath
+				return fnPathToUrl(dcReestr.transcribe_put_text)//Преобразуем сохранённый путь в URL
 			}
 			else return StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
 		}
@@ -355,11 +357,7 @@ Item {
 		title: "Выберите текстовый файл для просмотра"
 		currentFolder: {//Используем сохранённый путь из настроек, или стандартную домашнюю папку
 			if (dcReestr.transcribe_put_text !== "") {
-				var savedPath = dcReestr.transcribe_put_text
-				if (!savedPath.startsWith("file://")) {
-					savedPath = "file://" + savedPath
-				}
-				return savedPath
+				return fnPathToUrl(dcReestr.transcribe_put_text)//Преобразуем сохранённый путь в URL
 			}
 			else return StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
 		}

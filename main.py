@@ -1,4 +1,6 @@
+import os
 import sys
+os.environ['QT_QUICK_CONTROLS_STYLE'] = 'Fusion'# Альтернативы: 'Basic', 'Material', 'Universal', 'Imagine'
 from pathlib import Path
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtQml import QQmlApplicationEngine
@@ -89,7 +91,7 @@ class MainApp:
     
     def __init__(self):
         self.app = QApplication(sys.argv)
-        
+
         # Устанавливаем метаданные приложения
         self.app.setApplicationName(self.APP_NAME)
         self.app.setOrganizationName(self.APP_ORGANIZATION)
