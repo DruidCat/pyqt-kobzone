@@ -1,6 +1,7 @@
 import os
 import sys
 os.environ['QT_QUICK_CONTROLS_STYLE'] = 'Fusion'# Альтернативы: 'Basic', 'Material', 'Universal', 'Imagine'
+os.environ['PYTHONSAFEPATH'] = '1' #Разрешить импорт из CWD
 from pathlib import Path
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtQml import QQmlApplicationEngine

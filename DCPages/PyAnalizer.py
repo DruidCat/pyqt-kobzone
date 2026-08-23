@@ -56,6 +56,7 @@ class DCAnalyzer(QObject):
         self.model_name = "qwen3-coder-30b-a3b-instruct"  #Имя модели ИИ добавляем
         self.max_context = 22016  #Укажите ваше значение из LM Studio
         self.temperature = 0.5 #Температура ИИ модели.
+        self.overlap_percent = 20  #Процент перекрытия по умолчанию
 
     @pyqtSlot(str, int, float)
     def ustModelSettings(self, model_name, max_context, temperature):
@@ -67,7 +68,8 @@ class DCAnalyzer(QObject):
         print(f"✓ Настройки модели обновлены:")
         print(f"  - Модель: {self.model_name}")
         print(f"  - Контекст: {self.max_context} токенов")
-        print(f"  - Temperature: {self.temperature}")
+        print(f"  - Температура: {self.temperature}")
+        print(f"  - Перекрытие: {self.overlap_percent}")
 
     @pyqtSlot(str, str)
     def startAnaliza(self, text_content, prompt):
@@ -180,8 +182,9 @@ class DCAnalyzer(QObject):
         Разбиваем текст на части и отправляем каждую часть в модель.
         После обработки всех чанков делаем финальный анализ.
         """
-        max_tokens = 8000
-        chunks = self.split_text_into_chunks(text_content, max_tokens)
+        max_tokens = max(8000, self.max_context - 5000)#Используем максимум доступного контекста
+        #Разбиваем с перекрытием в %
+        chunks = self.split_text_into_chunks(text_content, max_tokens, overlap_percent=self.overlap_percent)
         total_chunks = len(chunks)
         
         #Если чанк один — сразу финальный анализ
@@ -305,7 +308,7 @@ class DCAnalyzer(QObject):
         """
         Выполняет финальный анализ на основе результатов всех чанков
         """
-        # ← ИЗМЕНЕНО: Сокращаем каждый результат чанка
+        # Сокращаем каждый результат чанка
         summarized_results = []
         for i, result in enumerate(chunk_results):
             summarized = self._summarize_chunk_result(result, max_length=1500)
@@ -324,24 +327,48 @@ class DCAnalyzer(QObject):
 
     Задача: На основе всех этих частичных анализов составь единый, связный итоговый анализ документа. 
     Объедини ключевые моменты, устрани дублирование, выдели главное. Ответ должен быть структурированным и понятным."""
+ 
+        max_response_tokens = int(self.max_context * 0.7)#Вычисляем оптимальный размер ответа,70% контекста для ответа,30% для промта и резерва
+        estimated_prompt_tokens = len(final_prompt) // 2.5  # Приблизительно
+        if estimated_prompt_tokens > (self.max_context * 0.3):#Проверяем, что промт не превышает 30% контекста
+            print(f"⚠ Промт слишком длинный ({estimated_prompt_tokens} токенов), сокращаем резюме...") 
+            summarized_results = []
+            for i, result in enumerate(chunk_results):
+                summarized = self._summarize_chunk_result(result, max_length=800)#резюме чанков
+                summarized_results.append(f"Часть {i+1}: {summarized}")
+            
+            combined_results = "\n\n".join(summarized_results)
+            final_prompt = f"""Ты получил анализ документа, разбитого на {total_chunks} частей.
 
+    Исходный запрос был: "{original_prompt}"
+
+    Результаты анализа по частям:
+
+    {combined_results}
+
+    Задача: На основе всех этих частичных анализов составь единый, связный итоговый анализ документа."""
+        
         try:
             headers = {"Content-Type": "application/json"}
             data = {
-                "model": self.model_name, #Используем переменную имении ИИ модели
+                "model": self.model_name,
                 "messages": [
                     {"role": "user", "content": final_prompt}
                 ],
                 "temperature": self.temperature,
-                "max_tokens": 8000,
-                "n_ctx": self.max_context #Указываем размер контекста через переменную.
+                "max_tokens": max_response_tokens,#Динамический расчёт.
+                "n_ctx": self.max_context
             }
+            print(f"✓ Финальный анализ:")
+            print(f"  - Промт: ~{int(len(final_prompt) / 2.5)} токенов")
+            print(f"  - Максимум ответа: {max_response_tokens} токенов")
+            print(f"  - Контекст: {self.max_context} токенов")
 
             response = requests.post(
                 f"{LM_STUDIO_URL}/chat/completions",
                 headers=headers,
                 json=data,
-                timeout=180  # Увеличиваем таймаут для финального анализа
+                timeout=180
             )
             
             if response.status_code == 200:
@@ -355,28 +382,70 @@ class DCAnalyzer(QObject):
             return f"[Ошибка: не удалось подключиться к LM Studio для финального анализа]"
         except Exception as e:
             return f"[Ошибка при финальном анализе: {str(e)}]"
+    
+    def split_text_into_chunks(self, text, max_tokens, overlap_percent=None):
+        """
+        Разбивает текст на части с перекрытием для сохранения контекста
+        
+        Args:
+            text: Исходный текст
+            max_tokens: Максимальное количество токенов в чанке
+            overlap_percent: Процент перекрытия между чанками (по умолчанию 20%)
+        
+        Returns:
+            list: Список чанков текста
+        """ 
+        #Если overlap_percent не передан, то..
+        if overlap_percent is None:
+            overlap_percent = self.overlap_percent #используем значение из self
 
-    def split_text_into_chunks(self, text, max_tokens):
-        """Разбиваем текст на части, каждая не превышает max_tokens"""
-        chars_per_token = 4
-        chunk_size = (max_tokens * chars_per_token) // 2
+        chars_per_token = 2.5  # Для русского текста (кириллица)
+        chunk_size = int((max_tokens * chars_per_token) // 2)
+        overlap_size = int(chunk_size * (overlap_percent / 100))
         
         chunks = []
-        while text:
-            if len(text) <= chunk_size:
-                chunks.append(text.strip())
+        start = 0
+        text_length = len(text)
+        
+        while start < text_length:
+            # Определяем конец текущего чанка
+            end = min(start + chunk_size, text_length)
+            
+            # Ищем конец предложения для естественного разрыва
+            if end < text_length:
+                # Ищем ближайшую точку, восклицательный знак или вопросительный знак
+                best_split = end
+                for delimiter in [". ", ".\n", "! ", "!\n", "? ", "?\n"]:
+                    pos = text.rfind(delimiter, start + chunk_size // 2, end)
+                    if pos != -1:
+                        best_split = pos + len(delimiter)
+                        break
+                end = best_split
+            
+            # Добавляем чанк
+            chunk_text = text[start:end].strip()
+            if chunk_text:
+                chunks.append(chunk_text)
+            
+            # Следующий чанк начинается с перекрытием
+            # Но не перемещаемся назад, если достигли конца
+            if end >= text_length:
                 break
             
-            split_point = min(chunk_size, len(text))
+            # Ищем начало нового чанка (с учётом перекрытия)
+            start = end - overlap_size
             
-            for delimiter in [". ", ".\n", "! ", "?\n"]:
-                pos = text.rfind(delimiter, 0, split_point)
+            # Ищем начало предложения для перекрытия
+            # Чтобы не разрывать предложение посередине
+            for delimiter in [". ", ".\n", "! ", "!\n", "? ", "?\n"]:
+                pos = text.find(delimiter, start, start + overlap_size // 2)
                 if pos != -1:
-                    split_point = pos + len(delimiter)
+                    start = pos + len(delimiter)
                     break
-            
-            chunks.append(text[:split_point].strip())
-            text = text[split_point:].strip()
+        
+        print(f"✓ Текст разбит на {len(chunks)} чанков с перекрытием {overlap_percent}%")
+        for i, chunk in enumerate(chunks):
+            print(f"  Чанк {i+1}: {len(chunk)} символов (~{int(len(chunk)/chars_per_token)} токенов)")
         
         return chunks
 
