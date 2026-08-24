@@ -93,8 +93,8 @@ Item {
 			if (ldrProgress.item) {//Всегда показываем "Финальный анализ..."
 				ldrProgress.item.text = "Финальный анализ..."
 				//Если чанков несколько — устанавливаем прогресс перед финалом
-				var estimated_chunks = fnKolichestvoChankov(txaContent.text)
-				if (estimated_chunks > 1 && root.rlProgress < 90) {
+				var kolichestvo_chankov = fnKolichestvoChankov(txaContent.text)
+				if (kolichestvo_chankov > 1 && root.rlProgress < 90) {
 					//Доводим до ~90% перед финальным анализом
 					root.rlProgress = 90
 					ldrProgress.item.progress = 90
@@ -104,15 +104,15 @@ Item {
 		function onSigAnalizStart() {//Сигнал Начала анализа.
 			root.log("✓ Анализ начался")
 			root.rlProgress = 0
-			var estimated_chunks = fnKolichestvoChankov(txaContent.text)//Определяем количество чанков
-			root.log(`Примерное количество чанков: ${estimated_chunks}`)
+			var kolichestvo_chankov = fnKolichestvoChankov(txaContent.text)//Определяем количество чанков
+			root.log(`Примерное количество чанков: ${kolichestvo_chankov}`)
 			tmrLogo.running = true//Запускаем анимацию логотипа и включаем политики кнопок.
 			if (ldrProgress.item) {//Если существует объект, то...
-				ldrProgress.total = estimated_chunks//Для Пересчёт скорости смещения полосы.
-				if (estimated_chunks === 1)//Если один чанк, то...
+				ldrProgress.total = kolichestvo_chankov//Для Пересчёт скорости смещения полосы.
+				if (kolichestvo_chankov === 1)//Если один чанк, то...
 					ldrProgress.item.text = "Финальный анализ..."//показываем текст "Финальный анализ..."
 				else//Если несколько чанков, то...
-					ldrProgress.item.text = `0/${estimated_chunks + 1}`//Для нескольких чанков показываем 0/N
+					ldrProgress.item.text = `0/${kolichestvo_chankov + 1}`//Для нескольких чанков показываем 0/N
 			}
 		}
 		
@@ -128,7 +128,7 @@ Item {
 	Component.onCompleted: {
         root.forceActiveFocus()
 		pyAnalyzer.ustModelSettings(dcReestr.analizer_model_imya, dcReestr.analizer_max_context,
-			dcReestr.analizer_temperatura)//Передаём настройки в Python
+			dcReestr.analizer_temperatura, dcReestr.analizer_perekritie)//Передаём настройки в Python
     }
 	Keys.onPressed: (event) => {//Обработка горячих клавиш
         if (event.modifiers & Qt.AltModifier) {
@@ -326,13 +326,11 @@ Item {
     }
 	function fnKolichestvoChankov(text) {//Функция приблизительного подсчёта количества чанков
 		if (!text || text.trim() === "") return 0
-		
-		var max_tokens = 8000
+		var max_tokens = dcReestr.analizer_max_context//Максимальное количество токенов
 		var chars_per_token = 4
 		var chunk_size = (max_tokens * chars_per_token) / 2
-		
-		var estimated_chunks = Math.ceil(text.length / chunk_size)
-		return estimated_chunks
+		var kolichestvo_chankov = Math.ceil(text.length / chunk_size)
+		return kolichestvo_chankov
 	} 
     Item {//Заголовок
         id: tmZagolovok
