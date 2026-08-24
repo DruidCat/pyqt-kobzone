@@ -45,13 +45,13 @@ Item {
             clip: true//Обрезаем всё, что выходит за границы этого элемента.
             focus: true//чтоб обработчик клавиатуры работал 
             Keys.onPressed: (event) => {//Обработчик клавиатуры.
-                if(event.key === Qt.Key_Up || event.key === Qt.Key_K){
+                if(event.key === Qt.Key_Up || event.key === Qt.Key_K || event.key === 1051){
                     const cnShag = root.pixelSize * 1.2;//одна строка
                     contentY = Math.max(0, contentY - cnShag);
                     event.accepted = true;
                 }
                 else{
-                    if(event.key === Qt.Key_Down || event.key === Qt.Key_J){
+                    if(event.key === Qt.Key_Down || event.key === Qt.Key_J || event.key === 1054){
                         const cnShag = root.pixelSize * 1.2;//одна строка
                         contentY = Math.min(contentHeight - height, contentY + cnShag);
                         event.accepted = true;

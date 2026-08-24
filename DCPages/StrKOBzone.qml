@@ -50,7 +50,7 @@ Item {
     }
     Keys.onPressed: (event) => {//Обработка клавиш на уровне root
 		if (event.modifiers & Qt.AltModifier) {
-            if (event.key === Qt.Key_F) {
+            if (event.key === Qt.Key_F || event.key === 1040) {
                 fnClickedMenu()//Функция Настройки
                 event.accepted = true
                 return
@@ -62,7 +62,7 @@ Item {
 		} else if (event.key === Qt.Key_F1){
 			fnClickedInfo()	
             event.accepted = true
-        } else if (event.key === Qt.Key_Up || event.key === Qt.Key_K) {
+        } else if (event.key === Qt.Key_Up || event.key === Qt.Key_K || event.key === 1051) {
             if (!menuMenu.visible) {//Навигация работает только если меню закрыто
                 root.currentIndex--
                 if (root.currentIndex < 0)
@@ -71,7 +71,7 @@ Item {
                 fnScrollKnopok(false)
             }
             event.accepted = true 
-        } else if (event.key === Qt.Key_Down || event.key === Qt.Key_J) {
+        } else if (event.key === Qt.Key_Down || event.key === Qt.Key_J || event.key === 1054) {
             if (!menuMenu.visible) {//Навигация работает только если меню закрыто
                 root.currentIndex++
                 if (root.currentIndex >= knopkiMassiv.length)

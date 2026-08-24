@@ -63,14 +63,14 @@ Item {
                 fnClickedNazad()
                 event.accepted = true
                 return
-            } else if (event.key === Qt.Key_F) {
+            } else if (event.key === Qt.Key_F || event.key === 1040) {
                 fnClickedMenu()//Функция Настройки
                 event.accepted = true
                 return
             }
         }
 		if (event.modifiers & Qt.ControlModifier) {
-            if (event.key === Qt.Key_T) {
+            if (event.key === Qt.Key_T || event.key === 1045) {
                 if (!menuMenu.visible && knopkaTranscribe.enabled) {
                     fnClickedTranscribe()
                 }
@@ -83,7 +83,7 @@ Item {
         } else if (event.key === Qt.Key_F1) {
             fnClickedInfo()    
             event.accepted = true
-        } else if (event.key === Qt.Key_Up || event.key === Qt.Key_K) {
+        } else if (event.key === Qt.Key_Up || event.key === Qt.Key_K || event.key === 1051) {
             if (!menuMenu.visible) {
                 var ltNoviY = flcZona.contentY - 50
                 if (ltNoviY < 0)
@@ -91,7 +91,7 @@ Item {
                 flcZona.contentY = ltNoviY
             }
             event.accepted = true
-        } else if (event.key === Qt.Key_Down || event.key === Qt.Key_J) {
+        } else if (event.key === Qt.Key_Down || event.key === Qt.Key_J || event.key === 1054) {
             if (!menuMenu.visible) {
                 var ltMaxY = flcZona.contentHeight - flcZona.height
                 var ltNoviY = flcZona.contentY + 50
