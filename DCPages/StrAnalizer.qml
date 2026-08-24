@@ -385,7 +385,10 @@ Item {
             interactive: true
             boundsBehavior: Flickable.StopAtBounds
             opacity: 0.9//ГЛАВНАЯ ПРОЗРАЧНОСТЬ!!!
-            
+
+			TapHandler {//Нажимаем на всю область
+				onTapped: fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
+			}
             Behavior on opacity {
                 NumberAnimation {
                     duration: 300
@@ -444,7 +447,7 @@ Item {
                         clip: true
                         interactive: true
                         boundsBehavior: Flickable.StopAtBounds
-                        
+            			            
                         TextArea.flickable: TextArea {
                             id: txaContent
                             objectName: "txaContent"
@@ -454,6 +457,9 @@ Item {
                             color: root.clrTexta
                             background: null
                             onTextChanged: pyAnalyzer.ustContentText(text)
+							TapHandler {//Нажимаем на всю область
+								onTapped: fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
+							}
                         }
                     }
                     DCScrollbar {
@@ -495,6 +501,9 @@ Item {
 					}
 					onTextChanged: {
 						pyAnalyzer.ustPromt(text)//Сохраняем промт при изменении
+					}
+					TapHandler {//Нажимаем на всю область
+						onTapped: fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
 					}
 				}	
                 DCKnopkaOriginal {//Кнопка анализа
@@ -550,6 +559,9 @@ Item {
                             color: root.clrTexta
 							background: null
 							textFormat: TextEdit.RichText//ВКЛЮЧАЕМ HTML 
+							TapHandler {//Нажимаем на всю область
+								onTapped: fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
+							}
                         }
                     }
                     DCScrollbar {

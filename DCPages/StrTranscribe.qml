@@ -459,13 +459,15 @@ Item {
             interactive: true
             boundsBehavior: Flickable.StopAtBounds
             opacity: 0.9
-            
             Behavior on opacity {
                 NumberAnimation {
                     duration: 300
                     easing.type: Easing.InOutQuad
                 }
             }
+			TapHandler {//Нажимаем на всю область виджета.
+				onTapped: fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
+			}
             Column {
                 id: clmnContent
                 width: flcZona.width - dcScrollbar.width
@@ -500,8 +502,7 @@ Item {
                 }
                 Row {
                     width: parent.width - parent.leftPadding - parent.rightPadding
-                    spacing: root.ntCoff
-                    
+                    spacing: root.ntCoff 
                     TextField {
                         id: txfAudioPut
                         width: parent.width - knopkaAudioPut.width - parent.spacing
@@ -519,8 +520,10 @@ Item {
                         onTextChanged: {
                             dcReestr.transcribe_put_audio = text
                         }
-                    }
-                    
+						TapHandler {//Нажимаем на всю область виджета.
+							onTapped: fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
+						}
+                    } 
                     DCKnopkaOriginal {
                         id: knopkaAudioPut
                         text: "..."
@@ -543,12 +546,10 @@ Item {
                     color: root.clrTexta
 					font.bold: true//Жирный текст.
                     width: parent.width - parent.leftPadding - parent.rightPadding
-                }
-                
+                } 
                 Row {
                     width: parent.width - parent.leftPadding - parent.rightPadding
-                    spacing: root.ntCoff
-                    
+                    spacing: root.ntCoff    
                     TextField {
                         id: txfTextPut
                         width: parent.width - knopkaTextPut.width - parent.spacing
@@ -565,9 +566,11 @@ Item {
                         }
                         onTextChanged: {
                             dcReestr.transcribe_put_text = text
-                        }
-                    }
-                    
+						}
+						TapHandler {//Нажимаем на всю область виджета.
+							onTapped: fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
+						}
+                    } 
                     DCKnopkaOriginal {
                         id: knopkaTextPut
                         text: "..."
@@ -612,8 +615,7 @@ Item {
                         pixelSize: root.ntWidth / 3 * root.ntCoff
                         radius: root.ntCoff / 4
                         clrFona: "transparent"
-                        clrTexta: root.clrTexta
-                        
+                        clrTexta: root.clrTexta   
                         onPressed: fnCloseMenuIfOpen()
                     }
                 }

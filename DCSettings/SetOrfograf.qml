@@ -58,7 +58,7 @@ Item {
 		} else if (event.key === Qt.Key_F1) {
 			fnClickedInfo()    
 			event.accepted = true
-		} else if (event.key === Qt.Key_Up || event.key === Qt.Key_K) {
+		} else if (event.key === Qt.Key_Up || event.key === Qt.Key_K || event.key === 1051) {
 			if (!menuMenu.visible) {
 				var ltNoviY = flcZona.contentY - 50
 				if (ltNoviY < 0)
@@ -66,7 +66,7 @@ Item {
 				flcZona.contentY = ltNoviY
 			}
 			event.accepted = true
-		} else if (event.key === Qt.Key_Down || event.key === Qt.Key_J) {
+		} else if (event.key === Qt.Key_Down || event.key === Qt.Key_J || event.key === 1054) {
 			if (!menuMenu.visible) {
 				var ltMaxY = flcZona.contentHeight - flcZona.height
 				var ltNoviY = flcZona.contentY + 50
@@ -175,6 +175,9 @@ Item {
 					duration: 300
 					easing.type: Easing.InOutQuad
 				}
+			}
+			TapHandler {//Нажимаем на всю область
+				onTapped: fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
 			}
 			Column {
 				id: clmnContent

@@ -212,6 +212,9 @@ Item {
                     contentHeight: clmnKnopki.height
                     clip: true
                     interactive: true
+					TapHandler {//Нажимаем на всю область виджета.
+						onTapped: fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
+					}
                     Column {
                         id: clmnKnopki
                         width: flcMenu.width - scbScrollbar.width - root.ntWidth * root.ntCoff

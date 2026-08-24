@@ -252,14 +252,15 @@ Item {
             interactive: true
             boundsBehavior: Flickable.StopAtBounds
             opacity: 0.9//ГЛАВНАЯ ПРОЗРАЧНОСТЬ!!!
-            
             Behavior on opacity {
                 NumberAnimation {
                     duration: 300
                     easing.type: Easing.InOutQuad
                 }
             }
-            
+            TapHandler {//Нажимаем на всю область виджета.
+				onTapped: fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
+			}
             Column {
                 id: clmnContent
                 width: flcZona.width - dcScrollbar.width
