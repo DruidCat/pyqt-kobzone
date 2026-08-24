@@ -117,7 +117,7 @@ Item {
 		}
 		
 		function onSigAnalizFinish() {//сигнал Анализ завершён. 
-			root.toolbar("✓ Анализ завершён")
+			root.toolbar(`Анализ завершён: ${txfPromt.text}`)
 			tmrLogo.running = false//Останавливаем анимацию анализа и политики кнопок
 		}	
 		function onSigDocumentsLoaded(combinedText, filesCount) {//Сигнал загрузки документов (текст, кол-во)
