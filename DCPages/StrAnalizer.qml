@@ -62,22 +62,22 @@ Item {
 									result !== "Анализируется..." &&
 									!result.startsWith("Ошибка:"))
 		}
-		function onSigFileSaved(path) {//Сигнал о том, что файл сохранился.
-			if (path.startsWith("[Ошибка")) {
-				console.log("Ошибка сохранения:", path)
+		function onSigAnalizSohranit(strPut) {//Сигнал о том, что файл сохранился.
+			if (strPut.startsWith("[Ошибка")) {
+				root.toolbar("Ошибка сохранения: " + strPut)
 			} else {
-				console.log("✓ Файл сохранён:", path)
-				root.toolbar("Сохранено: " + path.split('/').pop())
+				root.toolbar("Сохранено: " + strPut.split('/').pop())
+				dcReestr.analizer_put_sohranit = strPut;//Сохраняем путь папки, у котороую сохранили результат
 			}
 		}
 		function onSigChunkStarted(ntCurrent, ntTotal) {//Сигнал начала обработки Чанка.
-			console.log(`Чанк ${ntCurrent}/${ntTotal} начал обрабатываться`)
+			root.log(`Чанк ${ntCurrent}/${ntTotal} начал обрабатываться`)
 			if (ldrProgress.item && ntTotal > 1) {//Только для множественных чанков
 				ldrProgress.item.text = `${ntCurrent}/${ntTotal + 1}`//+1 резервируем для финального анализа
 			}
 		}
 		function onSigChunkFinished(ntCurrent, ntTotal) {//Сигнал окончания обработки Чанка.
-			console.log(`Чанк ${ntCurrent}/${ntTotal} завершён`)
+			root.log(`Чанк ${ntCurrent}/${ntTotal} завершён`)
 			if (ntTotal > 1) {//Только для множественных чанков
 				//Прогресс обновляется после завершения чанка
 				root.rlLoader = 100 / (ntTotal + 1)//+1 резервируем для финального анализа
@@ -88,12 +88,12 @@ Item {
 				}
 			}
 		}
-		function onSigFinalAnalysisStarted() {//Сигнал Начала финального анализа
-			console.log("✓ Начался финальный анализ")
+		function onSigAnalizFinalStart() {//Сигнал Начала финального анализа
+			root.log("✓ Начался финальный анализ")
 			if (ldrProgress.item) {//Всегда показываем "Финальный анализ..."
 				ldrProgress.item.text = "Финальный анализ..."
 				//Если чанков несколько — устанавливаем прогресс перед финалом
-				var estimated_chunks = fnEstimateChunks(txaContent.text)
+				var estimated_chunks = fnKolichestvoChankov(txaContent.text)
 				if (estimated_chunks > 1 && root.rlProgress < 90) {
 					//Доводим до ~90% перед финальным анализом
 					root.rlProgress = 90
@@ -101,11 +101,11 @@ Item {
 				}
 			}
 		}
-		function onSigAnalysisStarted() {//Сигнал Начала анализа.
-			console.log("✓ Анализ начался")
+		function onSigAnalizStart() {//Сигнал Начала анализа.
+			root.log("✓ Анализ начался")
 			root.rlProgress = 0
-			var estimated_chunks = fnEstimateChunks(txaContent.text)//Определяем количество чанков
-			console.log("Примерное количество чанков:", estimated_chunks)
+			var estimated_chunks = fnKolichestvoChankov(txaContent.text)//Определяем количество чанков
+			root.log(`Примерное количество чанков: ${estimated_chunks}`)
 			tmrLogo.running = true//Запускаем анимацию логотипа и включаем политики кнопок.
 			if (ldrProgress.item) {//Если существует объект, то...
 				ldrProgress.total = estimated_chunks//Для Пересчёт скорости смещения полосы.
@@ -115,13 +115,13 @@ Item {
 					ldrProgress.item.text = `0/${estimated_chunks + 1}`//Для нескольких чанков показываем 0/N
 			}
 		}
-		function onSigAnalysisFinished() {//сигнал Анализ завершён. 
-			console.log("✓ Анализ завершён")
-			tmrLogo.running = false
+		
+		function onSigAnalizFinish() {//сигнал Анализ завершён. 
+			root.toolbar("✓ Анализ завершён")
+			tmrLogo.running = false//Останавливаем анимацию анализа и политики кнопок
 		}	
 		function onSigDocumentsLoaded(combinedText, filesCount) {//Сигнал загрузки документов (текст, кол-во)
 			txaContent.text = combinedText//Обновление txaContent при загрузке файло
-			console.log(`✓ Загружено ${filesCount} файлов в txaContent`)
 			root.toolbar(`Загружено файлов: ${filesCount}`)
 		}
 	}
@@ -219,7 +219,7 @@ Item {
 			dcReestr.analizer_put_text = papkaPut//Записываем в реестр имя папки в реестр.
 		}
 		onRejected: {
-			console.log("Загрузка файлов отменена")
+
 		}
 	}
     Timer {//ТАЙМЕР анимации логотипа
@@ -299,7 +299,7 @@ Item {
 		dialogZagruzka.open()
     }
 	function fnUstMultipleDocuments(selectedFiles) {//Загрузка нескольких документов
-		console.log("Загрузка документов:", selectedFiles)
+		root.log("Загрузка документов: " + selectedFiles)
 		var filePaths = []//Преобразуем список URL в массив путей
 		for (var i = 0; i < selectedFiles.length; i++) {
 			var vtFail = selectedFiles[i].toString()
@@ -311,7 +311,7 @@ Item {
         pyAnalyzer.startAnaliza(txaContent.text, txfPromt.text)
     }
     function fnClickedSohranit() {//Функция сохранения результата анализа.
-        pyAnalyzer.sohranitResult()
+        pyAnalyzer.sohranitAnaliz(dcReestr.analizer_put_sohranit)//Открываем Диалог в папке (путь из реестра).
     }
     function fnToggleMenu() {//Функция изменяет состояние всплывающего меню если открыто, закрывает и наоборот
         if (menuMenu.visible) menuMenu.visible = false
@@ -324,7 +324,7 @@ Item {
         }
         return false
     }
-	function fnEstimateChunks(text) {//Функция приблизительного подсчёта количества чанков
+	function fnKolichestvoChankov(text) {//Функция приблизительного подсчёта количества чанков
 		if (!text || text.trim() === "") return 0
 		
 		var max_tokens = 8000

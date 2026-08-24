@@ -11,6 +11,7 @@ QtObject {
 	property int kobzone_visota: 550
 	//Нейро Анализ
     property string analizer_put_text: ""
+    property string analizer_put_sohranit: ""
 	property string analizer_model_imya: "qwen3-coder-30b-a3b-instruct"//Имя модели ИИ добавляем
 	property int analizer_max_context: 22016//Количество токенов
 	property real analizer_temperatura: 0.5//Температура ИИ модели, чем выше, тем точнее ответ. 0-1
@@ -29,6 +30,7 @@ QtObject {
 		property alias kobzone_visota: root.kobzone_visota
 		//Нейро Анализ
         property alias analizer_put_text: root.analizer_put_text
+        property alias analizer_put_sohranit: root.analizer_put_sohranit
 		property alias analizer_model_imya: root.analizer_model_imya
 		property alias analizer_max_context: root.analizer_max_context
 		property alias analizer_temperatura: root.analizer_temperatura
@@ -50,6 +52,9 @@ QtObject {
 		docPut = docPut.replace(/^file:\/\//, "")//Удаляем file://
 		if (analizer_put_text === "") {//Если настройки ёще были записаны, то...
             analizer_put_text = docPut//Записываем в реестр
+        }
+		if (analizer_put_sohranit === "") {//Если настройки ёще были записаны, то...
+            analizer_put_sohranit = docPut//Записываем в реестр
         }
         if (transcribe_put_audio === "") {//Если настройки ёще были записаны, то...
 			musicPut = musicPut.toString()//В текст переводим, чтоб replace работал

@@ -12,7 +12,7 @@ class DCAnalyzerWorker(QThread):
     sigFinished = pyqtSignal(str)
     sigChunkStarted = pyqtSignal(int, int)
     sigChunkFinished = pyqtSignal(int, int)
-    sigFinalAnalysisStarted = pyqtSignal() #начало финального анализа
+    sigAnalizFinalStart = pyqtSignal() #начало финального анализа
     
     def __init__(self, text_content, prompt, analyzer):
         super().__init__()
@@ -28,7 +28,7 @@ class DCAnalyzerWorker(QThread):
                 self.prompt,
                 chunk_start_callback=self.sigChunkStarted.emit,
                 chunk_finish_callback=self.sigChunkFinished.emit,
-                final_analysis_callback=self.sigFinalAnalysisStarted.emit
+                final_analysis_callback=self.sigAnalizFinalStart.emit
             )
             self.sigFinished.emit(result)
         except Exception as e:
@@ -38,12 +38,12 @@ class DCAnalyzerWorker(QThread):
 class DCAnalyzer(QObject):
     #Сигналы
     sigResultReady = pyqtSignal(str) #Сигнал готовности результата анализа.
-    sigFileSaved = pyqtSignal(str) #Сигнал о том, что файл сохранился.
+    sigAnalizSohranit = pyqtSignal(str) #Сигнал о том, что сохранился анализ в файл.
     sigChunkStarted = pyqtSignal(int, int) #Сигнал начала обработки Чанка.
     sigChunkFinished = pyqtSignal(int, int) #Сигнал окончания обработки Чанка.
-    sigFinalAnalysisStarted = pyqtSignal() #Сигнал начала финального анализа
-    sigAnalysisStarted = pyqtSignal() #Сигнал Начала анализа.
-    sigAnalysisFinished = pyqtSignal() #Сигнал Анализ завершён. 
+    sigAnalizFinalStart = pyqtSignal() #Сигнал начала финального анализа
+    sigAnalizStart = pyqtSignal() #Сигнал Начала анализа.
+    sigAnalizFinish = pyqtSignal() #Сигнал Анализ завершён. 
     sigDocumentsLoaded = pyqtSignal(str, int) #Сигнал загрузки документов (текст, количество)
     
     def __init__(self):
@@ -87,14 +87,14 @@ class DCAnalyzer(QObject):
             self.worker.wait()
         
         # Излучаем сигнал о начале анализа
-        self.sigAnalysisStarted.emit()
+        self.sigAnalizStart.emit()
         
         # Создаем новый поток
         self.worker = DCAnalyzerWorker(text_content, prompt, self)
         self.worker.sigFinished.connect(self._on_analysis_finished)
         self.worker.sigChunkStarted.connect(self.sigChunkStarted.emit)
         self.worker.sigChunkFinished.connect(self.sigChunkFinished.emit)
-        self.worker.sigFinalAnalysisStarted.connect(self.sigFinalAnalysisStarted.emit)
+        self.worker.sigAnalizFinalStart.connect(self.sigAnalizFinalStart.emit)
         self.worker.start()
         
         self.sigResultReady.emit("Анализируется...")
@@ -103,7 +103,7 @@ class DCAnalyzer(QObject):
         """Обработчик завершения анализа"""
         self.current_result = result
         self.sigResultReady.emit(result)
-        self.sigAnalysisFinished.emit() #Излучаем сигнал о том, что анализ завершён
+        self.sigAnalizFinish.emit() #Излучаем сигнал о том, что анализ завершён
 
     @pyqtSlot(str)
     def ustPromt(self, prompt): #Сохраняет текущий промт (вызывается из QML)
@@ -453,8 +453,8 @@ class DCAnalyzer(QObject):
     def ustContentText(self, content): #Устанавливаем текст контента (вызывается из QML)
         self.text_content = content
 
-    @pyqtSlot()
-    def sohranitResult(self): #Сохранение результата в файл 
+    @pyqtSlot(str)
+    def sohranitAnaliz(self, open_path): #Сохранение результата Анализа в файл 
         if not self.current_result or self.current_result == "Анализируется...":
             print("Нечего сохранять")
             return
@@ -467,9 +467,8 @@ class DCAnalyzer(QObject):
         save_dir = QFileDialog.getExistingDirectory(
             None,
             "Выберите папку для сохранения результата",
-            str(Path.home())
+            str(open_path)#Открыть Диалог в папке (путь open_path)
         )
-        
         if not save_dir:
             print("Сохранение отменено")
             return
@@ -504,7 +503,7 @@ class DCAnalyzer(QObject):
                 f.write(file_content)
             
             print(f"✓ Результат сохранён: {full_path}")
-            self.sigFileSaved.emit(str(full_path))
+            self.sigAnalizSohranit.emit(str(full_path))
         except Exception as e:
             print(f"✗ Ошибка сохранения: {e}")
-            self.sigFileSaved.emit(f"[Ошибка: {str(e)}]")
+            self.sigAnalizSohranit.emit(f"[Ошибка: {str(e)}]")
