@@ -129,7 +129,7 @@ ApplicationWindow {
 		onLogsChanged: {
 			//Отправляем в Логи сообщение.
 			if(logs !== ""){//Если не пустая строка, то...
-				pyConsole.log(toolbar.logs)//Отображаем в консоль.
+				pyConsole.log(toolbar.logs)//Отображаем в консоль. Минуя сломанную кодировку консоли Windows.
 				//tmJurnal.strDebug = toolbar.logs;//Добавляем строчку в лог для записи и отображения
 			}
 		}
@@ -168,7 +168,6 @@ ApplicationWindow {
 					Qt.callLater(function() {
 						tmKOBzone.forceActiveFocus()
 						toolbar.log("Фокус передан на tmKOBzone")//Передаём в лог сообщение
-						//console.log("Фокус передан на tmKOBzone")
 					})
 				}
 			}

@@ -169,9 +169,8 @@ Item {
 		target: pyFileOpener
 		function onSignalFileOpened(success, message) {
 			if (success) {
-				root.toolbar(message)//Файл открыт
+
 			} else {
-				console.error("✗ Ошибка:", message)
 				root.toolbar("Ошибка: " + message)
 			}
 		}
@@ -305,7 +304,6 @@ Item {
 	function fnUrlToLocalPath(url) {//Функция кроссплатформенного преобразования URL в путь
 		if (!url) return ""
 		var path = url.toString()
-		console.log("PATH", path)
 		if (path.startsWith("file:///")) {//Если путь начинается с file:///
 			path = path.substring(7)//Убираем "file://" чтоб осталось "/" /home, /mnt и тд
 		} else if (path.startsWith("file://")) {//Если путь начинается с file://
@@ -335,7 +333,7 @@ Item {
 			var vtPut = fnUrlToLocalPath(selectedFolder)//Используем кроссплатформенную функцию
 			dcReestr.transcribe_put_audio = vtPut
 			txfAudioPut.text = vtPut
-			console.log("✓ Выбрана папка аудио:", vtPut)
+			root.toolbar(`Танскрибация. Выбрана папка аудио: ${vtPut}`)//Сообщение в toolbar и журнал.
 		}
 	}	
 	FolderDialog {//Диалог выбора папки для текстовых файлов
@@ -351,7 +349,7 @@ Item {
 			var vtPut = fnUrlToLocalPath(selectedFolder)//Используем кроссплатформенную функцию
 			dcReestr.transcribe_put_text = vtPut
 			txfTextPut.text = vtPut
-			console.log("✓ Выбрана папка результатов:", vtPut)
+			root.toolbar(`Танскрибация. Выбрана папка результатов: ${vtPut}`)//Сообщение в toolbar и журнал.
 		}
 	}	
 	FileDialog {//Диалог открытия текстового файла для просмотра
@@ -366,12 +364,12 @@ Item {
 		nameFilters: ["Текстовые файлы (*.txt)", "Все файлы (*)"]
 		fileMode: FileDialog.OpenFile//Единичный выбор файла
 		onAccepted: {
-			console.log("✓ Выбран файл:", selectedFile)//Используем Python для открытия
-			pyFileOpener.openFile(selectedFile.toString())// Открываем через Python
+			var vrPutFaila = fnUrlToLocalPath(selectedFile);//Преобразуем в путь из url
+			root.toolbar(`Транскрибация. Выбран файл: ${vrPutFaila}`)//Сообщение в toolbar и журнал.
+			pyFileOpener.openFile(selectedFile.toString())//Открываем через Python
 			//pyFileOpener.openFolder("file://" + dcReestr.transcribe_put_text)//Так можно открыть папку.
 		}
 		onRejected: {
-			console.log("Выбор файла отменён")
 		}
 	}	
     Item {//Заголовок
