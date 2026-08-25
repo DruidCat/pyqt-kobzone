@@ -14,7 +14,7 @@ Item {
     property real stepRatio: 0.6//Доля высоты строки для шага. Если шаги «слишком рано» срабатывают - 0.7–0.8.
     property int  dragThresh: 5//Порог активации жеста. Если жест всё ещё «тяжело» запускается, уменьши до 2–3
     property int  highlightMs: 181//Длительность снапа.
-    property bool pressed: (tphKarusel.pressed||tphKnopki.pressed)?true:false//if нажата карусель||кнопки?true
+    property bool pressed: false
     property var modelData: []//Свойства для модели.
     property int currentIndex: 0//0-первый элемент отображается....2-третий элемент отображается по умолчанию.
     property alias karusel: pvwKarusel
@@ -33,7 +33,13 @@ Item {
     onVisibleChanged: {//Если видимость изменилась, то...
         if(visible) pvwKarusel.focus = true;//Если видимый, то фокусируемся на карусели, чтоб кнопки работали.
     }
-
+	Timer {
+		id: tmrPressed
+		interval: 220; running: false; repeat: false
+        onTriggered: {
+			root.pressed = false
+		}
+	}
     Rectangle {
         id: rctKarusel
         anchors.top: root.top
@@ -45,6 +51,12 @@ Item {
         border.color: root.clrTexta
         TapHandler {//Обработка нажатия, замена MouseArea с Qt5.10
             id: tphKarusel//Зону нажатия на карусель отслеживает.
+			onPressedChanged: {//Если изменилось состояние, то...
+				if(pressed) {//Если нажато, то...
+					root.pressed = true//Взводим флаг.
+					tmrPressed.restart()//Взводим таймер на изменение флага.
+				}
+			}
         }
     }
     Rectangle {
@@ -81,6 +93,12 @@ Item {
         }
         TapHandler {//Обработка нажатия, замена MouseArea с Qt5.10
             id: tphKnopki//Зону нажатия на кнопок отслеживает.
+			onPressedChanged: {//Если изменилось состояние, то...
+				if(pressed) {//Если нажато, то...
+					root.pressed = true//Взводим флаг.
+					tmrPressed.restart()//Взводим таймер на изменение флага.
+				}
+			}
         }
     }
 
