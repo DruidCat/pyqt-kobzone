@@ -261,11 +261,22 @@ ApplicationWindow {
 				onClickedJurnal: {
 					stvStr.push(pgStrJurnal)//Открываем Журнал
 				}
+				onClickedHotKey: {
+					tmStrInstrukciya.strInstrukciya = "hotkey"
+					stvStr.push(pgStrInstrukciya)
+				}
+				onClickedQt: {
+					tmStrInstrukciya.strInstrukciya = "oqt"
+					stvStr.push(pgStrInstrukciya)
+				}
 				onToolbar: function(strToolbar) {//Если сигнал пришёл с текстом в toolbar, то...
 					toolbar.fnText(strToolbar)//Передаём на отображение в toolbar сообщение.
 				}
 				onLog: function (strLog) {//Если сигнал пришёл с текстом в log, то...
 					toolbar.log(strLog)//Передаём в лог сообщение.
+				}
+				onUntShriftChanged: {//Если размер шрифта изменился, то...
+					root.shrift = (untShrift + 1)
 				}
 			}
 		}

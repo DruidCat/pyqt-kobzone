@@ -38,6 +38,8 @@ Item {
 	//Массив кнопок для навигации
     property var knopkiMassiv: []//Массив кнопок, между которыми нужно листать.
     property int currentIndex: 0//Выбранная кнопка.
+	//Шрифт
+	property int untShrift: dcReestr.kobzone_set_shrift//0-мал, 1-сред, 2-большой.
 	//Настройки
 	anchors.fill: parent
 	focus: true
@@ -45,13 +47,21 @@ Item {
 	signal clickedNazad()
 	signal clickedInfo()
 	signal clickedJurnal()
+	signal clickedHotKey();//Сигнал показа инструкции по горячим клавишам.
+	signal clickedQt();//Сигнал нажатия кнопки Об Qt.
 	signal toolbar(var strToolbar)
     signal log(var strLog)
 	//Методы
 	Component.onCompleted: {
-        knopkiMassiv = [knopkaJurnal, knopkaShrift]//Сюда добавляем id кнопок, между которыми мы будим листать
+        knopkiMassiv = [knopkaJurnal, knopkaShrift, knopkaKlavishi, knopkaQt]//Сюда добавляем id кнопок
 		root.forceActiveFocus()
 	}
+	DCSettings {//Объект настроек
+        id: dcReestr
+    }
+	onUntShriftChanged: {//Если размер Шрифта изменится, то...
+        dcReestr.kobzone_set_shrift = root.untShrift;//Сохраняем в реестре размер шрифта.
+    }
 	Keys.onPressed: (event) => {
 		if (event.modifiers & Qt.AltModifier) {
 			if (event.key === Qt.Key_Left) {
@@ -151,6 +161,9 @@ Item {
 		} else {
 			//Если меню закрыто, ничего не делаем (можно добавить другую логику)
 		}
+		if (pvShrift.visible) {
+			pvShrift.visible = false
+		}
     }
 	function fnClickedNazad() {
 		fnClickedEscape()//Функция нажатия на клавишу Escape
@@ -163,12 +176,21 @@ Item {
 	function fnToggleMenu() {
 		if (menuMenu.visible) 
 			menuMenu.visible = false
-		else 
+		else {
+			if (pvShrift.visible) pvShrift.visible = false
 			menuMenu.visible = true
+		}
 	}
 	function fnCloseMenuIfOpen() {
 		if (menuMenu.visible) {
 			menuMenu.visible = false
+			return true
+		}
+		return false
+	}
+	function fnCloseShriftIfOpen() {
+		if (pvShrift.visible) {
+			pvShrift.visible = false
 			return true
 		}
 		return false
@@ -178,8 +200,25 @@ Item {
 		root.clickedJurnal()
 	}
 	function fnClickedShrift(){//Функция выбора размера шрифта
-		root.log("В разработке")
-	}	
+		fnClickedEscape()//Закрываем выбор шрифта и меню открытое.
+		if(pvShrift.visible){//Если видимый виджет, то...
+			pvShrift.visible = false//Делаем невидимым виджет
+		}
+		else{//Если невидимый виджет, то...
+			Qt.callLater(function(){//пауза, иначе не сработает фокус и pvShrift. ВАЖНО!!!
+				pvShrift.visible = true//Делаем видимым виджет
+				pvShrift.karusel.forceActiveFocus()//фокус PathView, чтоб hotkey работали.
+			})
+		}
+	}
+	function fnClickedHotKey(){//Функция открытия инструкции с горячими клавишами.
+		fnClickedEscape()//Закрываем выбор шрифта и меню открытое.
+		root.clickedHotKey();//Сигнал открытия инструкции по горячим клавишам.
+	}
+	function fnClickedQt(){//Функция открытия инструкции о Qt
+		fnClickedEscape()//Закрываем выбор шрифта и меню открытое.
+		root.clickedQt();//Сигнал нажатия кнопки об Qt.
+	}
 	Item {//Заголовок
 		id: tmZagolovok
 		DCKnopkaNazad {
@@ -222,7 +261,10 @@ Item {
 				}
 			}
 			TapHandler {//Нажимаем на всю область
-				onTapped: fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
+				onTapped: {
+					fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
+					//fnCloseShriftIfOpen()//Закрываем меню выбора шрифта, если оно открыто
+				}
 			}
 			Column {
 				id: clmnContent
@@ -252,14 +294,25 @@ Item {
 					onPressedChanged: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
-								fnPress()//Если меню было закрыто, выполняем действие
+								if (pressed && !pvShrift.pressed) fnPress()
 							}
 						}
 					}
                 }
 				DCKnopkaOriginal {//Кнопка выбора размера шрифта
                     id: knopkaShrift
-                    text: "📁 размер шрифта"
+                    text: {
+                        let ltShrift = qsTr("📁 шрифт ");//
+                        if(root.untShrift === 0)
+                            ltShrift = ltShrift + qsTr("маленький")
+                        else
+                            if(root.untShrift === 1)
+                                ltShrift = ltShrift + qsTr("средний")
+                            else
+                                ltShrift = ltShrift + qsTr("большой")
+                        pvShrift.currentIndex = root.untShrift
+                        return ltShrift;
+                    }
                     ntHeight: root.ntWidth
                     ntCoff: root.ntCoff
 					anchors.left: parent.left
@@ -276,13 +329,80 @@ Item {
 					onPressedChanged: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
-								fnPress()//Если меню было закрыто, выполняем действие
+								if (pressed && !pvShrift.pressed) fnPress()
+							}
+						}
+					}
+                }
+				DCKnopkaOriginal {//Кнопка показа инструкции по горячим клавишам.
+                    id: knopkaKlavishi
+                    text: "📁 горячие клавиши"
+                    ntHeight: root.ntWidth
+                    ntCoff: root.ntCoff
+					anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2
+                    anchors.rightMargin: root.ntCoff * 2
+					clrTexta: root.clrMenuText
+                    clrKnopki: (root.currentIndex === 2) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    opacityKnopki: 0.9
+					function fnPress() {
+						root.currentIndex = 2
+						fnClickedHotKey()//Функция открытия инструкции с горячими клавишами.
+					}
+					onPressedChanged: {
+						if (pressed) {
+							if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
+								if (pressed && !pvShrift.pressed) fnPress()
+							}
+						}
+					}
+                }
+				DCKnopkaOriginal {//Кнопка показа инструкцию о Qt
+                    id: knopkaQt
+                    text: "📁 о qt"
+                    ntHeight: root.ntWidth
+                    ntCoff: root.ntCoff
+					anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2
+                    anchors.rightMargin: root.ntCoff * 2
+					clrTexta: root.clrMenuText
+                    clrKnopki: (root.currentIndex === 3) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    opacityKnopki: 0.9
+					function fnPress() {
+						root.currentIndex = 3
+						fnClickedQt()//Функция открытия инструкции о Qt
+					}
+					onPressedChanged: {
+						if (pressed) {
+							if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
+								if (pressed && !pvShrift.pressed) fnPress()
 							}
 						}
 					}
                 }
 			}
 		}
+		ListModel {//Модель с шриштами
+            id: modelShrift
+            ListElement { spisok: qsTr("маленький") }
+            ListElement { spisok: qsTr("средний") }
+            ListElement { spisok: qsTr("большой") }
+        }
+        DCPathView {
+            id: pvShrift
+            visible: false
+            ntWidth: root.ntWidth; ntCoff: root.ntCoff
+            anchors.left: tmZona.left; anchors.right: tmZona.right; anchors.bottom: tmZona.bottom
+            anchors.leftMargin: dcScrollbar.width; anchors.rightMargin: dcScrollbar.width
+            clrFona: root.clrFona; clrTexta: root.clrMenuText; clrMenuFon: root.clrMenuFon
+            modelData: modelShrift
+            onClicked: function(strShrift) {
+                pvShrift.visible = false;
+                root.untShrift = pvShrift.currentIndex;//Приравниваем значение к переменной.
+            }
+        }
 		DCScrollbar {//Скроллбар
 			id: dcScrollbar
 			flick: flcZona
@@ -370,8 +490,10 @@ Item {
 		propagateComposedEvents: true
 		onClicked: (mouse) => {
 			mouse.accepted = false
-			if (menuMenu.visible)
+			if (menuMenu.visible || pvShrift.visible){
 				menuMenu.visible = false
+				//pvShrift.visible = false
+			}
 			else 
 				root.forceActiveFocus()
 			root.forceActiveFocus()
