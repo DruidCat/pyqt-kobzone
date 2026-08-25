@@ -41,6 +41,20 @@ Item {
     signal toolbar(var strToolbar);//Сигнал, когда передаём новую надпись в Тулбар.
     signal log(var strLog)
     //Функции.
+	Component.onCompleted: {
+		root.forceActiveFocus()
+	}
+    onStrDebugChanged: {//Если переменная strDebug изменилась, то...
+		if(root.strDebug !== ""){
+			pyJurnal.writeLog(root.strDebug)// Записываем лог в файл через Python
+			var vrGodMesyac = Qt.formatDateTime(new Date(), "yyyy-MM-dd hh:mm:ss")//Временная метка
+			txdZona.text = txdZona.text + vrGodMesyac + " " +  root.strDebug + '\n'//Добавляем данные в Журнал
+		}
+    }
+	onVisibleChanged:{
+		if(visible) txdZona.fnFocus()//Фокусируемся, чтоб журнал листался клавишами горячими.
+		root.log("Фокус передан на DCTextEdit в StrJurnal")
+	}
     Keys.onPressed: (event) => {//Это запись для Qt6, для Qt5 нужно удалить event =>
         if(event.modifiers & Qt.ControlModifier){//Если нажат "Ctrl"
             if(event.key === Qt.Key_F){//Если нажата клавиша F, то...
@@ -70,17 +84,7 @@ Item {
                 }
             }
         }
-    }
-	Component.onCompleted: {
-		root.forceActiveFocus()
-	}
-    onStrDebugChanged: {//Если переменная strDebug изменилась, то...
-		if(root.strDebug !== ""){
-			pyJurnal.writeLog(root.strDebug)// Записываем лог в файл через Python
-			var vrGodMesyac = Qt.formatDateTime(new Date(), "yyyy-MM-dd hh:mm:ss")//Временная метка
-			txdZona.text = txdZona.text + vrGodMesyac + " " +  root.strDebug + '\n'//Добавляем данные в Журнал
-		}
-    }
+    }	
     function fnClickedNazad(){//Функция нажатия кнопки Назад
         fnClickedEscape();//Меню сворачиваем
         root.clickedNazad();

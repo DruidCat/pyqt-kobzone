@@ -641,14 +641,6 @@ ApplicationWindow {
 			clrFona: root.clrFona; clrTexta: root.clrKnopok; clrRabOblasti: root.clrStranic
 			textZagolovok: "ЖУРНАЛ"
 			zagolovokLevi: 1.3; zagolovokPravi: 1.3; toolbarLevi: 1.3; toolbarPravi: 1.3
-			onVisibleChanged: {
-				if (visible) {
-					Qt.callLater(function() {
-						tmJurnal.forceActiveFocus()
-						toolbar.log("Фокус передан на tmJurnal")
-					})
-				}
-			}
 			StrJurnal {
 				id: tmJurnal
 				ntWidth: pgStrJurnal.ntWidth; ntCoff: pgStrJurnal.ntCoff
