@@ -35,6 +35,9 @@ Item {
     property string logoImya: "kobzone"//Имя логотипа в DCLogo
 	property real rlProgress: 0
 	property real rlLoader: 1
+	//Массив кнопок для навигации
+    property var knopkiMassiv: []//Массив кнопок, между которыми нужно листать.
+    property int currentIndex: 0//Выбранная кнопка.
 	//Настройки
 	anchors.fill: parent
 	focus: true
@@ -45,6 +48,10 @@ Item {
 	signal toolbar(var strToolbar)
     signal log(var strLog)
 	//Методы
+	Component.onCompleted: {
+        knopkiMassiv = [knopkaJurnal, knopkaShrift]//Сюда добавляем id кнопок, между которыми мы будим листать
+		root.forceActiveFocus()
+	}
 	Keys.onPressed: (event) => {
 		if (event.modifiers & Qt.AltModifier) {
 			if (event.key === Qt.Key_Left) {
@@ -60,23 +67,29 @@ Item {
 			fnClickedInfo()    
 			event.accepted = true
 		} else if (event.key === Qt.Key_Up || event.key === Qt.Key_K || event.key === 1051) {
-			if (!menuMenu.visible) {
-				var ltNoviY = flcZona.contentY - 50
-				if (ltNoviY < 0)
-					ltNoviY = 0
-				flcZona.contentY = ltNoviY
-			}
-			event.accepted = true
+			if (!menuMenu.visible) {//Навигация работает только если меню закрыто
+                root.currentIndex--
+                if (root.currentIndex < 0)
+                    root.currentIndex = knopkiMassiv.length - 1
+                
+                fnScrollKnopok(false)
+            }
+            event.accepted = true
 		} else if (event.key === Qt.Key_Down || event.key === Qt.Key_J || event.key === 1054) {
-			if (!menuMenu.visible) {
-				var ltMaxY = flcZona.contentHeight - flcZona.height
-				var ltNoviY = flcZona.contentY + 50
-				if (ltNoviY > ltMaxY)
-					ltNoviY = ltMaxY
-				flcZona.contentY = ltNoviY
-			}    
-			event.accepted = true
-		} else if (event.key === Qt.Key_PageUp) {
+			if (!menuMenu.visible) {//Навигация работает только если меню закрыто
+                root.currentIndex++
+                if (root.currentIndex >= knopkiMassiv.length)
+                    root.currentIndex = 0
+                
+                fnScrollKnopok(true)
+            }
+            event.accepted = true
+		} else if (event.key === Qt.Key_Enter || event.key === Qt.Key_Return) {
+            if (!menuMenu.visible) {//Enter работает только если меню закрыто
+                fnClickedEnter()
+            }
+            event.accepted = true
+        } else if (event.key === Qt.Key_PageUp) {
 			if (!menuMenu.visible) {
 				var ltNoviY = flcZona.contentY - flcZona.height
 				if (ltNoviY < 0)
@@ -105,6 +118,33 @@ Item {
 			event.accepted = true
 		}
 	}
+	function fnClickedEnter() {//Функция обработки нажатия клавиши Enter
+        if (root.currentIndex >= 0 && root.currentIndex < knopkiMassiv.length) {
+            var vrKnopkaID = knopkiMassiv[root.currentIndex]
+            
+            if (vrKnopkaID && typeof vrKnopkaID.fnPress === "function" && 
+                vrKnopkaID.visible && vrKnopkaID.enabled) {
+                vrKnopkaID.fnPress()
+            }
+        }
+    }
+    function fnScrollKnopok(isPlus) {//Функция скроллина кнопок
+        var knopkaID = knopkiMassiv[root.currentIndex]
+        if (!knopkaID) {
+            return
+        }
+        if (knopkaID.visible) {
+            var knopkaTop = knopkaID.y
+            var knopkaBottom = knopkaTop + knopkaID.height + root.ntWidth
+            var visibleTop = flcZona.contentY
+            var visibleBottom = visibleTop + flcZona.height
+            
+            if (knopkaTop < visibleTop)
+                flcZona.contentY = knopkaTop
+            else if (knopkaBottom > visibleBottom)
+                flcZona.contentY = knopkaBottom - flcZona.height
+        }
+    }
 	function fnClickedEscape() {//Функция нажатия на клавишу Escape
 		if (menuMenu.visible) {
 			menuMenu.visible = false
@@ -138,11 +178,8 @@ Item {
 		root.clickedJurnal()
 	}
 	function fnClickedShrift(){//Функция выбора размера шрифта
-		console.log("В разработке")
-	}
-	Component.onCompleted: {
-		root.forceActiveFocus()
-	}
+		root.log("В разработке")
+	}	
 	Item {//Заголовок
 		id: tmZagolovok
 		DCKnopkaNazad {
@@ -208,11 +245,17 @@ Item {
 					clrTexta: root.clrMenuText
                     clrKnopki: (root.currentIndex === 0) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
-                    onClicked: {
-                        if (!fnCloseMenuIfOpen()) {
-                            fnClickedJugnal()//Функция открывающая Журнал
-                        }
-                    }
+					function fnPress() {
+						root.currentIndex = 0
+						fnClickedJugnal()//Функция открывающая Журнал
+					}
+					onPressedChanged: {
+						if (pressed) {
+							if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
+								fnPress()//Если меню было закрыто, выполняем действие
+							}
+						}
+					}
                 }
 				DCKnopkaOriginal {//Кнопка выбора размера шрифта
                     id: knopkaShrift
@@ -224,13 +267,19 @@ Item {
                     anchors.leftMargin: root.ntCoff * 2
                     anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 0) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 1) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
-                    onClicked: {
-                        if (!fnCloseMenuIfOpen()) {
-                            fnClickedShrift()//Функция выбора размера шрифта
-                        }
-                    }
+					function fnPress() {
+						root.currentIndex = 1
+						fnClickedShrift()//Функция выбора размера шрифта
+					}
+					onPressedChanged: {
+						if (pressed) {
+							if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
+								fnPress()//Если меню было закрыто, выполняем действие
+							}
+						}
+					}
                 }
 			}
 		}

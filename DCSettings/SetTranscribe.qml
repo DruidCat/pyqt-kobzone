@@ -35,6 +35,9 @@ Item {
     property string logoImya: "kobzone"//Имя логотипа в DCLogo
 	property real rlProgress: 0
 	property real rlLoader: 1
+	//Массив кнопок для навигации
+    property var knopkiMassiv: []//Массив кнопок, между которыми нужно листать.
+    property int currentIndex: 0//Выбранная кнопка.
 	//Настройки
 	anchors.fill: parent
 	focus: true
@@ -44,6 +47,10 @@ Item {
 	signal toolbar(var strToolbar)
     signal log(var strLog)
 	//Методы
+	Component.onCompleted: {
+        knopkiMassiv = []//Сюда добавляем id кнопок, между которыми мы будим листать.
+		root.forceActiveFocus()
+	}
 	Keys.onPressed: (event) => {
 		if (event.modifiers & Qt.AltModifier) {
 			if (event.key === Qt.Key_Left) {
@@ -104,6 +111,33 @@ Item {
 			event.accepted = true
 		}
 	}
+	function fnClickedEnter() {//Функция обработки нажатия клавиши Enter
+        if (root.currentIndex >= 0 && root.currentIndex < knopkiMassiv.length) {
+            var vrKnopkaID = knopkiMassiv[root.currentIndex]
+            
+            if (vrKnopkaID && typeof vrKnopkaID.fnPress === "function" && 
+                vrKnopkaID.visible && vrKnopkaID.enabled) {
+                vrKnopkaID.fnPress()
+            }
+        }
+    }
+    function fnScrollKnopok(isPlus) {//Функция скроллина кнопок
+        var knopkaID = knopkiMassiv[root.currentIndex]
+        if (!knopkaID) {
+            return
+        }
+        if (knopkaID.visible) {
+            var knopkaTop = knopkaID.y
+            var knopkaBottom = knopkaTop + knopkaID.height + root.ntWidth
+            var visibleTop = flcZona.contentY
+            var visibleBottom = visibleTop + flcZona.height
+            
+            if (knopkaTop < visibleTop)
+                flcZona.contentY = knopkaTop
+            else if (knopkaBottom > visibleBottom)
+                flcZona.contentY = knopkaBottom - flcZona.height
+        }
+    }
 	function fnClickedEscape() {//Функция нажатия на клавишу Escape
 		if (menuMenu.visible) {
 			menuMenu.visible = false
@@ -131,10 +165,7 @@ Item {
 			return true
 		}
 		return false
-	}
-	Component.onCompleted: {
-		root.forceActiveFocus()
-	}
+	}	
 	Item {//Заголовок
 		id: tmZagolovok
 		DCKnopkaNazad {

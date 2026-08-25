@@ -33,7 +33,7 @@ Item {
     property string logoImya: "kobzone"//Имя логотипа в DCLogo
     //Массив кнопок для навигации
     property var knopkiMassiv: []
-    property int currentIndex: 0
+    property int currentIndex: 0//Выбранная кнопка.
     //Настройки
     anchors.fill: parent
     //Сигналы
@@ -80,7 +80,6 @@ Item {
                 fnScrollKnopok(true)
             }
             event.accepted = true
-            
         } else if (event.key === Qt.Key_Enter || event.key === Qt.Key_Return) {
             if (!menuMenu.visible) {//Enter работает только если меню закрыто
                 fnClickedEnter()
@@ -88,7 +87,7 @@ Item {
             event.accepted = true
         }
     }
-    function fnClickedEnter() {
+    function fnClickedEnter() {//Функция обработки нажатия клавиши Enter
         if (root.currentIndex >= 0 && root.currentIndex < knopkiMassiv.length) {
             var vrKnopkaID = knopkiMassiv[root.currentIndex]
             
@@ -98,7 +97,7 @@ Item {
             }
         }
     }
-    function fnScrollKnopok(isPlus) {
+    function fnScrollKnopok(isPlus) {//Функция скроллина кнопок
         var knopkaID = knopkiMassiv[root.currentIndex]
         if (!knopkaID) {
             return
@@ -230,10 +229,9 @@ Item {
                             anchors.topMargin: root.ntWidth
                             clrTexta: root.clrMenuText
                             clrKnopki: (root.currentIndex === 0) ?
-                                Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+														Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                             text: "НЕЙРО АНАЛИЗ ДОКУМЕНТОВ"
                             opacityKnopki: 0.9
-                            
                             function fnPress() {
                                 root.currentIndex = 0
                                 root.clickedAnalizator()
@@ -241,7 +239,7 @@ Item {
                             onPressedChanged: {
                                 if (pressed) {
                                     if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
-                                        fnPress()// Если меню было закрыто, выполняем действие
+                                        fnPress()//Если меню было закрыто, выполняем действие
                                     }
                                 }
                             }
@@ -264,8 +262,8 @@ Item {
                             }
                             onPressedChanged: {
                                 if (pressed) {
-                                    if (!fnCloseMenuIfOpen()) {
-                                        fnPress()
+                                    if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
+                                        fnPress()//Если меню было закрыто, выполняем действие
                                     }
                                 }
                             }
@@ -282,15 +280,14 @@ Item {
                             text: "ТРАНСКРИБАЦИЯ"
                             opacityKnopki: 0.9
                             enabled: true
-                            
                             function fnPress() {
                                 root.currentIndex = 2
                                 root.clickedTranskribaciya()
                             }
                             onPressedChanged: {
                                 if (pressed) {
-                                    if (!fnCloseMenuIfOpen()) {
-                                        fnPress()
+                                    if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
+                                        fnPress()//Если меню было закрыто, выполняем действие
                                     }
                                 }
                             }
