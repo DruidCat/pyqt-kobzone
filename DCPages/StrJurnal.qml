@@ -31,6 +31,7 @@ Item {
 	property alias radiusZona: txdZona.radius
 	property string strDebug: ""//Глобальная переменная, в ней собирается строка со всеми Сообщениями.
     property int ntPoisk//Переменная, которая будет хранить диапазон поиска по Журналу.
+	property bool isMobile: false
     //Настройки.
 	anchors.fill: parent//Растянется по Родителю.
     focus: true;//Чтоб работали горячие клавиши.
@@ -130,7 +131,7 @@ Item {
             ntWidth: root.ntWidth
             ntCoff: root.ntCoff
 			readOnly: true//Запрещено редактировать текст
-            textEdit.selectByMouse: false//Запрещаем выделять текст, то нужно для свайпа Android
+            textEdit.selectByMouse: root.isMobile ? false : true//Запрещаем выделять текст для свайпа Android
             pixelSize: root.ntWidth/2*root.ntCoff//размер шрифта текста в два раза меньше.
             radius: root.ntCoff/4//Радиус возьмём из настроек элемента qml через property
             clrFona: root.clrFona//Цвет фона рабочей области

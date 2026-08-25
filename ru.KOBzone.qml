@@ -664,6 +664,7 @@ ApplicationWindow {
 				toolbarHeight: pgStrJurnal.rctStrToolbar.height
 				tapZagolovokLevi: pgStrJurnal.zagolovokLevi; tapZagolovokPravi: pgStrJurnal.zagolovokPravi
 				tapToolbarLevi: pgStrJurnal.toolbarLevi; tapToolbarPravi: pgStrJurnal.toolbarPravi
+				isMobile: root.isMobile
 				onClickedNazad: {
 					stvStr.pop()//Назад страницу
 					Qt.callLater(function() {
