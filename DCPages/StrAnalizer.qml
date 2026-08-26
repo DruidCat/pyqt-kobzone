@@ -70,10 +70,19 @@ Item {
 				dcReestr.analizer_put_sohranit = strPut;//Сохраняем путь папки, у котороую сохранили результат
 			}
 		}
-		function onSigChunkStarted(ntCurrent, ntTotal) {//Сигнал начала обработки Чанка.
+		function onSigChunkStarted(ntCurrent, ntTotal) {
 			root.log(`Чанк ${ntCurrent}/${ntTotal} начал обрабатываться`)
-			if (ldrProgress.item && ntTotal > 1) {//Только для множественных чанков
-				ldrProgress.item.text = `${ntCurrent}/${ntTotal + 1}`//+1 резервируем для финального анализа
+			if (ldrProgress.item) {
+				if (ntCurrent === 1) {//Настраиваем прогресс при первом чанке
+					ldrProgress.total = ntTotal
+					if (ntTotal === 1) {
+						ldrProgress.item.text = "Финальный анализ..."
+					} else {
+						ldrProgress.item.text = `${ntCurrent}/${ntTotal + 1}`
+					}
+				} else if (ntTotal > 1) {
+					ldrProgress.item.text = `${ntCurrent}/${ntTotal + 1}`
+				}
 			}
 		}
 		function onSigChunkFinished(ntCurrent, ntTotal) {//Сигнал окончания обработки Чанка.
@@ -104,18 +113,12 @@ Item {
 		function onSigAnalizStart() {//Сигнал Начала анализа.
 			root.log("✓ Анализ начался")
 			root.rlProgress = 0
-			var kolichestvo_chankov = fnKolichestvoChankov(txaContent.text)//Определяем количество чанков
-			root.log(`Примерное количество чанков: ${kolichestvo_chankov}`)
 			tmrLogo.running = true//Запускаем анимацию логотипа и включаем политики кнопок.
 			if (ldrProgress.item) {//Если существует объект, то...
-				ldrProgress.total = kolichestvo_chankov//Для Пересчёт скорости смещения полосы.
-				if (kolichestvo_chankov === 1)//Если один чанк, то...
-					ldrProgress.item.text = "Финальный анализ..."//показываем текст "Финальный анализ..."
-				else//Если несколько чанков, то...
-					ldrProgress.item.text = `0/${kolichestvo_chankov + 1}`//Для нескольких чанков показываем 0/N
+				ldrProgress.item.text = "Подготовка..."//Устанавливаем прогресс в режим ожидания
+				ldrProgress.item.progress = 0
 			}
 		}
-		
 		function onSigAnalizFinish() {//сигнал Анализ завершён. 
 			root.toolbar(`Анализ завершён: ${txfPromt.text}`)
 			tmrLogo.running = false//Останавливаем анимацию анализа и политики кнопок
@@ -328,14 +331,6 @@ Item {
         }
         return false
     }
-	function fnKolichestvoChankov(text) {//Функция приблизительного подсчёта количества чанков
-		if (!text || text.trim() === "") return 0
-		var max_tokens = dcReestr.analizer_max_context//Максимальное количество токенов
-		var chars_per_token = 4
-		var chunk_size = (max_tokens * chars_per_token) / 2
-		var kolichestvo_chankov = Math.ceil(text.length / chunk_size)
-		return kolichestvo_chankov
-	} 
     Item {//Заголовок
         id: tmZagolovok
         DCKnopkaNazad {

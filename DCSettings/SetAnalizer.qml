@@ -38,6 +38,8 @@ Item {
 	//Массив кнопок для навигации
     property var knopkiMassiv: []//Массив кнопок, между которыми нужно листать.
     property int currentIndex: 0//Выбранная кнопка.
+	//Модель
+	property string strModel: dcReestr.analizer_model_imya//Имя модели ИИ
 	//Настройки
 	anchors.fill: parent
 	focus: true
@@ -48,9 +50,15 @@ Item {
     signal log(var strLog)
 	//Методы
 	Component.onCompleted: {
-        knopkiMassiv = []//Сюда добавляем id кнопок, между которыми мы будим листать.
+        knopkiMassiv = [knopkaModeli]//Сюда добавляем id кнопок, между которыми мы будим листать.
 		root.forceActiveFocus()
 	}
+	DCSettings {//Объект настроек
+        id: dcReestr
+    }
+	onStrModelChanged: {//Если Модель изменится, то...
+        dcReestr.analizer_model_imya = root.strModel;//Сохраняем в реестре имя Модели.
+    }
 	Keys.onPressed: (event) => {
 		if (event.modifiers & Qt.AltModifier) {
 			if (event.key === Qt.Key_Left) {
@@ -165,7 +173,21 @@ Item {
 			return true
 		}
 		return false
-	}	
+	}
+	function fnClickedModel(){//Функция выбора Модели
+		if(pvModels.visible){//Если видимый виджет, то...
+			Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModels. ВАЖНО!!!
+				pvModels.visible = false//Делаем невидимым виджет
+				root.forceActiveFocus()//фокус PathView, чтоб hotkey работали.
+			})
+		}
+		else{//Если невидимый виджет, то...
+			Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModels. ВАЖНО!!!
+				pvModels.visible = true//Делаем видимым виджет
+				pvModels.karusel.forceActiveFocus()//фокус PathView, чтоб hotkey работали.
+			})
+		}
+	}
 	Item {//Заголовок
 		id: tmZagolovok
 		DCKnopkaNazad {
@@ -219,32 +241,43 @@ Item {
 				leftPadding: root.ntCoff * 2
 				rightPadding: root.ntCoff * 2
 				//ТУТ КОНТЕНТ НАСТРОЕК
-				Text {//Промт для модели
-                    text: "Имя модели:"
-                    font.pixelSize: root.ntWidth/2 * root.ntCoff
-                    color: root.clrTexta
-					font.bold: true//Жирный текст.
-                    width: parent.width - parent.leftPadding - parent.rightPadding
+				DCKnopkaOriginal {//Кнопка выбора размера шрифта
+                    id: knopkaModeli
+                    text: {
+                        let ltShrift = qsTr("модель ");//
+						/*
+                        if(root.strModel === 0)
+                            ltShrift = ltShrift + qsTr("маленький")
+                        else
+                            if(root.strModel === 1)
+                                ltShrift = ltShrift + qsTr("средний")
+                            else
+                                ltShrift = ltShrift + qsTr("большой")
+                        pvModels.currentIndex = root.strModel
+						*/
+                        return ltShrift;
+                    }
+                    ntHeight: root.ntWidth
+                    ntCoff: root.ntCoff
+					anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2
+                    anchors.rightMargin: root.ntCoff * 2
+					clrTexta: root.clrMenuText
+                    clrKnopki: (root.currentIndex === 1) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    opacityKnopki: 0.9
+					function fnPress() {
+						root.currentIndex = 1
+						fnClickedModel()//Функция выбора Модели.
+					}
+					onPressedChanged: {
+						if (pressed) {
+							if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
+								if (pressed && !pvModels.pressed) fnPress()
+							}
+						}
+					}
                 }
-				TextField {
-					id: promptField
-					width: parent.width - parent.leftPadding - parent.rightPadding
-					placeholderText: "Напишите имя языковой модели"
-					selectByMouse: true
-					color: root.clrTexta
-					background: Rectangle {
-						color: "transparent"
-						border.color: root.clrTexta
-						border.width: 1
-						radius: root.ntCoff / 2
-					}
-					Keys.onReturnPressed: {//Если нажат Enter
-						
-					}
-					onTextChanged: {
-
-					}
-				}
 			}
 		}
 		DCScrollbar {//Скроллбар
@@ -263,6 +296,30 @@ Item {
 				}
 			}
 		}
+		ListModel {//Модель с шриштами
+            id: modelModels
+			/*
+            ListElement { spisok: qsTr("маленький") }
+            ListElement { spisok: qsTr("средний") }
+            ListElement { spisok: qsTr("большой") }
+			*/
+        }
+        DCPathView {
+            id: pvModels
+            visible: false
+            ntWidth: root.ntWidth; ntCoff: root.ntCoff
+            anchors.left: tmZona.left; anchors.right: tmZona.right; anchors.bottom: tmZona.bottom
+            anchors.leftMargin: dcScrollbar.width; anchors.rightMargin: dcScrollbar.width
+            clrFona: root.clrFona; clrTexta: root.clrMenuText; clrMenuFon: root.clrMenuFon
+            modelData: modelModels
+            onClicked: function(strShrift) {
+				Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModels. ВАЖНО!!!
+					pvModels.visible = false//Делаем невидимым виджет
+					//root.strModel = pvModels.currentIndex;//Приравниваем значение к переменной.
+					root.forceActiveFocus()//фокус PathView, чтоб hotkey работали.
+				})
+            }
+        }
 		DCMenu {//Всплывающее меню DCMenu
 			id: menuMenu
 			visible: false

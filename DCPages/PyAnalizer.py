@@ -401,7 +401,7 @@ class DCAnalyzer(QObject):
             overlap_percent = self.overlap_percent #используем значение из self
 
         chars_per_token = 2.5  # Для русского текста (кириллица)
-        chunk_size = int((max_tokens * chars_per_token) // 2)
+        chunk_size = int(max_tokens * chars_per_token * 0.85)#0.85 = 15% запас для промта "Текст (часть X из Y):\n"
         overlap_size = int(chunk_size * (overlap_percent / 100))
         
         chunks = []
