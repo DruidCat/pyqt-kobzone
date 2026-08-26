@@ -307,7 +307,10 @@ Item {
 			filePaths.push(vtFail)
 		}
 		pyAnalyzer.ustMultipleDocuments(filePaths)//Вызываем метод Python для загрузки файлов
-	}	
+	}
+	function fnClickedOchistit() {//Функция очистки промта.
+		txfPromt.text = ""//Очищаем промт.
+	}
     function fnClickedAnaliz() {//Функция запускающая нейро анализ документов
         pyAnalyzer.startAnaliza(txaContent.text, txfPromt.text)
     }
@@ -482,30 +485,48 @@ Item {
 					font.bold: true//Жирный текст.
                     width: parent.width - parent.leftPadding - parent.rightPadding
                 }
-				TextField {
-					id: txfPromt
-					width: parent.width - parent.leftPadding - parent.rightPadding
-					placeholderText: "Проанализируй этот текст и выдели основные темы"
-					selectByMouse: true
-					color: root.clrTexta
-					background: Rectangle {
-						color: "transparent"
-						border.color: root.clrTexta
-						border.width: 1
-						radius: root.ntCoff / 2
-					}
-					Keys.onReturnPressed: {
-						if (txaContent.text.trim() !== "") {
-							fnClickedAnaliz()//Функция запускающая нейро анализ документов
+				Row {
+                    width: parent.width - parent.leftPadding - parent.rightPadding
+                    spacing: root.ntCoff
+					TextField {
+						id: txfPromt
+						width: parent.width - parent.leftPadding
+					   						- parent.rightPadding
+											- knopkaOchistit.width//минус ширина кнопки
+											- parent.spacing//минус расстояние Row
+						height: knopkaOchistit.height
+						placeholderText: "Проанализируй этот текст и выдели основные темы"
+						selectByMouse: true
+						color: root.clrTexta
+						background: Rectangle {
+							color: "transparent"
+							border.color: root.clrTexta
+							border.width: 1
+							radius: root.ntCoff / 2
+						}
+						Keys.onReturnPressed: {
+							if (txaContent.text.trim() !== "") {
+								fnClickedAnaliz()//Функция запускающая нейро анализ документов
+							}
+						}
+						onTextChanged: {
+							pyAnalyzer.ustPromt(text)//Сохраняем промт при изменении
+						}
+						TapHandler {//Нажимаем на всю область
+							onTapped: fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
+						}
+					}	
+					DCKnopkaZakrit {
+						id: knopkaOchistit
+						ntWidth: root.ntWidth
+						ntCoff: root.ntCoff
+						clrKnopki: root.clrTexta
+						clrFona: root.clrFona
+						onClicked: {
+                        	if (!fnCloseMenuIfOpen()) fnClickedOchistit()//Функция очистки промта.
 						}
 					}
-					onTextChanged: {
-						pyAnalyzer.ustPromt(text)//Сохраняем промт при изменении
-					}
-					TapHandler {//Нажимаем на всю область
-						onTapped: fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
-					}
-				}	
+				}
                 DCKnopkaOriginal {//Кнопка анализа
                     id: knopkaAnaliz
                     text: "🚀 Анализировать"
