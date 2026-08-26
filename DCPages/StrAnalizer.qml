@@ -101,6 +101,7 @@ Item {
 			root.log("✓ Начался финальный анализ")
 			if (ldrProgress.item) {//Всегда показываем "Финальный анализ..."
 				ldrProgress.item.text = "Финальный анализ..."
+				/*
 				//Если чанков несколько — устанавливаем прогресс перед финалом
 				var kolichestvo_chankov = fnKolichestvoChankov(txaContent.text)
 				if (kolichestvo_chankov > 1 && root.rlProgress < 90) {
@@ -108,6 +109,7 @@ Item {
 					root.rlProgress = 90
 					ldrProgress.item.progress = 90
 				}
+				*/
 			}
 		}
 		function onSigAnalizStart() {//Сигнал Начала анализа.

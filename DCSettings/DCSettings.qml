@@ -13,7 +13,8 @@ QtObject {
 	//Нейро Анализ
     property string analizer_put_text: ""
     property string analizer_put_sohranit: ""
-	property string analizer_model_imya: "qwen3-coder-30b-a3b-instruct"//Имя модели ИИ добавляем
+	property string analizer_model_imya: "(автовыбор модели)"//По умолчанию автовыбор
+	//property string analizer_model_imya: "qwen3-coder-30b-a3b-instruct"//Имя модели ИИ добавляем
 	property int analizer_max_context: 22016//Количество токенов
 	property real analizer_temperatura: 0.5//Температура ИИ модели, чем выше, тем точнее ответ. 0-1
 	property int analizer_perekritie: 20//Перекрытие чтения соседнего чанка в процентах: 20 это 20%

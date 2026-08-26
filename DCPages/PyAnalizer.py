@@ -61,7 +61,12 @@ class DCAnalyzer(QObject):
     @pyqtSlot(str, int, float, int)
     def ustModelSettings(self, model_name, max_context, temperature, overlap_percent):
         """Устанавливает параметры модели из настроек QML"""
-        self.model_name = model_name
+        # Если модель пустая или "(автовыбор модели)" — не задаём имя
+        if model_name == "" or model_name == "(автовыбор модели)":
+            self.model_name = None  # Не передавать в запрос
+        else:
+            self.model_name = model_name
+
         self.max_context = max_context
         self.temperature = temperature
         self.overlap_percent = overlap_percent
@@ -198,14 +203,15 @@ class DCAnalyzer(QObject):
             
             try:
                 headers = {"Content-Type": "application/json"}
-                data = {
-                    "model": self.model_name, #Используем переменную имении ИИ модели
+                data = {#В запросе к LM Studio:
                     "messages": [
                         {"role": "user", "content": full_prompt}
                     ],
                     "temperature": self.temperature,
                     "max_tokens": max_tokens - 1000
                 }
+                if self.model_name:#Добавляем model только если задано
+                    data["model"] = self.model_name
                 
                 response = requests.post(
                     f"{LM_STUDIO_URL}/chat/completions",
@@ -243,13 +249,14 @@ class DCAnalyzer(QObject):
             try:
                 headers = {"Content-Type": "application/json"}
                 data = {
-                    "model": self.model_name, #Используем переменную имении ИИ модели
                     "messages": [
                         {"role": "user", "content": full_prompt}
                     ],
                     "temperature": self.temperature,
                     "max_tokens": max_tokens - 1000
                 }
+                if self.model_name:  # Добавляем model только если задано
+                    data["model"] = self.model_name 
                 
                 response = requests.post(
                     f"{LM_STUDIO_URL}/chat/completions",
@@ -352,14 +359,16 @@ class DCAnalyzer(QObject):
         try:
             headers = {"Content-Type": "application/json"}
             data = {
-                "model": self.model_name,
                 "messages": [
                     {"role": "user", "content": final_prompt}
                 ],
                 "temperature": self.temperature,
-                "max_tokens": max_response_tokens,#Динамический расчёт.
+                "max_tokens": max_response_tokens,
                 "n_ctx": self.max_context
             }
+            if self.model_name:
+                data["model"] = self.model_name 
+
             print(f"✓ Финальный анализ:")
             print(f"  - Промт: ~{int(len(final_prompt) / 2.5)} токенов")
             print(f"  - Максимум ответа: {max_response_tokens} токенов")

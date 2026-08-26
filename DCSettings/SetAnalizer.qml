@@ -52,12 +52,52 @@ Item {
 	Component.onCompleted: {
         knopkiMassiv = [knopkaModeli]//Сюда добавляем id кнопок, между которыми мы будим листать.
 		root.forceActiveFocus()
+
+        pyModelManager.zagruzitModeli()//Загружаем модели при открытии страницы
 	}
 	DCSettings {//Объект настроек
         id: dcReestr
     }
 	onStrModelChanged: {//Если Модель изменится, то...
-        dcReestr.analizer_model_imya = root.strModel;//Сохраняем в реестре имя Модели.
+        dcReestr.analizer_model_imya = root.strModel//Сохраняем в реестре имя Модели.
+        pyModelManager.ustModel(root.strModel)//Отправляем в Python
+        //Обновляем настройки анализатора
+        let contextVal = dcReestr.analizer_context
+        let tempVal = dcReestr.analizer_temp
+        let overlapVal = dcReestr.analizer_overlap
+        pyAnalyzer.ustModelSettings(
+            root.strModel, 
+            contextVal, 
+            tempVal, 
+            overlapVal
+        )
+    }
+    Connections {//Обработчик загрузки моделей из Python
+        target: pyModelManager
+
+        function onSigModelsLoaded(models) {
+            modelModels.clear()//Очищаем старую модель
+            for (let i = 0; i < models.length; i++) {//Заполняем новыми данными
+                modelModels.append({ spisok: models[i] })
+            }
+            let savedModel = dcReestr.analizer_model_imya//Устанавливаем текущий индекс
+
+            if (savedModel === "" || savedModel === "(автовыбор модели)") {
+                pvModels.currentIndex = 0//Первый элемент = автовыбор
+            } else {
+                for (let i = 0; i < models.length; i++) {//Ищем сохранённую модель в списке
+                    if (models[i] === savedModel) {
+                        pvModels.currentIndex = i
+                        break
+                    }
+                }
+            }
+            console.log("✓ Загружено моделей:", models.length)
+        }
+        function onSigError(errorMsg) {
+            console.log("✗ Ошибка загрузки моделей:", errorMsg)
+            root.log("Ошибка: " + errorMsg)
+        }
     }
 	Keys.onPressed: (event) => {
 		if (event.modifiers & Qt.AltModifier) {
@@ -244,18 +284,15 @@ Item {
 				DCKnopkaOriginal {//Кнопка выбора размера шрифта
                     id: knopkaModeli
                     text: {
-                        let ltShrift = qsTr("модель ");//
-						/*
-                        if(root.strModel === 0)
-                            ltShrift = ltShrift + qsTr("маленький")
-                        else
-                            if(root.strModel === 1)
-                                ltShrift = ltShrift + qsTr("средний")
-                            else
-                                ltShrift = ltShrift + qsTr("большой")
-                        pvModels.currentIndex = root.strModel
-						*/
-                        return ltShrift;
+                        let ltText = qsTr("модель ");//
+						if (root.strModel === "" || root.strModel === "(автовыбор модели)") {
+							ltText += qsTr("автовыбор")
+						} else {
+							// Показываем только последнюю часть имени (без пути)
+							let parts = root.strModel.split("/")
+							ltText += parts[parts.length - 1]
+						}
+						return ltText;
                     }
                     ntHeight: root.ntWidth
                     ntCoff: root.ntCoff
@@ -264,10 +301,10 @@ Item {
                     anchors.leftMargin: root.ntCoff * 2
                     anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 1) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 0) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					function fnPress() {
-						root.currentIndex = 1
+						root.currentIndex = 0
 						fnClickedModel()//Функция выбора Модели.
 					}
 					onPressedChanged: {
@@ -298,11 +335,7 @@ Item {
 		}
 		ListModel {//Модель с шриштами
             id: modelModels
-			/*
-            ListElement { spisok: qsTr("маленький") }
-            ListElement { spisok: qsTr("средний") }
-            ListElement { spisok: qsTr("большой") }
-			*/
+			//Будет заполняться динамически из Python
         }
         DCPathView {
             id: pvModels
@@ -312,10 +345,10 @@ Item {
             anchors.leftMargin: dcScrollbar.width; anchors.rightMargin: dcScrollbar.width
             clrFona: root.clrFona; clrTexta: root.clrMenuText; clrMenuFon: root.clrMenuFon
             modelData: modelModels
-            onClicked: function(strShrift) {
+            onClicked: function(strModel) {
 				Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModels. ВАЖНО!!!
 					pvModels.visible = false//Делаем невидимым виджет
-					//root.strModel = pvModels.currentIndex;//Приравниваем значение к переменной.
+					root.strModel = strModel//Сохраняем выбор
 					root.forceActiveFocus()//фокус PathView, чтоб hotkey работали.
 				})
             }
