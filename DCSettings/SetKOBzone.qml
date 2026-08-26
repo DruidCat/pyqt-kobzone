@@ -399,8 +399,11 @@ Item {
             clrFona: root.clrFona; clrTexta: root.clrMenuText; clrMenuFon: root.clrMenuFon
             modelData: modelShrift
             onClicked: function(strShrift) {
-                pvShrift.visible = false;
-                root.untShrift = pvShrift.currentIndex;//Приравниваем значение к переменной.
+				Qt.callLater(function(){//пауза, иначе не сработает фокус и pvShrift. ВАЖНО!!!
+					pvShrift.visible = false//Делаем невидимым виджет
+					root.untShrift = pvShrift.currentIndex;//Приравниваем значение к переменной.
+					root.forceActiveFocus()//фокус PathView, чтоб hotkey работали.
+				})
             }
         }
 		DCScrollbar {//Скроллбар
