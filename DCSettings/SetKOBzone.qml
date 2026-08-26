@@ -266,7 +266,7 @@ Item {
 			TapHandler {//Нажимаем на всю область
 				onTapped: {
 					fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
-					if(!pvShrift.jdi) fnCloseShriftIfOpen()//Закрываем меню выбора шрифта, если оно открыто
+					if(!pvShrift.jdi && !pvShrift.pressed) fnCloseShriftIfOpen()//Закрываем меню выбора шрифта, если оно открыто
 				}
 			}
 			Column {
