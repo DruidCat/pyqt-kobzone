@@ -191,6 +191,7 @@ Item {
 	function fnCloseShriftIfOpen() {
 		if (pvShrift.visible) {
 			pvShrift.visible = false
+			root.forceActiveFocus()//фокус root, чтоб hotkey работали.
 			return true
 		}
 		return false
@@ -200,9 +201,11 @@ Item {
 		root.clickedJurnal()
 	}
 	function fnClickedShrift(){//Функция выбора размера шрифта
-		fnClickedEscape()//Закрываем выбор шрифта и меню открытое.
 		if(pvShrift.visible){//Если видимый виджет, то...
-			pvShrift.visible = false//Делаем невидимым виджет
+			Qt.callLater(function(){//пауза, иначе не сработает фокус и pvShrift. ВАЖНО!!!
+				pvShrift.visible = false//Делаем невидимым виджет
+				root.forceActiveFocus()//фокус PathView, чтоб hotkey работали.
+			})
 		}
 		else{//Если невидимый виджет, то...
 			Qt.callLater(function(){//пауза, иначе не сработает фокус и pvShrift. ВАЖНО!!!
@@ -263,7 +266,7 @@ Item {
 			TapHandler {//Нажимаем на всю область
 				onTapped: {
 					fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
-					//fnCloseShriftIfOpen()//Закрываем меню выбора шрифта, если оно открыто
+					if(!pvShrift.jdi) fnCloseShriftIfOpen()//Закрываем меню выбора шрифта, если оно открыто
 				}
 			}
 			Column {
@@ -277,7 +280,7 @@ Item {
 				//ТУТ КОНТЕНТ НАСТРОЕК
 				DCKnopkaOriginal {//Кнопка открытия Журнала
                     id: knopkaJurnal
-                    text: "📁 журнал"
+                    text: "журнал"
                     ntHeight: root.ntWidth
                     ntCoff: root.ntCoff
 					anchors.left: parent.left
@@ -302,7 +305,7 @@ Item {
 				DCKnopkaOriginal {//Кнопка выбора размера шрифта
                     id: knopkaShrift
                     text: {
-                        let ltShrift = qsTr("📁 шрифт ");//
+                        let ltShrift = qsTr("шрифт ");//
                         if(root.untShrift === 0)
                             ltShrift = ltShrift + qsTr("маленький")
                         else
@@ -336,7 +339,7 @@ Item {
                 }
 				DCKnopkaOriginal {//Кнопка показа инструкции по горячим клавишам.
                     id: knopkaKlavishi
-                    text: "📁 горячие клавиши"
+                    text: "горячие клавиши"
                     ntHeight: root.ntWidth
                     ntCoff: root.ntCoff
 					anchors.left: parent.left
@@ -360,7 +363,7 @@ Item {
                 }
 				DCKnopkaOriginal {//Кнопка показа инструкцию о Qt
                     id: knopkaQt
-                    text: "📁 о qt"
+                    text: "о qt"
                     ntHeight: root.ntWidth
                     ntCoff: root.ntCoff
 					anchors.left: parent.left
@@ -495,7 +498,7 @@ Item {
 			mouse.accepted = false
 			if (menuMenu.visible || pvShrift.visible){
 				menuMenu.visible = false
-				//pvShrift.visible = false
+				pvShrift.visible = false
 			}
 			else 
 				root.forceActiveFocus()

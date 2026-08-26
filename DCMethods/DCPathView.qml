@@ -18,6 +18,7 @@ Item {
     property var modelData: []//Свойства для модели.
     property int currentIndex: 0//0-первый элемент отображается....2-третий элемент отображается по умолчанию.
     property alias karusel: pvwKarusel
+	property bool jdi: false//true - жди, только что открылся виджет
     //Настройки.
     height:pvwKarusel.pathItemCount*ntWidth*ntCoff*1.5//Высота виджета
     //Сигналы
@@ -31,13 +32,24 @@ Item {
         }
     }
     onVisibleChanged: {//Если видимость изменилась, то...
-        if(visible) pvwKarusel.focus = true;//Если видимый, то фокусируемся на карусели, чтоб кнопки работали.
+		if(visible){
+			pvwKarusel.focus = true;//Если видимый, то фокусируемся на карусели, чтоб кнопки работали.
+			root.jdi = true;//Жди, виджет только что открылся
+			tmrJdi.restart();//Запускаем таймер сбрасывающий флаг root.jdi
+		}
     }
 	Timer {
 		id: tmrPressed
 		interval: 220; running: false; repeat: false
         onTriggered: {
 			root.pressed = false
+		}
+	}
+	Timer {
+		id: tmrJdi
+		interval: 220; running: false; repeat: false
+        onTriggered: {
+			root.jdi = false
 		}
 	}
     Rectangle {
