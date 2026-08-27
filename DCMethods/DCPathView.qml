@@ -20,7 +20,7 @@ Item {
     property alias karusel: pvwKarusel
 	property bool jdi: false//true - жди, только что открылся виджет
     //Настройки.
-    height:pvwKarusel.pathItemCount*ntWidth*ntCoff*1.5//Высота виджета
+	height: (ntWidth * ntCoff + ntCoff) * 3 * 1.2
     //Сигналы
     signal clicked(var strSpisok);//Сигнал нажатия на элемент
     //Функции.
@@ -86,7 +86,7 @@ Item {
             anchors.top: rctKnopki.top; anchors.left: rctKnopki.left
             anchors.margins: root.ntCoff/2
             clrKnopki: root.clrTexta; clrFona: root.clrFona
-            onClicked: pvwKarusel.decrementCurrentIndex()//Прокрутка вверх
+            onClicked: pvwKarusel.incrementCurrentIndex()//Прокрутка вверх
         }
         DCKnopkaVniz {
             id: knopkaVniz
@@ -94,7 +94,7 @@ Item {
             anchors.bottom: rctKnopki.bottom; anchors.left: rctKnopki.left
             anchors.margins: root.ntCoff/2
             clrKnopki: root.clrTexta; clrFona: root.clrFona
-            onClicked: pvwKarusel.incrementCurrentIndex()//Прокрутка вниз
+            onClicked: pvwKarusel.decrementCurrentIndex()//Прокрутка вниз 
         }
         DCKnopkaZakrit {
             id: knopkaZakrit
@@ -113,46 +113,52 @@ Item {
 			}
         }
     }
-
-	Path {//Размеры PathView, и направление бесконечного скролинга.
-        id: pthKarusel
-		//Середина - начало.
-        startX: root.width/2//Середина строчки списка - это середина Item
-        startY: root.height/2
+	Path {
+		id: pthKarusel
+		
+		property real itemHeight: root.ntWidth * root.ntCoff + root.ntCoff
+		property real centerY: root.height / 2
+		
+		// Начало — центр (текущий элемент)
+		startX: root.width / 2
+		startY: centerY
 		PathAttribute { name: "prozrachnost"; value: 1.0 }
-        PathAttribute { name: "masshtab"; value: 0.85 }
-		PathAttribute { name: "z"; value: 0 }//0 (+1 - это передний слой, -1 - это занлий слой)
-		//Верх
-		PathQuad {
-            x: root.width/2
-            y: (root.ntWidth*root.ntCoff+root.ntCoff)/2
-            controlX: root.width/2
-            controlY: (root.height/2-(root.ntWidth*root.ntCoff+root.ntCoff)/2)/2
+		PathAttribute { name: "masshtab"; value: 0.85 }
+		PathAttribute { name: "z"; value: 1 }
+		
+		// Позиция -1 (сверху, сзади)
+		PathLine {
+			x: root.width / 2
+			y: pthKarusel.centerY - pthKarusel.itemHeight * 1.1
 		}
-
 		PathAttribute { name: "prozrachnost"; value: 0.5 }
-        PathAttribute { name: "masshtab"; value: 0.83 }
+		PathAttribute { name: "masshtab"; value: 0.83 }
 		PathAttribute { name: "z"; value: -1 }
-		//Низ
-		PathQuad {
-            x: root.width/2
-            y: root.height-(root.ntWidth*root.ntCoff+root.ntCoff)/2
-            controlX: root.width/2
-            controlY: root.height/2
+		
+		// Позиция 0 (центр) — повтор для цикла
+		PathLine {
+			x: root.width / 2
+			y: pthKarusel.centerY
 		}
-
+		PathAttribute { name: "prozrachnost"; value: 1.0 }
+		PathAttribute { name: "masshtab"; value: 0.85 }
+		PathAttribute { name: "z"; value: 1 }
+		
+		// Позиция +1 (снизу, сзади)
+		PathLine {
+			x: root.width / 2
+			y: pthKarusel.centerY + pthKarusel.itemHeight * 1.1
+		}
 		PathAttribute { name: "prozrachnost"; value: 0.5 }
-        PathAttribute { name: "masshtab"; value: 0.83 }
+		PathAttribute { name: "masshtab"; value: 0.83 }
 		PathAttribute { name: "z"; value: -1 }
-
-		PathQuad{//Переход к началу в середину.
-            x: root.width/2
-            y: root.height/2
-            controlX: root.width/2
-            controlY: root.height/2+(root.height/2
-                -(root.ntWidth*root.ntCoff+root.ntCoff)/2)/2
+		
+		// Замыкание к началу
+		PathLine {
+			x: root.width / 2
+			y: pthKarusel.centerY
 		}
-	}
+	}	
 	PathView {//Представление модели с бесконечным скролингом.
         id: pvwKarusel
         //Свойства.
@@ -163,7 +169,8 @@ Item {
         currentIndex: root.currentIndex
         delegate: cmpKarusel
         path: pthKarusel//Устанавливаем габариты и направление скролинга в представлении
-        pathItemCount: 3//Количество видимых элементов модели.
+		pathItemCount: 3//Максимально 3 показывать.
+		cacheItemCount: 0
         interactive: false //отключаем встроенную перетаскиваемость
         DragHandler {//Шаговое управление свайпом/мышью, «перехватывает» захват у MouseArea
             id: drhSvaip
@@ -196,8 +203,8 @@ Item {
         }
         //Доснап к центру, чтобы выглядело аккуратно
         snapMode: PathView.SnapOneItem
-        preferredHighlightBegin: height/2
-        preferredHighlightEnd: height/2
+        preferredHighlightBegin: 0.5
+		preferredHighlightEnd: 0.5
         highlightRangeMode: PathView.StrictlyEnforceRange
         highlightMoveDuration: root.highlightMs
         //Функции
@@ -220,8 +227,8 @@ Item {
                 }
             }
         }
-        Keys.onUpPressed: if(root.visible) decrementCurrentIndex();//Если нажата стрелка вверх, и видимый, то
-        Keys.onDownPressed: if(root.visible) incrementCurrentIndex();//Если нажата стрелка вниз, и видимый, то
+        Keys.onUpPressed: if(root.visible) incrementCurrentIndex();//Если нажата стрелка вниз, и видимый, то
+        Keys.onDownPressed: if(root.visible) decrementCurrentIndex();//Если нажата стрелка вверх, и видимый,то
         Keys.onEnterPressed: if(root.visible) activateCurrentItem();//Если нажата Enter, и видимый, то
         Keys.onReturnPressed: if(root.visible) activateCurrentItem()//Если нажата Return, и видимый, то
     }
@@ -286,8 +293,9 @@ Item {
                 }
             }
             onHeightChanged: {//Если изменилась высота, значит изменился размер Шрифта в StrMenu.
+				let localNtCoff = root.ntCoff
                 Qt.callLater(function () {//Делаем паузу на такт,иначе не успеет пересчитаться высота!
-                    txtText.font.pixelSize = rctStroka.height-root.ntCoff
+                    txtText.font.pixelSize = rctStroka.height-localNtCoff
                     if(rctStroka.width > txtText.width){//Если длина строки больше длины текста, то...
                         for(var ltShag=txtText.font.pixelSize;ltShag<rctStroka.height-root.ntCoff;ltShag++){
                             if(txtText.width < rctStroka.width){//Если длина текста меньше динны строки

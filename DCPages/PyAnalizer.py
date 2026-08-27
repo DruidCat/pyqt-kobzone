@@ -71,11 +71,11 @@ class DCAnalyzer(QObject):
         self.temperature = temperature
         self.overlap_percent = overlap_percent
         
-        print(f"✓ Настройки модели обновлены:")
-        print(f"  - Модель: {self.model_name}")
-        print(f"  - Контекст: {self.max_context} токенов")
-        print(f"  - Температура: {self.temperature}")
-        print(f"  - Перекрытие: {self.overlap_percent}")
+        #print(f"✓ Настройки модели обновлены:")
+        #print(f"  - Модель: {self.model_name}")
+        #print(f"  - Контекст: {self.max_context} токенов")
+        #print(f"  - Температура: {self.temperature}")
+        #print(f"  - Перекрытие: {self.overlap_percent}")
 
     @pyqtSlot(str, str)
     def startAnaliza(self, text_content, prompt):
