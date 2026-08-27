@@ -11,6 +11,7 @@ class DCModelManager(QObject):
     sigModelsLoaded = pyqtSignal(list)  # Список моделей загружен
     sigModelChanged = pyqtSignal(str)   # Модель изменена
     sigError = pyqtSignal(str)          # Ошибка
+    sigServerOk = pyqtSignal()          # Сервер доступен
     
     def __init__(self):
         super().__init__()
@@ -82,3 +83,22 @@ class DCModelManager(QObject):
     def poluchitModel(self):
         """Возвращает текущую модель"""
         return self._current_model
+
+    @pyqtSlot()
+    def proverkaServera(self):
+        """Проверяет доступность LM Studio (без загрузки моделей)"""
+        try:
+            response = requests.get(
+                f"{LM_STUDIO_URL}/models",
+                timeout=2
+            )
+            
+            if response.status_code == 200:
+                self.sigServerOk.emit()  # Новый сигнал
+            else:
+                self.sigError.emit(f"Сервер вернул код {response.status_code}")
+        
+        except requests.exceptions.ConnectionError:
+            self.sigError.emit("LM Studio не запущен")
+        except Exception as e:
+            self.sigError.emit(str(e))

@@ -40,6 +40,7 @@ Item {
     property int currentIndex: 0//Выбранная кнопка.
 	//Модель
 	property string strModel: dcReestr.analizer_model_imya//Имя модели ИИ
+	property bool isLMStudioStart: false;//true - LM Studio запущена и доступна в виде сервера.
 	//Настройки
 	anchors.fill: parent
 	focus: true
@@ -51,9 +52,9 @@ Item {
 	//Методы
 	Component.onCompleted: {
         knopkiMassiv = [knopkaModeli]//Сюда добавляем id кнопок, между которыми мы будим листать.
-		root.forceActiveFocus()
-
+		pyModelManager.proverkaServera()//Проверяем сервер перед загрузкой моделей
         pyModelManager.zagruzitModeli()//Загружаем модели при открытии страницы
+		root.forceActiveFocus()
 	}
 	DCSettings {//Объект настроек
         id: dcReestr
@@ -62,15 +63,10 @@ Item {
         dcReestr.analizer_model_imya = root.strModel//Сохраняем в реестре имя Модели.
         pyModelManager.ustModel(root.strModel)//Отправляем в Python
         //Обновляем настройки анализатора
-        let contextVal = dcReestr.analizer_context
-        let tempVal = dcReestr.analizer_temp
-        let overlapVal = dcReestr.analizer_overlap
-        pyAnalyzer.ustModelSettings(
-            root.strModel, 
-            contextVal, 
-            tempVal, 
-            overlapVal
-        )
+        let ltMaxContext = dcReestr.analizer_max_context
+		let ltTemperatura = dcReestr.analizer_temperatura
+        let ltPerekritie = dcReestr.analizer_perekritie
+        pyAnalyzer.ustModelSettings(root.strModel, ltMaxContext, ltTemperatura, ltPerekritie)
     }
     Connections {//Обработчик загрузки моделей из Python
         target: pyModelManager
@@ -92,11 +88,14 @@ Item {
                     }
                 }
             }
-            console.log("✓ Загружено моделей:", models.length)
+            root.log(`✓ Загружено моделей: ${models.length}`)
         }
+		function onSigServerOk() {
+			root.isLMStudioStart = true//Запущена и доступна.
+		}
         function onSigError(errorMsg) {
-            console.log("✗ Ошибка загрузки моделей:", errorMsg)
-            root.log("Ошибка: " + errorMsg)
+			root.isLMStudioStart = false//Не доступна.
+            root.log(`Ошибка: ${errorMsg}`)
         }
     }
 	Keys.onPressed: (event) => {
@@ -147,7 +146,12 @@ Item {
 				flcZona.contentY = ltNoviY
 			}
 			event.accepted = true
-		} else if (event.key === Qt.Key_Home) {
+		} else if (event.key === Qt.Key_Enter || event.key === Qt.Key_Return) {
+            if (!menuMenu.visible) {//Enter работает только если меню закрыто
+                fnClickedEnter()
+            }
+            event.accepted = true
+        } else if (event.key === Qt.Key_Home) {
 			if (!menuMenu.visible) {
 				flcZona.contentY = 0
 			}
@@ -192,6 +196,9 @@ Item {
 		} else {
 			//Если меню закрыто, ничего не делаем (можно добавить другую логику)
 		}
+		if (pvModels.visible) {
+			pvModels.visible = false
+		}
     }
 	function fnClickedNazad() {
 		fnClickedEscape()//Функция нажатия на клавишу Escape
@@ -204,12 +211,22 @@ Item {
 	function fnToggleMenu() {
 		if (menuMenu.visible) 
 			menuMenu.visible = false
-		else 
+		else {
+			if (pvModels.visible) pvModels.visible = false
 			menuMenu.visible = true
+		}
 	}
 	function fnCloseMenuIfOpen() {
 		if (menuMenu.visible) {
 			menuMenu.visible = false
+			return true
+		}
+		return false
+	}
+	function fnCloseKaruselIfOpen() {
+		if (pvModels.visible) {
+			pvModels.visible = false
+			root.forceActiveFocus()//фокус root, чтоб hotkey работали.
 			return true
 		}
 		return false
@@ -270,7 +287,10 @@ Item {
 				}
 			}
 			TapHandler {//Нажимаем на всю область
-				onTapped: fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
+				onTapped: {
+					fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
+					if(!pvModels.jdi && !pvModels.pressed) fnCloseKaruselIfOpen()//Закрываем карусель pv....
+				}
 			}
 			Column {
 				id: clmnContent
@@ -424,10 +444,10 @@ Item {
 		propagateComposedEvents: true
 		onClicked: (mouse) => {
 			mouse.accepted = false
-			if (menuMenu.visible)
+			if (menuMenu.visible || pvModels.visible){
 				menuMenu.visible = false
-			else 
-				root.forceActiveFocus()
+				pvModels.visible = false
+			} else root.forceActiveFocus()
 			root.forceActiveFocus()
 		}
 	}
