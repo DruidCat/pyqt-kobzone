@@ -38,21 +38,21 @@ Item {
 			tmrJdi.restart();//Запускаем таймер сбрасывающий флаг root.jdi
 		}
     }
-	Timer {
+	Timer {//Таймер оставляет флаг pressed взведённым на интервал,чтоб обработчики сигнала страболи в програме
 		id: tmrPressed
 		interval: 220; running: false; repeat: false
         onTriggered: {
 			root.pressed = false
 		}
 	}
-	Timer {
+	Timer {//Таймер того, что фиксирует флаг открытия приложения на интервал, для обработчиков в программе.
 		id: tmrJdi
 		interval: 220; running: false; repeat: false
         onTriggered: {
 			root.jdi = false
 		}
 	}
-    Rectangle {
+    Rectangle {//Основной прямоугольник виджета
         id: rctKarusel
         anchors.top: root.top
         anchors.left: root.left
@@ -71,7 +71,7 @@ Item {
 			}
         }
     }
-    Rectangle {
+    Rectangle {//Прямоугольник зоны кнопок.
         id: rctKnopki
         width: root.ntCoff * root.ntWidth + root.ntCoff
         height: root.height
@@ -115,18 +115,15 @@ Item {
     }
 	Path {
 		id: pthKarusel
-		
 		property real itemHeight: root.ntWidth * root.ntCoff + root.ntCoff
 		property real centerY: root.height / 2
-		
-		// Начало — центр (текущий элемент)
+		//Начало — центр (текущий элемент)
 		startX: root.width / 2
 		startY: centerY
 		PathAttribute { name: "prozrachnost"; value: 1.0 }
 		PathAttribute { name: "masshtab"; value: 0.85 }
 		PathAttribute { name: "z"; value: 1 }
-		
-		// Позиция -1 (сверху, сзади)
+		//Позиция -1 (сверху, сзади)
 		PathLine {
 			x: root.width / 2
 			y: pthKarusel.centerY - pthKarusel.itemHeight * 1.1
@@ -134,8 +131,7 @@ Item {
 		PathAttribute { name: "prozrachnost"; value: 0.5 }
 		PathAttribute { name: "masshtab"; value: 0.83 }
 		PathAttribute { name: "z"; value: -1 }
-		
-		// Позиция 0 (центр) — повтор для цикла
+		//Позиция 0 (центр) — повтор для цикла
 		PathLine {
 			x: root.width / 2
 			y: pthKarusel.centerY
@@ -143,8 +139,7 @@ Item {
 		PathAttribute { name: "prozrachnost"; value: 1.0 }
 		PathAttribute { name: "masshtab"; value: 0.85 }
 		PathAttribute { name: "z"; value: 1 }
-		
-		// Позиция +1 (снизу, сзади)
+		//Позиция +1 (снизу, сзади)
 		PathLine {
 			x: root.width / 2
 			y: pthKarusel.centerY + pthKarusel.itemHeight * 1.1
@@ -152,8 +147,7 @@ Item {
 		PathAttribute { name: "prozrachnost"; value: 0.5 }
 		PathAttribute { name: "masshtab"; value: 0.83 }
 		PathAttribute { name: "z"; value: -1 }
-		
-		// Замыкание к началу
+		//Замыкание к началу
 		PathLine {
 			x: root.width / 2
 			y: pthKarusel.centerY
@@ -196,8 +190,8 @@ Item {
                 const dy = translation.y - prevT;//дельта с предыдущего события
                 prevT = translation.y
                 acc -= dy/slow//замедляем в slow раз
-                while (acc >= step) { pvwKarusel.decrementCurrentIndex(); acc -= step }
-                while (acc <= -step) { pvwKarusel.incrementCurrentIndex(); acc += step }
+                while (acc >= step) { pvwKarusel.incrementCurrentIndex(); acc -= step }
+                while (acc <= -step) { pvwKarusel.decrementCurrentIndex(); acc += step }
             }
             onCanceled: { acc = 0; prevT = 0 }//Чтобы жесты не «залипали» при прерывании, обнуляем.
         }
@@ -213,7 +207,7 @@ Item {
                 root.currentIndex = pvwKarusel.currentIndex//Изменяем значение в root переменной currentIndex
             }
         }
-        function activateCurrentItem() {//Функция выбора активного элемента модели.
+        function fnClickedEnter() {//Функция выбора активного элемента модели.
             if (typeof model.get === "function") {//Если model объект типа ListModel (у него есть функция get)
                 var elementModel = model.get(currentIndex)//Получаем текущий элемент модели по currentIndex
                 if (elementModel)//Если элемент найден, то...
@@ -229,8 +223,8 @@ Item {
         }
         Keys.onUpPressed: if(root.visible) incrementCurrentIndex();//Если нажата стрелка вниз, и видимый, то
         Keys.onDownPressed: if(root.visible) decrementCurrentIndex();//Если нажата стрелка вверх, и видимый,то
-        Keys.onEnterPressed: if(root.visible) activateCurrentItem();//Если нажата Enter, и видимый, то
-        Keys.onReturnPressed: if(root.visible) activateCurrentItem()//Если нажата Return, и видимый, то
+        Keys.onEnterPressed: if(root.visible) fnClickedEnter();//Если нажата Enter, и видимый, то
+        Keys.onReturnPressed: if(root.visible) fnClickedEnter()//Если нажата Return, и видимый, то
     }
     Component {//Делегат
         id: cmpKarusel
@@ -293,9 +287,9 @@ Item {
                 }
             }
             onHeightChanged: {//Если изменилась высота, значит изменился размер Шрифта в StrMenu.
-				let localNtCoff = root.ntCoff
+				let ltCoff = root.ntCoff
                 Qt.callLater(function () {//Делаем паузу на такт,иначе не успеет пересчитаться высота!
-                    txtText.font.pixelSize = rctStroka.height-localNtCoff
+                    txtText.font.pixelSize = rctStroka.height-ltCoff
                     if(rctStroka.width > txtText.width){//Если длина строки больше длины текста, то...
                         for(var ltShag=txtText.font.pixelSize;ltShag<rctStroka.height-root.ntCoff;ltShag++){
                             if(txtText.width < rctStroka.width){//Если длина текста меньше динны строки
@@ -340,11 +334,9 @@ Item {
         acceptedDevices: PointerDevice.Mouse//колесо работало только при наведении мыши на PathView
         onWheel: function(event) {
             if (event.angleDelta.y > 0)
-                pvwKarusel.decrementCurrentIndex()//Прокрутка вверх
-            else{
-                if (event.angleDelta.y < 0)
-                    pvwKarusel.incrementCurrentIndex()//Прокрутка вниз
-            }
+				pvwKarusel.incrementCurrentIndex()//Прокрутка вниз
+            else if (event.angleDelta.y < 0)
+				pvwKarusel.decrementCurrentIndex()//Прокрутка вверх
         }
     }
     /*
@@ -354,11 +346,9 @@ Item {
         anchors.fill: pvwKarusel // чтобы ловить колесо по всей области PathView
         onWheel: function(event) {
             if (event.angleDelta.y > 0)
-                pvwKarusel.decrementCurrentIndex()//Прокрутка вверх
-            else{
-                if (event.angleDelta.y < 0)
-                    pvwKarusel.incrementCurrentIndex()//Прокрутка вниз
-            }
+				pvwKarusel.incrementCurrentIndex()//Прокрутка вниз
+            else if (event.angleDelta.y < 0)
+				pvwKarusel.decrementCurrentIndex()//Прокрутка вверх
         }
     }
     */
