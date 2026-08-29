@@ -52,8 +52,10 @@ Item {
 	//Методы
 	Component.onCompleted: {
         knopkiMassiv = [knopkaModeli]//Сюда добавляем id кнопок, между которыми мы будим листать.
-		pyModelManager.proverkaServera()//Проверяем сервер перед загрузкой моделей
-        pyModelManager.zagruzitModeli()//Загружаем модели при открытии страницы
+		if(Qt.platform.os !== "windows"){//TODO ЭТО ДЛЯ ОТЛАДКИ ПРОГРАММЫ, ЧТОБ БЫСТРЕЕ ЗАПУСКАЛАСЬ.
+			pyModelManager.proverkaServera()//Проверяем сервер перед загрузкой моделей
+			pyModelManager.zagruzitModeli()//Загружаем модели при открытии страницы
+		}
 		root.forceActiveFocus()
 	}
 	DCSettings {//Объект настроек
