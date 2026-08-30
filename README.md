@@ -1,6 +1,6 @@
 # Любимая КОБзона
 
-Приложение для управления локальными яыковыми моделями с графическим интерфейсом на PyQt6 и интеграцией с LM Studio.
+Приложение для управления локальными языковыми моделями с графическим интерфейсом на PyQt6 и интеграцией с LM Studio.
 
 ## Описание
 
@@ -322,7 +322,7 @@ pip install -r requirements.txt
 
 ## Шаг 4: Токен Hugging Face (для диаризации)
 # 1. Зайдите на https://huggingface.co — зарегистрируйтесь
-# 2. Примите лицензию pyannote, обязательно вводим название фирмы Dryads и сайт фирмы vc.com/DruidCat:
+# 2. Примите лицензию pyannote, обязательно вводим название фирмы "DC" и сайт фирмы www.vk.ru
 #	https://huggingface.co/pyannote/speaker-diarization
 # 	https://huggingface.co/pyannote/speaker-diarization-3.1
 #	https://huggingface.co/pyannote/speaker-diarization-community-1 
