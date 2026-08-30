@@ -220,13 +220,32 @@ Item {
 		onAccepted: {
 			fnUstMultipleDocuments(selectedFiles)//Загружаем файлы в функцию.
 			var filePut = selectedFiles[0].toString()//Получаем путь для первого файла.
-			filePut = filePut.replace(/^file:\/\//, "")//Убираем "file://" из начала пути
+			filePut = fnUrlToLocalPath(filePut)//Используем кроссплатформенную функцию Убираем "file://" 
 			var papkaPut = filePut.substring(0, filePut.lastIndexOf('/'));//Обрезаем имя файла по /
 			dcReestr.analizer_put_text = papkaPut//Записываем в реестр имя папки в реестр.
 		}
 		onRejected: {
 
 		}
+	}
+	function fnUrlToLocalPath(url) {//Функция кроссплатформенного преобразования URL в путь
+		if (!url) return ""
+		var path = url.toString()
+		if (path.startsWith("file:///")) {//Если путь начинается с file:///
+			path = path.substring(7)//Убираем "file://" чтоб осталось "/" /home, /mnt и тд
+		} else if (path.startsWith("file://")) {//Если путь начинается с file://
+			path = path.substring(7)//Убираем "file://"
+		}
+		path = decodeURIComponent(path)//Декодируем URL-кодирование (%20 → пробел, %3F → ?)
+		if (Qt.platform.os === "windows") {//Windows: если путь начинается с /C:/, убираем первый /
+			if (path.length > 2 && path[0] === '/' && path[2] === ':') {
+				path = path.substring(1)
+			}
+		}
+		if (Qt.platform.os !== "windows" && path.startsWith("//")) {//Linux-убираем двойной слеш,если появился
+			path = path.substring(1)
+		}
+		return path
 	}
     Timer {//ТАЙМЕР анимации логотипа
         id: tmrLogo

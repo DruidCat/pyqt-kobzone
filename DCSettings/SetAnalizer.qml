@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Dialogs
 import DCButtons 1.0
 import DCMethods 1.0
 
@@ -40,7 +41,8 @@ Item {
     property int currentIndex: 0//Выбранная кнопка.
 	//Модель
 	property string strModel: dcReestr.analizer_model_imya//Имя модели ИИ
-	property bool isLMStudioStart: false;//true - LM Studio запущена и доступна в виде сервера.
+	property bool isLMStart: false;//true - LM Studio запущена и доступна в виде сервера.
+	property string putLMStudio: dcReestr.analizer_lms_put//Путь к приложению LM Studio из реестра.
 	//Настройки
 	anchors.fill: parent
 	focus: true
@@ -51,10 +53,12 @@ Item {
     signal log(var strLog)
 	//Методы
 	Component.onCompleted: {
-        knopkiMassiv = [knopkaModeli]//Сюда добавляем id кнопок, между которыми мы будим листать.
-		if(Qt.platform.os !== "windows"){//TODO ЭТО ДЛЯ ОТЛАДКИ ПРОГРАММЫ, ЧТОБ БЫСТРЕЕ ЗАПУСКАЛАСЬ.
+        knopkiMassiv = [knopkaLMStart, knopkaLMPut, knopkaModeli]//Сюда добавляем id кнопок
+		if(Qt.application.os !== "windows"){//TODO ЭТО ДЛЯ ОТЛАДКИ ПРОГРАММЫ, ЧТОБ БЫСТРЕЕ ЗАПУСКАЛАСЬ.
 			pyModelManager.proverkaServera()//Проверяем сервер перед загрузкой моделей
 			pyModelManager.zagruzitModeli()//Загружаем модели при открытии страницы
+			if (dcReestr.analizer_lms_put !== "")//Передаём путь из настроек в Python
+				pyLMStart.ustPut(dcReestr.analizer_lms_put)
 		}
 		root.forceActiveFocus()
 	}
@@ -70,6 +74,10 @@ Item {
         let ltPerekritie = dcReestr.analizer_perekritie
         pyAnalyzer.ustModelSettings(root.strModel, ltMaxContext, ltTemperatura, ltPerekritie)
     }
+	onPutLMStudioChanged: {//Если путь к LM Studio изменился, то...
+		if (root.putLMStudio !== "")//Если он не пустой, то...
+			pyLMStart.ustPut(root.putLMStudio)//Передаём его в логику Python
+	}
     Connections {//Обработчик загрузки моделей из Python
         target: pyModelManager
 
@@ -93,13 +101,36 @@ Item {
             root.log(`✓ Загружено моделей: ${models.length}`)
         }
 		function onSigServerOk() {
-			root.isLMStudioStart = true//Запущена и доступна.
+			root.isLMStart = true//Запущена и доступна.
 		}
         function onSigError(errorMsg) {
-			root.isLMStudioStart = false//Не доступна.
+			root.isLMStart = false//Не доступна.
             root.log(`Ошибка: ${errorMsg}`)
         }
     }
+	Connections {
+		target: pyLMStart
+		
+		function onSigZapuschen() {
+			root.log("✓ LM Studio запущен!")
+			//Перепроверяем доступность и загружаем модели
+			pyModelManager.proverkaServera()
+			pyModelManager.zagruzitModeli()
+		}
+		function onSigOstanovlen() {
+			root.log("✓ LM Studio остановлен")
+			root.isLMStart = false
+		}
+		function onSigError(errorMsg) {
+			root.log(`✗ ${errorMsg}`)
+		}
+		function onSigLog(logMsg) {
+			root.log(logMsg)
+		}
+		function onSigProverkaStarted() {
+			root.log("Ожидание запуска сервера (до 30 секунд)...")
+		}
+	}
 	Keys.onPressed: (event) => {
 		if (event.modifiers & Qt.AltModifier) {
 			if (event.key === Qt.Key_Left) {
@@ -116,19 +147,20 @@ Item {
 			event.accepted = true
 		} else if (event.key === Qt.Key_Up || event.key === Qt.Key_K || event.key === 1051) {
 			if (!menuMenu.visible) {
-				var ltNoviY = flcZona.contentY - 50
-				if (ltNoviY < 0)
-					ltNoviY = 0
-				flcZona.contentY = ltNoviY
+				root.currentIndex--
+                if (root.currentIndex < 0)
+                    root.currentIndex = knopkiMassiv.length - 1
+                
+                fnScrollKnopok(false)
 			}
 			event.accepted = true
 		} else if (event.key === Qt.Key_Down || event.key === Qt.Key_J || event.key === 1054) {
 			if (!menuMenu.visible) {
-				var ltMaxY = flcZona.contentHeight - flcZona.height
-				var ltNoviY = flcZona.contentY + 50
-				if (ltNoviY > ltMaxY)
-					ltNoviY = ltMaxY
-				flcZona.contentY = ltNoviY
+				root.currentIndex++
+                if (root.currentIndex >= knopkiMassiv.length)
+                    root.currentIndex = 0
+                
+                fnScrollKnopok(true)
 			}    
 			event.accepted = true
 		} else if (event.key === Qt.Key_PageUp) {
@@ -247,6 +279,35 @@ Item {
 			})
 		}
 	}
+	function fnPathToUrl(localPath) {//Функция кроссплатформенного преобразования пути в URL
+		if (!localPath) return ""
+		if (localPath.startsWith("file://")) return localPath//Если это уже URL — возвращаем как есть
+		//Для локальных файлов нужен формат file:///
+		if (localPath.startsWith("/")) {//Linux: /home/user/ -> file:///home/user/ (добавляем file://)
+			return "file://" + localPath//file:// + /path = file:///path
+		} else {//Windows: C:/Users/ -> file:///C:/Users/ (добавляем file:///)
+			return "file:///" + localPath//file:/// + C:/path = file:///C:/path
+		}
+	}
+	function fnUrlToLocalPath(url) {//Функция кроссплатформенного преобразования URL в путь
+		if (!url) return ""
+		var path = url.toString()
+		if (path.startsWith("file:///")) {//Если путь начинается с file:///
+			path = path.substring(7)//Убираем "file://" чтоб осталось "/" /home, /mnt и тд
+		} else if (path.startsWith("file://")) {//Если путь начинается с file://
+			path = path.substring(7)//Убираем "file://"
+		}
+		path = decodeURIComponent(path)//Декодируем URL-кодирование (%20 → пробел, %3F → ?)
+		if (Qt.application.os === "windows") {//Windows: если путь начинается с /C:/, убираем первый /
+			if (path.length > 2 && path[0] === '/' && path[2] === ':') {
+				path = path.substring(1)
+			}
+		}
+		if (Qt.application.os !== "windows" && path.startsWith("//")) {//Linux-убираем двойной слеш,если появился
+			path = path.substring(1)
+		}
+		return path
+	}
 	Item {//Заголовок
 		id: tmZagolovok
 		DCKnopkaNazad {
@@ -303,6 +364,89 @@ Item {
 				leftPadding: root.ntCoff * 2
 				rightPadding: root.ntCoff * 2
 				//ТУТ КОНТЕНТ НАСТРОЕК
+				DCKnopkaOriginal {//Кнопка запуска/остановки LM Studio
+					id: knopkaLMStart
+					text: root.isLMStart ? qsTr("Остановить LM Studio") : qsTr("Запустить LM Studio")
+					ntHeight: root.ntWidth
+					ntCoff: root.ntCoff
+					anchors.left: parent.left
+					anchors.right: parent.right
+					anchors.leftMargin: root.ntCoff * 2
+					anchors.rightMargin: root.ntCoff * 2
+					clrTexta: root.clrMenuText
+                    clrKnopki: (root.currentIndex === 0) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    opacityKnopki: 0.9
+					function fnPress() {
+						root.currentIndex = 0
+						if(root.isLMStart){
+							pyLMStart.ostanovit()
+							root.log("Остановка LM Studio...")
+						}
+						else{
+							pyLMStart.zapustit()
+							root.log("⏳ Запуск LM Studio...")
+						}
+					}
+					onPressedChanged: {
+						if (pressed) {
+							if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
+								if (pressed && !pvModels.pressed) fnPress()
+							}
+						}
+					}
+				}
+				DCKnopkaOriginal {//Кнопка выбора пути LM Studio 
+                    id: knopkaLMPut
+                    text: {
+                        let ltText = qsTr("Путь к LM Studio: ");//
+						if (root.putLMStudio === "") ltText += qsTr("не задан")
+						else ltText += root.putLMStudio
+						return ltText;
+                    }
+                    ntHeight: root.ntWidth
+                    ntCoff: root.ntCoff
+					anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2
+                    anchors.rightMargin: root.ntCoff * 2
+					clrTexta: root.clrMenuText
+                    clrKnopki: (root.currentIndex === 1) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    opacityKnopki: 0.9
+					function fnPress() {
+						root.currentIndex = 1
+						dialogLMPut.open()//Функция выбора пути к LM Studio.
+					}
+					onPressedChanged: {
+						if (pressed) {
+							if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
+								if (pressed && !pvModels.pressed) fnPress()
+							}
+						}
+					}	
+					FileDialog {
+						id: dialogLMPut
+						title: qsTr("Выберите путь к LM Studio")
+						nameFilters: {
+							if(Qt.application.os === "windows") return ["Исполняемые файлы (*.exe)", "Все файлы (*)"]
+							else if (Qt.application.os === "linux") return ["AppImage (*.AppImage)", "Все файлы (*)"]
+							else if (Qt.application.os === "osx") return ["Приложения (*.app)", "Все файлы (*)"]
+							return ["Все файлы (*)"];//Безопасный фоллбэк
+						}
+						currentFolder: {//Используем сохранённый путь из реестра, или стандартную домашнюю папку
+							if (dcReestr.analizer_lms_put !== "") {
+								var vrPut = dcReestr.analizer_lms_put
+								vrPut = fnPathToUrl(vrPut)//Преобразуем сохранённый путь в URL
+								return vrPut.substring(0, vrPut.lastIndexOf("/"));//Обрезаем имя файла.
+							}
+							else return StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
+						}
+						onAccepted: {
+							var vrPut = fnUrlToLocalPath(selectedFile)//Используем кроссплатформенную функцию
+							dcReestr.analizer_lms_put = vrPut
+							//pyLMSLauncher.ustPutLMS(vrPut)
+						}
+					}
+                }
 				DCKnopkaOriginal {//Кнопка выбора размера шрифта
                     id: knopkaModeli
                     text: {
@@ -323,10 +467,10 @@ Item {
                     anchors.leftMargin: root.ntCoff * 2
                     anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 0) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 2) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					function fnPress() {
-						root.currentIndex = 0
+						root.currentIndex = 2
 						fnClickedModel()//Функция выбора Модели.
 					}
 					onPressedChanged: {
@@ -336,7 +480,7 @@ Item {
 							}
 						}
 					}
-                }
+				}
 			}
 		}
 		DCScrollbar {//Скроллбар
@@ -371,9 +515,11 @@ Item {
 				Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModels. ВАЖНО!!!
 					pvModels.visible = false//Делаем невидимым виджет
 					root.strModel = strModel//Сохраняем выбор
-					root.forceActiveFocus()//фокус PathView, чтоб hotkey работали.
 				})
             }
+			onVisibleChanged: {//Если видимость поменялась, то...
+				if(!visible) root.forceActiveFocus()//Если невидимый, то фокус на root, чтоб hotkey работали.
+			}
         }
 		DCMenu {//Всплывающее меню DCMenu
 			id: menuMenu
