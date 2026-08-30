@@ -405,9 +405,11 @@ Item {
 				Qt.callLater(function(){//пауза, иначе не сработает фокус и pvShrift. ВАЖНО!!!
 					pvShrift.visible = false//Делаем невидимым виджет
 					root.untShrift = pvShrift.currentIndex;//Приравниваем значение к переменной.
-					root.forceActiveFocus()//фокус PathView, чтоб hotkey работали.
 				})
             }
+			onVisibleChanged: {//Если видимость поменялась, то...
+				if(!visible) root.forceActiveFocus()//Если невидимый, то фокус на root, чтоб hotkey работали.
+			}
         }
 		DCScrollbar {//Скроллбар
 			id: dcScrollbar
