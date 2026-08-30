@@ -1,4 +1,5 @@
 venv/
 __pycache__/
 resources.rcc
+resources_rc.py
 logs.txt
