@@ -7,11 +7,11 @@ TODO:
 - DCKnopkaInfo, перерисовать кнопку информация, когда она становится активной, она инверсирует цвет.
 - StrKOBzone, придумать, как бы менялись логотипы по настройки из ru.KOBzone.qml
 - PyAnalizer, показывать результаты анализа чанков по мере их анализа.
+- SetAnalizer, Проверку подключения к LM Studio, при запуске нейро анализа текста,а не при загрузке приложения
 - SetAnalizer, если не запущена LM Studio, задать вопрос перед анализом. "Запустить LM Studio?"
 - SetTranscribe, сделать проверку на запущенную языковую модель, и если она запущена, предложить остановить её
 - SetInstrukciya, написать инструкцию по горячим клавишам и помощью ИИ
-- Проверку подключения к LM Studio, при открытии нейро анализа текста.
-- SetAnalizer, set_analizer, прописать, как запускать без/c sandbox LM Studio
+- StrInstrukciya, set_analizer, прописать, как запускать без/c sandbox LM Studio
 - SetAnalizer, сделать настройку запуска LM Studio с sandbox и без sandbox.
 - SetAnalizer. DCPathView выдаёт ошибки в консоль, когда не запущена LM Studio.
 - SetAnalizer, сделать настройку старта сервера LM Studio ~/.lmstudio/bin/lms server start
