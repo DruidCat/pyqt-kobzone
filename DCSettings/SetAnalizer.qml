@@ -44,6 +44,7 @@ Item {
 	property string strModel: dcReestr.analizer_model_imya//Имя модели ИИ
 	property bool isLMStart: false;//true - LM Studio запущена и доступна в виде сервера.
 	property string putLMStudio: dcReestr.analizer_lms_put//Путь к приложению LM Studio из реестра.
+	property real rlTemperatura: dcReestr.analizer_temperatura//Температура ИИ
 	//Настройки
 	anchors.fill: parent
 	focus: true
@@ -54,7 +55,7 @@ Item {
     signal log(var strLog)
 	//Методы
 	Component.onCompleted: {
-        knopkiMassiv = [knopkaLMStart, knopkaLMPut, knopkaModeli]//Сюда добавляем id кнопок
+        knopkiMassiv = [knopkaLMStart, knopkaLMPut, knopkaModeli, knopkaTemperatura]//Сюда добавляем id кнопок
 		if(Qt.application.os !== "windows"){//TODO ЭТО ДЛЯ ОТЛАДКИ ПРОГРАММЫ, ЧТОБ БЫСТРЕЕ ЗАПУСКАЛАСЬ.
 			pyModelManager.proverkaServera()//Проверяем сервер перед загрузкой моделей
 			pyModelManager.zagruzitModeli()//Загружаем модели при открытии страницы
@@ -74,7 +75,14 @@ Item {
 		let ltTemperatura = dcReestr.analizer_temperatura
         let ltPerekritie = dcReestr.analizer_perekritie
         pyAnalyzer.ustModelSettings(root.strModel, ltMaxContext, ltTemperatura, ltPerekritie)
-    }
+	}
+	onRlTemperaturaChanged: {
+        //Обновляем настройки анализатора
+        let ltMaxContext = dcReestr.analizer_max_context
+		let ltTemperatura = dcReestr.analizer_temperatura
+        let ltPerekritie = dcReestr.analizer_perekritie
+        pyAnalyzer.ustModelSettings(root.strModel, ltMaxContext, ltTemperatura, ltPerekritie)
+	}
 	onPutLMStudioChanged: {//Если путь к LM Studio изменился, то...
 		if (root.putLMStudio !== ""){//Если он не пустой, то...
 			pyLMStart.ustPut(root.putLMStudio)//Передаём его в логику Python
@@ -125,7 +133,7 @@ Item {
 			knopkaLMStart.isPerehodniProces = false
 		}
 		function onSigError(errorMsg) {//Обработка сигнала ошибки
-			root.log(`✗ ${errorMsg}`)
+			root.log(`Ошибка: ${errorMsg}`)
 		}
 		function onSigLog(logMsg) {//Обработка согнала сообщений из Класса
 			root.log(logMsg)
@@ -261,11 +269,12 @@ Item {
 	function fnClickedEscape() {//Функция нажатия на клавишу Escape
 		if (menuMenu.visible) {
 			menuMenu.visible = false
-		} else {
-			//Если меню закрыто, ничего не делаем (можно добавить другую логику)
 		}
 		if (pvModels.visible) {
 			pvModels.visible = false
+		}
+		if (pvTemperatura.visible) {
+			pvTemperatura.visible = false
 		}
     }
 	function fnClickedNazad() {
@@ -281,6 +290,7 @@ Item {
 			menuMenu.visible = false
 		else {
 			if (pvModels.visible) pvModels.visible = false
+			if (pvTemperatura.visible) pvTemperatura.visible = false
 			menuMenu.visible = true
 		}
 	}
@@ -291,9 +301,17 @@ Item {
 		}
 		return false
 	}
-	function fnCloseKaruselIfOpen() {
+	function fnCloseModelsIfOpen() {
 		if (pvModels.visible) {
 			pvModels.visible = false
+			root.forceActiveFocus()//фокус root, чтоб hotkey работали.
+			return true
+		}
+		return false
+	}
+	function fnCloseTemperaturaIfOpen(){
+		if (pvTemperatura.visible) {
+			pvTemperatura.visible = false
 			root.forceActiveFocus()//фокус root, чтоб hotkey работали.
 			return true
 		}
@@ -310,6 +328,20 @@ Item {
 			Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModels. ВАЖНО!!!
 				pvModels.visible = true//Делаем видимым виджет
 				pvModels.karusel.forceActiveFocus()//фокус PathView, чтоб hotkey работали.
+			})
+		}
+	}
+	function fnClickedTemperatura(){//Функция выбора Температуры ИИ
+		if(pvTemperatura.visible){//Если видимый виджет, то...
+			Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModels. ВАЖНО!!!
+				pvTemperatura.visible = false//Делаем невидимым виджет
+				root.forceActiveFocus()//фокус PathView, чтоб hotkey работали.
+			})
+		}
+		else{//Если невидимый виджет, то...
+			Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModels. ВАЖНО!!!
+				pvTemperatura.visible = true//Делаем видимым виджет
+				pvTemperatura.karusel.forceActiveFocus()//фокус PathView, чтоб hotkey работали.
 			})
 		}
 	}
@@ -386,7 +418,8 @@ Item {
 			TapHandler {//Нажимаем на всю область
 				onTapped: {
 					fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
-					if(!pvModels.jdi && !pvModels.pressed) fnCloseKaruselIfOpen()//Закрываем карусель pv....
+					if(!pvModels.jdi && !pvModels.pressed) fnCloseModelsIfOpen()//Закрываем карусель pv....
+					if(!pvTemperatura.jdi && !pvTemperatura.pressed) fnCloseTemperaturaIfOpen()//Закрываем
 				}
 			}
 			Column {
@@ -400,7 +433,7 @@ Item {
 				//ТУТ КОНТЕНТ НАСТРОЕК
 				DCKnopkaOriginal {//Кнопка запуска/остановки LM Studio
 					id: knopkaLMStart
-					text: root.isLMStart ? qsTr("Остановить LM Studio") : qsTr("Запустить LM Studio")
+					text: root.isLMStart ? qsTr("остановить LM Studio") : qsTr("запустить LM Studio")
 					ntHeight: root.ntWidth
 					ntCoff: root.ntCoff
 					anchors.left: parent.left
@@ -434,7 +467,7 @@ Item {
 					onPressedChanged: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
-								if (pressed && !pvModels.pressed) fnPress()
+								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
 							}
 						}
 					}
@@ -442,7 +475,7 @@ Item {
 				DCKnopkaOriginal {//Кнопка выбора пути LM Studio 
                     id: knopkaLMPut
                     text: {
-                        let ltText = qsTr("Путь к LM Studio: ");//
+                        let ltText = qsTr("путь к LM Studio: ");//
 						if (root.putLMStudio === "") ltText += qsTr("не задан")
 						else ltText += root.putLMStudio
 						return ltText;
@@ -463,7 +496,7 @@ Item {
 					onPressedChanged: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
-								if (pressed && !pvModels.pressed) fnPress()
+								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
 							}
 						}
 					}	
@@ -497,7 +530,36 @@ Item {
 					onPressedChanged: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
-								if (pressed && !pvModels.pressed) fnPress()
+								if (pressed && !pvModels.pressed && !pvTemperatura.pressed)fnPress()
+							}
+						}
+					}
+				}
+				DCKnopkaOriginal {//Кнопка выбора Температуры ИИ
+                    id: knopkaTemperatura
+                    text: {
+                        let ltText = qsTr("температура ");//
+						ltText += root.rlTemperatura//Добавляем в строчку температуру из параметра
+                        pvTemperatura.currentIndex = root.rlTemperatura*10//Выставляем в карусели нужную Темп.
+						return ltText;
+                    }
+                    ntHeight: root.ntWidth
+                    ntCoff: root.ntCoff
+					anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2
+                    anchors.rightMargin: root.ntCoff * 2
+					clrTexta: root.clrMenuText
+                    clrKnopki: (root.currentIndex === 3) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    opacityKnopki: 0.9
+					function fnPress() {
+						root.currentIndex = 3
+						fnClickedTemperatura()//Функция выбора Температуры ИИ
+					}
+					onPressedChanged: {
+						if (pressed) {
+							if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
+								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
 							}
 						}
 					}
@@ -536,6 +598,39 @@ Item {
 				Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModels. ВАЖНО!!!
 					pvModels.visible = false//Делаем невидимым виджет
 					root.strModel = strModel//Сохраняем выбор
+				})
+            }
+			onVisibleChanged: {//Если видимость поменялась, то...
+				if(!visible) root.forceActiveFocus()//Если невидимый, то фокус на root, чтоб hotkey работали.
+			}
+        }
+		ListModel {//Модель с температурами для ИИ
+		id: modelTemperatura
+            ListElement { spisok: 0 }
+            ListElement { spisok: 0.1 }
+            ListElement { spisok: 0.2 }
+            ListElement { spisok: 0.3 }
+            ListElement { spisok: 0.4 }
+            ListElement { spisok: 0.5 }
+            ListElement { spisok: 0.6 }
+            ListElement { spisok: 0.7 }
+            ListElement { spisok: 0.8 }
+            ListElement { spisok: 0.9 }
+            ListElement { spisok: 1 }
+        }
+		DCPathView {
+            id: pvTemperatura
+            visible: false
+            ntWidth: root.ntWidth; ntCoff: root.ntCoff
+            anchors.left: tmZona.left; anchors.right: tmZona.right; anchors.bottom: tmZona.bottom
+            anchors.leftMargin: dcScrollbar.width; anchors.rightMargin: dcScrollbar.width
+            clrFona: root.clrFona; clrTexta: root.clrMenuText; clrMenuFon: root.clrMenuFon
+            modelData: modelTemperatura
+            onClicked: function(strTemperatura) {
+				Qt.callLater(function(){//пауза, иначе не сработает фокус и pvTemperatura. ВАЖНО!!!
+					pvTemperatura.visible = false//Делаем невидимым виджет
+					root.rlTemperatura = strTemperatura//Приравнываем значение полученное
+					dcReestr.analizer_temperatura = root.rlTemperatura//Сохраняем в реестре температуру ИИ.
 				})
             }
 			onVisibleChanged: {//Если видимость поменялась, то...
@@ -613,9 +708,10 @@ Item {
 		propagateComposedEvents: true
 		onClicked: (mouse) => {
 			mouse.accepted = false
-			if (menuMenu.visible || pvModels.visible){
+			if (menuMenu.visible || pvModels.visible || pvTemperatura.visible){
 				menuMenu.visible = false
 				pvModels.visible = false
+				pvTemperatura.visible = false
 			} else root.forceActiveFocus()
 			root.forceActiveFocus()
 		}
