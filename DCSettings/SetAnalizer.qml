@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtCore
 import QtQuick.Dialogs
 import DCButtons 1.0
 import DCMethods 1.0
@@ -75,8 +76,10 @@ Item {
         pyAnalyzer.ustModelSettings(root.strModel, ltMaxContext, ltTemperatura, ltPerekritie)
     }
 	onPutLMStudioChanged: {//Если путь к LM Studio изменился, то...
-		if (root.putLMStudio !== "")//Если он не пустой, то...
+		if (root.putLMStudio !== ""){//Если он не пустой, то...
 			pyLMStart.ustPut(root.putLMStudio)//Передаём его в логику Python
+			console.log("AAAAA")
+		}
 	}
     Connections {//Обработчик загрузки моделей из Python
         target: pyModelManager
@@ -195,6 +198,36 @@ Item {
 				flcZona.contentY = flcZona.contentHeight - flcZona.height
 			}
 			event.accepted = true
+		}
+	}
+	FileDialog {
+		id: dialogLMPut
+		title: qsTr("Выберите путь к LM Studio")
+		nameFilters: {
+			if(Qt.application.os === "windows") return ["Исполняемые файлы (*.exe)", "Все файлы (*)"]
+			else if (Qt.application.os === "linux") return ["AppImage (*.AppImage)", "Все файлы (*)"]
+			else if (Qt.application.os === "osx") return ["Приложения (*.app)", "Все файлы (*)"]
+			return ["Все файлы (*)"];//Безопасный фоллбэк
+		}
+		currentFolder: {//Используем сохранённый путь из реестра, или стандартную домашнюю папку
+			if (dcReestr.analizer_lms_put !== "") {
+				var vrPut = dcReestr.analizer_lms_put
+				vrPut = fnPathToUrl(vrPut)//Преобразуем сохранённый путь в URL
+				return vrPut.substring(0, vrPut.lastIndexOf("/"));//Обрезаем имя файла.
+			}
+			else return StandardPaths.writableLocation(StandardPaths.HomeLocation)//Открываем домашнюю локацию
+		}
+		onAccepted: {
+			var vrPut = fnUrlToLocalPath(selectedFile)//Используем кроссплатформенную функцию
+			dcReestr.analizer_lms_put = vrPut
+			if(knopkaLMStart.isStart){//Если путь к LM Studio выбран и была попытка старта, то...
+				knopkaLMStart.isStart = false;//Сбрасываем флаг.
+				pyLMStart.zapustit()//Запускаем LM Studio.
+				root.toolbar("⏳ Запуск LM Studio...")
+			}
+		}
+		onRejected: {//Если нажата кнопка отмены, то...
+			knopkaLMStart.isStart = false;//Сбрасываем флаг.
 		}
 	}
 	function fnClickedEnter() {//Функция обработки нажатия клавиши Enter
@@ -376,15 +409,22 @@ Item {
 					clrTexta: root.clrMenuText
                     clrKnopki: (root.currentIndex === 0) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
+					property bool isStart: false//true - попытка запуска LM Studio без заданного пути.
 					function fnPress() {
 						root.currentIndex = 0
 						if(root.isLMStart){
 							pyLMStart.ostanovit()
-							root.log("Остановка LM Studio...")
+							root.toolbar("Остановка LM Studio...")
 						}
 						else{
-							pyLMStart.zapustit()
-							root.log("⏳ Запуск LM Studio...")
+							if (root.putLMStudio === "") {//Если путь не задан
+								knopkaLMStart.isStart = true;//Попутка запустить LM Studio.
+								dialogLMPut.open()//Функция выбора пути к LM Studio.
+							}
+							else{
+								pyLMStart.zapustit()
+								root.toolbar("⏳ Запуск LM Studio...")
+							}
 						}
 					}
 					onPressedChanged: {
@@ -423,29 +463,6 @@ Item {
 							}
 						}
 					}	
-					FileDialog {
-						id: dialogLMPut
-						title: qsTr("Выберите путь к LM Studio")
-						nameFilters: {
-							if(Qt.application.os === "windows") return ["Исполняемые файлы (*.exe)", "Все файлы (*)"]
-							else if (Qt.application.os === "linux") return ["AppImage (*.AppImage)", "Все файлы (*)"]
-							else if (Qt.application.os === "osx") return ["Приложения (*.app)", "Все файлы (*)"]
-							return ["Все файлы (*)"];//Безопасный фоллбэк
-						}
-						currentFolder: {//Используем сохранённый путь из реестра, или стандартную домашнюю папку
-							if (dcReestr.analizer_lms_put !== "") {
-								var vrPut = dcReestr.analizer_lms_put
-								vrPut = fnPathToUrl(vrPut)//Преобразуем сохранённый путь в URL
-								return vrPut.substring(0, vrPut.lastIndexOf("/"));//Обрезаем имя файла.
-							}
-							else return StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
-						}
-						onAccepted: {
-							var vrPut = fnUrlToLocalPath(selectedFile)//Используем кроссплатформенную функцию
-							dcReestr.analizer_lms_put = vrPut
-							//pyLMSLauncher.ustPutLMS(vrPut)
-						}
-					}
                 }
 				DCKnopkaOriginal {//Кнопка выбора размера шрифта
                     id: knopkaModeli
