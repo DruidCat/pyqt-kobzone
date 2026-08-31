@@ -14,8 +14,6 @@ TODO:
 - StrInstrukciya, set_analizer, прописать, как запускать без sandbox LM Studio
 - SetAnalizer, сделать настройку запуска LM Studio с sandbox и без sandbox.
 - SetAnalizer. DCPathView выдаёт ошибки в консоль, когда не запущена LM Studio.
-- SetAnalizer, при запуске и остановке LM Studio сделать кнопку не активной в переходных процессах.
-- SetAnalizer,  сообщение в toolbar сделать, которые необходимо логировать.
 - SetAnalizer, сделать настройку старта сервера LM Studio ~/.lmstudio/bin/lms server start
 - SetAnalizer, нажал запуск LM Studio, она загрузилась, а если сервер не стартанул, не работает индикация.
 - Скрипт работающий с LM Studio нужно сделать один.
@@ -85,3 +83,5 @@ TODO:
 2026-08-30 SetAnalizer, есть возможность запускать и останавливать LM Studio из приложения.
 2026-08-30 README.md переписал установку python, pyqt под linux и windows, чтоб приложение запустилось.
 2026-08-31 SetAnalizer,если путь к LM Studio не задан,при нажатии на кнопку запуст открывается диалог и запуск
+2026-08-31 SetAnalizer, при запуске и остановке LM Studio сделал кнопку не активной в переходных процессах.
+2026-08-31 SetAnalizer, навёл порядок в сообщениях в toolbar и log. Убрал дублирующие.

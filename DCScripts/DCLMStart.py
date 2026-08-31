@@ -14,7 +14,7 @@ class DCLMStart(QObject):
     sigOstanovlen = pyqtSignal()
     sigError = pyqtSignal(str)
     sigLog = pyqtSignal(str)
-    sigProverkaStarted = pyqtSignal()
+    sigStarted = pyqtSignal()
     
     def __init__(self):
         super().__init__()
@@ -58,7 +58,6 @@ class DCLMStart(QObject):
             
         except Exception as e:
             error_msg = f"Ошибка запуска: {str(e)}"
-            print(f"✗ {error_msg}")
             self.sigError.emit(error_msg)
             self._zapusk_v_processe = False
     
@@ -70,7 +69,6 @@ class DCLMStart(QObject):
             return
         
         if self._proverkaZapushen():
-            print("⚠ LM Studio уже работает")
             self.sigLog.emit("LM Studio уже работает")
             self.sigZapuschen.emit()
             return
@@ -79,13 +77,11 @@ class DCLMStart(QObject):
         
         if not lms_path:
             error_msg = "Не удалось найти LM Studio. Укажите путь в настройках."
-            print(f"✗ {error_msg}")
             self.sigError.emit(error_msg)
             return
         
         try:
-            print(f"✓ Запуск LM Studio: {lms_path}")
-            self.sigLog.emit(f"Запуск: {lms_path.name}")
+            self.sigLog.emit(f"Запуск LM Studio: {lms_path.name}")
             
             self._zapusk_v_processe = True
             
@@ -101,12 +97,11 @@ class DCLMStart(QObject):
             self._initTimer()
             self._popitki = 0
             self._timer.start(3000)
-            self.sigProverkaStarted.emit()
+            self.sigStarted.emit()
             self.sigLog.emit("Ожидание запуска сервера...")
         
         except Exception as e:
             error_msg = f"Ошибка запуска: {str(e)}"
-            print(f"✗ {error_msg}")
             self.sigError.emit(error_msg)
             self._zapusk_v_processe = False
     
@@ -130,11 +125,9 @@ class DCLMStart(QObject):
                             except:
                                 subprocess.run(["kill", "-9", pid], timeout=2)
                     
-                    print("✓ LM Studio остановлен")
                     self.sigLog.emit("LM Studio остановлен")
                     self.sigOstanovlen.emit()
                 else:
-                    print("⚠ LM Studio не запущен")
                     self.sigLog.emit("LM Studio не запущен")
             
             elif platform.system() == "Darwin":
@@ -149,7 +142,6 @@ class DCLMStart(QObject):
         
         except Exception as e:
             error_msg = f"Ошибка остановки: {str(e)}"
-            print(f"✗ {error_msg}")
             self.sigError.emit(error_msg)
     
     def _naitiLMStudio(self):
@@ -257,8 +249,7 @@ class DCLMStart(QObject):
                 self._timer.stop()
             self._popitki = 0
             self._zapusk_v_processe = False
-            print("✓ LM Studio сервер доступен")
-            self.sigLog.emit("✓ LM Studio сервер запущен!")
+            self.sigLog.emit("LM Studio сервер запущен!")
             self.sigZapuschen.emit()
         else:
             if self._popitki >= self._max_popitok:
@@ -267,8 +258,6 @@ class DCLMStart(QObject):
                 self._popitki = 0
                 self._zapusk_v_processe = False
                 error_msg = "LM Studio не отвечает. Запустите вручную или проверьте путь."
-                print(f"✗ {error_msg}")
                 self.sigError.emit(error_msg)
             else:
-                print(f"⏳ Проверка {self._popitki}/{self._max_popitok}...")
-                self.sigLog.emit(f"Попытка {self._popitki}/{self._max_popitok}...")
+                self.sigLog.emit(f"⏳ Попытка {self._popitki}/{self._max_popitok}...")

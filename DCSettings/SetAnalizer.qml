@@ -78,7 +78,6 @@ Item {
 	onPutLMStudioChanged: {//Если путь к LM Studio изменился, то...
 		if (root.putLMStudio !== ""){//Если он не пустой, то...
 			pyLMStart.ustPut(root.putLMStudio)//Передаём его в логику Python
-			console.log("AAAAA")
 		}
 	}
     Connections {//Обработчик загрузки моделей из Python
@@ -101,7 +100,7 @@ Item {
                     }
                 }
             }
-            root.log(`✓ Загружено моделей: ${models.length}`)
+            root.log(`Загружено моделей: ${models.length}`)
         }
 		function onSigServerOk() {
 			root.isLMStart = true//Запущена и доступна.
@@ -115,23 +114,24 @@ Item {
 		target: pyLMStart
 		
 		function onSigZapuschen() {
-			root.log("✓ LM Studio запущен!")
-			//Перепроверяем доступность и загружаем модели
-			pyModelManager.proverkaServera()
-			pyModelManager.zagruzitModeli()
+			root.toolbar("LM Studio запущен!")
+			pyModelManager.proverkaServera()//Перепроверяем доступность
+			pyModelManager.zagruzitModeli()//загружаем модели
+			knopkaLMStart.isPerehodniProces = false
 		}
 		function onSigOstanovlen() {
-			root.log("✓ LM Studio остановлен")
+			root.toolbar("LM Studio остановлен")
 			root.isLMStart = false
+			knopkaLMStart.isPerehodniProces = false
 		}
-		function onSigError(errorMsg) {
+		function onSigError(errorMsg) {//Обработка сигнала ошибки
 			root.log(`✗ ${errorMsg}`)
 		}
-		function onSigLog(logMsg) {
+		function onSigLog(logMsg) {//Обработка согнала сообщений из Класса
 			root.log(logMsg)
 		}
-		function onSigProverkaStarted() {
-			root.log("Ожидание запуска сервера (до 30 секунд)...")
+		function onSigStarted() {//Обработка сигнала старта LM Studio
+			knopkaLMStart.isPerehodniProces = true;//Запуск LM Studio.
 		}
 	}
 	Keys.onPressed: (event) => {
@@ -220,14 +220,15 @@ Item {
 		onAccepted: {
 			var vrPut = fnUrlToLocalPath(selectedFile)//Используем кроссплатформенную функцию
 			dcReestr.analizer_lms_put = vrPut
-			if(knopkaLMStart.isStart){//Если путь к LM Studio выбран и была попытка старта, то...
-				knopkaLMStart.isStart = false;//Сбрасываем флаг.
+			if(knopkaLMStart.isStartBezPuti){//Если путь к LM Studio выбран и была попытка старта, то...
+				knopkaLMStart.isStartBezPuti = false;//Сбрасываем флаг.
 				pyLMStart.zapustit()//Запускаем LM Studio.
 				root.toolbar("⏳ Запуск LM Studio...")
 			}
 		}
 		onRejected: {//Если нажата кнопка отмены, то...
-			knopkaLMStart.isStart = false;//Сбрасываем флаг.
+			knopkaLMStart.isStartBezPuti = false;//Сбрасываем флаг.
+			knopkaLMStart.isPerehodniProces = false//Деактивируем переходный процесс.
 		}
 	}
 	function fnClickedEnter() {//Функция обработки нажатия клавиши Enter
@@ -409,16 +410,19 @@ Item {
 					clrTexta: root.clrMenuText
                     clrKnopki: (root.currentIndex === 0) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
-					property bool isStart: false//true - попытка запуска LM Studio без заданного пути.
+					enabled: !isPerehodniProces//Делаем неактивной кнопку, если переходный процесс.
+					property bool isStartBezPuti: false//true - попытка запуска LM Studio без заданного пути.
+					property bool isPerehodniProces: false//true-когда запуск или становка LM Studio началась
 					function fnPress() {
 						root.currentIndex = 0
+						knopkaLMStart.isPerehodniProces = true//Активируем переходный процесс.
 						if(root.isLMStart){
 							pyLMStart.ostanovit()
 							root.toolbar("Остановка LM Studio...")
 						}
 						else{
 							if (root.putLMStudio === "") {//Если путь не задан
-								knopkaLMStart.isStart = true;//Попутка запустить LM Studio.
+								knopkaLMStart.isStartBezPuti = true;//Попутка запустить LM Studio.
 								dialogLMPut.open()//Функция выбора пути к LM Studio.
 							}
 							else{
