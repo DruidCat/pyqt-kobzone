@@ -445,17 +445,29 @@ github.com/DruidCat/pyqt-kobzone</a></center></p>
             txdZona.text = qsTr("
                 <html>
                     <body>
+<p>На данной странице вы можете настроить параметры взаимодействия с локальным сервером нейросетей LM Studio.</p>
+
+<p><b>УПРАВЛЕНИЕ LM STUDIO:</b></p>
+<ol>
+<p><b>[статус LM Studio]</b> Позволяет запустить или остановить работу локального сервера нейросети LM Studio. Кнопка меняет свое название в зависимости от текущего состояния.</p>
+
+<p><b>[путь к LM Studio]</b> Позволяет указать путь к исполняемому файлу программы LM Studio на вашем компьютере.</p>
+
+<p><b>[выбор модели]</b> Позволяет выбрать конкретную языковую модель из списка тех, что были предварительно загружены в LM Studio.</p>
+
+<p><b>[температура]</b> Настройка параметра Temperature. Этот параметр влияет на уровень креативности ответов языковой модели. Значение 0.5 является сбалансированным. (Чем выше значение, тем более непредсказуемы и творчески ответы; чем ниже — тем они строже и точнее).</p>
+</ol>
+
 <p><b>ФУНКЦИОНАЛ:</b></p>
 <ol>
-<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaNazad.png\"> - Вернуться в главное меню \
+<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaNazad.png\"> - Вернуться в предыдущее меню \
 (Alt+стрелка влево).</p>
-<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaMenu.png\"> - Настройка процесса анализа.</p>
-<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaInfo.png\"> - Помощь по анализу(F1).</p>
+<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaInfo.png\"> - Помощь (F1).</p>
 </ol>
-<p>Вы можете настраивать.</p>
+<p>Если LM Studio не запущена или модель не выбрана, процесс анализа работать не будет.</p>
                     </body>
                 </html>"
-			); 
+            ); 
         } else if(strKluch === "orfograf"){
             txdZona.text = qsTr("
                 <html>

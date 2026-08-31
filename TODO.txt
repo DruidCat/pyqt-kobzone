@@ -11,7 +11,7 @@ TODO:
 - SetTranscribe, сделать проверку на запущенную языковую модель, и если она запущена, предложить остановить её
 - SetInstrukciya, написать инструкцию по горячим клавишам и помощью ИИ
 - Проверку подключения к LM Studio, при открытии нейро анализа текста.
-- StrInstrukciya, set_analizer, прописать, как запускать без sandbox LM Studio
+- SetAnalizer, set_analizer, прописать, как запускать без/c sandbox LM Studio
 - SetAnalizer, сделать настройку запуска LM Studio с sandbox и без sandbox.
 - SetAnalizer. DCPathView выдаёт ошибки в консоль, когда не запущена LM Studio.
 - SetAnalizer, сделать настройку старта сервера LM Studio ~/.lmstudio/bin/lms server start
@@ -86,3 +86,4 @@ TODO:
 2026-08-31 SetAnalizer, при запуске и остановке LM Studio сделал кнопку не активной в переходных процессах.
 2026-08-31 SetAnalizer, навёл порядок в сообщениях в toolbar и log. Убрал дублирующие.
 2026-08-31 SetAnalizer, сделал кнопку Температура, которая позволяет задать температуру ИИ.
+2026-08-31 StrInstrukciya, set_analizer, написал инструкцию.
