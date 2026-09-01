@@ -13,6 +13,10 @@ PyQt6==6.10.2
 # Рабочая версия requests==2.34.2
 requests
 
+# Для RAG
+faiss-cpu
+#faiss-gpu
+openai
 # Зайдите на https://huggingface.co — зарегистрируйтесь
 # Создайте токен: Settings → Access Tokens → New Token (Read)
 # Залогиньтесь:
