@@ -299,15 +299,16 @@ pyenv global 3.13
 ```
 
 ## Токен Hugging Face (для диаризации)
-- 1. Зайдите на https://huggingface.co — зарегистрируйтесь
-- 2. Примите лицензию pyannote, обязательно вводим название фирмы и сайт фирмы:
-        https://huggingface.co/pyannote/speaker-diarization
-        https://huggingface.co/pyannote/speaker-diarization-3.1
-        https://huggingface.co/pyannote/speaker-diarization-community-1 
-        https://huggingface.co/pyannote/segmentation-3.0
-
-- 3. Создайте токен: Settings → Access Tokens → New Token (Read)
-- 4. Залогиньтесь:
+- Зайдите на https://huggingface.co — зарегистрируйтесь
+- Примите лицензию pyannote, обязательно вводим название фирмы и сайт фирмы:
+```http
+https://huggingface.co/pyannote/speaker-diarization
+https://huggingface.co/pyannote/speaker-diarization-3.1
+https://huggingface.co/pyannote/speaker-diarization-community-1 
+https://huggingface.co/pyannote/segmentation-3.0
+```
+- Создайте токен: Settings → Access Tokens → New Token (Read)
+- Залогиньтесь:
 ```bash
 hf auth login
 ```
