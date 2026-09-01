@@ -13,8 +13,8 @@ from DCPages.PyTranscribe import DCTranscribe #Из PyTranscribe.py импорт
 from DCPages.PyJurnal import DCJurnal #Из PyJurnal.py импортируем класс DCJurnal
 from DCScripts.DCFileOpener import DCFileOpener #Из DCFileOpener.py импортируем класс DCFileOpener
 from DCScripts.DCConsoleLog import DCConsoleLog #Из DCConsoleLog.py импортируем класс DCConsoleLog
-from DCScripts.DCModelManager import DCModelManager #Скрипт управляющий моделями в LM Studio
-from DCScripts.DCLMStart import DCLMStart #Скрипт запускающий и останавливающий LM Studio
+from DCScripts.DCLMStudio import DCLMStudio
+
 import resources_rc
 
 
@@ -107,8 +107,7 @@ class MainApp:
         self.jurnal = DCJurnal()# Инициализация class DCJurnal из PyJurnal.py
         self.file_opener = DCFileOpener()#Иннициализация class DCFileOpener из DCFileOpener.py
         self.console_log = DCConsoleLog()#Иннициализация class DCConsoleLog из DCConsoleLog.py
-        self.model_manager = DCModelManager()
-        self.lm_start = DCLMStart()#Иннициируем класс DCLMStart из DCLMStart.py
+        self.lm_studio = DCLMStudio()#Иннициализация class DCLMStudio из DCLMStudio.py
         self.python_info = None
         self.qt_info = None
         self.load_custom_font()#Загружаем шрифт
@@ -163,9 +162,8 @@ class MainApp:
         self.engine.rootContext().setContextProperty("pyTranscriber", self.transcriber)
         self.engine.rootContext().setContextProperty("pyJurnal", self.jurnal)#доступен в QML как "jurnal"
         self.engine.rootContext().setContextProperty("pyFileOpener", self.file_opener)#в QML pyFileOpener
-        self.engine.rootContext().setContextProperty("pyModelManager", self.model_manager)
         self.engine.rootContext().setContextProperty("pyConsole", self.console_log)#в QML pyConsole
-        self.engine.rootContext().setContextProperty("pyLMStart", self.lm_start)
+        self.engine.rootContext().setContextProperty("pyLMStudio", self.lm_studio)#в QML pyLMStudio
         self.engine.rootContext().setContextProperty("pyPythonInfo", self.python_info)
         self.engine.rootContext().setContextProperty("pyQtInfo", self.qt_info)
         

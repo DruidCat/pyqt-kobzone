@@ -16,7 +16,6 @@ TODO:
 - SetAnalizer. DCPathView выдаёт ошибки в консоль, когда не запущена LM Studio.
 - SetAnalizer, сделать настройку старта сервера LM Studio ~/.lmstudio/bin/lms server start
 - SetAnalizer, нажал запуск LM Studio, она загрузилась, а если сервер не стартанул, не работает индикация.
-- Скрипт работающий с LM Studio нужно сделать один.
 - DCPathView в Linux не работает колёсико мыши и не работает захват пальцем или мышью.
 
 ПОЧИНИЛ:
@@ -88,4 +87,4 @@ TODO:
 2026-08-31 SetAnalizer, сделал кнопку Температура, которая позволяет задать температуру ИИ.
 2026-08-31 StrInstrukciya, set_analizer, написал инструкцию.
 2026-08-31 StrInstrukciya, set_kobzone, написал инструкцию.
-
+2026-09-01 DCLMStudio.py скрипт работающий с LM Studio сделал один.

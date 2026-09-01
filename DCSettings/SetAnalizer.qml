@@ -57,10 +57,10 @@ Item {
 	Component.onCompleted: {
         knopkiMassiv = [knopkaLMStart, knopkaLMPut, knopkaModeli, knopkaTemperatura]//Сюда добавляем id кнопок
 		if(Qt.application.os !== "windows"){//TODO ЭТО ДЛЯ ОТЛАДКИ ПРОГРАММЫ, ЧТОБ БЫСТРЕЕ ЗАПУСКАЛАСЬ.
-			pyModelManager.proverkaServera()//Проверяем сервер перед загрузкой моделей
-			pyModelManager.zagruzitModeli()//Загружаем модели при открытии страницы
+			pyLMStudio.proverkaServera()//Проверяем сервер перед загрузкой моделей
+			pyLMStudio.zagruzitModeli()//Загружаем модели при открытии страницы
 			if (dcReestr.analizer_lms_put !== "")//Передаём путь из настроек в Python
-				pyLMStart.ustPut(dcReestr.analizer_lms_put)
+				pyLMStudio.ustPut(dcReestr.analizer_lms_put)
 		}
 		root.forceActiveFocus()
 	}
@@ -69,7 +69,7 @@ Item {
     }
 	onStrModelChanged: {//Если Модель изменится, то...
         dcReestr.analizer_model_imya = root.strModel//Сохраняем в реестре имя Модели.
-        pyModelManager.ustModel(root.strModel)//Отправляем в Python
+        pyLMStudio.ustModel(root.strModel)//Отправляем в Python
         //Обновляем настройки анализатора
         let ltMaxContext = dcReestr.analizer_max_context
 		let ltTemperatura = dcReestr.analizer_temperatura
@@ -85,11 +85,11 @@ Item {
 	}
 	onPutLMStudioChanged: {//Если путь к LM Studio изменился, то...
 		if (root.putLMStudio !== ""){//Если он не пустой, то...
-			pyLMStart.ustPut(root.putLMStudio)//Передаём его в логику Python
+			pyLMStudio.ustPut(root.putLMStudio)//Передаём его в логику Python
 		}
 	}
     Connections {//Обработчик загрузки моделей из Python
-        target: pyModelManager
+        target: pyLMStudio
 
         function onSigModelsLoaded(models) {
             modelModels.clear()//Очищаем старую модель
@@ -117,23 +117,16 @@ Item {
 			root.isLMStart = false//Не доступна.
             root.log(`Ошибка: ${errorMsg}`)
         }
-    }
-	Connections {
-		target: pyLMStart
-		
 		function onSigZapuschen() {
 			root.toolbar("LM Studio запущен!")
-			pyModelManager.proverkaServera()//Перепроверяем доступность
-			pyModelManager.zagruzitModeli()//загружаем модели
+			pyLMStudio.proverkaServera()//Перепроверяем доступность
+			pyLMStudio.zagruzitModeli()//загружаем модели
 			knopkaLMStart.isPerehodniProces = false
 		}
 		function onSigOstanovlen() {
 			root.toolbar("LM Studio остановлен")
 			root.isLMStart = false
 			knopkaLMStart.isPerehodniProces = false
-		}
-		function onSigError(errorMsg) {//Обработка сигнала ошибки
-			root.log(`Ошибка: ${errorMsg}`)
 		}
 		function onSigLog(logMsg) {//Обработка согнала сообщений из Класса
 			root.log(logMsg)
@@ -230,7 +223,7 @@ Item {
 			dcReestr.analizer_lms_put = vrPut
 			if(knopkaLMStart.isStartBezPuti){//Если путь к LM Studio выбран и была попытка старта, то...
 				knopkaLMStart.isStartBezPuti = false;//Сбрасываем флаг.
-				pyLMStart.zapustit()//Запускаем LM Studio.
+				pyLMStudio.zapustit()//Запускаем LM Studio.
 				root.toolbar("⏳ Запуск LM Studio...")
 			}
 		}
@@ -450,7 +443,7 @@ Item {
 						root.currentIndex = 0
 						knopkaLMStart.isPerehodniProces = true//Активируем переходный процесс.
 						if(root.isLMStart){
-							pyLMStart.ostanovit()
+							pyLMStudio.ostanovit()
 							root.toolbar("Остановка LM Studio...")
 						}
 						else{
@@ -459,7 +452,7 @@ Item {
 								dialogLMPut.open()//Функция выбора пути к LM Studio.
 							}
 							else{
-								pyLMStart.zapustit()
+								pyLMStudio.zapustit()
 								root.toolbar("⏳ Запуск LM Studio...")
 							}
 						}
