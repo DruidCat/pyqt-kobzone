@@ -250,7 +250,7 @@ DruidCat
 - Для работы с языковыми моделями требуется достаточно оперативной памяти (минимум 8 GB)
 - Первый запуск может быть медленным из-за загрузки модели в LM Studio
 
-**Полный гайд: Расшифровка совещаний по ролям (M4A → текст)**
+## Гайд по расшифровка совещаний по ролям (M4A → текст)
 ```bash
 # Устанавливаем необходимые пакеты кодеков
 sudo apt install -y ffmpeg libavutil58 libavcodec60 libavformat60 libavdevice60 libavfilter9 libswscale7 libswresample4
@@ -263,8 +263,8 @@ nvidia-smi
 ```
 Должна отобразиться ваша видеокарта и версия CUDA (12.x).
 
-**Установка Python3.13 в виртуальном окружении pyenv, на котором работает WhisperX**
-pyenv необходим, чтоб в проекте не конфликтовали версии Python на одном компьютере.
+## Установка Python3.13 в виртуальном окружении pyenv, на котором работает WhisperX
+- pyenv необходим, чтоб в проекте не конфликтовали версии Python на одном компьютере.
 ```bash
 # Устанавливаем пакеты для того, чтоб установить pynve если через apt не получилось:
 sudo apt install -y make build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libffi-dev python3-openssl
@@ -298,17 +298,17 @@ python3 --version
 pyenv global 3.13
 ```
 
-**Токен Hugging Face (для диаризации)**
-    - 1. Зайдите на https://huggingface.co — зарегистрируйтесь
-    - 2. Примите лицензию pyannote, обязательно вводим название фирмы и сайт фирмы:
+## Токен Hugging Face (для диаризации)
+- 1. Зайдите на https://huggingface.co — зарегистрируйтесь
+- 2. Примите лицензию pyannote, обязательно вводим название фирмы и сайт фирмы:
         https://huggingface.co/pyannote/speaker-diarization
         https://huggingface.co/pyannote/speaker-diarization-3.1
         https://huggingface.co/pyannote/speaker-diarization-community-1 
         https://huggingface.co/pyannote/segmentation-3.0
 
-    - 3. Создайте токен: Settings → Access Tokens → New Token (Read)
-    - 4. Залогиньтесь:
-```cmd
+- 3. Создайте токен: Settings → Access Tokens → New Token (Read)
+- 4. Залогиньтесь:
+```bash
 hf auth login
 ```
 
