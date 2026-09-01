@@ -52,9 +52,13 @@ pip install -r requirements.txt
 5. **Установите LM Studio:**
 
 ```bash
+# Установите libfuse2 чтоб запускать *.AppImage
+sudo apt install libfuse2
 # Скачайте LM Studio с официального сайта
 wget https://lmstudio.ai/download/linux -O lmstudio.AppImage
 chmod +x lmstudio.AppImage
+./lmstudio.AppImage --no-sandbox
+# или в песочнице
 ./lmstudio.AppImage
 ```
 
