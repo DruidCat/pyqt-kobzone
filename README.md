@@ -8,7 +8,7 @@
 
 ## Требования
 
-- Python 3.11
+- Python 3.13
 - PyQt6
 - LM Studio (для работы с языковыми моделями)
 
@@ -20,9 +20,7 @@
 
 ```bash
 sudo apt update
-sudo apt upgrade -y
-sudo apt install python3.11 python3.11-venv python3-pip git curl -y
-sudo apt install -y ffmpeg libavutil58 libavcodec60 libavformat60 libavdevice60 libavfilter9 libswscale7 libswresample4
+sudo apt install -y python3.13 python3.13-venv python3-pip git curl ffmpeg
 ```
 
 2. **Клонируйте репозиторий:**
@@ -35,8 +33,13 @@ cd pyqt-kobzone
 3. **Создайте виртуальное окружение:**
 
 ```bash
-python3.11 -m venv venv
+python3.13 -m venv venv
 source venv/bin/activate
+```
+
+```bash
+# Когда ты попадёшь в виртуальное пространство venv, из него можно будет выйти командой
+deactivate
 ```
 
 4. **Установите зависимости:**
@@ -63,14 +66,14 @@ chmod +x lmstudio.AppImage
 7. **Запустите приложение:**
 
 ```bash
-python3.11 main.py
+python3.13 main.py
 ```
 
 ### Windows 10, 11
 
-1. **Установите Python 3.11:**
-   - Скачайте Python 3.11 с официального сайта: https://www.python.org/downloads/release/python-3110/
-   - При установке обязательно отметьте "Add Python 3.11 to PATH"
+1. **Установите Python 3.13:**
+   - Скачайте Python 3.13 с официального сайта: https://www.python.org/downloads/release/python-31314/
+   - При установке обязательно отметьте "Add Python 3.13 to PATH"
    - Выберите "Custom installation" и убедитесь, что установлены pip и IDLE
 
 2. **Установите Git (опционально):**
@@ -92,6 +95,11 @@ cd pyqt-kobzone
 ```cmd
 python -m venv venv
 venv\Scripts\activate
+```
+
+```bash
+# Когда ты попадёшь в виртуальное пространство venv, из него можно будет выйти командой
+deactivate
 ```
 
 5. **Установите зависимости:**
@@ -152,18 +160,6 @@ pyqt-kobzone/
 
 ## Решение проблем
 
-### Ubuntu
-
-**Ошибка: "No module named 'PyQt6'"**
-```bash
-pip install --upgrade PyQt6
-```
-
-**Ошибка: "python3.11: command not found"**
-```bash
-sudo apt install python3.11 python3.11-venv
-```
-
 **Ошибка подключения к LM Studio:**
 - Убедитесь, что LM Studio запущен
 - Проверьте, что локальный сервер активен (вкладка "Local Server" в LM Studio)
@@ -177,17 +173,12 @@ sudo apt install libxcb-xinerama0 libxcb-cursor0
 ### Windows
 
 **Ошибка: "python is not recognized"**
-- Переустановите Python 3.11 с галочкой "Add Python to PATH"
+- Переустановите Python 3.13 с галочкой "Add Python to PATH"
 - Или добавьте путь к Python в переменные среды вручную:
-  - Обычно: `C:\Users\<Username>\AppData\Local\Programs\Python\Python311`
-
-**Ошибка: "No module named 'PyQt6'"**
-```cmd
-pip install --upgrade PyQt6
-```
+  - Обычно: `C:\Users\<Username>\AppData\Local\Programs\Python\Python313`
 
 **Ошибка при установке PyQt6:**
-- Убедитесь, что используете 64-битную версию Python 3.11
+- Убедитесь, что используете 64-битную версию Python 3.13
 - Попробуйте обновить pip: `python -m pip install --upgrade pip`
 
 **LM Studio не подключается:**
@@ -249,7 +240,7 @@ DruidCat
 - GitHub: https://github.com/DruidCat/pyqt-kobzone
 - Документация PyQt6: https://www.riverbankcomputing.com/static/Docs/PyQt6/
 - LM Studio: https://lmstudio.ai/
-- Python 3.11: https://www.python.org/downloads/release/python-3110/
+- Python 3.13: https://www.python.org/downloads/release/python-31314/
 
 ---
 
@@ -261,26 +252,19 @@ DruidCat
 
 Полный гайд: Расшифровка совещаний по ролям (M4A → текст)
 
-## Шаг 1: Подготовка системы
-# Обновляем систему на Ubuntu 26.04.
-sudo apt update && sudo apt upgrade -y
-
-# Устанавливаем необходимые пакеты
-sudo apt install -y python3 python3-pip python3-venv ffmpeg git libavutil58 libavcodec60 libavformat60 libavdevice60 libavfilter9 libswscale7 libswresample4
+# Устанавливаем необходимые пакеты кодеков
+sudo apt install -y ffmpeg libavutil58 libavcodec60 libavformat60 libavdevice60 libavfilter9 libswscale7 libswresample4
 # Проверяем ffmpeg (нужен для конвертации M4A)
 ffmpeg --version
-
-# Качаем проект с github.
-git clone -b main git@github.com:DruidCat/pyqt-kobzone.git
 
 # Проверка CUDA:
 nvidia-smi
 
 Должна отобразиться ваша видеокарта и версия CUDA (12.x).
 
-Установка Python3.11 в виртуальном окружении pyenv, на котором работает WhisperX
+Установка Python3.13 в виртуальном окружении pyenv, на котором работает WhisperX
 pyenv необходим, чтоб в проекте не конфликтовали версии Python на одном компьютере.
-# Устанавливаем пакеты для того, чтоб установить pynve:
+# Устанавливаем пакеты для того, чтоб установить pynve если через apt не получилось:
 sudo apt install -y make build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libffi-dev python3-openssl
 
 # Скачиваем pyenv в домашний каталог .pyenv
@@ -296,31 +280,19 @@ eval "$(pyenv init -)"
 # Перезапускаем консоль, чтоб обновился .bashrc
 source ~/.bashrc
 
-# Запускаем в виртуальном пространстве Python 3.11 на котром написана WhisperX на момент написания статьи.
-pyenv shell 3.11
+# Скачать python 3.13 через pyenv
+pyenv install 3.13.14
 
-# Проверить, что сделали всё правильно, должна отобразится версия 3.11
+# Запускаем в виртуальном пространстве Python 3.13 на котром написана WhisperX на момент написания статьи.
+pyenv shell 3.13
+
+# Проверить, что сделали всё правильно, должна отобразится версия 3.13
 python3 --version
 
 # Сделать версию по умолчанию для всех сессий, я так сделал
-pyenv global 3.11
+pyenv global 3.13
 
-## Шаг 2: Создание проекта и окружения
-# Создаём папку проекта, в эту папку установится проект вместе с нейронкой WhisperX в виртуальном пространстве venv
-mkdir ~/git/pyqt-kobzone && cd ~/git/pyqt-kobzone
-
-# Виртуальное окружение
-python3 -m venv venv
-source venv/bin/activate
-
-# когда ты попадёшь в виртуальное пространство venv, из него можно будет выйти командой
-deactivate
-
-## Шаг 3: Установка полная всех библиотек в автоматическом режиме.
-pip install --upgrade pip
-pip install -r requirements.txt
-
-## Шаг 4: Токен Hugging Face (для диаризации)
+## Токен Hugging Face (для диаризации)
 # 1. Зайдите на https://huggingface.co — зарегистрируйтесь
 # 2. Примите лицензию pyannote, обязательно вводим название фирмы и сайт фирмы
 #	https://huggingface.co/pyannote/speaker-diarization
@@ -330,31 +302,9 @@ pip install -r requirements.txt
 #
 # 3. Создайте токен: Settings → Access Tokens → New Token (Read)
 # 4. Залогиньтесь:
+```cmd
 hf auth login
+```
 
 # Вставьте токен когда попросит, при печатании токена не видно будет букв
 
-## Шаг 6: Запуск Любимой КОБзоны и нейросети WhisperX в разделе Транскрибация.
-cd ~/git/pyqt-kobzane
-source venv/bin/activate
-python main.py
-
-## Результат
-
-| Формат | Назначение |
-|--------|-----------|
-| `.txt` | Текстовый протокол для чтения |
-| `.json` | Структурированные данные для обработки |
-
-### Пример вывода `.txt`:
-ПРОТОКОЛ БЕСЕДЫ
-Файл: совещание_11января
-Дата расшифровки: 22.02.2022 11:11
-
-[SPEAKER_00]: Добрый день, коллеги. Начинаем планёрку.
-[SPEAKER_01]: Здравствуйте.
-[SPEAKER_00]: Алексей, доложи по продажам за декабрь.
-[SPEAKER_01]: Итого за декабрь выручка составила двадцать два миллиона.
-[SPEAKER_02]: Могу сразу по маркетингу, если не против.
-[SPEAKER_00]: Давай, Ольга.
-[SPEAKER_02]: Конверсия выросла на двенадцать процентов после новогодней акции.

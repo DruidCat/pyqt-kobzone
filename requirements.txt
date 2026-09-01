@@ -1,8 +1,8 @@
 # ЗАПУСКАТЬ В ВИРТУАЛЬНОМ ПРОСТРАНСТВЕ!
 # source venv/bin/activate
 #
-# pip install -r pipinstall.txt
-# Зависимости для работы с Любимой КОБзоной
+# pip install -r requirements.txt
+# Зависимости для работы с Любимая КОБзона
 torch
 torchaudio
 torchvision
@@ -12,8 +12,6 @@ huggingface_hub
 PyQt6==6.10.2
 # Рабочая версия requests==2.34.2
 requests
-# Для создания ресурсов.
-PyQt6-tools
 
 # Зайдите на https://huggingface.co — зарегистрируйтесь
 # Создайте токен: Settings → Access Tokens → New Token (Read)
