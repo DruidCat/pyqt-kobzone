@@ -44,6 +44,7 @@ Item {
 	property bool isRAG: false//true - создание RAG началась.
 	property int tekushiFail: 0//Текущий файл в обработке.
 	property int kolichestvoFailov: 0//общее количество обрабатываемых файлов
+	property bool isGPU: false//true - анализ через GPU, false - анализ через CPU
     //Настройки
     anchors.fill: parent
     focus: true 
@@ -373,7 +374,7 @@ Item {
 			anchors.left: tmZagolovok.left
 			anchors.right: tmZagolovok.right
 			
-			text: qsTr("ОСТАНОВИТЬ ТРАНСКРИБАЦИЮ?")
+			text: qsTr("ОСТАНОВИТЬ СОЗДАНИЕ RAG БАЗЫ ДАННЫХ?")
 			visible: false
 			
 			clrFona: "red"

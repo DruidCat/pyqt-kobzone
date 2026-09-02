@@ -15,7 +15,7 @@ requests
 
 # Для RAG
 faiss-cpu
-#faiss-gpu
+faiss-gpu
 openai
 # Зайдите на https://huggingface.co — зарегистрируйтесь
 # Создайте токен: Settings → Access Tokens → New Token (Read)
