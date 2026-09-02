@@ -131,8 +131,6 @@ Item {
     }
 	Component.onCompleted: {
         root.forceActiveFocus()
-        txfTextPut.text = dcReestr.transcribe_put_text
-        txfAudioPut.text = dcReestr.transcribe_put_audio
     }
 	Connections {//Connections для транскрибера
 		target: pyTranscriber
@@ -199,8 +197,6 @@ Item {
 				knopkaTranscribe.enabled = false
 				knopkaAudioPut.enabled = false
 				knopkaTextPut.enabled = false
-				txfAudioPut.enabled = false
-				txfTextPut.enabled = false
 				knopkaInfo.visible = false
 				knopkaNastroiki.visible = false
 
@@ -225,8 +221,6 @@ Item {
 			knopkaTranscribe.enabled = true
 			knopkaAudioPut.enabled = true//Включаем кнопку, чтоб она нажималась
 			knopkaTextPut.enabled = true//Включаем кнопку, чтоб она нажималась
-			txfAudioPut.enabled = true
-			txfTextPut.enabled = true
             knopkaInfo.visible = true
 			knopkaNastroiki.visible = true
         }
@@ -332,7 +326,6 @@ Item {
 		onAccepted: {
 			var vtPut = fnUrlToLocalPath(selectedFolder)//Используем кроссплатформенную функцию
 			dcReestr.transcribe_put_audio = vtPut
-			txfAudioPut.text = vtPut
 			root.toolbar(`Танскрибация. Выбрана папка аудио: ${vtPut}`)//Сообщение в toolbar и журнал.
 		}
 	}	
@@ -348,7 +341,6 @@ Item {
 		onAccepted: {
 			var vtPut = fnUrlToLocalPath(selectedFolder)//Используем кроссплатформенную функцию
 			dcReestr.transcribe_put_text = vtPut
-			txfTextPut.text = vtPut
 			root.toolbar(`Танскрибация. Выбрана папка результатов: ${vtPut}`)//Сообщение в toolbar и журнал.
 		}
 	}	
@@ -500,46 +492,24 @@ Item {
 					font.bold: true//Жирный текст.
                     width: parent.width - parent.leftPadding - parent.rightPadding
                 }
-                Row {
-                    width: parent.width - parent.leftPadding - parent.rightPadding
-                    spacing: root.ntCoff 
-                    TextField {
-                        id: txfAudioPut
-                        width: parent.width - knopkaAudioPut.width - parent.spacing
-						height: root.ntHeight
-						font.pixelSize: root.pixelHeight//Имперический размер шрифта.
-                        placeholderText: "Путь к папке с аудиофайлами"
-                        selectByMouse: true
-                        color: root.clrTexta
-                        background: Rectangle {
-                            color: "transparent"
-                            border.color: root.clrTexta
-                            border.width: 1
-                            radius: root.ntCoff / 2
-                        }
-                        onTextChanged: {
-                            dcReestr.transcribe_put_audio = text
-                        }
-						TapHandler {//Нажимаем на всю область виджета.
-							onTapped: fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
+				DCKnopkaOriginal {
+					id: knopkaAudioPut
+					text: dcReestr.transcribe_put_audio
+					ntHeight: root.ntWidth
+					ntCoff: root.ntCoff
+					clrKnopki: root.clrTexta
+					clrTexta: root.clrFona
+					anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2
+                    anchors.rightMargin: root.ntCoff * 2
+					
+					onClicked: {
+						if (!fnCloseMenuIfOpen()) {
+							fnClickedPutAudio()
 						}
-                    } 
-                    DCKnopkaOriginal {
-                        id: knopkaAudioPut
-                        text: "..."
-                        ntHeight: root.ntWidth
-                        ntCoff: root.ntCoff
-                        clrKnopki: root.clrTexta
-                        clrTexta: root.clrFona
-                        width: root.ntWidth * root.ntCoff * 3
-                        
-                        onClicked: {
-                            if (!fnCloseMenuIfOpen()) {
-                                fnClickedPutAudio()
-                            }
-                        }
-                    }
-                }
+					}
+				}
                 Text {//Путь сохранения результатов
                     text: "Путь сохранения результатов:"
                     font.pixelSize: root.ntWidth/2 * root.ntCoff
@@ -547,46 +517,24 @@ Item {
 					font.bold: true//Жирный текст.
                     width: parent.width - parent.leftPadding - parent.rightPadding
                 } 
-                Row {
-                    width: parent.width - parent.leftPadding - parent.rightPadding
-                    spacing: root.ntCoff    
-                    TextField {
-                        id: txfTextPut
-                        width: parent.width - knopkaTextPut.width - parent.spacing
-						height: root.ntHeight
-						font.pixelSize: root.pixelHeight//Имперический размер шрифта.
-                        placeholderText: "Путь к папке для сохранения результатов"
-                        selectByMouse: true
-                        color: root.clrTexta
-                        background: Rectangle {
-                            color: "transparent"
-                            border.color: root.clrTexta
-                            border.width: 1
-                            radius: root.ntCoff / 2
-                        }
-                        onTextChanged: {
-                            dcReestr.transcribe_put_text = text
+				DCKnopkaOriginal {
+					id: knopkaTextPut
+					text: dcReestr.transcribe_put_text
+					ntHeight: root.ntWidth
+					ntCoff: root.ntCoff
+					clrKnopki: root.clrTexta
+					clrTexta: root.clrFona
+					anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2
+                    anchors.rightMargin: root.ntCoff * 2
+					
+					onClicked: {
+						if (!fnCloseMenuIfOpen()) {
+							fnClickedPutText()
 						}
-						TapHandler {//Нажимаем на всю область виджета.
-							onTapped: fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
-						}
-                    } 
-                    DCKnopkaOriginal {
-                        id: knopkaTextPut
-                        text: "..."
-                        ntHeight: root.ntWidth
-                        ntCoff: root.ntCoff
-                        clrKnopki: root.clrTexta
-                        clrTexta: root.clrFona
-                        width: root.ntWidth * root.ntCoff * 3
-                        
-                        onClicked: {
-                            if (!fnCloseMenuIfOpen()) {
-                                fnClickedPutText()
-                            }
-                        }
-                    }
-                }
+					}
+				}
                 Text {//Прогресс транскрибации
                     text: "Прогресс транскрибации:"
                     font.pixelSize: root.ntWidth/2 * root.ntCoff
