@@ -13,9 +13,26 @@ import threading
 from datetime import datetime
 import zipfile
 
+# ============================================================
+# ОПРЕДЕЛЕНИЕ РЕЖИМА ЗАПУСКА
+# ============================================================
+
+IS_GUI_MODE = os.environ.get('RAG_GUI_MODE', '0') == '1'
+
+# Получение путей из переменных окружения
+BASE_DIR = os.environ.get(
+    'RAG_DB_DIR',
+    "/mnt/Yandex.Disk/Мои Документы/БД/A.I. СССР"
+)
+
+DATA_DIR = os.environ.get(
+    'RAG_DOC_DIR',
+    os.path.join(BASE_DIR, "base")
+)
+
 # Пути к папкам
-base_dir = "/mnt/Yandex.Disk/Мои Документы/БД/A.I. СССР"
-data_dir = os.path.join(base_dir, "base")
+base_dir = BASE_DIR
+data_dir = DATA_DIR
 add_dir = os.path.join(base_dir, "add")
 arch_dir = os.path.join(base_dir, "arch")
 index_dir = os.path.join(base_dir, "faiss_index")
@@ -99,15 +116,22 @@ if os.path.exists(index_dir) and os.path.isdir(index_dir):
     print("="*70)
     print("⚠️  Обнаружена существующая векторная база данных RAG")
     print("="*70)
-    response = input("\n🔄 Пересоздать векторную базу данных RAG? (Д/Н): ")
-    
-    if response in ['Д', 'д', 'Y', 'y']:
+
+    if IS_GUI_MODE:
+        # В GUI режиме всегда пересоздаём
         print("\n🗑️  Удаление старой базы данных...")
         shutil.rmtree(index_dir)
-        print("✓ Старая база удалена\n")
+        print("✓ Старая база удалена\n", flush=True)
     else:
-        print("\n❌ Операция отменена. Выход из программы.")
-        sys.exit(0)
+        response = input("\n🔄 Пересоздать векторную базу данных RAG? (Д/Н): ")
+        
+        if response in ['Д', 'д', 'Y', 'y']:
+            print("\n🗑️  Удаление старой базы данных...")
+            shutil.rmtree(index_dir)
+            print("✓ Старая база удалена\n")
+        else:
+            print("\n❌ Операция отменена. Выход из программы.")
+            sys.exit(0)
 
 print("="*70)
 print("🚀 СОЗДАНИЕ ВЕКТОРНОЙ БАЗЫ ДАННЫХ RAG")
@@ -130,6 +154,77 @@ def check_and_move_new_files():
     
     if not new_files:
         return
+    
+    # ==================== GUI РЕЖИМ ====================
+    if IS_GUI_MODE:
+        print("="*70, flush=True)
+        print("📥 ОБНАРУЖЕНЫ НОВЫЕ ФАЙЛЫ В ПАПКЕ ДЛЯ ДОБАВЛЕНИЯ", flush=True)
+        print("="*70, flush=True)
+        print(f"\nПапка: {add_dir}\n", flush=True)
+        
+        for idx, file_path in enumerate(new_files, 1):
+            relative_path = os.path.relpath(file_path, add_dir)
+            file_size = os.path.getsize(file_path)
+            size_kb = file_size / 1024
+            print(f"  [{idx}] {relative_path} ({size_kb:.1f} KB)", flush=True)
+        
+        print(f"\n📊 Всего файлов: {len(new_files)}", flush=True)
+        print("="*70, flush=True)
+        
+        # Автоматически переносим файлы в GUI режиме
+        print("\n🔄 Автоматический перенос файлов в base...", flush=True)
+        
+        # Создание резервной копии базы перед добавлением
+        if not create_backup_archive():
+            print("\n❌ Ошибка создания архива. Операция отменена.", flush=True)
+            sys.exit(1)
+        
+        # Создание подпапки с текущей датой
+        current_date = datetime.now().strftime("%Y-%m-%d")
+        target_dir = os.path.join(data_dir, current_date)
+        
+        os.makedirs(target_dir, exist_ok=True)
+        
+        print(f"\n📁 Создана папка: {current_date}/", flush=True)
+        print("🔄 Перенос файлов...\n", flush=True)
+        
+        moved_count = 0
+        for idx, file_path in enumerate(new_files, 1):
+            try:
+                file_name = os.path.basename(file_path)
+                target_path = os.path.join(target_dir, file_name)
+                
+                # Проверка на существование файла с таким же именем
+                if os.path.exists(target_path):
+                    base_name, ext = os.path.splitext(file_name)
+                    counter = 1
+                    while os.path.exists(target_path):
+                        file_name = f"{base_name}_{counter}{ext}"
+                        target_path = os.path.join(target_dir, file_name)
+                        counter += 1
+                
+                shutil.move(file_path, target_path)
+                print(f"  [{idx}/{len(new_files)}] ✓ {os.path.basename(file_path)} → {current_date}/{file_name}", flush=True)
+                moved_count += 1
+            except Exception as e:
+                print(f"  [{idx}/{len(new_files)}] ✗ Ошибка при переносе {os.path.basename(file_path)}: {e}", flush=True)
+        
+        print(f"\n✓ Перенесено файлов: {moved_count}/{len(new_files)}\n", flush=True)
+        
+        # Удаление пустых папок в add
+        try:
+            for root, dirs, files in os.walk(add_dir, topdown=False):
+                for dir_name in dirs:
+                    dir_path = os.path.join(root, dir_name)
+                    if not os.listdir(dir_path):
+                        os.rmdir(dir_path)
+                        print(f"  🗑️  Удалена пустая папка: {os.path.relpath(dir_path, add_dir)}", flush=True)
+        except Exception as e:
+            print(f"  ⚠️  Ошибка при удалении пустых папок: {e}", flush=True)
+        
+        return
+    
+    # ==================== ТЕРМИНАЛЬНЫЙ РЕЖИМ ====================
     
     # Показываем найденные файлы
     print("="*70)
@@ -221,27 +316,36 @@ class SpinnerThread(threading.Thread):
         self.running = True
         self.message = ""
         self.daemon = True
+        self.enabled = not IS_GUI_MODE #Отключается в GUI режиме
     
     def run(self):
         while self.running:
-            if self.message:
+            if self.message and self.enabled: #Проверка enabled
                 sys.stdout.write(f'\r  {self.spinner[self.idx]} {self.message}')
                 sys.stdout.flush()
                 self.idx = (self.idx + 1) % 4
-            time.sleep(0.1)  # Обновление каждые 100мс для плавной анимации
+            time.sleep(0.1)
     
     def update_message(self, msg):
         self.message = msg
+        if not self.enabled: #Если GUI, выводим сразу
+            print(f"  {msg}", flush=True)
     
     def stop(self):
         self.running = False
-        sys.stdout.write('\r')
-        sys.stdout.flush()
+        if self.enabled:
+            sys.stdout.write('\r')
+            sys.stdout.flush()
 
 def encode_texts(texts, batch_size=32):
     """Кодирование текстов в эмбеддинги"""
     all_embeddings = []
     total = len(texts)
+    
+    # Вычисляем шаг для обновления (1% от общего количества)
+    one_percent = max(1, total // 100)  # Минимум 1, чтобы не было деления на 0
+    next_report = one_percent  # Следующая точка отчёта
+    last_reported_percent = 0  # Последний отображённый процент
     
     # Запуск спиннера в отдельном потоке
     spinner = SpinnerThread()
@@ -259,15 +363,22 @@ def encode_texts(texts, batch_size=32):
             batch_embeddings = torch.nn.functional.normalize(batch_embeddings, p=2, dim=1)
             all_embeddings.append(batch_embeddings.cpu())
         
-        # Обновление сообщения для спиннера
+        # Обновление прогресса ТОЛЬКО при достижении следующего процента
         processed = i + len(batch)
-        percent = (processed / total) * 100
-        spinner.update_message(f'Обработано {processed}/{total} фрагментов ({percent:.1f}%)')
+        
+        if processed >= next_report or processed == total:
+            percent = int((processed / total) * 100)
+            
+            # Обновляем ТОЛЬКО если процент изменился
+            if percent > last_reported_percent or processed == total:
+                spinner.update_message(f'Обработано {processed}/{total} фрагментов ({percent}%)')
+                last_reported_percent = percent
+                next_report += one_percent  # Следующий порог
     
     # Остановка спиннера
     spinner.stop()
     spinner.join()
-    print(f'  ✓ Обработано {total}/{total} фрагментов (100.0%)')
+    print(f'  ✓ Обработано {total}/{total} фрагментов (100%)')
     
     return torch.vstack(all_embeddings)
 
@@ -307,7 +418,7 @@ for idx, file_path in enumerate(txt_files, 1):
         
         # Показываем относительный путь от data_dir
         relative_path = os.path.relpath(file_path, data_dir)
-        print(f"[{idx:2d}/{len(txt_files)}] ✓ {relative_path:50s} ({chunk_count:4d} фрагментов)")
+        print(f"[{idx}/{len(txt_files)}] ✓ {relative_path:50s} ({chunk_count:4d} фрагментов)", flush=True)
     except Exception as e:
         print(f"[{idx:2d}/{len(txt_files)}] ✗ Ошибка {os.path.basename(file_path)}: {e}")
 

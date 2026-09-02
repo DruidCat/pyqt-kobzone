@@ -134,11 +134,11 @@ Item {
     }
 	Connections {//Connections для транскрибера
 		target: pyRAG
-		function onRAGStarted() {//Функция начала работы скрипта DCRAGMake.py
+		function onSigRAGStarted() {//Функция начала работы скрипта DCRAGMake.py
 			root.isRAG = true//Взводим флаг, что создание RAG началась.
 			tmrLogo.running = true//Запускаем анимацию логотипа и политику кнопок.
 		}
-		function onRAGFinished(success, message) {//Функция окончания работы скрипта DCRAGMake.py
+		function onSigRAGFinished(success, message) {//Функция окончания работы скрипта DCRAGMake.py
 			fnStopRAG()//Останавливаем создание RAG.	
 			if (!success) {//Если ошибка, то...
 				txdZona.strCopy += "\n❌ Ошибка: " + message + "\n"
@@ -664,3 +664,5 @@ Item {
         }
     }
 }
+
+
