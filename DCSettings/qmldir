@@ -4,5 +4,6 @@ DCSettings 1.0 DCSettings.qml
 SetAnalizer 1.0 SetAnalizer.qml
 SetKOBzone 1.0 SetKOBzone.qml
 SetOrfograf 1.0 SetOrfograf.qml
+SetRAG 1.0 SetRAG.qml
 SetTranscribe 1.0 SetTranscribe.qml
 

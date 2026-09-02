@@ -199,6 +199,10 @@ ApplicationWindow {
 					pgStrTranscribe.textZagolovok = "ТРАНСКРИБАЦИЯ"
 					stvStr.push(pgStrTranscribe)
 				}
+				onClickedRAG: {
+					pgStrRAG.textZagolovok = "СОЗДАНИЕ RAG БД"
+					stvStr.push(pgStrRAG)
+				}
 				onClickedSettings: {
 					stvStr.push(pgStrSetKOBzone)
 				}
@@ -594,6 +598,116 @@ ApplicationWindow {
 				}
 				onClickedInfo: {
 					tmStrInstrukciya.strInstrukciya = "set_transcribe"
+					stvStr.push(pgStrInstrukciya)
+				}
+				onToolbar: function(strToolbar) {//Если сигнал пришёл с текстом в toolbar, то...
+					toolbar.fnText(strToolbar)//Передаём на отображение в toolbar сообщение.
+				}
+				onLog: function (strLog) {//Если сигнал пришёл с текстом в log, то...
+					toolbar.log(strLog)//Передаём в лог сообщение.
+				}
+			}
+		}
+		Stranica {//Создание RAG БД
+		//////////////////////////////////
+		///С О З Д А Н И Е   R A G   Б Д//
+		//////////////////////////////////
+			id: pgStrRAG
+			visible: false
+			focus: true
+			ntWidth: root.ntWidth; ntCoff: root.ntCoff
+			clrFona: root.clrFona; clrTexta: root.clrKnopok; clrRabOblasti: root.clrStranic
+			textZagolovok: "СОЗДАНИЕ RAG БД"
+			zagolovokLevi: 1.3; zagolovokPravi: 1.3; toolbarLevi: 1.3; toolbarPravi: 1.3
+			onVisibleChanged: {
+				if (visible) {
+					Qt.callLater(function() {
+						tmRAG.forceActiveFocus()
+						toolbar.log("Фокус передан на tmRAG")
+					})
+				}
+			}
+			StrRAG{
+				id: tmRAG
+				ntWidth: pgStrRAG.ntWidth; ntCoff: pgStrRAG.ntCoff
+				clrTexta: pgStrRAG.clrTexta; clrFona: pgStrRAG.clrRabOblasti
+				clrMenuText: root.clrMenuText; clrMenuFon: pgStrRAG.clrFona
+				zagolovokX: pgStrRAG.rctStrZagolovok.x
+				zagolovokY: pgStrRAG.rctStrZagolovok.y
+				zagolovokWidth: pgStrRAG.rctStrZagolovok.width
+				zagolovokHeight: pgStrRAG.rctStrZagolovok.height
+				zonaX: pgStrRAG.rctStrZona.x; zonaY: pgStrRAG.rctStrZona.y
+				zonaWidth: pgStrRAG.rctStrZona.width; zonaHeight: pgStrRAG.rctStrZona.height
+				toolbarX: pgStrRAG.rctStrToolbar.x; toolbarY: pgStrRAG.rctStrToolbar.y
+				toolbarWidth: pgStrRAG.rctStrToolbar.width
+				toolbarHeight: pgStrRAG.rctStrToolbar.height
+				tapZagolovokLevi: pgStrRAG.zagolovokLevi
+				tapZagolovokPravi: pgStrRAG.zagolovokPravi
+				tapToolbarLevi: pgStrRAG.toolbarLevi; tapToolbarPravi: pgStrRAG.toolbarPravi
+				logoRazmer: root.logoRazmer; logoImya: root.logoImya
+				onClickedNazad: {
+					stvStr.pop()
+					Qt.callLater(function() {
+						stvStr.currentItem.forceActiveFocus()
+					})
+				}
+				onClickedSettings: {
+					stvStr.push(pgStrSetRAG)
+				}
+				onClickedInfo: {
+					tmStrInstrukciya.strInstrukciya = "rag"
+					stvStr.push(pgStrInstrukciya)
+				}
+				onToolbar: function(strToolbar) {//Если сигнал пришёл с текстом в toolbar, то...
+					toolbar.fnText(strToolbar)//Передаём на отображение в toolbar сообщение.
+				}
+				onLog: function (strLog) {//Если сигнал пришёл с текстом в log, то...
+					toolbar.log(strLog)//Передаём в лог сообщение.
+				}
+			}
+		}
+		Stranica {//Настройка RAG 
+		///////////////////////////////
+		///Н А С Т Р О Й К А   R A G///
+		///////////////////////////////
+			id: pgStrSetRAG
+			visible: false; focus: true
+			ntWidth: root.ntWidth; ntCoff: root.ntCoff
+			clrFona: root.clrFona; clrTexta: root.clrKnopok; clrRabOblasti: root.clrStranic
+			textZagolovok: "НАСТРОЙКА RAG"
+			zagolovokLevi: 1.3; zagolovokPravi: 1.3; toolbarLevi: 1.3; toolbarPravi: 1.3
+			onVisibleChanged: {
+				if (visible) {
+					Qt.callLater(function() {
+						tmSetRAG.forceActiveFocus()
+						toolbar.log("Фокус передан на tmSetRAG")
+					})
+				}
+			}
+			SetRAG{
+				id: tmSetRAG
+				ntWidth: pgStrSetRAG.ntWidth; ntCoff: pgStrSetRAG.ntCoff
+				clrTexta: pgStrSetRAG.clrTexta; clrFona: pgStrSetRAG.clrRabOblasti
+				clrMenuText: root.clrMenuText; clrMenuFon: pgStrTranscribe.clrFona
+				zagolovokX: pgStrSetRAG.rctStrZagolovok.x; zagolovokY: pgStrSetRAG.rctStrZagolovok.y
+				zagolovokWidth: pgStrSetRAG.rctStrZagolovok.width
+				zagolovokHeight: pgStrSetRAG.rctStrZagolovok.height
+				zonaX: pgStrSetRAG.rctStrZona.x; zonaY: pgStrSetRAG.rctStrZona.y
+				zonaWidth: pgStrSetRAG.rctStrZona.width; zonaHeight: pgStrSetRAG.rctStrZona.height
+				toolbarX: pgStrSetRAG.rctStrToolbar.x; toolbarY: pgStrSetRAG.rctStrToolbar.y
+				toolbarWidth: pgStrSetRAG.rctStrToolbar.width
+				toolbarHeight: pgStrSetRAG.rctStrToolbar.height
+				tapZagolovokLevi: pgStrSetRAG.zagolovokLevi; tapZagolovokPravi: pgStrSetRAG.zagolovokPravi
+				tapToolbarLevi: pgStrSetRAG.toolbarLevi; tapToolbarPravi: pgStrSetRAG.toolbarPravi
+				logoRazmer: root.logoRazmer; logoImya: root.logoImya
+				onClickedNazad: {
+					stvStr.pop()//Назад страницу
+					Qt.callLater(function() {
+						stvStr.currentItem.forceActiveFocus()
+					})
+				}
+				onClickedInfo: {
+					tmStrInstrukciya.strInstrukciya = "set_rag"
 					stvStr.push(pgStrInstrukciya)
 				}
 				onToolbar: function(strToolbar) {//Если сигнал пришёл с текстом в toolbar, то...

@@ -40,13 +40,14 @@ Item {
     signal clickedAnalizator()
     signal clickedOrfograf()
     signal clickedTranskribaciya()
+    signal clickedRAG()
 	signal clickedSettings()
 	signal clickedInfo()//Сигнал нажатия кнопки Информация
 	signal toolbar(var strToolbar)
     signal log(var strLog)
 	//Методы
     Component.onCompleted: {
-        knopkiMassiv = [knopkaAnalizator, knopkaRedaktor, knopkaTranskribaciya]
+        knopkiMassiv = [knopkaAnalizator, knopkaRedaktor, knopkaTranskribaciya, knopkaRAG]
     }
     Keys.onPressed: (event) => {//Обработка клавиш на уровне root
 		if (event.modifiers & Qt.AltModifier) {
@@ -283,6 +284,30 @@ Item {
                             function fnPress() {
                                 root.currentIndex = 2
                                 root.clickedTranskribaciya()
+                            }
+                            onPressedChanged: {
+                                if (pressed) {
+                                    if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
+                                        fnPress()//Если меню было закрыто, выполняем действие
+                                    }
+                                }
+                            }
+                        }
+						DCKnopkaOriginal {//Кнопка "RAG"
+                            id: knopkaRAG
+                            ntHeight: root.ntWidth * 1.1
+                            ntCoff: root.ntCoff
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            clrTexta: root.clrMenuText
+                            clrKnopki: (root.currentIndex === 3) ?
+								Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                            text: "СОЗДАНИЕ RAG БД"
+                            opacityKnopki: 0.9
+                            enabled: true
+                            function fnPress() {
+                                root.currentIndex = 3
+                                root.clickedRAG()
                             }
                             onPressedChanged: {
                                 if (pressed) {

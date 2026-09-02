@@ -140,26 +140,18 @@ Item {
 	Component.onCompleted: {//Слот, кода всё представление отрисовалось.
         if(imyaMenu == "kobzone")//Если это главное Меню, то...
 			lsvMenu.model = JSMenu.vrMenuKOBzone;//Перегружаем модель ListView с новыми данными.
-		else{
-            if(imyaMenu == "analizer")//Если это Анализ текста, то...
-				lsvMenu.model = JSMenu.vrMenuAnalizer;//Перегружаем модель ListView с новыми данными.
-			else{
-                if(imyaMenu == "orfograf")//Если это редактор Орфографии, то...
-					lsvMenu.model = JSMenu.vrMenuOrfograf;//Перегружаем модель ListView с новыми данными.
-                else{
-                    if(imyaMenu == "transcribe")//Это транскрибация аудио в текст
-                        lsvMenu.model = JSMenu.vrMenuTranscribe;//Перегружаем модель ListView с данными
-					else{
-						if(imyaMenu == "settings")//Это настройки
-							lsvMenu.model = JSMenu.vrSettings;//Перегружаем модель ListView с данными
-						else{
-							if(imyaMenu == "jurnal")//Это настройки
-								lsvMenu.model = JSMenu.vrMenuJurnal;//Перегружаем модель ListView с данными
-						}
-					}
-                }
-            }
-		}
+		else if(imyaMenu == "analizer")//Если это Анализ текста, то...
+			lsvMenu.model = JSMenu.vrMenuAnalizer;//Перегружаем модель ListView с новыми данными.
+		else if(imyaMenu == "orfograf")//Если это редактор Орфографии, то...
+			lsvMenu.model = JSMenu.vrMenuOrfograf;//Перегружаем модель ListView с новыми данными.
+		else if(imyaMenu == "transcribe")//Это транскрибация аудио в текст
+			lsvMenu.model = JSMenu.vrMenuTranscribe;//Перегружаем модель ListView с данными
+		else if(imyaMenu == "rag")//Это создание RAG БД 
+			lsvMenu.model = JSMenu.vrMenuRAG;//Перегружаем модель ListView с данными
+		else if(imyaMenu == "settings")//Это настройки
+			lsvMenu.model = JSMenu.vrSettings;//Перегружаем модель ListView с данными
+		else if(imyaMenu == "jurnal")//Это настройки
+			lsvMenu.model = JSMenu.vrMenuJurnal;//Перегружаем модель ListView с данными
         root.height = lsvMenu.count*(ntWidth*ntCoff+ntCoff)+ntCoff;//Выставляем высоту под размер меню.
 	}
 }

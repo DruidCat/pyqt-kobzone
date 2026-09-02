@@ -282,6 +282,10 @@ Item {
 																zagolovok: "ИНСТРУКЦИЯ ПО ТРАНСКРИБАЦИИ" }
                 ListElement { key: "set_transcribe"; title: "Настройка транскрибации";
 																zagolovok: "НАСТРОЙКА ТРАНСКРИБАЦИИ" }
+				ListElement { key: "rag"; title: "Создание RAG БД";
+																zagolovok: "ИНСТРУКЦИЯ ПО СОЗДАНИЮ RAG" }
+                ListElement { key: "set_rag"; title: "Настройка RAG";
+																zagolovok: "НАСТРОЙКА RAG" }
                 ListElement { key: "jurnal"; title: "Журнал"; zagolovok: "ИНСТРУКЦИЯ ПО ЖУРНАЛУ" }
                 ListElement { key: "hotkey"; title: "Горячие клавиши"; zagolovok: "ГОРЯЧИЕ КЛАВИШИ" }
                 ListElement { key: "oqt"; title: "О Qt"; zagolovok: "О QT" }
@@ -379,6 +383,8 @@ github.com/DruidCat/pyqt-kobzone</a></center></p>
 <p><center>&copy;2026. Разработчик <b>Синебрюхов Сергей Владимирович</b></center></p>
 <p><center><b>Доверь рутинную работу нейросети. Высвободи в своей жизни время, чтоб сделать на самом деле \
 что то важное в своей жизни!</b></center></p>
+<p>Если у вас есть документы, которые вы ходите, чтоб языковая модель использовала как базу данных, то \
+используйте инструмент СОЗДАНИЕ RAG БД.</p>
 <p>Распознавайте аудиозаписи ваших разговоров, встреч, лекций, выступлений, переводя их в текст. Используйте \
 для этого инструмент ТРАНСКРИБАЦИЯ.</p>
 <p>Чтоб отредактировать неверно распознанный текс нейросетью, используйте инструмент ИСПРАВЛЕНИЕ ТЕКСТА.</p>
@@ -535,6 +541,29 @@ LM Studio. Кнопка меняет свое название в зависим
                 </html>"
             );
         } else if(strKluch === "set_transcribe"){
+            txdZona.text = qsTr("
+                <html>
+                    <body>
+<p><b>ФУНКЦИОНАЛ:</b></p>
+<ol>
+<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaNazad.png\"> - Вернуться в главное меню \
+(Alt+стрелка влево).</p>
+<p><img src = \"qrc:/resources/images/DCButtons/24x24/DCKnopkaInfo.png\"> - Помощь по анализу(F1).</p>
+</ol>
+<p>Вы можете настраивать.</p>
+                    </body>
+                </html>"
+			);
+        } else if(strKluch === "rag"){//Если это Инструкция по созданию RAG БД, то...
+            txdZona.text = qsTr("
+                <html>
+                    <body>
+<p><b>Создание RAG БД</b> — это создание специализированно базы данных RAG с которой умеют работать языковые \
+модели.</p>
+                    </body>
+                </html>"
+            );
+        } else if(strKluch === "set_rag"){
             txdZona.text = qsTr("
                 <html>
                     <body>

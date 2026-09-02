@@ -22,6 +22,9 @@ QtObject {
 	//Транскрибация
     property string transcribe_put_audio: ""
     property string transcribe_put_text: ""
+	//RAG
+    property string rag_put_doc: ""
+    property string rag_put_db: ""
 	//Инструкции
 	property int instrukcii_shirina: 220
 	//Объект настроек (автоматическое сохранение)
@@ -44,6 +47,9 @@ QtObject {
 		//Транскрибация
         property alias transcribe_put_audio: root.transcribe_put_audio
         property alias transcribe_put_text: root.transcribe_put_text
+		//RAG
+		property alias rag_put_doc: root.rag_put_doc
+		property alias rag_put_db: root.rag_put_db
 		//Инструкции
 		property alias instrukcii_shirina: root.instrukcii_shirina
     }
@@ -70,6 +76,12 @@ QtObject {
         }
         if (transcribe_put_text === "") {//Если настройки ёще были записаны, то...
             transcribe_put_text = docPut//Записываем в реестр
+        }
+		if (rag_put_doc === "") {//Если настройки ёще были записаны, то...
+            rag_put_doc = docPut//Записываем в реестр
+        }
+		if (rag_put_db === "") {//Если настройки ёще были записаны, то...
+            rag_put_db = docPut//Записываем в реестр
         }
     }
 }

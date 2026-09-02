@@ -90,6 +90,32 @@ var vrMenuTranscribe = [
         "menu": qsTr("Выход")
     }
 ]
+var vrMenuRAG = [
+    {
+        "nomer": "1",
+        "menu": qsTr("Создать RAG БД")
+    },
+    {
+        "nomer": "2",
+        "menu": qsTr("Путь к документам")
+    },
+    {
+        "nomer": "3",
+        "menu": qsTr("Путь размещения RAG")
+    },
+	{
+        "nomer": "4",
+        "menu": qsTr("Настройки")
+    },
+    {
+        "nomer": "5",
+        "menu": qsTr("Помощь")
+    },
+    {
+        "nomer": "6",
+        "menu": qsTr("Выход")
+    }
+]
 var vrSettings = [
 			{
 				"nomer": "1",
