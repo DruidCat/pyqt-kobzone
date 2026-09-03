@@ -10,6 +10,8 @@ Item {
     property alias clrTexta: txnTextInput.color //цвет текста
     property alias bold: txnTextInput.font.bold
     property alias italic: txnTextInput.font.italic
+	property bool isNumber: false//true - ввод одних цифр
+	property bool isUpper: false//true - все заглавные буквы
 	property bool blSqlProtect: false//true - защита от Sql инъекция, прещён ввод определённых символов
     property int  ntWidth: 2
     property int ntCoff: 8
@@ -62,7 +64,7 @@ Item {
 			validator: RegularExpressionValidator {//Чтоб не было SQL инъекции, запрещены символы ';*%_?\
                 //regularExpression: /[0-9a-zA-Zа-яА-ЯёЁ ~`!@#№$^:&<>,./"(){}|=+-]+/
                 //Если код начинается с ^ [^.....] то это запретить вводить и перечисляются символы.\\ - это \
-				regularExpression: blSqlProtect ? /[^';*%_\\?]+/ : /.*/
+				regularExpression: isNumber ? /^[0-9]*$/ : blSqlProtect ? /[^';*%_\\?]+/ : /.*/
             }
 
 			//TODO Qt5 Интерфейс. Закоментировать не нужный.
@@ -75,6 +77,7 @@ Item {
             font.pixelSize: root.ntWidth*root.ntCoff//размер шрифта текста.
 			//font.capitalization: Font.AllUppercase//Отображает текст весь с заглавных букв.
             //inputMethodHints: Qt.ImhUppercaseOnly//Буквы в виртуальной клавиатуре заглавные
+			inputMethodHints: isNumber ? Qt.ImhDigitsOnly : isUpper ? Qt.ImhUppercaseOnly : Qt.ImhNone
             //cursorPosition: text.length;//Курсор в конец текста
             maximumLength: 33//Максимальная длина ввода текста.
 			readOnly: true//нельзя редактировать. 
