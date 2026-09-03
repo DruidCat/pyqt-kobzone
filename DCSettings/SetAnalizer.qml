@@ -267,10 +267,20 @@ Item {
 		if (pvTemperatura.visible) {
 			pvTemperatura.visible = false
 		}
+		txnZagolovok.visible = false//Делаем невидимым ввот чисел
     }
 	function fnClickedNazad() {
 		fnClickedEscape()//Функция нажатия на клавишу Escape
 		root.clickedNazad()
+	}
+	function fnClickedZakrit(){//Функция обрабатывающая кнопку Закрыть.
+		txnZagolovok.visible = false//Делаем невидимым ввот чисел
+	}
+	function fnClickedOk(){//Нажимаем на Ок(Сохранить)
+		let ltContext = Number(txnZagolovok.text)//Явно приобразовываем в число.
+		let ltResult = Math.round(ltContext / 64) * 64;//Получаем число кратное 64.
+		DCSettings.analizer_max_context = ltResult//Сохраняем в реестре значение.
+		txnZagolovok.visible = false//Делаем невидимым ввот чисел
 	}
 	function fnClickedInfo() {
 		fnClickedEscape()//Функция нажатия на клавишу Escape
@@ -282,6 +292,7 @@ Item {
 		else {
 			if (pvModels.visible) pvModels.visible = false
 			if (pvTemperatura.visible) pvTemperatura.visible = false
+			if (txnZagolovok.visible) txnZagolovok.visible = false
 			menuMenu.visible = true
 		}
 	}
@@ -304,6 +315,13 @@ Item {
 		if (pvTemperatura.visible) {
 			pvTemperatura.visible = false
 			root.forceActiveFocus()//фокус root, чтоб hotkey работали.
+			return true
+		}
+		return false
+	}
+	function fnCloseContextIfOpen() {
+		if (txnZagolovok.visible) {
+			txnZagolovok.visible = false
 			return true
 		}
 		return false
@@ -337,7 +355,7 @@ Item {
 		}
 	}
 	function fnClickedContext(){//Функция выбора максимального контекста
-
+		txnZagolovok.visible = !txnZagolovok.visible
 	}
 	function fnPathToUrl(localPath) {//Функция кроссплатформенного преобразования пути в URL
 		if (!localPath) return ""
@@ -382,6 +400,78 @@ Item {
 			tapWidth: tapHeight * root.tapZagolovokLevi
 			onClicked: fnClickedNazad()
 		}
+		DCKnopkaZakrit {
+            id: knopkaZakrit
+            ntWidth: root.ntWidth
+            ntCoff: root.ntCoff
+            visible: false
+            anchors.verticalCenter: tmZagolovok.verticalCenter
+            anchors.left: tmZagolovok.left
+            clrKnopki: root.clrTexta
+            clrFona: root.clrFona
+            tapHeight: root.ntWidth*root.ntCoff+root.ntCoff
+            tapWidth: tapHeight*root.tapZagolovokLevi
+            onClicked: fnClickedZakrit();//Функция обрабатывающая кнопку Закрыть.
+        }
+		DCKnopkaOk {
+            id: knopkaOk
+			ntWidth: root.ntWidth
+			ntCoff: root.ntCoff
+			visible: false
+			anchors.verticalCenter: tmZagolovok.verticalCenter
+			anchors.right: tmZagolovok.right
+			clrKnopki: root.clrTexta
+            tapHeight: root.ntWidth*root.ntCoff+root.ntCoff
+            tapWidth: tapHeight*root.tapZagolovokLevi
+            onClicked: fnClickedOk();//Нажимаем на Ок(Сохранить)	
+		}
+		Item {
+            id: tmTextInput
+			anchors.top: tmZagolovok.top
+			anchors.bottom: tmZagolovok.bottom
+			anchors.left: knopkaZakrit.right
+			anchors.right: knopkaOk.left
+            anchors.topMargin: root.ntCoff/4
+            anchors.bottomMargin: root.ntCoff/4
+            anchors.leftMargin: root.ntCoff/2
+            anchors.rightMargin: root.ntCoff/2
+			DCTextInput {
+				id: txnZagolovok
+				ntWidth: root.ntWidth
+				ntCoff: root.ntCoff
+				anchors.fill: tmTextInput
+				visible: false
+				isNumber: true//Вводим только цифры
+				clrTexta: root.clrTexta; clrFona: root.clrMenuFon
+				radius: root.ntCoff/2
+				textInput.font.capitalization: Font.AllUppercase//Отображает текст весь с заглавных букв.
+				textInput.inputMethodHints: Qt.ImhUppercaseOnly//Буквы в виртуальной клавиатуре заглавные
+				textInput.maximumLength: 6//Ограницение по вводу максимальны токенов для локальной модели
+				onSgnDebug: function (strDebug) { root.toolbar(strDebug) }//Ошибка из виджета в программу.
+				onVisibleChanged: {//Если видимость DCTextInput изменился, то...
+					if(txnZagolovok.visible){//Если DCTextInput видим, то...
+						knopkaNazad.visible = false;//Конопка Назад Невидимая.
+						knopkaZakrit.visible = true;//Кнопка закрыть Видимая
+						knopkaOk.visible = true;//Кнопка Ок Видимая.
+						text = DCSettings.analizer_max_context//Показываем значение максимального контекста
+						textInput.focus = true//Фокус на виджете, чтоб горячие клавиши работали.
+					}
+					else{//Если DCTextInput не видим, то...
+						knopkaNazad.visible = true;//Конопка Информация Видимая.
+						knopkaZakrit.visible = false;//Кнопка закрыть Невидимая
+						knopkaOk.visible = false;//Кнопка Ок Невидимая.
+						txnZagolovok.text = "";//Текст обнуляем вводимый.
+						root.forceActiveFocus()//Фокус на главной странице, чтоб горячие клавиши работали.
+					}
+				}
+				onClickedEnter: {//слот нажатия кнопки Enter.
+					if(knopkaOk.visible) fnClickedOk();//Функция сохранения данных.
+				}
+				onClickedEscape: {
+					if(knopkaZakrit.visible) fnClickedZakrit()//Функция закрытия виджета
+				}
+			}
+		}
 	}
 	Item {//Рабочая зона
 		id: tmZona
@@ -412,6 +502,7 @@ Item {
 			TapHandler {//Нажимаем на всю область
 				onTapped: {
 					fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
+					if(!knopkaContext.pressedTmr550) fnCloseContextIfOpen()//Закрываем контекст максимальный
 					if(!pvModels.jdi && !pvModels.pressed) fnCloseModelsIfOpen()//Закрываем карусель pv....
 					if(!pvTemperatura.jdi && !pvTemperatura.pressed) fnCloseTemperaturaIfOpen()//Закрываем
 				}
@@ -460,7 +551,7 @@ Item {
 					}
 					onPressedChanged: {
 						if (pressed) {
-							if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
+							if (!fnCloseMenuIfOpen() && !fnCloseContextIfOpen()) {//Сначала закрываем меню если открыто
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
 							}
 						}
@@ -489,7 +580,7 @@ Item {
 					}
 					onPressedChanged: {
 						if (pressed) {
-							if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
+							if (!fnCloseMenuIfOpen() && !fnCloseContextIfOpen()) {//Сначала закрываем меню если открыто
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
 							}
 						}
@@ -523,7 +614,7 @@ Item {
 					}
 					onPressedChanged: {
 						if (pressed) {
-							if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
+							if (!fnCloseMenuIfOpen() && !fnCloseContextIfOpen()) {//Сначала закрываем меню если открыто
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed)fnPress()
 							}
 						}
@@ -552,7 +643,7 @@ Item {
 					}
 					onPressedChanged: {
 						if (pressed) {
-							if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
+							if (!fnCloseMenuIfOpen() && !fnCloseContextIfOpen()) {//Сначала закрываем меню если открыто
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
 							}
 						}
@@ -580,7 +671,7 @@ Item {
 					}
 					onPressedChanged: {
 						if (pressed) {
-							if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
+							if (!fnCloseMenuIfOpen() && !fnCloseContextIfOpen()) {//Сначала закрываем меню если открыто
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
 							}
 						}
@@ -703,7 +794,7 @@ Item {
 			tapHeight: root.ntWidth * root.ntCoff + root.ntCoff
 			tapWidth: tapHeight * root.tapToolbarLevi
 			onClicked: {
-				if (!fnCloseMenuIfOpen()) {
+				if (!fnCloseMenuIfOpen() && !fnCloseContextIfOpen()) {
 					fnClickedInfo()
 				}
 			}
@@ -730,10 +821,11 @@ Item {
 		propagateComposedEvents: true
 		onClicked: (mouse) => {
 			mouse.accepted = false
-			if (menuMenu.visible || pvModels.visible || pvTemperatura.visible){
+			if (menuMenu.visible || pvModels.visible || pvTemperatura.visible || txnZagolovok.visible){
 				menuMenu.visible = false
 				pvModels.visible = false
 				pvTemperatura.visible = false
+				txnZagolovok.visible = false
 			} else root.forceActiveFocus()
 			root.forceActiveFocus()
 		}
