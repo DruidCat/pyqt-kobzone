@@ -44,7 +44,6 @@ Item {
 	property bool isRAG: false//true - создание RAG началась.
 	property int tekushiFail: 0//Текущий файл в обработке.
 	property int kolichestvoFailov: 0//общее количество обрабатываемых файлов
-	property bool isGPU: false//true - анализ через GPU, false - анализ через CPU
     //Настройки
     anchors.fill: parent
     focus: true 
@@ -55,9 +54,6 @@ Item {
 	signal toolbar(var strToolbar)
     signal log(var strLog)
 	//Методы
-    DCSettings {//Объект настроек
-        id: dcReestr
-    }
     Keys.onPressed: (event) => {//Обработка горячих клавиш
         if (event.modifiers & Qt.AltModifier) {
             if (event.key === Qt.Key_Left) {
@@ -246,7 +242,7 @@ Item {
 			txdZona.strCopy = ""//Очищаем переменную Прогресса созадания RAG.
 			txdZona.text = ""//Очищаем зону отображения прогресса RAG.
 			//Запускаем через бэкенд pyRAG.py	
-			pyRAG.start(dcReestr.rag_put_doc, dcReestr.rag_put_db)
+			pyRAG.start(DCSettings.rag_put_doc, DCSettings.rag_put_db, DCSettings.rag_gpu)
 		}
 	}
 	function fnStopRAG() {//Функция Остановки создания RAG.
@@ -306,14 +302,14 @@ Item {
 		id: dialogDoc
 		title: "Выберите папку с документами"
 		currentFolder: {//Используем сохранённый путь из настроек, или стандартную домашнюю папку
-			if (dcReestr.rag_put_doc !== "") {
-				return fnPathToUrl(dcReestr.rag_put_doc)//Преобразуем сохранённый путь в URL
+			if (DCSettings.rag_put_doc !== "") {
+				return fnPathToUrl(DCSettings.rag_put_doc)//Преобразуем сохранённый путь в URL
 			}
 			else return StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
 		}
 		onAccepted: {
 			var vtPut = fnUrlToLocalPath(selectedFolder)//Используем кроссплатформенную функцию
-			dcReestr.rag_put_doc = vtPut
+			DCSettings.rag_put_doc = vtPut
 			root.toolbar(`RAG. Выбрана папка с документами: ${vtPut}`)//Сообщение в toolbar и журнал.
 		}
 	}	
@@ -321,14 +317,14 @@ Item {
 		id: dialogDB
 		title: "Выберите папку для размещения RAG базы данных"
 		currentFolder: {//Используем сохранённый путь из настроек, или стандартную домашнюю папку
-			if (dcReestr.rag_put_db !== "") {
-				return fnPathToUrl(dcReestr.rag_put_db)//Преобразуем сохранённый путь в URL
+			if (DCSettings.rag_put_db !== "") {
+				return fnPathToUrl(DCSettings.rag_put_db)//Преобразуем сохранённый путь в URL
 			}
 			else return StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
 		}
 		onAccepted: {
 			var vtPut = fnUrlToLocalPath(selectedFolder)//Используем кроссплатформенную функцию
-			dcReestr.rag_put_db = vtPut
+			DCSettings.rag_put_db = vtPut
 			root.toolbar(`RAG. Выбрана папка размещения БД: ${vtPut}`)//Сообщение в toolbar и журнал.
 		}
 	}	
@@ -462,7 +458,7 @@ Item {
                 }
 				DCKnopkaOriginal {
 					id: knopkaPutDoc
-					text: dcReestr.rag_put_doc
+					text: DCSettings.rag_put_doc
 					ntHeight: root.ntWidth
 					ntCoff: root.ntCoff
 					clrKnopki: root.clrTexta
@@ -487,7 +483,7 @@ Item {
                 } 
 				DCKnopkaOriginal {
 					id: knopkaPutDB
-					text: dcReestr.rag_put_db
+					text: DCSettings.rag_put_db
 					ntHeight: root.ntWidth
 					ntCoff: root.ntCoff
 					clrKnopki: root.clrTexta

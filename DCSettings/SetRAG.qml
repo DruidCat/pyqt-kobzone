@@ -38,6 +38,8 @@ Item {
 	//Массив кнопок для навигации
     property var knopkiMassiv: []//Массив кнопок, между которыми нужно листать.
     property int currentIndex: 0//Выбранная кнопка.
+	
+	property bool isGPU: DCSettings.rag_gpu//true - анализ через GPU, false - анализ через CPU
 	//Настройки
 	anchors.fill: parent
 	focus: true
@@ -48,7 +50,7 @@ Item {
     signal log(var strLog)
 	//Методы
 	Component.onCompleted: {
-        knopkiMassiv = []//Сюда добавляем id кнопок, между которыми мы будим листать.
+        knopkiMassiv = [knopkaGPU]//Сюда добавляем id кнопок, между которыми мы будим листать.
 		root.forceActiveFocus()
 	}
 	Keys.onPressed: (event) => {
@@ -67,21 +69,22 @@ Item {
 			event.accepted = true
 		} else if (event.key === Qt.Key_Up || event.key === Qt.Key_K || event.key === 1051) {
 			if (!menuMenu.visible) {
-				var ltNoviY = flcZona.contentY - 50
-				if (ltNoviY < 0)
-					ltNoviY = 0
-				flcZona.contentY = ltNoviY
+				root.currentIndex--
+                if (root.currentIndex < 0)
+                    root.currentIndex = knopkiMassiv.length - 1
+                
+                fnScrollKnopok(false)
 			}
 			event.accepted = true
 		} else if (event.key === Qt.Key_Down || event.key === Qt.Key_J || event.key === 1054) {
 			if (!menuMenu.visible) {
-				var ltMaxY = flcZona.contentHeight - flcZona.height
-				var ltNoviY = flcZona.contentY + 50
-				if (ltNoviY > ltMaxY)
-					ltNoviY = ltMaxY
-				flcZona.contentY = ltNoviY
+				root.currentIndex++
+                if (root.currentIndex >= knopkiMassiv.length)
+                    root.currentIndex = 0
+                
+                fnScrollKnopok(true)
 			}    
-			event.accepted = true
+			event.accepted = true	
 		} else if (event.key === Qt.Key_PageUp) {
 			if (!menuMenu.visible) {
 				var ltNoviY = flcZona.contentY - flcZona.height
@@ -99,7 +102,12 @@ Item {
 				flcZona.contentY = ltNoviY
 			}
 			event.accepted = true
-		} else if (event.key === Qt.Key_Home) {
+		} else if (event.key === Qt.Key_Enter || event.key === Qt.Key_Return) {
+            if (!menuMenu.visible) {//Enter работает только если меню закрыто
+                fnClickedEnter()
+            }
+            event.accepted = true
+        } else if (event.key === Qt.Key_Home) {
 			if (!menuMenu.visible) {
 				flcZona.contentY = 0
 			}
@@ -219,6 +227,34 @@ Item {
 				leftPadding: root.ntCoff * 2
 				rightPadding: root.ntCoff * 2
 				//ТУТ КОНТЕНТ НАСТРОЕК
+				DCKnopkaOriginal {//Кнопка использования GPU/CPU при создании RAG базы данных
+					id: knopkaGPU
+					text: root.isGPU ? qsTr("gpu вкл") : qsTr("gpu выкл")
+					ntHeight: root.ntWidth
+					ntCoff: root.ntCoff
+					anchors.left: parent.left
+					anchors.right: parent.right
+					anchors.leftMargin: root.ntCoff * 2
+					anchors.rightMargin: root.ntCoff * 2
+					clrTexta: root.clrMenuText
+                    clrKnopki: (root.currentIndex === 0) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    opacityKnopki: 0.9
+					function fnPress() {
+						root.currentIndex = 0
+						root.isGPU = !root.isGPU
+						DCSettings.rag_gpu = root.isGPU
+						if(root.isGPU) root.toolbar("Используется GPU для создания RAG базы данных.")
+						else root.toolbar("Используется CPU для создания RAG базы данных.")
+					}
+					onPressedChanged: {
+						if (pressed) {
+							if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
+								//if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
+								fnPress()
+							}
+						}
+					}
+				}
 			}
 		}
 		DCScrollbar {//Скроллбар

@@ -4,7 +4,6 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 import os
 import sys
 import shutil
-import faiss
 import pickle
 from transformers import AutoTokenizer, AutoModel
 import torch
@@ -18,6 +17,25 @@ import zipfile
 # ============================================================
 
 IS_GUI_MODE = os.environ.get('RAG_GUI_MODE', '0') == '1'
+USE_GPU = os.environ.get('RAG_USE_GPU', '0') == '1'  # ← Новый флаг
+
+# Определение доступности GPU
+GPU_AVAILABLE = torch.cuda.is_available()
+
+# Проверка faiss-gpu
+try:
+    if USE_GPU:
+        import faiss.contrib.torch_utils  # Проверка faiss-gpu
+        FAISS_GPU_AVAILABLE = True
+    else:
+        import faiss
+        FAISS_GPU_AVAILABLE = False
+except ImportError:
+    import faiss
+    FAISS_GPU_AVAILABLE = False
+    if USE_GPU:
+        print("⚠️  FAISS-GPU не установлен, используется CPU версия")
+        USE_GPU = False
 
 # Получение путей из переменных окружения
 BASE_DIR = os.environ.get(
@@ -39,6 +57,26 @@ index_dir = os.path.join(base_dir, "faiss_index")
 
 # Время старта скрипта
 start_time = time.time()
+
+# Вывод информации о режиме работы
+print("="*70)
+print("🚀 СОЗДАНИЕ ВЕКТОРНОЙ БАЗЫ ДАННЫХ RAG")
+print("="*70)
+if USE_GPU and GPU_AVAILABLE and FAISS_GPU_AVAILABLE:
+    print("🎮 Режим: GPU (CUDA)")
+    print(f"   Устройство: {torch.cuda.get_device_name(0)}")
+    print(f"   VRAM: {torch.cuda.get_device_properties(0).total_memory / 1024**3:.1f} GB")
+elif USE_GPU and not GPU_AVAILABLE:
+    print("⚠️  GPU запрошен, но CUDA недоступна")
+    print("💻 Режим: CPU (fallback)")
+    USE_GPU = False
+elif USE_GPU and not FAISS_GPU_AVAILABLE:
+    print("⚠️  GPU запрошен, но faiss-gpu не установлен")
+    print("💻 Режим: CPU (fallback)")
+    USE_GPU = False
+else:
+    print("💻 Режим: CPU")
+print("="*70)
 
 def create_backup_archive():
     """Создание архива папки base и перемещение в arch"""
@@ -297,9 +335,19 @@ def check_and_move_new_files():
 check_and_move_new_files()
 
 print("\n📥 Загрузка модели...")
+
+# Определение устройства
+device = torch.device('cuda' if USE_GPU and GPU_AVAILABLE else 'cpu')
+
 tokenizer = AutoTokenizer.from_pretrained('sentence-transformers/all-MiniLM-L6-v2')
 model = AutoModel.from_pretrained('sentence-transformers/all-MiniLM-L6-v2')
-print("✓ Модель загружена")
+
+# Перемещаем модель на GPU если нужно
+if USE_GPU and GPU_AVAILABLE:
+    model = model.to(device)
+    print(f"✓ Модель загружена на GPU: {torch.cuda.get_device_name(0)}")
+else:
+    print("✓ Модель загружена на CPU")
 
 def mean_pooling(model_output, attention_mask):
     """Mean Pooling - учитываем attention mask для корректного усреднения"""
@@ -342,25 +390,37 @@ def encode_texts(texts, batch_size=32):
     all_embeddings = []
     total = len(texts)
     
+    # Увеличиваем batch_size для GPU
+    if USE_GPU and GPU_AVAILABLE:
+        batch_size = 128  # GPU может обработать больше
+    
     # Вычисляем шаг для обновления (1% от общего количества)
-    one_percent = max(1, total // 100)  # Минимум 1, чтобы не было деления на 0
-    next_report = one_percent  # Следующая точка отчёта
-    last_reported_percent = 0  # Последний отображённый процент
+    one_percent = max(1, total // 100)
+    next_report = one_percent
+    last_reported_percent = 0
     
     # Запуск спиннера в отдельном потоке
     spinner = SpinnerThread()
     spinner.start()
+    
+    # Определение устройства
+    device = torch.device('cuda' if USE_GPU and GPU_AVAILABLE else 'cpu')
     
     for i in range(0, len(texts), batch_size):
         batch = texts[i:i+batch_size]
         encoded = tokenizer(batch, padding=True, truncation=True, 
                           max_length=512, return_tensors='pt')
         
+        # Перемещаем данные на GPU если нужно
+        if USE_GPU and GPU_AVAILABLE:
+            encoded = {key: val.to(device) for key, val in encoded.items()}
+        
         with torch.no_grad():
             model_output = model(**encoded)
             batch_embeddings = mean_pooling(model_output, encoded['attention_mask'])
             # Нормализация
             batch_embeddings = torch.nn.functional.normalize(batch_embeddings, p=2, dim=1)
+            # Возвращаем на CPU для сохранения
             all_embeddings.append(batch_embeddings.cpu())
         
         # Обновление прогресса ТОЛЬКО при достижении следующего процента
@@ -369,11 +429,10 @@ def encode_texts(texts, batch_size=32):
         if processed >= next_report or processed == total:
             percent = int((processed / total) * 100)
             
-            # Обновляем ТОЛЬКО если процент изменился
             if percent > last_reported_percent or processed == total:
                 spinner.update_message(f'Обработано {processed}/{total} фрагментов ({percent}%)')
                 last_reported_percent = percent
-                next_report += one_percent  # Следующий порог
+                next_report += one_percent
     
     # Остановка спиннера
     spinner.stop()
@@ -435,9 +494,33 @@ print(f"\n✓ Размерность эмбеддингов: {embeddings_tensor.
 # Создание FAISS индекса
 print("\n🔨 Создание FAISS индекса...")
 dimension = embeddings_tensor.shape[1]
-index = faiss.IndexFlatL2(dimension)
-index.add(embeddings_tensor.detach().numpy().astype('float32'))
-print("✓ Индекс создан")
+
+if USE_GPU and FAISS_GPU_AVAILABLE:
+    # GPU версия
+    import faiss
+    
+    # Создаём CPU индекс
+    cpu_index = faiss.IndexFlatL2(dimension)
+    
+    # Переносим на GPU
+    res = faiss.StandardGpuResources()  # Инициализация GPU ресурсов
+    gpu_index = faiss.index_cpu_to_gpu(res, 0, cpu_index)  # 0 = первая GPU
+    
+    # Добавляем векторы
+    gpu_index.add(embeddings_tensor.detach().numpy().astype('float32'))
+    
+    # Копируем обратно на CPU для сохранения
+    index = faiss.index_gpu_to_cpu(gpu_index)
+
+    print(f"✓ Индекс создан на GPU 0: {torch.cuda.get_device_name(0)}") 
+else:
+    # CPU версия
+    import faiss
+    
+    index = faiss.IndexFlatL2(dimension)
+    index.add(embeddings_tensor.detach().numpy().astype('float32'))
+    
+    print("✓ Индекс создан на CPU")
 
 # Сохранение
 print("\n💾 Сохранение базы данных...")
@@ -466,5 +549,6 @@ print(f"  📁 Местоположение: {index_dir}")
 print(f"  📚 Файлов обработано: {len(txt_files)}")
 print(f"  📄 Фрагментов создано: {len(documents)}")
 print(f"  🔢 Размерность векторов: {dimension}")
+print(f"  {'🎮' if USE_GPU and GPU_AVAILABLE else '💻'} Устройство: {'GPU' if USE_GPU and GPU_AVAILABLE else 'CPU'}")
 print(f"  ⏱️  Время работы: {format_time(elapsed_time)}")
 print("="*70)
