@@ -16,6 +16,7 @@ Item {
     property real maxDarker: 1.3//Максимальная затемнённость кнопки, когда она нажата.
     property bool enabled: true//true - активирована, false - деактивированна кнопка.
     property bool pressed: tphKnopkaOriginal.pressed//true - нажали false - не нажали
+    property bool pressedTmr550: false//true - нажали false - не нажали
     //property bool pressed: maKnopkaOriginal.pressed//true - нажали false - не нажали
     property real opacityKnopki: 1
     property real opacityTexta: 1
@@ -48,10 +49,17 @@ Item {
     //Для Авроры комментируем TapHandler, расскомментируем MouseArea и наоборот.
     TapHandler {//Обработка нажатия, замена MouseArea с Qt5.10
         id: tphKnopkaOriginal
+		grabPermissions: PointerHandler.ApprovesTakeOverByNothing | PointerHandler.CanTakeOverFromAnythin
         onTapped: {
             if(root.enabled)//Если активирована кнопка, то...
                 root.clicked();//Обрабатываем клик.
         }
+		onPressedChanged: {//Если изменилось состояние, то...
+			if(pressed && root.enabled) {//Если нажато, то...
+				root.pressedTmr550 = true//Взводим флаг.
+				tmrPressed.restart()//Взводим таймер на изменение флага.
+			}
+		}
     }
     /*
     MouseArea {
@@ -63,6 +71,13 @@ Item {
         }
     }
     */
+   Timer {//Таймер оставляет флаг pressed взведённым на интервал,чтоб обработчики сигнала страболи в програме
+		id: tmrPressed
+		interval: 550; running: false; repeat: false
+        onTriggered: {
+			root.pressedTmr550 = false
+		}
+	}
     Rectangle {
         id: rctKnopka
         anchors.fill: root
