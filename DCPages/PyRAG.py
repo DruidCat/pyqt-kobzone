@@ -13,10 +13,11 @@ class RAGWorker(QThread):
     progressUpdate = pyqtSignal(int, int)
     finished = pyqtSignal(bool, str)
     
-    def __init__(self, doc_path: str, db_path: str):
+    def __init__(self, doc_path: str, db_path: str, use_gpu: bool = False):
         super().__init__()
         self.doc_path = doc_path
         self.db_path = db_path
+        self.use_gpu = use_gpu  # ← Добавили флаг GPU
         self.process = None
         self._should_stop = False
     
@@ -31,13 +32,17 @@ class RAGWorker(QThread):
                 return
             
             # Формируем команду запуска
-            cmd = [sys.executable, str(script_path)]
+            cmd = [
+                sys.executable,
+                str(script_path)
+            ]
             
-            # Устанавливаем переменные окружения
+            # Устанавливаем переменные окружения для путей
             env = os.environ.copy()
-            env['RAG_DOC_DIR'] = self.doc_path
-            env['RAG_DB_DIR'] = self.db_path
-            env['RAG_GUI_MODE'] = '1'
+            env['RAG_DOC_DIR'] = self.doc_path      # Папка с документами
+            env['RAG_DB_DIR'] = self.db_path        # Папка для RAG БД
+            env['RAG_GUI_MODE'] = '1'               # Включаем GUI режим
+            env['RAG_USE_GPU'] = '1' if self.use_gpu else '0'  # ← Передаём флаг GPU
             
             # Запускаем процесс
             self.process = subprocess.Popen(
@@ -92,7 +97,7 @@ class RAGWorker(QThread):
         
         except Exception as e:
             self.logMessage.emit(f"\n❌ Критическая ошибка: {str(e)}")
-            self.finished.emit(False, str(e)) 
+            self.finished.emit(False, str(e))
     
     def stop(self):
         """Остановка процесса"""
@@ -103,7 +108,6 @@ class RAGWorker(QThread):
                 self.process.wait(timeout=5)
             except subprocess.TimeoutExpired:
                 self.process.kill()
-
 
 class DCRAG(QObject):
     """Класс для управления созданием RAG из QML"""
@@ -117,8 +121,8 @@ class DCRAG(QObject):
         super().__init__()
         self.worker = None
     
-    @pyqtSlot(str, str)
-    def start(self, doc_path: str, db_path: str):
+    @pyqtSlot(str, str, bool) #Добавили bool для isGPU
+    def start(self, doc_path: str, db_path: str, use_gpu: bool = False):
         """Запуск создания RAG"""
         # Проверка путей
         if not doc_path or not Path(doc_path).exists():
@@ -141,14 +145,14 @@ class DCRAG(QObject):
             self.logMessage.emit("⚠️ Создание RAG уже запущено")
             return
         
-        # Создаём рабочий поток
-        self.worker = RAGWorker(doc_path, db_path)
+        # Создаём рабочий поток с флагом GPU
+        self.worker = RAGWorker(doc_path, db_path, use_gpu) #Передаём use_gpu
         self.worker.logMessage.connect(self.logMessage.emit)
         self.worker.progressUpdate.connect(self.progressUpdate.emit)
         self.worker.finished.connect(self._on_finished)
         
         self.sigRAGStarted.emit()
-        self.worker.start()
+        self.worker.start() 
     
     @pyqtSlot()
     def stop(self):
