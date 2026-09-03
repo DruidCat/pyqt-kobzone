@@ -5,7 +5,6 @@ import threading
 from pathlib import Path
 from PyQt6.QtCore import QObject, pyqtSignal, pyqtSlot, QThread
 
-
 class RAGWorker(QThread):
     """Рабочий поток для запуска DCRAGMake.py"""
     
@@ -13,11 +12,12 @@ class RAGWorker(QThread):
     progressUpdate = pyqtSignal(int, int)
     finished = pyqtSignal(bool, str)
     
-    def __init__(self, doc_path: str, db_path: str, use_gpu: bool = False):
+    def __init__(self, doc_path: str, db_path: str, use_gpu: bool = False, model_index: int = 0):
         super().__init__()
         self.doc_path = doc_path
         self.db_path = db_path
-        self.use_gpu = use_gpu  # ← Добавили флаг GPU
+        self.use_gpu = use_gpu
+        self.model_index = model_index  # ← Добавили индекс модели
         self.process = None
         self._should_stop = False
     
@@ -39,10 +39,11 @@ class RAGWorker(QThread):
             
             # Устанавливаем переменные окружения для путей
             env = os.environ.copy()
-            env['RAG_DOC_DIR'] = self.doc_path      # Папка с документами
-            env['RAG_DB_DIR'] = self.db_path        # Папка для RAG БД
-            env['RAG_GUI_MODE'] = '1'               # Включаем GUI режим
-            env['RAG_USE_GPU'] = '1' if self.use_gpu else '0'  # ← Передаём флаг GPU
+            env['RAG_DOC_DIR'] = self.doc_path
+            env['RAG_DB_DIR'] = self.db_path
+            env['RAG_GUI_MODE'] = '1'
+            env['RAG_USE_GPU'] = '1' if self.use_gpu else '0'
+            env['RAG_MODEL_INDEX'] = str(self.model_index)  # ← Передаём индекс модели
             
             # Запускаем процесс
             self.process = subprocess.Popen(
@@ -121,8 +122,8 @@ class DCRAG(QObject):
         super().__init__()
         self.worker = None
     
-    @pyqtSlot(str, str, bool) #Добавили bool для isGPU
-    def start(self, doc_path: str, db_path: str, use_gpu: bool = False):
+    @pyqtSlot(str, str, bool, int)#Добавили bool для GPU, int для ntModel
+    def start(self, doc_path: str, db_path: str, use_gpu: bool = False, model_index: int = 0):
         """Запуск создания RAG"""
         # Проверка путей
         if not doc_path or not Path(doc_path).exists():
@@ -131,6 +132,11 @@ class DCRAG(QObject):
         
         if not db_path:
             self.logMessage.emit(f"❌ Ошибка: не указана папка для RAG базы данных")
+            return
+        
+        # Проверка индекса модели
+        if not 0 <= model_index <= 6:
+            self.logMessage.emit(f"❌ Ошибка: неверный индекс модели {model_index}")
             return
         
         # Создаём выходную папку если её нет
@@ -145,8 +151,8 @@ class DCRAG(QObject):
             self.logMessage.emit("⚠️ Создание RAG уже запущено")
             return
         
-        # Создаём рабочий поток с флагом GPU
-        self.worker = RAGWorker(doc_path, db_path, use_gpu) #Передаём use_gpu
+        # Создаём рабочий поток с флагом GPU и индексом модели
+        self.worker = RAGWorker(doc_path, db_path, use_gpu, model_index)
         self.worker.logMessage.connect(self.logMessage.emit)
         self.worker.progressUpdate.connect(self.progressUpdate.emit)
         self.worker.finished.connect(self._on_finished)

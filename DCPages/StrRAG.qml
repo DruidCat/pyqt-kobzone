@@ -43,7 +43,7 @@ Item {
 	//Свойства для управления состоянием создания RAG
 	property bool isRAG: false//true - создание RAG началась.
 	property int tekushiFail: 0//Текущий файл в обработке.
-	property int kolichestvoFailov: 0//общее количество обрабатываемых файлов
+	property int kolichestvoFailov: 0//общее количество обрабатываемых файлов	
     //Настройки
     anchors.fill: parent
     focus: true 
@@ -242,7 +242,7 @@ Item {
 			txdZona.strCopy = ""//Очищаем переменную Прогресса созадания RAG.
 			txdZona.text = ""//Очищаем зону отображения прогресса RAG.
 			//Запускаем через бэкенд pyRAG.py	
-			pyRAG.start(DCSettings.rag_put_doc, DCSettings.rag_put_db, DCSettings.rag_gpu)
+			pyRAG.start(DCSettings.rag_put_doc,DCSettings.rag_put_db,DCSettings.rag_gpu,DCSettings.rag_model)
 		}
 	}
 	function fnStopRAG() {//Функция Остановки создания RAG.
@@ -434,7 +434,7 @@ Item {
                 rightPadding: root.ntCoff * 2
                 DCKnopkaOriginal {//Кнопка "RAG"
                     id: knopkaRAG
-                    text: "Создать RAG БД"
+                    text: "📦 Создать RAG БД"
                     ntHeight: root.ntWidth
                     ntCoff: root.ntCoff
                     clrKnopki: root.clrTexta    

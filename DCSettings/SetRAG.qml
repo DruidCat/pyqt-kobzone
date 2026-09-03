@@ -40,6 +40,7 @@ Item {
     property int currentIndex: 0//Выбранная кнопка.
 	
 	property bool isGPU: DCSettings.rag_gpu//true - анализ через GPU, false - анализ через CPU
+	property int ntModel: DCSettings.rag_model//модель от 0 простой до сложной 6	
 	//Настройки
 	anchors.fill: parent
 	focus: true
@@ -50,7 +51,7 @@ Item {
     signal log(var strLog)
 	//Методы
 	Component.onCompleted: {
-        knopkiMassiv = [knopkaGPU]//Сюда добавляем id кнопок, между которыми мы будим листать.
+        knopkiMassiv = [knopkaGPU, knopkaModeli]//Сюда добавляем id кнопок, между которыми мы будим листать.
 		root.forceActiveFocus()
 	}
 	Keys.onPressed: (event) => {
@@ -152,6 +153,9 @@ Item {
 		} else {
 			//Если меню закрыто, ничего не делаем (можно добавить другую логику)
 		}
+		if (pvModeli.visible) {
+			pvModeli.visible = false
+		}
     }
 	function fnClickedNazad() {
 		fnClickedEscape()//Функция нажатия на клавишу Escape
@@ -164,8 +168,10 @@ Item {
 	function fnToggleMenu() {
 		if (menuMenu.visible) 
 			menuMenu.visible = false
-		else 
+		else {
+			if (pvModeli.visible) pvModeli.visible = false
 			menuMenu.visible = true
+		}
 	}
 	function fnCloseMenuIfOpen() {
 		if (menuMenu.visible) {
@@ -173,7 +179,29 @@ Item {
 			return true
 		}
 		return false
-	}	
+	}
+	function fnCloseModeliIfOpen() {
+		if (pvModeli.visible) {
+			pvModeli.visible = false
+			root.forceActiveFocus()//фокус root, чтоб hotkey работали.
+			return true
+		}
+		return false
+	}
+	function fnClickedModeli(){//Функция выбора модели
+		if(pvModeli.visible){//Если видимый виджет, то...
+			Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModeli. ВАЖНО!!!
+				pvModeli.visible = false//Делаем невидимым виджет
+				root.forceActiveFocus()//фокус PathView, чтоб hotkey работали.
+			})
+		}
+		else{//Если невидимый виджет, то...
+			Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModeli. ВАЖНО!!!
+				pvModeli.visible = true//Делаем видимым виджет
+				pvModeli.karusel.forceActiveFocus()//фокус PathView, чтоб hotkey работали.
+			})
+		}
+	}
 	Item {//Заголовок
 		id: tmZagolovok
 		DCKnopkaNazad {
@@ -216,7 +244,10 @@ Item {
 				}
 			}
 			TapHandler {//Нажимаем на всю область
-				onTapped: fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
+				onTapped: {
+					fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
+					if(!pvModeli.jdi && !pvModeli.pressed) fnCloseModeliIfOpen()//Закрываем меню выбора модели
+				}
 			}
 			Column {
 				id: clmnContent
@@ -249,14 +280,71 @@ Item {
 					onPressedChanged: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
-								//if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
-								fnPress()
+								if (pressed && !pvModeli.pressed) fnPress()
 							}
 						}
 					}
 				}
+				DCKnopkaOriginal {//Кнопка выбора модели
+                    id: knopkaModeli
+                    text: {
+                        let ltModel = qsTr("модель ");//
+						ltModel += modelModeli.get(root.ntModel).spisok
+                        pvModeli.currentIndex = root.ntModel
+                        return ltModel;
+                    }
+                    ntHeight: root.ntWidth
+                    ntCoff: root.ntCoff
+					anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2
+                    anchors.rightMargin: root.ntCoff * 2
+					clrTexta: root.clrMenuText
+                    clrKnopki: (root.currentIndex === 1) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    opacityKnopki: 0.9
+					function fnPress() {
+						root.currentIndex = 1
+						fnClickedModeli()//Функция выбора модели
+					}
+					onPressedChanged: {
+						if (pressed) {
+							if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
+								if (pressed && !pvModeli.pressed) fnPress()
+							}
+						}
+					}
+                }
 			}
 		}
+		ListModel {//Модель с Моделями движков RAG
+            id: modelModeli
+            ListElement { spisok: "all-MiniLM-L6-v2 (384D, быстрая)" }
+            ListElement { spisok: "all-MiniLM-L12-v2 (384D, точная)" }
+            ListElement { spisok: "paraphrase-multilingual (384D, многоязычная)" }
+            ListElement { spisok: "all-mpnet-base-v2 (768D, максимальное качество)" }
+            ListElement { spisok: "LaBSE (768D, 100+ языков)" }
+            ListElement { spisok: "e5-small-v2 (384D, альтернатива)" }
+            ListElement { spisok: "e5-large-v2 (1024D, максимум для GPU)" }
+        }
+        DCPathView {
+            id: pvModeli
+            visible: false
+            ntWidth: root.ntWidth; ntCoff: root.ntCoff
+            anchors.left: tmZona.left; anchors.right: tmZona.right; anchors.bottom: tmZona.bottom
+            anchors.leftMargin: dcScrollbar.width; anchors.rightMargin: dcScrollbar.width
+            clrFona: root.clrFona; clrTexta: root.clrMenuText; clrMenuFon: root.clrMenuFon
+            modelData: modelModeli
+            onClicked: function(strModel) {
+				Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModeli. ВАЖНО!!!
+					pvModeli.visible = false//Делаем невидимым виджет
+					root.ntModel = pvModeli.currentIndex;//Приравниваем значение к переменной.
+					DCSettings.rag_model = root.ntModel//Сохраняем в реестре.
+				})
+            }
+			onVisibleChanged: {//Если видимость поменялась, то...
+				if(!visible) root.forceActiveFocus()//Если невидимый, то фокус на root, чтоб hotkey работали.
+			}
+        }
 		DCScrollbar {//Скроллбар
 			id: dcScrollbar
 			flick: flcZona
@@ -344,8 +432,10 @@ Item {
 		propagateComposedEvents: true
 		onClicked: (mouse) => {
 			mouse.accepted = false
-			if (menuMenu.visible)
+			if (menuMenu.visible || pvModeli.visible){
 				menuMenu.visible = false
+				pvModeli.visible = false
+			}
 			else 
 				root.forceActiveFocus()
 			root.forceActiveFocus()

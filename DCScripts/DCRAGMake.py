@@ -17,7 +17,72 @@ import zipfile
 # ============================================================
 
 IS_GUI_MODE = os.environ.get('RAG_GUI_MODE', '0') == '1'
-USE_GPU = os.environ.get('RAG_USE_GPU', '0') == '1'  # ← Новый флаг
+USE_GPU = os.environ.get('RAG_USE_GPU', '0') == '1'#Флаг GPU
+MODEL_INDEX = int(os.environ.get('RAG_MODEL_INDEX', '0'))#Получаем индекс модели
+
+# Словарь моделей эмбеддингов
+EMBEDDING_MODELS = {
+    0: {
+        'name': 'sentence-transformers/all-MiniLM-L6-v2',
+        'dimension': 384,
+        'description': '384D, быстрая',
+        'batch_size_cpu': 32,
+        'batch_size_gpu': 128
+    },
+    1: {
+        'name': 'sentence-transformers/all-MiniLM-L12-v2',
+        'dimension': 384,
+        'description': '384D, точная',
+        'batch_size_cpu': 32,
+        'batch_size_gpu': 128
+    },
+    2: {
+        'name': 'sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2',
+        'dimension': 384,
+        'description': '384D, многоязычная',
+        'batch_size_cpu': 32,
+        'batch_size_gpu': 128
+    },
+    3: {
+        'name': 'sentence-transformers/all-mpnet-base-v2',
+        'dimension': 768,
+        'description': '768D, максимальное качество',
+        'batch_size_cpu': 16,
+        'batch_size_gpu': 64
+    },
+    4: {
+        'name': 'sentence-transformers/LaBSE',
+        'dimension': 768,
+        'description': '768D, 100+ языков',
+        'batch_size_cpu': 16,
+        'batch_size_gpu': 64
+    },
+    5: {
+        'name': 'intfloat/e5-small-v2',
+        'dimension': 384,
+        'description': '384D, альтернатива',
+        'batch_size_cpu': 32,
+        'batch_size_gpu': 128
+    },
+    6: {
+        'name': 'intfloat/e5-large-v2',
+        'dimension': 1024,
+        'description': '1024D, максимум для GPU',
+        'batch_size_cpu': 8,
+        'batch_size_gpu': 32
+    }
+}
+
+# Проверка корректности индекса модели
+if MODEL_INDEX not in EMBEDDING_MODELS:
+    print(f"❌ Ошибка: неверный индекс модели {MODEL_INDEX}")
+    print(f"   Доступные индексы: 0-{len(EMBEDDING_MODELS)-1}")
+    sys.exit(1)
+
+# Получение выбранной модели
+SELECTED_MODEL = EMBEDDING_MODELS[MODEL_INDEX]
+MODEL_NAME = SELECTED_MODEL['name']
+EXPECTED_DIMENSION = SELECTED_MODEL['dimension']
 
 # Определение доступности GPU
 GPU_AVAILABLE = torch.cuda.is_available()
@@ -62,6 +127,8 @@ start_time = time.time()
 print("="*70)
 print("🚀 СОЗДАНИЕ ВЕКТОРНОЙ БАЗЫ ДАННЫХ RAG")
 print("="*70)
+print(f"📦 Модель: {MODEL_NAME}")
+print(f"   {SELECTED_MODEL['description']}")
 if USE_GPU and GPU_AVAILABLE and FAISS_GPU_AVAILABLE:
     print("🎮 Режим: GPU (CUDA)")
     print(f"   Устройство: {torch.cuda.get_device_name(0)}")
@@ -339,8 +406,22 @@ print("\n📥 Загрузка модели...")
 # Определение устройства
 device = torch.device('cuda' if USE_GPU and GPU_AVAILABLE else 'cpu')
 
-tokenizer = AutoTokenizer.from_pretrained('sentence-transformers/all-MiniLM-L6-v2')
-model = AutoModel.from_pretrained('sentence-transformers/all-MiniLM-L6-v2')
+try:
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+    model = AutoModel.from_pretrained(MODEL_NAME)
+    
+    # Перемещаем модель на GPU если нужно
+    if USE_GPU and GPU_AVAILABLE:
+        model = model.to(device)
+        print(f"✓ Модель загружена на GPU: {torch.cuda.get_device_name(0)}")
+    else:
+        print("✓ Модель загружена на CPU")
+    
+    print(f"   Ожидаемая размерность: {EXPECTED_DIMENSION}D")
+
+except Exception as e:
+    print(f"❌ Ошибка загрузки модели: {e}")
+    sys.exit(1)
 
 # Перемещаем модель на GPU если нужно
 if USE_GPU and GPU_AVAILABLE:
@@ -385,14 +466,17 @@ class SpinnerThread(threading.Thread):
             sys.stdout.write('\r')
             sys.stdout.flush()
 
-def encode_texts(texts, batch_size=32):
+def encode_texts(texts, batch_size=None):
     """Кодирование текстов в эмбеддинги"""
     all_embeddings = []
     total = len(texts)
     
-    # Увеличиваем batch_size для GPU
-    if USE_GPU and GPU_AVAILABLE:
-        batch_size = 128  # GPU может обработать больше
+    # Автоматический выбор batch_size на основе модели и устройства
+    if batch_size is None:
+        if USE_GPU and GPU_AVAILABLE:
+            batch_size = SELECTED_MODEL['batch_size_gpu']
+        else:
+            batch_size = SELECTED_MODEL['batch_size_cpu']
     
     # Вычисляем шаг для обновления (1% от общего количества)
     one_percent = max(1, total // 100)
@@ -408,6 +492,11 @@ def encode_texts(texts, batch_size=32):
     
     for i in range(0, len(texts), batch_size):
         batch = texts[i:i+batch_size]
+        
+        # Для e5 моделей нужен префикс "query: " или "passage: "
+        if MODEL_NAME.startswith('intfloat/e5'):
+            batch = [f"passage: {text}" for text in batch]
+        
         encoded = tokenizer(batch, padding=True, truncation=True, 
                           max_length=512, return_tensors='pt')
         
@@ -548,6 +637,7 @@ print("="*70)
 print(f"  📁 Местоположение: {index_dir}")
 print(f"  📚 Файлов обработано: {len(txt_files)}")
 print(f"  📄 Фрагментов создано: {len(documents)}")
+print(f"  📦 Модель: {MODEL_NAME}")
 print(f"  🔢 Размерность векторов: {dimension}")
 print(f"  {'🎮' if USE_GPU and GPU_AVAILABLE else '💻'} Устройство: {'GPU' if USE_GPU and GPU_AVAILABLE else 'CPU'}")
 print(f"  ⏱️  Время работы: {format_time(elapsed_time)}")

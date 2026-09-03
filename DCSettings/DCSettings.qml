@@ -27,6 +27,7 @@ QtObject {
     property string rag_put_doc: ""
     property string rag_put_db: ""
 	property bool rag_gpu: false//true - работает на gpu, false - работает на cpu.
+	property int rag_model: 0//модели от 0 до 6
 	//Инструкции
 	property int instrukcii_shirina: 220
 	//Объект настроек (автоматическое сохранение)
@@ -53,6 +54,7 @@ QtObject {
 		property alias rag_put_doc: root.rag_put_doc
 		property alias rag_put_db: root.rag_put_db
 		property alias rag_gpu: root.rag_gpu
+		property alias rag_model: root.rag_model
 		//Инструкции
 		property alias instrukcii_shirina: root.instrukcii_shirina
     }

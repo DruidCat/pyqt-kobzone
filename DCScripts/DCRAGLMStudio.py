@@ -58,7 +58,7 @@ def load_faiss_index():
 class EmbeddingModel:
     """Класс для генерации эмбеддингов (та же модель, что при создании)"""
     
-    def __init__(self, model_name='sentence-transformers/all-MiniLM-L6-v2'):
+    def __init__(self, model_name='intfloat/e5-large-v2'):
         print("📥 Загрузка модели эмбеддингов...")
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.model = AutoModel.from_pretrained(model_name)
@@ -116,7 +116,7 @@ def search_faiss(index, query_embedding, documents, metadatas, top_k=5):
 
 # ==================== LM STUDIO API ====================
 
-def query_lm_studio(context, question, max_tokens=1024):
+def query_lm_studio(context, question, max_tokens=8192):
     """Отправка запроса в LM Studio"""
     
     client = OpenAI(
