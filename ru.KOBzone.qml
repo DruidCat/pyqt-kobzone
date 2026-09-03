@@ -32,21 +32,21 @@ ApplicationWindow {
 	title: "Любимая КОБзона"
 	//width: 1100
 	//height: 550
-    x: isMobile ? 0 : dcReestr.kobzone_x//Считываем из реестра X (в бизнес-логике)
-    y: isMobile ? 0 : dcReestr.kobzone_y//Считываем из реестра Y (в бизнес-логике)
+    x: isMobile ? 0 : DCSettings.kobzone_x//Считываем из реестра X (в бизнес-логике)
+    y: isMobile ? 0 : DCSettings.kobzone_y//Считываем из реестра Y (в бизнес-логике)
     width: {
         var vrWidth = Screen.desktopAvailableWidth;//Расчитываем доступную ширину экрана
         if(isMobile)//Если мобильная платформа, то...
             return vrWidth;//Масимально возможная ширина.
         else
-            return dcReestr.kobzone_shirina;//Считываем из реестра ширину окна.
+            return DCSettings.kobzone_shirina;//Считываем из реестра ширину окна.
     }
     height: {
         var vrHeight = Screen.desktopAvailableHeight//Расчитываем доступную высоту экрана
         if(isMobile)//Если мобильная платформа, то...
             return vrHeight;//Масимально возможная ширина.
         else
-            return dcReestr.kobzone_visota;//Считываем из реестра высоту окна.
+            return DCSettings.kobzone_visota;//Считываем из реестра высоту окна.
     }
     minimumWidth: {//Минимальная ширина не для мобильных платформ.
         if(!isMobile)//Если не мобильная платформа, то...
@@ -57,9 +57,6 @@ ApplicationWindow {
             return 330;
     }
     //Методы
-	DCSettings {//Объект настроек
-        id: dcReestr
-    }
     function ensureOnScreen() {//Функция не дающая окну оказаться вне видимой области экрана
         if (isMobile) return//Если мобильное устройство, выходим из функции.
         // Может быть undefined до показа окна/привязки к монитору
@@ -88,21 +85,21 @@ ApplicationWindow {
     }
     onWidthChanged: {//Если Ширина поменялась, то...
         if(!isMobile){//Если не мобильная платформа, то...
-            dcReestr.kobzone_shirina = width;//Отправляем в бизнес логику ширину окна, для обработки.
+            DCSettings.kobzone_shirina = width;//Отправляем в бизнес логику ширину окна, для обработки.
         }
     }
     onHeightChanged: {//Если Высота поменялась, то...
         if(!isMobile){//Если не мобильная платформа, то...
-            dcReestr.kobzone_visota = height;//Отправляем в бизнес логику высоту окна, для обработки.
+            DCSettings.kobzone_visota = height;//Отправляем в бизнес логику высоту окна, для обработки.
         }
     }
     onXChanged: {//Если X координата изменилась, то...
         if (!isMobile)//Если не мобильное устройство, то...
-            dcReestr.kobzone_x = x;//Сохранение X координаты в бизнес-логику
+            DCSettings.kobzone_x = x;//Сохранение X координаты в бизнес-логику
     }
     onYChanged: {//Если Y координата изменилась, то...
         if (!isMobile)//Если не мобильное устройство, то...
-            dcReestr.kobzone_y = y;//Сохранение Y координаты в бизнес-логику
+            DCSettings.kobzone_y = y;//Сохранение Y координаты в бизнес-логику
     }
     onVisibleChanged: {//Вызывать кламп после показа окна
         if(visible && !isMobile) Qt.callLater(ensureOnScreen)//Если видимое окно и не мобильное устройство

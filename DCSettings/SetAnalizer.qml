@@ -41,10 +41,11 @@ Item {
     property var knopkiMassiv: []//Массив кнопок, между которыми нужно листать.
     property int currentIndex: 0//Выбранная кнопка.
 	//Модель
-	property string strModel: dcReestr.analizer_model_imya//Имя модели ИИ
+	property string strModel: DCSettings.analizer_model_imya//Имя модели ИИ
 	property bool isLMStart: false;//true - LM Studio запущена и доступна в виде сервера.
-	property string putLMStudio: dcReestr.analizer_lms_put//Путь к приложению LM Studio из реестра.
-	property real rlTemperatura: dcReestr.analizer_temperatura//Температура ИИ
+	property string putLMStudio: DCSettings.analizer_lms_put//Путь к приложению LM Studio из реестра.
+	property real rlTemperatura: DCSettings.analizer_temperatura//Температура ИИ
+	property int maxContext: DCSettings.analizer_max_context//Максимальное количество токенов
 	//Настройки
 	anchors.fill: parent
 	focus: true
@@ -55,32 +56,29 @@ Item {
     signal log(var strLog)
 	//Методы
 	Component.onCompleted: {
-        knopkiMassiv = [knopkaLMStart, knopkaLMPut, knopkaModeli, knopkaTemperatura]//Сюда добавляем id кнопок
+        knopkiMassiv = [knopkaLMStart, knopkaLMPut, knopkaModeli, knopkaTemperatura, knopkaContext]
 		if(Qt.application.os !== "windows"){//TODO ЭТО ДЛЯ ОТЛАДКИ ПРОГРАММЫ, ЧТОБ БЫСТРЕЕ ЗАПУСКАЛАСЬ.
 			pyLMStudio.proverkaServera()//Проверяем сервер перед загрузкой моделей
 			pyLMStudio.zagruzitModeli()//Загружаем модели при открытии страницы
-			if (dcReestr.analizer_lms_put !== "")//Передаём путь из настроек в Python
-				pyLMStudio.ustPut(dcReestr.analizer_lms_put)
+			if (DCSettings.analizer_lms_put !== "")//Передаём путь из настроек в Python
+				pyLMStudio.ustPut(DCSettings.analizer_lms_put)
 		}
 		root.forceActiveFocus()
 	}
-	DCSettings {//Объект настроек
-        id: dcReestr
-    }
 	onStrModelChanged: {//Если Модель изменится, то...
-        dcReestr.analizer_model_imya = root.strModel//Сохраняем в реестре имя Модели.
+        DCSettings.analizer_model_imya = root.strModel//Сохраняем в реестре имя Модели.
         pyLMStudio.ustModel(root.strModel)//Отправляем в Python
         //Обновляем настройки анализатора
-        let ltMaxContext = dcReestr.analizer_max_context
-		let ltTemperatura = dcReestr.analizer_temperatura
-        let ltPerekritie = dcReestr.analizer_perekritie
+        let ltMaxContext = DCSettings.analizer_max_context
+		let ltTemperatura = DCSettings.analizer_temperatura
+        let ltPerekritie = DCSettings.analizer_perekritie
         pyAnalyzer.ustModelSettings(root.strModel, ltMaxContext, ltTemperatura, ltPerekritie)
 	}
 	onRlTemperaturaChanged: {
         //Обновляем настройки анализатора
-        let ltMaxContext = dcReestr.analizer_max_context
-		let ltTemperatura = dcReestr.analizer_temperatura
-        let ltPerekritie = dcReestr.analizer_perekritie
+        let ltMaxContext = DCSettings.analizer_max_context
+		let ltTemperatura = DCSettings.analizer_temperatura
+        let ltPerekritie = DCSettings.analizer_perekritie
         pyAnalyzer.ustModelSettings(root.strModel, ltMaxContext, ltTemperatura, ltPerekritie)
 	}
 	onPutLMStudioChanged: {//Если путь к LM Studio изменился, то...
@@ -96,7 +94,7 @@ Item {
             for (let i = 0; i < models.length; i++) {//Заполняем новыми данными
                 modelModels.append({ spisok: models[i] })
             }
-            let savedModel = dcReestr.analizer_model_imya//Устанавливаем текущий индекс
+            let savedModel = DCSettings.analizer_model_imya//Устанавливаем текущий индекс
 
             if (savedModel === "" || savedModel === "(автовыбор модели)") {
                 pvModels.currentIndex = 0//Первый элемент = автовыбор
@@ -211,8 +209,8 @@ Item {
 			return ["Все файлы (*)"];//Безопасный фоллбэк
 		}
 		currentFolder: {//Используем сохранённый путь из реестра, или стандартную домашнюю папку
-			if (dcReestr.analizer_lms_put !== "") {
-				var vrPut = dcReestr.analizer_lms_put
+			if (DCSettings.analizer_lms_put !== "") {
+				var vrPut = DCSettings.analizer_lms_put
 				vrPut = fnPathToUrl(vrPut)//Преобразуем сохранённый путь в URL
 				return vrPut.substring(0, vrPut.lastIndexOf("/"));//Обрезаем имя файла.
 			}
@@ -220,7 +218,7 @@ Item {
 		}
 		onAccepted: {
 			var vrPut = fnUrlToLocalPath(selectedFile)//Используем кроссплатформенную функцию
-			dcReestr.analizer_lms_put = vrPut
+			DCSettings.analizer_lms_put = vrPut
 			if(knopkaLMStart.isStartBezPuti){//Если путь к LM Studio выбран и была попытка старта, то...
 				knopkaLMStart.isStartBezPuti = false;//Сбрасываем флаг.
 				pyLMStudio.zapustit()//Запускаем LM Studio.
@@ -337,6 +335,9 @@ Item {
 				pvTemperatura.karusel.forceActiveFocus()//фокус PathView, чтоб hotkey работали.
 			})
 		}
+	}
+	function fnClickedContext(){//Функция выбора максимального контекста
+
 	}
 	function fnPathToUrl(localPath) {//Функция кроссплатформенного преобразования пути в URL
 		if (!localPath) return ""
@@ -557,6 +558,34 @@ Item {
 						}
 					}
 				}
+				DCKnopkaOriginal {//Кнопка выбора максимального количества токенов
+                    id: knopkaContext
+                    text: {
+                        let ltText = qsTr("максимальный контекст ");//
+						ltText += root.maxContext//Добавляем в строчку значения максимального контекста.
+						return ltText;
+                    }
+                    ntHeight: root.ntWidth
+                    ntCoff: root.ntCoff
+					anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2
+                    anchors.rightMargin: root.ntCoff * 2
+					clrTexta: root.clrMenuText
+                    clrKnopki: (root.currentIndex === 4) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    opacityKnopki: 0.9
+					function fnPress() {
+						root.currentIndex = 4
+						fnClickedContext()//Функция выбора максимального контекста
+					}
+					onPressedChanged: {
+						if (pressed) {
+							if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
+								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
+							}
+						}
+					}
+				}
 			}
 		}
 		DCScrollbar {//Скроллбар
@@ -623,7 +652,7 @@ Item {
 				Qt.callLater(function(){//пауза, иначе не сработает фокус и pvTemperatura. ВАЖНО!!!
 					pvTemperatura.visible = false//Делаем невидимым виджет
 					root.rlTemperatura = strTemperatura//Приравнываем значение полученное
-					dcReestr.analizer_temperatura = root.rlTemperatura//Сохраняем в реестре температуру ИИ.
+					DCSettings.analizer_temperatura = root.rlTemperatura//Сохраняем в реестре температуру ИИ.
 				})
             }
 			onVisibleChanged: {//Если видимость поменялась, то...

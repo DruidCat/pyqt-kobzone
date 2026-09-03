@@ -39,7 +39,7 @@ Item {
     property var knopkiMassiv: []//Массив кнопок, между которыми нужно листать.
     property int currentIndex: 0//Выбранная кнопка.
 	//Шрифт
-	property int untShrift: dcReestr.kobzone_set_shrift//0-мал, 1-сред, 2-большой.
+	property int untShrift: DCSettings.kobzone_set_shrift//0-мал, 1-сред, 2-большой.
 	//Настройки
 	anchors.fill: parent
 	focus: true
@@ -56,11 +56,8 @@ Item {
         knopkiMassiv = [knopkaJurnal, knopkaShrift, knopkaKlavishi, knopkaQt]//Сюда добавляем id кнопок
 		root.forceActiveFocus()
 	}
-	DCSettings {//Объект настроек
-        id: dcReestr
-    }
 	onUntShriftChanged: {//Если размер Шрифта изменится, то...
-        dcReestr.kobzone_set_shrift = root.untShrift;//Сохраняем в реестре размер шрифта.
+        DCSettings.kobzone_set_shrift = root.untShrift;//Сохраняем в реестре размер шрифта.
     }
 	Keys.onPressed: (event) => {
 		if (event.modifiers & Qt.AltModifier) {

@@ -48,9 +48,6 @@ Item {
     signal toolbar(var strToolbar)
     signal log(var strLog)
     //Методы
-	DCSettings {//Объект настроек
-        id: dcReestr
-    }
 	DCMarkdown {//Подключаем конвертер Markdown
 		id: dcMarkdown
 	}	
@@ -67,7 +64,7 @@ Item {
 				root.toolbar("Ошибка сохранения: " + strPut)
 			} else {
 				root.toolbar("Сохранено: " + strPut.split('/').pop())
-				dcReestr.analizer_put_sohranit = strPut;//Сохраняем путь папки, у котороую сохранили результат
+				DCSettings.analizer_put_sohranit = strPut;//Сохраняем путь папки, у котороую сохранили результат
 			}
 		}
 		function onSigChunkStarted(ntCurrent, ntTotal) {
@@ -132,8 +129,8 @@ Item {
 	}
 	Component.onCompleted: {
         root.forceActiveFocus()
-		pyAnalyzer.ustModelSettings(dcReestr.analizer_model_imya, dcReestr.analizer_max_context,
-			dcReestr.analizer_temperatura, dcReestr.analizer_perekritie)//Передаём настройки в Python
+		pyAnalyzer.ustModelSettings(DCSettings.analizer_model_imya, DCSettings.analizer_max_context,
+			DCSettings.analizer_temperatura, DCSettings.analizer_perekritie)//Передаём настройки в Python
     }
 	Keys.onPressed: (event) => {//Обработка горячих клавиш
         if (event.modifiers & Qt.AltModifier) {
@@ -212,7 +209,7 @@ Item {
 		id: dialogZagruzka
 		title: "Выберите текстовые файлы для анализа"
 		currentFolder: {//Используем сохранённый путь из реестра, или стандартную домашнюю папку
-			if (dcReestr.analizer_put_text !== "") return "file://" + dcReestr.analizer_put_text
+			if (DCSettings.analizer_put_text !== "") return "file://" + DCSettings.analizer_put_text
 			else return StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
 		}
 		nameFilters: ["Текстовые файлы (*.txt)", "Все файлы (*)"]
@@ -222,7 +219,7 @@ Item {
 			var filePut = selectedFiles[0].toString()//Получаем путь для первого файла.
 			filePut = fnUrlToLocalPath(filePut)//Используем кроссплатформенную функцию Убираем "file://" 
 			var papkaPut = filePut.substring(0, filePut.lastIndexOf('/'));//Обрезаем имя файла по /
-			dcReestr.analizer_put_text = papkaPut//Записываем в реестр имя папки в реестр.
+			DCSettings.analizer_put_text = papkaPut//Записываем в реестр имя папки в реестр.
 		}
 		onRejected: {
 
@@ -339,7 +336,7 @@ Item {
         pyAnalyzer.startAnaliza(txaContent.text, txfPromt.text)
     }
     function fnClickedSohranit() {//Функция сохранения результата анализа.
-        pyAnalyzer.sohranitAnaliz(dcReestr.analizer_put_sohranit)//Открываем Диалог в папке (путь из реестра).
+        pyAnalyzer.sohranitAnaliz(DCSettings.analizer_put_sohranit)//Открываем Диалог в папке (путь из реестра).
     }
     function fnToggleMenu() {//Функция изменяет состояние всплывающего меню если открыто, закрывает и наоборот
         if (menuMenu.visible) menuMenu.visible = false

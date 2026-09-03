@@ -41,10 +41,6 @@ Item {
 	signal clickedNazad();//Сигнал нажатия кнопки Назад
     signal signalZagolovok(var strZagolovok);//Сигнал, когда передаём новую надпись в Заголовок.
 	//Методы
-    DCSettings {//Объект настроек
-        id: dcReestr
-    }
-    //Функуции.
     Keys.onPressed: (event) => {//Это запись для Qt6, для Qt5 нужно удалить event =>
         if(event.modifiers & Qt.ControlModifier){//Если нажат "Ctrl"
             if (event.key === Qt.Key_B){//Если нажата клавиша В, то...
@@ -126,7 +122,7 @@ Item {
         property int minSidebarWidth: 200//Минимум ширины боковой панели
         property int maxSidebarWidth: root.width * 0.8//Максимум ширины боковой панели
         property int sidebarWidth: root.isMobile//Если мобила,ширина на весь экран,если нет,то данные из Реест
-                                   ? root.width : Math.max(minSidebarWidth, dcReestr.instrukcii_shirina)
+                                   ? root.width : Math.max(minSidebarWidth, DCSettings.instrukcii_shirina)
         //Настройки
         edge: Qt.RightEdge
         modal: false
@@ -320,12 +316,12 @@ Item {
                 onReleased: {//Если отпустили кнопку мышки
                     drwSidebar.interactive = true;//Включаем свайп Drawer. ВАЖНО!
                     isDrag = false//При отпускании мыши Окончание перетаскивания
-                    dcReestr.instrukcii_shirina = drwSidebar.sidebarWidth//Записываем в реестр ширину панели.
+                    DCSettings.instrukcii_shirina = drwSidebar.sidebarWidth//Записываем в реестр ширину панели.
                 }
                 onCanceled: {
                     drwSidebar.interactive = true;//Включаем свайп Drawer. ВАЖНО!
                     isDrag = false//Окончание перетаскивания
-                    dcReestr.instrukcii_shirina = drwSidebar.sidebarWidth//Записываем в реестр ширину панели.
+                    DCSettings.instrukcii_shirina = drwSidebar.sidebarWidth//Записываем в реестр ширину панели.
                 }
                 onPositionChanged: (mouse) => {//Если позиция меняется, то...
                     if (!isDrag || root.isMobile) return//Если не перетаск. ручку или мобильное устройство,вых

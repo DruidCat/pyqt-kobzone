@@ -54,9 +54,6 @@ Item {
 	signal toolbar(var strToolbar)
     signal log(var strLog)
 	//Методы
-    DCSettings {//Объект настроек
-        id: dcReestr
-    }
     Keys.onPressed: (event) => {//Обработка горячих клавиш
         if (event.modifiers & Qt.AltModifier) {
             if (event.key === Qt.Key_Left) {
@@ -255,7 +252,7 @@ Item {
 			txdZona.strCopy = ""//Очищаем переменную Прогресса транскрибации.
 			txdZona.text = ""//Очищаем зону отображения прогресса транскрибации.
 			//Запускаем через бэкенд PyTranscriber.py	
-			pyTranscriber.start(dcReestr.transcribe_put_audio, dcReestr.transcribe_put_text)
+			pyTranscriber.start(DCSettings.transcribe_put_audio, DCSettings.transcribe_put_text)
 		}
 	}
 	function fnStopTranscriber() {//Функция Остановки транскрибации.
@@ -318,14 +315,14 @@ Item {
 		id: dialogAudio
 		title: "Выберите папку с аудио файлами"
 		currentFolder: {//Используем сохранённый путь из настроек, или стандартную домашнюю папку
-			if (dcReestr.transcribe_put_audio !== "") {
-				return fnPathToUrl(dcReestr.transcribe_put_audio)//Преобразуем сохранённый путь в URL
+			if (DCSettings.transcribe_put_audio !== "") {
+				return fnPathToUrl(DCSettings.transcribe_put_audio)//Преобразуем сохранённый путь в URL
 			}
 			else return StandardPaths.writableLocation(StandardPaths.MusicLocation)
 		}
 		onAccepted: {
 			var vtPut = fnUrlToLocalPath(selectedFolder)//Используем кроссплатформенную функцию
-			dcReestr.transcribe_put_audio = vtPut
+			DCSettings.transcribe_put_audio = vtPut
 			root.toolbar(`Танскрибация. Выбрана папка аудио: ${vtPut}`)//Сообщение в toolbar и журнал.
 		}
 	}	
@@ -333,14 +330,14 @@ Item {
 		id: dialogText
 		title: "Выберите папку для текстовых файлов"
 		currentFolder: {//Используем сохранённый путь из настроек, или стандартную домашнюю папку
-			if (dcReestr.transcribe_put_text !== "") {
-				return fnPathToUrl(dcReestr.transcribe_put_text)//Преобразуем сохранённый путь в URL
+			if (DCSettings.transcribe_put_text !== "") {
+				return fnPathToUrl(DCSettings.transcribe_put_text)//Преобразуем сохранённый путь в URL
 			}
 			else return StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
 		}
 		onAccepted: {
 			var vtPut = fnUrlToLocalPath(selectedFolder)//Используем кроссплатформенную функцию
-			dcReestr.transcribe_put_text = vtPut
+			DCSettings.transcribe_put_text = vtPut
 			root.toolbar(`Танскрибация. Выбрана папка результатов: ${vtPut}`)//Сообщение в toolbar и журнал.
 		}
 	}	
@@ -348,8 +345,8 @@ Item {
 		id: dialogOtkrit
 		title: "Выберите текстовый файл для просмотра"
 		currentFolder: {//Используем сохранённый путь из настроек, или стандартную домашнюю папку
-			if (dcReestr.transcribe_put_text !== "") {
-				return fnPathToUrl(dcReestr.transcribe_put_text)//Преобразуем сохранённый путь в URL
+			if (DCSettings.transcribe_put_text !== "") {
+				return fnPathToUrl(DCSettings.transcribe_put_text)//Преобразуем сохранённый путь в URL
 			}
 			else return StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
 		}
@@ -359,7 +356,7 @@ Item {
 			var vrPutFaila = fnUrlToLocalPath(selectedFile);//Преобразуем в путь из url
 			root.toolbar(`Транскрибация. Выбран файл: ${vrPutFaila}`)//Сообщение в toolbar и журнал.
 			pyFileOpener.openFile(selectedFile.toString())//Открываем через Python
-			//pyFileOpener.openFolder("file://" + dcReestr.transcribe_put_text)//Так можно открыть папку.
+			//pyFileOpener.openFolder("file://" + DCSettings.transcribe_put_text)//Так можно открыть папку.
 		}
 		onRejected: {
 		}
@@ -494,7 +491,7 @@ Item {
                 }
 				DCKnopkaOriginal {
 					id: knopkaAudioPut
-					text: dcReestr.transcribe_put_audio
+					text: DCSettings.transcribe_put_audio
 					ntHeight: root.ntWidth
 					ntCoff: root.ntCoff
 					clrKnopki: root.clrTexta
@@ -519,7 +516,7 @@ Item {
                 } 
 				DCKnopkaOriginal {
 					id: knopkaTextPut
-					text: dcReestr.transcribe_put_text
+					text: DCSettings.transcribe_put_text
 					ntHeight: root.ntWidth
 					ntCoff: root.ntCoff
 					clrKnopki: root.clrTexta

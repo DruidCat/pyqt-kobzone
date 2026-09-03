@@ -1,3 +1,4 @@
+pragma Singleton
 import QtQuick
 import QtCore
 //DCSettings - виджет сохранения настроек в реестр.
@@ -25,6 +26,7 @@ QtObject {
 	//RAG
     property string rag_put_doc: ""
     property string rag_put_db: ""
+	property bool rag_gpu: false//true - работает на gpu, false - работает на cpu.
 	//Инструкции
 	property int instrukcii_shirina: 220
 	//Объект настроек (автоматическое сохранение)
@@ -50,6 +52,7 @@ QtObject {
 		//RAG
 		property alias rag_put_doc: root.rag_put_doc
 		property alias rag_put_db: root.rag_put_db
+		property alias rag_gpu: root.rag_gpu
 		//Инструкции
 		property alias instrukcii_shirina: root.instrukcii_shirina
     }
