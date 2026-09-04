@@ -224,7 +224,7 @@ Item {
 		if (isRAG) {//Если создание RAG идёт, то...
 			knopkaNazad.visible = false//Невидимая кнопка, чтоб она не нажималась, при нажатии Отмены.
 			knopkaMenu.visible = false// Невидимая кнопка, чтоб она не нажималась, при нажатии Ок.
-			vprStopRAG.visible = true//Выдаём вопрос об остановке создания RAG.
+			vprRAGStop.visible = true//Выдаём вопрос об остановке создания RAG.
 		} else {
 			fnClickedEscape()//Функция нажатия на клавишу Escape
 			root.clickedNazad()
@@ -243,7 +243,9 @@ Item {
 			txdZona.strCopy = ""//Очищаем переменную Прогресса созадания RAG.
 			txdZona.text = ""//Очищаем зону отображения прогресса RAG.
 			//Запускаем через бэкенд pyRAG.py	
-			pyRAG.start(DCSettings.rag_put_doc,DCSettings.rag_put_db,DCSettings.rag_gpu,DCSettings.rag_model)
+			pyRAG.start(DCSettings.rag_put_doc, DCSettings.rag_put_db,
+						DCSettings.rag_gpu, DCSettings.rag_model,
+						DCSettings.rag_batch_gpu, DCSettings.rag_batch_cpu)
 		}
 	}
 	function fnStopRAG() {//Функция Остановки создания RAG.
@@ -363,33 +365,23 @@ Item {
             }
         }
 		DCVopros {
-			id: vprStopRAG
-			ntWidth: root.ntWidth
-			ntCoff: root.ntCoff
-			anchors.top: tmZagolovok.top
-			anchors.bottom: tmZagolovok.bottom
-			anchors.left: tmZagolovok.left
-			anchors.right: tmZagolovok.right
-			
-			text: qsTr("ОСТАНОВИТЬ СОЗДАНИЕ RAG БАЗЫ ДАННЫХ?")
+			id: vprRAGStop
+			ntWidth: root.ntWidth; ntCoff: root.ntCoff
+			anchors.top: tmZagolovok.top; anchors.bottom: tmZagolovok.bottom
+			anchors.left: tmZagolovok.left; anchors.right: tmZagolovok.right
+			clrFona: root.clrVnimanie; clrTexta: root.clrFona
+			clrKnopki: root.clrFona; clrBorder: root.clrFona
+			tapKnopkaZakrit: root.tapZagolovokLevi; tapKnopkaOk: root.tapZagolovokPravi
 			visible: false
-			
-			clrFona: root.clrVnimanie
-			clrTexta: root.clrFona
-			clrKnopki: root.clrFona
-			clrBorder: root.clrFona
-			
-			tapKnopkaZakrit: root.tapZagolovokLevi
-			tapKnopkaOk: root.tapZagolovokPravi
-			
+			text: qsTr("ОСТАНОВИТЬ СОЗДАНИЕ RAG БАЗЫ ДАННЫХ?")
 			onClickedOk: {
-				vprStopRAG.visible = false//Делаем невидимый диалог
+				vprRAGStop.visible = false//Делаем невидимый диалог
         		root.forceActiveFocus()//Переводим фокус на основное окно, чтоб работали горячие кнопки.
 				pyRAG.stop()//Останавливаем принудительно транскрибацию.
 				fnStopRAG()//Останавливаем создание RAG.
 			}
 			onClickedOtmena: {
-				vprStopRAG.visible = false//Делаем невидимый диалог.
+				vprRAGStop.visible = false//Делаем невидимый диалог.
         		root.forceActiveFocus()//Переводим фокус на основное окно, чтоб работали горячие кнопки.
 				knopkaNazad.visible = true//видимая кнопка, чтоб она нажималась
 				knopkaMenu.visible = true// видимая кнопка, чтоб она нажималась

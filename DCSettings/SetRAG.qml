@@ -42,6 +42,8 @@ Item {
 	
 	property bool isGPU: DCSettings.rag_gpu//true - анализ через GPU, false - анализ через CPU
 	property int ntModel: DCSettings.rag_model//модель от 0 простой до сложной 6	
+	property int ntBatchGPU: DCSettings.rag_batch_gpu//Максимум 256
+	property int ntBatchCPU: DCSettings.rag_batch_cpu//Максимум 64
 	//Настройки
 	anchors.fill: parent
 	focus: true
@@ -52,7 +54,7 @@ Item {
     signal log(var strLog)
 	//Методы
 	Component.onCompleted: {
-        knopkiMassiv = [knopkaGPU, knopkaModeli]//Сюда добавляем id кнопок, между которыми мы будим листать.
+        knopkiMassiv = [knopkaGPU, knopkaModeli, knopkaBatchGPU, knopkaBatchCPU]//Сюда добавляем id кнопок
 		root.forceActiveFocus()
 	}
 	Keys.onPressed: (event) => {
@@ -157,6 +159,7 @@ Item {
 		if (pvModeli.visible) {
 			pvModeli.visible = false
 		}
+		txnZagolovok.visible = false//Делаем невидимым ввот чисел
     }
 	function fnClickedNazad() {
 		fnClickedEscape()//Функция нажатия на клавишу Escape
@@ -171,6 +174,8 @@ Item {
 			menuMenu.visible = false
 		else {
 			if (pvModeli.visible) pvModeli.visible = false
+			if (vprGPUStart.visible) vprGPUStart.visible = false
+			if (txnZagolovok.visible) txnZagolovok.visible = false
 			menuMenu.visible = true
 		}
 	}
@@ -181,10 +186,23 @@ Item {
 		}
 		return false
 	}
+	function fnCloseBatchIfOpen() {
+		if (txnZagolovok.visible) {
+			txnZagolovok.visible = false
+			return true
+		}
+		return false
+	}
 	function fnCloseModeliIfOpen() {
 		if (pvModeli.visible) {
 			pvModeli.visible = false
-			root.forceActiveFocus()//фокус root, чтоб hotkey работали.
+			return true
+		}
+		return false
+	}
+	function fnCloseGPUStartIfOpen() {
+		if (vprGPUStart.visible) {
+			vprGPUStart.visible = false
 			return true
 		}
 		return false
@@ -193,15 +211,33 @@ Item {
 		if(pvModeli.visible){//Если видимый виджет, то...
 			Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModeli. ВАЖНО!!!
 				pvModeli.visible = false//Делаем невидимым виджет
-				root.forceActiveFocus()//фокус PathView, чтоб hotkey работали.
 			})
 		}
 		else{//Если невидимый виджет, то...
+			pvModeli.currentIndex = root.ntModel//Выставляем центральной модель из настроек
 			Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModeli. ВАЖНО!!!
 				pvModeli.visible = true//Делаем видимым виджет
-				pvModeli.karusel.forceActiveFocus()//фокус PathView, чтоб hotkey работали.
 			})
 		}
+	}
+	function fnClickedOk(){//Функция сохранения данных.
+		let ltContext = Number(txnZagolovok.text)//Явно приобразовываем в число.
+		let ltResult = Math.round(ltContext / 2) * 2;//Получаем число кратное 2.
+		if (txnZagolovok.isBatchGPU){
+			if (ltResult>256) ltResult = 256
+			DCSettings.rag_batch_gpu = ltResult//Сохраняем в реестре значение.
+		} else {
+			if (ltResult>64) ltResult = 64 
+			DCSettings.rag_batch_cpu = ltResult//Сохраняем в реестре значение.
+		}
+		txnZagolovok.visible = false//Делаем невидимым ввот чисел
+	}
+	function fnClickedZakrit(){//Функция закрытия виджета
+		txnZagolovok.visible = false//Делаем невидимым ввот чисел
+	}
+	function fnClickedBatch(blBatchGPU){//Функция выбора batch size
+		txnZagolovok.isBatchGPU = blBatchGPU
+		txnZagolovok.visible = !txnZagolovok.visible
 	}
 	Item {//Заголовок
 		id: tmZagolovok
@@ -216,6 +252,107 @@ Item {
 			tapHeight: root.ntWidth * root.ntCoff + root.ntCoff
 			tapWidth: tapHeight * root.tapZagolovokLevi
 			onClicked: fnClickedNazad()
+		}
+		DCKnopkaZakrit {
+            id: knopkaZakrit
+            ntWidth: root.ntWidth
+            ntCoff: root.ntCoff
+            visible: false
+            anchors.verticalCenter: tmZagolovok.verticalCenter
+            anchors.left: tmZagolovok.left
+            clrKnopki: root.clrTexta
+            clrFona: root.clrFona
+            tapHeight: root.ntWidth*root.ntCoff+root.ntCoff
+            tapWidth: tapHeight*root.tapZagolovokLevi
+            onClicked: fnClickedZakrit();//Функция обрабатывающая кнопку Закрыть.
+        }
+		DCKnopkaOk {
+            id: knopkaOk
+			ntWidth: root.ntWidth
+			ntCoff: root.ntCoff
+			visible: false
+			anchors.verticalCenter: tmZagolovok.verticalCenter
+			anchors.right: tmZagolovok.right
+			clrKnopki: root.clrTexta
+            tapHeight: root.ntWidth*root.ntCoff+root.ntCoff
+            tapWidth: tapHeight*root.tapZagolovokLevi
+            onClicked: fnClickedOk();//Нажимаем на Ок(Сохранить)	
+		}
+		Item {
+            id: tmTextInput
+			anchors.top: tmZagolovok.top
+			anchors.bottom: tmZagolovok.bottom
+			anchors.left: knopkaZakrit.right
+			anchors.right: knopkaOk.left
+            anchors.topMargin: root.ntCoff/4
+            anchors.bottomMargin: root.ntCoff/4
+            anchors.leftMargin: root.ntCoff/2
+            anchors.rightMargin: root.ntCoff/2
+			DCTextInput {
+				id: txnZagolovok
+				ntWidth: root.ntWidth; ntCoff: root.ntCoff
+				anchors.fill: tmTextInput
+				clrTexta: root.clrTexta; clrFona: root.clrMenuFon
+				radius: root.ntCoff/2
+				visible: false
+				isNumber: true//Вводим только цифры
+				textInput.maximumLength: 3//Ограницение по вводу максимальны токенов для локальной модели
+				property bool isBatchGPU: false//true - открываем настройки batch_size_gpu, false - cpu
+				onSgnDebug: function (strDebug) { root.toolbar(strDebug) }//Ошибка из виджета в программу.
+				onVisibleChanged: {//Если видимость DCTextInput изменился, то...
+					if(txnZagolovok.visible){//Если DCTextInput видим, то...
+						knopkaNazad.visible = false;//Конопка Назад Невидимая.
+						knopkaZakrit.visible = true;//Кнопка закрыть Видимая
+						knopkaOk.visible = true;//Кнопка Ок Видимая.
+						if (isBatchGPU) text = DCSettings.rag_batch_gpu//Показываем значение batch_size_gpu
+						else text = DCSettings.rag_batch_cpu//Показываем значение batch_size_cpu
+					}
+					else{//Если DCTextInput не видим, то...
+						knopkaNazad.visible = true;//Конопка Информация Видимая.
+						knopkaZakrit.visible = false;//Кнопка закрыть Невидимая
+						knopkaOk.visible = false;//Кнопка Ок Невидимая.
+						txnZagolovok.text = "";//Текст обнуляем вводимый.
+						root.forceActiveFocus()//Фокус на главной странице, чтоб горячие клавиши работали.
+					}
+				}
+				onClickedEnter: {//слот нажатия кнопки Enter.
+					if(knopkaOk.visible) fnClickedOk();//Функция сохранения данных.
+				}
+				onClickedEscape: {
+					if(knopkaZakrit.visible) fnClickedZakrit()//Функция закрытия виджета
+				}
+			}
+		}
+		DCVopros {
+			id: vprGPUStart
+			ntWidth: root.ntWidth; ntCoff: root.ntCoff
+			anchors.top: tmZagolovok.top; anchors.bottom: tmZagolovok.bottom
+			anchors.left: tmZagolovok.left; anchors.right: tmZagolovok.right
+			clrFona: root.clrVnimanie; clrTexta: root.clrFona
+			clrKnopki: root.clrFona; clrBorder: root.clrFona
+			tapKnopkaZakrit: root.tapZagolovokLevi; tapKnopkaOk: root.tapZagolovokPravi
+			visible: false
+			text: qsTr("ВКЛЮЧИТЬ GPU?")
+			onVisibleChanged: {
+				if(visible) {
+					pvModeli.visible = false//Делаем невидимым виджет
+					knopkaNazad.visible = false
+					knopkaModeli.enabled = false
+				} else {
+					knopkaNazad.visible = true
+					knopkaModeli.enabled = true
+        			root.forceActiveFocus()//Переводим фокус на основное окно, чтоб работали горячие кнопки.
+				}
+			}
+			onClickedOk: {
+				DCSettings.rag_gpu = root.isGPU = true
+				DCSettings.rag_model = root.ntModel = pvModeli.currentIndex;//Приравниваем значение
+				vprGPUStart.visible = false//Делаем невидимый диалог
+				pvModeli.visible = false
+			}
+			onClickedOtmena: {
+				vprGPUStart.visible = false//Делаем невидимый диалог.
+			}
 		}
 	}
 	Item {//Рабочая зона
@@ -247,6 +384,8 @@ Item {
 			TapHandler {//Нажимаем на всю область
 				onTapped: {
 					fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
+					if(!knopkaBatchGPU.pressedTmr550 && !knopkaBatchCPU.pressedTmr550) fnCloseBatchIfOpen()
+					fnCloseGPUStartIfOpen()//Закрываем попрос по GPU
 					if(!pvModeli.jdi && !pvModeli.pressed) fnCloseModeliIfOpen()//Закрываем меню выбора модели
 				}
 			}
@@ -280,7 +419,7 @@ Item {
 					}
 					onPressedChanged: {
 						if (pressed) {
-							if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
+							if (!fnCloseMenuIfOpen() && !fnCloseGPUStartIfOpen() && !fnCloseBatchIfOpen()){
 								if (pressed && !pvModeli.pressed) fnPress()
 							}
 						}
@@ -309,12 +448,68 @@ Item {
 					}
 					onPressedChanged: {
 						if (pressed) {
-							if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
+							if (!fnCloseMenuIfOpen() && !fnCloseGPUStartIfOpen() && !fnCloseBatchIfOpen()) {
 								if (pressed && !pvModeli.pressed) fnPress()
 							}
 						}
 					}
                 }
+				DCKnopkaOriginal {//Кнопка параллельный прогонов через GPU
+					id: knopkaBatchGPU
+					text: {
+						let ltText = qsTr("batch GPU ");//
+						ltText += DCSettings.rag_batch_gpu
+                        return ltText;
+					}
+					ntHeight: root.ntWidth
+					ntCoff: root.ntCoff
+					anchors.left: parent.left
+					anchors.right: parent.right
+					anchors.leftMargin: root.ntCoff * 2
+					anchors.rightMargin: root.ntCoff * 2
+					clrTexta: root.clrMenuText
+                    clrKnopki: (root.currentIndex === 2) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    opacityKnopki: 0.9
+					function fnPress() {
+						fnClickedBatch(true)//Запускаем настройку batch_size_gpu
+						root.toolbar("Выберите количество фрагментов документа за один проход GPU.")
+					}
+					onPressedChanged: {
+						if (pressed) {
+							if (!fnCloseMenuIfOpen() && !fnCloseGPUStartIfOpen() && !fnCloseBatchIfOpen()){
+								if (pressed && !pvModeli.pressed) fnPress()
+							}
+						}
+					}
+				}
+				DCKnopkaOriginal {//Кнопка параллельный прогонов через CPU
+					id: knopkaBatchCPU
+					text: {
+						let ltText = qsTr("batch CPU ");//
+						ltText += DCSettings.rag_batch_cpu
+                        return ltText;
+					}
+					ntHeight: root.ntWidth
+					ntCoff: root.ntCoff
+					anchors.left: parent.left
+					anchors.right: parent.right
+					anchors.leftMargin: root.ntCoff * 2
+					anchors.rightMargin: root.ntCoff * 2
+					clrTexta: root.clrMenuText
+                    clrKnopki: (root.currentIndex === 3) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    opacityKnopki: 0.9
+					function fnPress() {
+						fnClickedBatch(false)//Запускаем настройку batch_size_cpu
+						root.toolbar("Выберите количество фрагментов документа за один проход для CPU.")
+					}
+					onPressedChanged: {
+						if (pressed) {
+							if (!fnCloseMenuIfOpen() && !fnCloseGPUStartIfOpen() && !fnCloseBatchIfOpen()){
+								if (pressed && !pvModeli.pressed) fnPress()
+							}
+						}
+					}
+				}
 			}
 		}
 		ListModel {//Модель с Моделями движков RAG
@@ -324,8 +519,8 @@ Item {
             ListElement { spisok: "paraphrase-multilingual (384D, многоязычная)" }
             ListElement { spisok: "all-mpnet-base-v2 (768D, максимальное качество)" }
             ListElement { spisok: "LaBSE (768D, 100+ языков)" }
-            ListElement { spisok: "e5-small-v2 (384D, альтернатива)" }
-            ListElement { spisok: "e5-large-v2 (1024D, максимум для GPU)" }
+            ListElement { spisok: "BAAI/bge-m3 (1024D, мультиязычная 8K)" }
+            ListElement { spisok: "e5-multilingual-large (1024D, использует GPU)" }
         }
         DCPathView {
             id: pvModeli
@@ -337,13 +532,19 @@ Item {
             modelData: modelModeli
             onClicked: function(strModel) {
 				Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModeli. ВАЖНО!!!
-					pvModeli.visible = false//Делаем невидимым виджет
-					root.ntModel = pvModeli.currentIndex;//Приравниваем значение к переменной.
-					DCSettings.rag_model = root.ntModel//Сохраняем в реестре.
+					if(pvModeli.currentIndex === 6 && !root.isGPU){//Для этой модели нужен GPU
+						vprGPUStart.visible = true
+					}
+					else{
+						pvModeli.visible = false//Делаем невидимым виджет
+						root.ntModel = pvModeli.currentIndex;//Приравниваем значение к переменной.
+						DCSettings.rag_model = root.ntModel//Сохраняем в реестре.
+					}
 				})
             }
 			onVisibleChanged: {//Если видимость поменялась, то...
-				if(!visible) root.forceActiveFocus()//Если невидимый, то фокус на root, чтоб hotkey работали.
+				if(visible) Qt.callLater(function(){ pvModeli.karusel.forceActiveFocus() })//фокус PathView
+				else root.forceActiveFocus()//Если невидимый, то фокус на root, чтоб hotkey работали.
 			}
         }
 		DCScrollbar {//Скроллбар
@@ -396,29 +597,25 @@ Item {
 		clip: true
 		DCKnopkaInfo {
 			id: knopkaInfo
-			ntWidth: root.ntWidth
-			ntCoff: root.ntCoff
+			ntWidth: root.ntWidth; ntCoff: root.ntCoff
 			anchors.verticalCenter: tmToolbar.verticalCenter
 			anchors.left: tmToolbar.left
-			clrKnopki: root.clrTexta
-			clrFona: root.clrFona
+			clrKnopki: root.clrTexta; clrFona: root.clrFona
 			visible: true
 			tapHeight: root.ntWidth * root.ntCoff + root.ntCoff
 			tapWidth: tapHeight * root.tapToolbarLevi
 			onClicked: {
-				if (!fnCloseMenuIfOpen()) {
+				if (!fnCloseMenuIfOpen() && !fnCloseGPUStartIfOpen() && !fnCloseBatchIfOpen()) {
 					fnClickedInfo()
 				}
 			}
 		}
 		DCKnopkaNastroiki {
 			id: knopkaNastroiki
-			ntWidth: root.ntWidth
-			ntCoff: root.ntCoff
+			ntWidth: root.ntWidth; ntCoff: root.ntCoff
 			anchors.verticalCenter: tmToolbar.verticalCenter
 			anchors.right: tmToolbar.right
-			clrKnopki: root.clrTexta
-			clrFona: root.clrFona
+			clrKnopki: root.clrTexta; clrFona: root.clrFona
 			blVert: true
 			tapHeight: root.ntWidth * root.ntCoff + root.ntCoff
 			tapWidth: tapHeight * root.tapToolbarPravi
@@ -433,9 +630,10 @@ Item {
 		propagateComposedEvents: true
 		onClicked: (mouse) => {
 			mouse.accepted = false
-			if (menuMenu.visible || pvModeli.visible){
+			if (menuMenu.visible || pvModeli.visible || txnZagolovok.visible){
 				menuMenu.visible = false
 				pvModeli.visible = false
+				txnZagolovok.visible = false
 			}
 			else 
 				root.forceActiveFocus()

@@ -58,7 +58,7 @@ def load_faiss_index():
 class EmbeddingModel:
     """Класс для генерации эмбеддингов (та же модель, что при создании)"""
     
-    def __init__(self, model_name='intfloat/e5-large-v2'):
+    def __init__(self, model_name='BAAI/bge-m3'):
         print("📥 Загрузка модели эмбеддингов...")
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.model = AutoModel.from_pretrained(model_name)

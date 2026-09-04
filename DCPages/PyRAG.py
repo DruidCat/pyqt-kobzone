@@ -12,12 +12,15 @@ class RAGWorker(QThread):
     progressUpdate = pyqtSignal(int, int)
     finished = pyqtSignal(bool, str)
     
-    def __init__(self, doc_path: str, db_path: str, use_gpu: bool = False, model_index: int = 0):
+    def __init__(self, doc_path: str, db_path: str, use_gpu: bool = False, 
+                 model_index: int = 0, batch_gpu: int = 8, batch_cpu: int = 4):
         super().__init__()
         self.doc_path = doc_path
         self.db_path = db_path
         self.use_gpu = use_gpu
-        self.model_index = model_index  # ← Добавили индекс модели
+        self.model_index = model_index
+        self.batch_gpu = batch_gpu      # ← Новый параметр
+        self.batch_cpu = batch_cpu      # ← Новый параметр
         self.process = None
         self._should_stop = False
     
@@ -43,7 +46,9 @@ class RAGWorker(QThread):
             env['RAG_DB_DIR'] = self.db_path
             env['RAG_GUI_MODE'] = '1'
             env['RAG_USE_GPU'] = '1' if self.use_gpu else '0'
-            env['RAG_MODEL_INDEX'] = str(self.model_index)  # ← Передаём индекс модели
+            env['RAG_MODEL_INDEX'] = str(self.model_index)
+            env['RAG_BATCH_GPU'] = str(self.batch_gpu)  # ← Передаём batch_gpu
+            env['RAG_BATCH_CPU'] = str(self.batch_cpu)  # ← Передаём batch_cpu
             
             # Запускаем процесс
             self.process = subprocess.Popen(
@@ -122,8 +127,9 @@ class DCRAG(QObject):
         super().__init__()
         self.worker = None
     
-    @pyqtSlot(str, str, bool, int)#Добавили bool для GPU, int для ntModel
-    def start(self, doc_path: str, db_path: str, use_gpu: bool = False, model_index: int = 0):
+    @pyqtSlot(str, str, bool, int, int, int)  # ← Добавили два int для batch_size
+    def start(self, doc_path: str, db_path: str, use_gpu: bool = False, 
+              model_index: int = 0, batch_gpu: int = 8, batch_cpu: int = 4):
         """Запуск создания RAG"""
         # Проверка путей
         if not doc_path or not Path(doc_path).exists():
@@ -135,8 +141,17 @@ class DCRAG(QObject):
             return
         
         # Проверка индекса модели
-        if not 0 <= model_index <= 6:
+        if not 0 <= model_index <= 7:
             self.logMessage.emit(f"❌ Ошибка: неверный индекс модели {model_index}")
+            return
+        
+        # Проверка batch_size
+        if not 1 <= batch_gpu <= 256:
+            self.logMessage.emit(f"❌ Ошибка: неверный batch_gpu {batch_gpu} (1-256)")
+            return
+        
+        if not 1 <= batch_cpu <= 64:
+            self.logMessage.emit(f"❌ Ошибка: неверный batch_cpu {batch_cpu} (1-64)")
             return
         
         # Создаём выходную папку если её нет
@@ -151,14 +166,15 @@ class DCRAG(QObject):
             self.logMessage.emit("⚠️ Создание RAG уже запущено")
             return
         
-        # Создаём рабочий поток с флагом GPU и индексом модели
-        self.worker = RAGWorker(doc_path, db_path, use_gpu, model_index)
+        # Создаём рабочий поток с batch_size
+        self.worker = RAGWorker(doc_path, db_path, use_gpu, model_index, 
+                                batch_gpu, batch_cpu)  # ← Передаём batch_size
         self.worker.logMessage.connect(self.logMessage.emit)
         self.worker.progressUpdate.connect(self.progressUpdate.emit)
         self.worker.finished.connect(self._on_finished)
         
         self.sigRAGStarted.emit()
-        self.worker.start() 
+        self.worker.start()
     
     @pyqtSlot()
     def stop(self):
