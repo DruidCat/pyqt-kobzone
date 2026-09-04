@@ -17,6 +17,7 @@ Item {
     property color clrFona: "white"
     property color clrMenuText: "indigo"
     property color clrMenuFon: "#f5f5f5"
+    property color clrVnimanie: "red"
     
     property alias zagolovokX: tmZagolovok.x
     property alias zagolovokY: tmZagolovok.y
@@ -223,7 +224,7 @@ Item {
 		if (isRAG) {//Если создание RAG идёт, то...
 			knopkaNazad.visible = false//Невидимая кнопка, чтоб она не нажималась, при нажатии Отмены.
 			knopkaMenu.visible = false// Невидимая кнопка, чтоб она не нажималась, при нажатии Ок.
-			stopDialog.visible = true//Выдаём вопрос об остановке создания RAG.
+			vprStopRAG.visible = true//Выдаём вопрос об остановке создания RAG.
 		} else {
 			fnClickedEscape()//Функция нажатия на клавишу Escape
 			root.clickedNazad()
@@ -362,7 +363,7 @@ Item {
             }
         }
 		DCVopros {
-			id: stopDialog
+			id: vprStopRAG
 			ntWidth: root.ntWidth
 			ntCoff: root.ntCoff
 			anchors.top: tmZagolovok.top
@@ -373,7 +374,7 @@ Item {
 			text: qsTr("ОСТАНОВИТЬ СОЗДАНИЕ RAG БАЗЫ ДАННЫХ?")
 			visible: false
 			
-			clrFona: "red"
+			clrFona: root.clrVnimanie
 			clrTexta: root.clrFona
 			clrKnopki: root.clrFona
 			clrBorder: root.clrFona
@@ -382,13 +383,13 @@ Item {
 			tapKnopkaOk: root.tapZagolovokPravi
 			
 			onClickedOk: {
-				stopDialog.visible = false//Делаем невидимый диалог
+				vprStopRAG.visible = false//Делаем невидимый диалог
         		root.forceActiveFocus()//Переводим фокус на основное окно, чтоб работали горячие кнопки.
 				pyRAG.stop()//Останавливаем принудительно транскрибацию.
 				fnStopRAG()//Останавливаем создание RAG.
 			}
 			onClickedOtmena: {
-				stopDialog.visible = false//Делаем невидимый диалог.
+				vprStopRAG.visible = false//Делаем невидимый диалог.
         		root.forceActiveFocus()//Переводим фокус на основное окно, чтоб работали горячие кнопки.
 				knopkaNazad.visible = true//видимая кнопка, чтоб она нажималась
 				knopkaMenu.visible = true// видимая кнопка, чтоб она нажималась

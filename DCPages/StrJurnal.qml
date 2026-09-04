@@ -11,7 +11,9 @@ Item {
     property color clrTexta: "Orange"
 	property color clrFona: "Black"
     property color clrMenuText: "Orange"
-    property color clrMenuFon: "SlateGray"
+    property color clrMenuFon: "SlateGray"	
+	property color clrVnimanie: "red"
+
     property alias zagolovokX: tmZagolovok.x
 	property alias zagolovokY: tmZagolovok.y
 	property alias zagolovokWidth: tmZagolovok.width
@@ -24,6 +26,7 @@ Item {
 	property alias toolbarY: tmToolbar.y
 	property alias toolbarWidth: tmToolbar.width
 	property alias toolbarHeight: tmToolbar.height
+
     property real tapZagolovokLevi: 1
     property real tapZagolovokPravi: 1
     property real tapToolbarLevi: 1

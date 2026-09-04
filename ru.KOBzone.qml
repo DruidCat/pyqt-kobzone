@@ -11,6 +11,7 @@ ApplicationWindow {
 	readonly property color clrFona: "lightgrey"
 	readonly property color clrStranic: "#f5f5f5"
 	readonly property color clrMenuText: "#2d4288"//Индиго
+	readonly property color clrVnimanie: "red"//Цвет ВНИМАНИЕ!!!
 	readonly property int logoRazmer: 22//Размер Логотита в приложении.
 	readonly property string logoImya: "kobzone"//Имя логотипа в DCLogo
 
@@ -142,7 +143,7 @@ ApplicationWindow {
 				Qt.callLater(function() {
 					currentItem.forceActiveFocus()
 					toolbar.vrStranica = currentItem;//Передаём указатель на страницу, которая открыта.
-					toolbar.log("Фокус установлен на:" + " " + currentItem)
+					//toolbar.log("Фокус на: " + currentItem)
 				})
 			}
 		}
@@ -156,23 +157,14 @@ ApplicationWindow {
 			ntWidth: root.ntWidth; ntCoff: root.ntCoff
 			clrFona: root.clrFona; clrTexta: root.clrKnopok; clrRabOblasti: root.clrStranic
 			textZagolovok: "МЕНЮ"
-			zagolovokLevi: 1.3; zagolovokPravi: 1.3
-			toolbarLevi: 1.3; toolbarPravi: 1.3
-            
-			onVisibleChanged: {
-				if (visible) {
-					toolbar.log("pgStrKOBzone стала видимой")
-					Qt.callLater(function() {
-						tmKOBzone.forceActiveFocus()
-						toolbar.log("Фокус передан на tmKOBzone")//Передаём в лог сообщение
-					})
-				}
-			}
+			zagolovokLevi: 1.3; zagolovokPravi: 1.3; toolbarLevi: 1.3; toolbarPravi: 1.3
+			onVisibleChanged: if (visible) Qt.callLater(function() { tmKOBzone.forceActiveFocus() })
 			StrKOBzone {
 				id: tmKOBzone
 				ntWidth: pgStrKOBzone.ntWidth; ntCoff: pgStrKOBzone.ntCoff
 				clrTexta: pgStrKOBzone.clrTexta; clrFona: pgStrKOBzone.clrRabOblasti
 				clrMenuText: root.clrMenuText; clrMenuFon: pgStrKOBzone.clrFona
+				clrVnimanie: root.clrVnimanie
 				zagolovokX: pgStrKOBzone.rctStrZagolovok.x; zagolovokY: pgStrKOBzone.rctStrZagolovok.y
 				zagolovokWidth: pgStrKOBzone.rctStrZagolovok.width
 				zagolovokHeight: pgStrKOBzone.rctStrZagolovok.height
@@ -185,19 +177,15 @@ ApplicationWindow {
 				tapToolbarLevi: pgStrKOBzone.toolbarLevi; tapToolbarPravi: pgStrKOBzone.toolbarPravi
 				logoRazmer: root.logoRazmer; logoImya: root.logoImya
 				onClickedAnalizator: {
-					pgStrAnalizer.textZagolovok = "НЕЙРО АНАЛИЗ ДОКУМЕНТОВ"
 					stvStr.push(pgStrAnalizer)
 				}
 				onClickedOrfograf: {
-					pgStrOrfograf.textZagolovok = "ИСПРАВЛЕНИЕ ТЕКСТА"
 					stvStr.push(pgStrOrfograf)
 				}
 				onClickedTranskribaciya: {
-					pgStrTranscribe.textZagolovok = "ТРАНСКРИБАЦИЯ"
 					stvStr.push(pgStrTranscribe)
 				}
 				onClickedRAG: {
-					pgStrRAG.textZagolovok = "СОЗДАНИЕ RAG БД"
 					stvStr.push(pgStrRAG)
 				}
 				onClickedSettings: {
@@ -225,19 +213,13 @@ ApplicationWindow {
 			clrFona: root.clrFona; clrTexta: root.clrKnopok; clrRabOblasti: root.clrStranic
 			textZagolovok: "НАСТРОЙКА ПРИЛОЖЕНИЯ"
 			zagolovokLevi: 1.3; zagolovokPravi: 1.3; toolbarLevi: 1.3; toolbarPravi: 1.3
-			onVisibleChanged: {
-				if (visible) {
-					Qt.callLater(function() {
-						tmSetKOBzone.forceActiveFocus()
-						toolbar.log("Фокус передан на tmSetKOBzone")
-					})
-				}
-			}
+			onVisibleChanged: if (visible) Qt.callLater(function() { tmSetKOBzone.forceActiveFocus() })
 			SetKOBzone {
 				id: tmSetKOBzone
 				ntWidth: pgStrSetKOBzone.ntWidth; ntCoff: pgStrSetKOBzone.ntCoff
 				clrTexta: pgStrSetKOBzone.clrTexta; clrFona: pgStrSetKOBzone.clrRabOblasti
 				clrMenuText: root.clrMenuText; clrMenuFon: pgStrTranscribe.clrFona
+				clrVnimanie: root.clrVnimanie
 				zagolovokX: pgStrSetKOBzone.rctStrZagolovok.x; zagolovokY: pgStrSetKOBzone.rctStrZagolovok.y
 				zagolovokWidth: pgStrSetKOBzone.rctStrZagolovok.width
 				zagolovokHeight: pgStrSetKOBzone.rctStrZagolovok.height
@@ -251,9 +233,7 @@ ApplicationWindow {
 				logoRazmer: root.logoRazmer; logoImya: root.logoImya
 				onClickedNazad: {
 					stvStr.pop()//Назад страницу
-					Qt.callLater(function() {
-						stvStr.currentItem.forceActiveFocus()
-					})
+					Qt.callLater(function() { stvStr.currentItem.forceActiveFocus() })
 				}
 				onClickedInfo: {
 					tmStrInstrukciya.strInstrukciya = "set_kobzone"
@@ -290,20 +270,15 @@ ApplicationWindow {
 			focus: true
 			ntWidth: root.ntWidth; ntCoff: root.ntCoff
 			clrFona: root.clrFona; clrTexta: root.clrKnopok; clrRabOblasti: root.clrStranic
+			textZagolovok: "НЕЙРО АНАЛИЗ ДОКУМЕНТОВ"
 			zagolovokLevi: 1.3; zagolovokPravi: 1.3; toolbarLevi: 1.3; toolbarPravi: 1.3
-			onVisibleChanged: {
-				if (visible) {
-					Qt.callLater(function() {
-						tmAnalizer.forceActiveFocus()
-						toolbar.log("Фокус передан на tmAnalizer")
-					})
-				}
-			}
+			onVisibleChanged: if (visible) Qt.callLater(function() { tmAnalizer.forceActiveFocus() })
 			StrAnalizer {
 				id: tmAnalizer
 				ntWidth: pgStrAnalizer.ntWidth; ntCoff: pgStrAnalizer.ntCoff
                 clrTexta: pgStrAnalizer.clrTexta; clrFona: pgStrAnalizer.clrRabOblasti
                 clrMenuText: root.clrMenuText; clrMenuFon: pgStrAnalizer.clrFona
+				clrVnimanie: root.clrVnimanie
 				zagolovokX: pgStrAnalizer.rctStrZagolovok.x; zagolovokY: pgStrAnalizer.rctStrZagolovok.y
 				zagolovokWidth: pgStrAnalizer.rctStrZagolovok.width
 				zagolovokHeight: pgStrAnalizer.rctStrZagolovok.height
@@ -317,9 +292,7 @@ ApplicationWindow {
 				logoRazmer: root.logoRazmer; logoImya: root.logoImya
 				onClickedNazad: {
 					stvStr.pop()
-					Qt.callLater(function() {
-						stvStr.currentItem.forceActiveFocus()
-					})
+					Qt.callLater(function() { stvStr.currentItem.forceActiveFocus() })
 				}
 				onClickedSettings: {
 					stvStr.push(pgStrSetAnalizer)
@@ -346,19 +319,13 @@ ApplicationWindow {
 			clrFona: root.clrFona; clrTexta: root.clrKnopok; clrRabOblasti: root.clrStranic
 			textZagolovok: "НАСТРОЙКА НЕЙРО АНАЛИЗА"
 			zagolovokLevi: 1.3; zagolovokPravi: 1.3; toolbarLevi: 1.3; toolbarPravi: 1.3
-			onVisibleChanged: {
-				if (visible) {
-					Qt.callLater(function() {
-						tmSetAnalizer.forceActiveFocus()
-						toolbar.log("Фокус передан на tmSetAnalizer")
-					})
-				}
-			}
+			onVisibleChanged: if (visible) Qt.callLater(function() { tmSetAnalizer.forceActiveFocus() })
 			SetAnalizer{
 				id: tmSetAnalizer
 				ntWidth: pgStrSetAnalizer.ntWidth; ntCoff: pgStrSetAnalizer.ntCoff
 				clrTexta: pgStrSetAnalizer.clrTexta; clrFona: pgStrSetAnalizer.clrRabOblasti
 				clrMenuText: root.clrMenuText; clrMenuFon: pgStrTranscribe.clrFona
+				clrVnimanie: root.clrVnimanie
 				zagolovokX: pgStrSetAnalizer.rctStrZagolovok.x; zagolovokY: pgStrSetAnalizer.rctStrZagolovok.y
 				zagolovokWidth: pgStrSetAnalizer.rctStrZagolovok.width
 				zagolovokHeight: pgStrSetAnalizer.rctStrZagolovok.height
@@ -372,9 +339,7 @@ ApplicationWindow {
 				logoRazmer: root.logoRazmer; logoImya: root.logoImya
 				onClickedNazad: {
 					stvStr.pop()//Назад страницу
-					Qt.callLater(function() {
-						stvStr.currentItem.forceActiveFocus()
-					})
+					Qt.callLater(function() { stvStr.currentItem.forceActiveFocus() })
 				}
 				onClickedInfo: {
 					tmStrInstrukciya.strInstrukciya = "set_analizer"
@@ -397,20 +362,15 @@ ApplicationWindow {
 			focus: true
 			ntWidth: root.ntWidth; ntCoff: root.ntCoff
 			clrFona: root.clrFona; clrTexta: root.clrKnopok; clrRabOblasti: root.clrStranic
+			textZagolovok: "ИСПРАВЛЕНИЕ ТЕКСТА"
 			zagolovokLevi: 1.3; zagolovokPravi: 1.3; toolbarLevi: 1.3; toolbarPravi: 1.3
-			onVisibleChanged: {
-				if (visible) {
-					Qt.callLater(function() {
-						tmAnalizer.forceActiveFocus()
-						toolbar.log("Фокус передан на tmOrfograf")
-					})
-				}
-			}
+			onVisibleChanged: if (visible) Qt.callLater(function() { tmAnalizer.forceActiveFocus() })
 			StrOrfograf {
 				id: tmOrfograf
 				ntWidth: pgStrOrfograf.ntWidth; ntCoff: pgStrOrfograf.ntCoff
 				clrTexta: pgStrOrfograf.clrTexta; clrFona: pgStrOrfograf.clrRabOblasti
 				clrMenuText: root.clrMenuText; clrMenuFon: pgStrOrfograf.clrFona
+				clrVnimanie: root.clrVnimanie
                 zagolovokX: pgStrOrfograf.rctStrZagolovok.x; zagolovokY: pgStrOrfograf.rctStrZagolovok.y
 				zagolovokWidth: pgStrOrfograf.rctStrZagolovok.width
 				zagolovokHeight: pgStrOrfograf.rctStrZagolovok.height
@@ -424,9 +384,7 @@ ApplicationWindow {
 				logoRazmer: root.logoRazmer; logoImya: root.logoImya
 				onClickedNazad: {
 					stvStr.pop()
-					Qt.callLater(function() {
-						stvStr.currentItem.forceActiveFocus()
-					})
+					Qt.callLater(function() { stvStr.currentItem.forceActiveFocus() })
 				}
 				onClickedSettings: {
 					stvStr.push(pgStrSetOrfograf)
@@ -453,19 +411,13 @@ ApplicationWindow {
 			clrFona: root.clrFona; clrTexta: root.clrKnopok; clrRabOblasti: root.clrStranic
 			textZagolovok: "НАСТРОЙКА ОРФОГРАФИИ"
 			zagolovokLevi: 1.3; zagolovokPravi: 1.3; toolbarLevi: 1.3; toolbarPravi: 1.3
-			onVisibleChanged: {
-				if (visible) {
-					Qt.callLater(function() {
-						tmSetOrfograf.forceActiveFocus()
-						toolbar.log("Фокус передан на tmSetOrfograf")
-					})
-				}
-			}
+			onVisibleChanged: if (visible) Qt.callLater(function() { tmSetOrfograf.forceActiveFocus() })
 			SetOrfograf{
 				id: tmSetOrfograf
 				ntWidth: pgStrSetOrfograf.ntWidth; ntCoff: pgStrSetOrfograf.ntCoff
 				clrTexta: pgStrSetOrfograf.clrTexta; clrFona: pgStrSetOrfograf.clrRabOblasti
 				clrMenuText: root.clrMenuText; clrMenuFon: pgStrTranscribe.clrFona
+				clrVnimanie: root.clrVnimanie
 				zagolovokX: pgStrSetOrfograf.rctStrZagolovok.x; zagolovokY: pgStrSetOrfograf.rctStrZagolovok.y
 				zagolovokWidth: pgStrSetOrfograf.rctStrZagolovok.width
 				zagolovokHeight: pgStrSetOrfograf.rctStrZagolovok.height
@@ -479,9 +431,7 @@ ApplicationWindow {
 				logoRazmer: root.logoRazmer; logoImya: root.logoImya
 				onClickedNazad: {
 					stvStr.pop()//Назад страницу
-					Qt.callLater(function() {
-						stvStr.currentItem.forceActiveFocus()
-					})
+					Qt.callLater(function() { stvStr.currentItem.forceActiveFocus() })
 				}
 				onClickedInfo: {
 					tmStrInstrukciya.strInstrukciya = "set_orfograf"
@@ -506,19 +456,13 @@ ApplicationWindow {
 			clrFona: root.clrFona; clrTexta: root.clrKnopok; clrRabOblasti: root.clrStranic
 			textZagolovok: "ТРАНСКРИБАЦИЯ"
 			zagolovokLevi: 1.3; zagolovokPravi: 1.3; toolbarLevi: 1.3; toolbarPravi: 1.3
-			onVisibleChanged: {
-				if (visible) {
-					Qt.callLater(function() {
-						tmTranscribe.forceActiveFocus()
-						toolbar.log("Фокус передан на tmTranscribe")
-					})
-				}
-			}
+			onVisibleChanged: if (visible) Qt.callLater(function() { tmTranscribe.forceActiveFocus() })
 			StrTranscribe {
 				id: tmTranscribe
 				ntWidth: pgStrTranscribe.ntWidth; ntCoff: pgStrTranscribe.ntCoff
 				clrTexta: pgStrTranscribe.clrTexta; clrFona: pgStrTranscribe.clrRabOblasti
 				clrMenuText: root.clrMenuText; clrMenuFon: pgStrTranscribe.clrFona
+				clrVnimanie: root.clrVnimanie
 				zagolovokX: pgStrTranscribe.rctStrZagolovok.x
 				zagolovokY: pgStrTranscribe.rctStrZagolovok.y
 				zagolovokWidth: pgStrTranscribe.rctStrZagolovok.width
@@ -534,9 +478,7 @@ ApplicationWindow {
 				logoRazmer: root.logoRazmer; logoImya: root.logoImya
 				onClickedNazad: {
 					stvStr.pop()
-					Qt.callLater(function() {
-						stvStr.currentItem.forceActiveFocus()
-					})
+					Qt.callLater(function() { stvStr.currentItem.forceActiveFocus() })
 				}
 				onClickedSettings: {
 					stvStr.push(pgStrSetTranscribe)
@@ -563,19 +505,13 @@ ApplicationWindow {
 			clrFona: root.clrFona; clrTexta: root.clrKnopok; clrRabOblasti: root.clrStranic
 			textZagolovok: "НАСТРОЙКА ТРАНСКРИБАЦИИ"
 			zagolovokLevi: 1.3; zagolovokPravi: 1.3; toolbarLevi: 1.3; toolbarPravi: 1.3
-			onVisibleChanged: {
-				if (visible) {
-					Qt.callLater(function() {
-						tmSetTranscribe.forceActiveFocus()
-						toolbar.log("Фокус передан на tmSetTranscribe")
-					})
-				}
-			}
+			onVisibleChanged: if (visible) Qt.callLater(function() { tmSetTranscribe.forceActiveFocus() })
 			SetTranscribe{
 				id: tmSetTranscribe
 				ntWidth: pgStrSetTranscribe.ntWidth; ntCoff: pgStrSetTranscribe.ntCoff
 				clrTexta: pgStrSetTranscribe.clrTexta; clrFona: pgStrSetTranscribe.clrRabOblasti
 				clrMenuText: root.clrMenuText; clrMenuFon: pgStrTranscribe.clrFona
+				clrVnimanie: root.clrVnimanie
 				zagolovokX: pgStrSetTranscribe.rctStrZagolovok.x; zagolovokY: pgStrSetTranscribe.rctStrZagolovok.y
 				zagolovokWidth: pgStrSetTranscribe.rctStrZagolovok.width
 				zagolovokHeight: pgStrSetTranscribe.rctStrZagolovok.height
@@ -589,9 +525,7 @@ ApplicationWindow {
 				logoRazmer: root.logoRazmer; logoImya: root.logoImya
 				onClickedNazad: {
 					stvStr.pop()//Назад страницу
-					Qt.callLater(function() {
-						stvStr.currentItem.forceActiveFocus()
-					})
+					Qt.callLater(function() { stvStr.currentItem.forceActiveFocus() })
 				}
 				onClickedInfo: {
 					tmStrInstrukciya.strInstrukciya = "set_transcribe"
@@ -616,19 +550,13 @@ ApplicationWindow {
 			clrFona: root.clrFona; clrTexta: root.clrKnopok; clrRabOblasti: root.clrStranic
 			textZagolovok: "СОЗДАНИЕ RAG БД"
 			zagolovokLevi: 1.3; zagolovokPravi: 1.3; toolbarLevi: 1.3; toolbarPravi: 1.3
-			onVisibleChanged: {
-				if (visible) {
-					Qt.callLater(function() {
-						tmRAG.forceActiveFocus()
-						toolbar.log("Фокус передан на tmRAG")
-					})
-				}
-			}
+			onVisibleChanged: if (visible) Qt.callLater(function() { tmRAG.forceActiveFocus() })
 			StrRAG{
 				id: tmRAG
 				ntWidth: pgStrRAG.ntWidth; ntCoff: pgStrRAG.ntCoff
 				clrTexta: pgStrRAG.clrTexta; clrFona: pgStrRAG.clrRabOblasti
 				clrMenuText: root.clrMenuText; clrMenuFon: pgStrRAG.clrFona
+				clrVnimanie: root.clrVnimanie
 				zagolovokX: pgStrRAG.rctStrZagolovok.x
 				zagolovokY: pgStrRAG.rctStrZagolovok.y
 				zagolovokWidth: pgStrRAG.rctStrZagolovok.width
@@ -644,9 +572,7 @@ ApplicationWindow {
 				logoRazmer: root.logoRazmer; logoImya: root.logoImya
 				onClickedNazad: {
 					stvStr.pop()
-					Qt.callLater(function() {
-						stvStr.currentItem.forceActiveFocus()
-					})
+					Qt.callLater(function() { stvStr.currentItem.forceActiveFocus() })
 				}
 				onClickedSettings: {
 					stvStr.push(pgStrSetRAG)
@@ -673,19 +599,13 @@ ApplicationWindow {
 			clrFona: root.clrFona; clrTexta: root.clrKnopok; clrRabOblasti: root.clrStranic
 			textZagolovok: "НАСТРОЙКА RAG"
 			zagolovokLevi: 1.3; zagolovokPravi: 1.3; toolbarLevi: 1.3; toolbarPravi: 1.3
-			onVisibleChanged: {
-				if (visible) {
-					Qt.callLater(function() {
-						tmSetRAG.forceActiveFocus()
-						toolbar.log("Фокус передан на tmSetRAG")
-					})
-				}
-			}
+			onVisibleChanged: if (visible) Qt.callLater(function() { tmSetRAG.forceActiveFocus() })
 			SetRAG{
 				id: tmSetRAG
 				ntWidth: pgStrSetRAG.ntWidth; ntCoff: pgStrSetRAG.ntCoff
 				clrTexta: pgStrSetRAG.clrTexta; clrFona: pgStrSetRAG.clrRabOblasti
 				clrMenuText: root.clrMenuText; clrMenuFon: pgStrTranscribe.clrFona
+				clrVnimanie: root.clrVnimanie
 				zagolovokX: pgStrSetRAG.rctStrZagolovok.x; zagolovokY: pgStrSetRAG.rctStrZagolovok.y
 				zagolovokWidth: pgStrSetRAG.rctStrZagolovok.width
 				zagolovokHeight: pgStrSetRAG.rctStrZagolovok.height
@@ -699,9 +619,7 @@ ApplicationWindow {
 				logoRazmer: root.logoRazmer; logoImya: root.logoImya
 				onClickedNazad: {
 					stvStr.pop()//Назад страницу
-					Qt.callLater(function() {
-						stvStr.currentItem.forceActiveFocus()
-					})
+					Qt.callLater(function() { stvStr.currentItem.forceActiveFocus() })
 				}
 				onClickedInfo: {
 					tmStrInstrukciya.strInstrukciya = "set_rag"
@@ -728,7 +646,7 @@ ApplicationWindow {
 				id: tmStrInstrukciya
 				ntWidth: pgStrInstrukciya.ntWidth; ntCoff: pgStrInstrukciya.ntCoff
 				clrTexta: pgStrInstrukciya.clrTexta; clrFona: pgStrInstrukciya.clrRabOblasti
-				clrPolzunka: pgStrInstrukciya.clrFona
+				clrVnimanie: root.clrVnimanie; clrPolzunka: pgStrInstrukciya.clrFona
 				zagolovokX: pgStrInstrukciya.rctStrZagolovok.x; zagolovokY: pgStrInstrukciya.rctStrZagolovok.y
 				zagolovokWidth: pgStrInstrukciya.rctStrZagolovok.width
 				zagolovokHeight: pgStrInstrukciya.rctStrZagolovok.height
@@ -744,9 +662,7 @@ ApplicationWindow {
     			qtVersion: root.qtVersion
 				onClickedNazad: {
 					stvStr.pop()//Назад страницу
-					Qt.callLater(function() {
-						stvStr.currentItem.forceActiveFocus()
-					})
+					Qt.callLater(function() { stvStr.currentItem.forceActiveFocus() })
 				}
 				onSignalZagolovok: function(strZagolovok) {//Слот сигнала signalZagolovok с новым Заголовком.
 					pgStrInstrukciya.textZagolovok = strZagolovok;//Выставляем изменённый Заголовок.
@@ -768,6 +684,7 @@ ApplicationWindow {
 				ntWidth: pgStrJurnal.ntWidth; ntCoff: pgStrJurnal.ntCoff
 				clrTexta: pgStrJurnal.clrTexta; clrFona: pgStrJurnal.clrRabOblasti
 				clrMenuText: root.clrMenuText; clrMenuFon: pgStrTranscribe.clrFona
+				clrVnimanie: root.clrVnimanie
 				zagolovokX: pgStrJurnal.rctStrZagolovok.x; zagolovokY: pgStrJurnal.rctStrZagolovok.y
 				zagolovokWidth: pgStrJurnal.rctStrZagolovok.width
 				zagolovokHeight: pgStrJurnal.rctStrZagolovok.height
@@ -781,9 +698,7 @@ ApplicationWindow {
 				isMobile: root.isMobile
 				onClickedNazad: {
 					stvStr.pop()//Назад страницу
-					Qt.callLater(function() {
-						stvStr.currentItem.forceActiveFocus()
-					})
+					Qt.callLater(function() { stvStr.currentItem.forceActiveFocus() })
 				}
 				onClickedInfo: {
 					tmStrInstrukciya.strInstrukciya = "jurnal"

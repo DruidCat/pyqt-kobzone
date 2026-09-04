@@ -11,6 +11,7 @@ Item {
     property color clrFona: "white"
     property color clrMenuText: "indigo"
     property color clrMenuFon: "#f5f5f5"
+	property color clrVnimanie: "red"
     
     property alias zagolovokX: tmZagolovok.x
     property alias zagolovokY: tmZagolovok.y
