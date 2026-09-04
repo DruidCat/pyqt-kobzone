@@ -49,7 +49,6 @@ Item {
     //Для Авроры комментируем TapHandler, расскомментируем MouseArea и наоборот.
     TapHandler {//Обработка нажатия, замена MouseArea с Qt5.10
         id: tphKnopkaOriginal
-		grabPermissions: PointerHandler.ApprovesTakeOverByNothing | PointerHandler.CanTakeOverFromAnythin
         onTapped: {
             if(root.enabled)//Если активирована кнопка, то...
                 root.clicked();//Обрабатываем клик.

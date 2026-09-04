@@ -292,7 +292,7 @@ Item {
 						root.currentIndex = 0
 						fnClickedJugnal()//Функция открывающая Журнал
 					}
-					onPressedChanged: {
+					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
 								if (pressed && !pvShrift.pressed) fnPress()
@@ -327,7 +327,7 @@ Item {
 						root.currentIndex = 1
 						fnClickedShrift()//Функция выбора размера шрифта
 					}
-					onPressedChanged: {
+					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
 								if (pressed && !pvShrift.pressed) fnPress()
@@ -351,7 +351,7 @@ Item {
 						root.currentIndex = 2
 						fnClickedHotKey()//Функция открытия инструкции с горячими клавишами.
 					}
-					onPressedChanged: {
+					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
 								if (pressed && !pvShrift.pressed) fnPress()
@@ -375,7 +375,7 @@ Item {
 						root.currentIndex = 3
 						fnClickedQt()//Функция открытия инструкции о Qt
 					}
-					onPressedChanged: {
+					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
 								if (pressed && !pvShrift.pressed) fnPress()

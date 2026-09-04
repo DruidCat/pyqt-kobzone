@@ -238,7 +238,7 @@ Item {
                                 root.currentIndex = 0
                                 root.clickedAnalizator()
                             }
-                            onPressedChanged: {
+                            onClicked: {
                                 if (pressed) {
                                     if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
                                         fnPress()//Если меню было закрыто, выполняем действие
@@ -262,7 +262,7 @@ Item {
                                 root.currentIndex = 1
                                 root.clickedOrfograf()
                             }
-                            onPressedChanged: {
+                            onClicked: {
                                 if (pressed) {
                                     if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
                                         fnPress()//Если меню было закрыто, выполняем действие
@@ -286,7 +286,7 @@ Item {
                                 root.currentIndex = 2
                                 root.clickedTranskribaciya()
                             }
-                            onPressedChanged: {
+                            onClicked: {
                                 if (pressed) {
                                     if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
                                         fnPress()//Если меню было закрыто, выполняем действие
@@ -310,7 +310,7 @@ Item {
                                 root.currentIndex = 3
                                 root.clickedRAG()
                             }
-                            onPressedChanged: {
+                            onClicked: {
                                 if (pressed) {
                                     if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
                                         fnPress()//Если меню было закрыто, выполняем действие

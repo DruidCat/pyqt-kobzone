@@ -417,7 +417,7 @@ Item {
 						if(root.isGPU) root.toolbar("Используется GPU для создания RAG базы данных.")
 						else root.toolbar("Используется CPU для создания RAG базы данных.")
 					}
-					onPressedChanged: {
+					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseGPUStartIfOpen() && !fnCloseBatchIfOpen()){
 								if (pressed && !pvModeli.pressed) fnPress()
@@ -446,7 +446,7 @@ Item {
 						root.currentIndex = 1
 						fnClickedModeli()//Функция выбора модели
 					}
-					onPressedChanged: {
+					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseGPUStartIfOpen() && !fnCloseBatchIfOpen()) {
 								if (pressed && !pvModeli.pressed) fnPress()
@@ -474,7 +474,7 @@ Item {
 						fnClickedBatch(true)//Запускаем настройку batch_size_gpu
 						root.toolbar("Выберите количество фрагментов документа за один проход GPU.")
 					}
-					onPressedChanged: {
+					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseGPUStartIfOpen() && !fnCloseBatchIfOpen()){
 								if (pressed && !pvModeli.pressed) fnPress()
@@ -502,7 +502,7 @@ Item {
 						fnClickedBatch(false)//Запускаем настройку batch_size_cpu
 						root.toolbar("Выберите количество фрагментов документа за один проход для CPU.")
 					}
-					onPressedChanged: {
+					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseGPUStartIfOpen() && !fnCloseBatchIfOpen()){
 								if (pressed && !pvModeli.pressed) fnPress()
