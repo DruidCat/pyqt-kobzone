@@ -234,7 +234,7 @@ Item {
 		if (isTranscribing) {//Если транскрибация идёт, то...
 			knopkaNazad.visible = false//Невидимая кнопка, чтоб она не нажималась, при нажатии Отмены.
 			knopkaMenu.visible = false// Невидимая кнопка, чтоб она не нажималась, при нажатии Ок.
-			stopDialog.visible = true//Выдаём вопрос об остановке транскрибации.
+			vprTranscribeStop.visible = true//Выдаём вопрос об остановке транскрибации.
 		} else {
 			fnClickedEscape()//Функция нажатия на клавишу Escape
 			root.clickedNazad()
@@ -396,33 +396,23 @@ Item {
             }
         }
 		DCVopros {
-			id: stopDialog
-			ntWidth: root.ntWidth
-			ntCoff: root.ntCoff
-			anchors.top: tmZagolovok.top
-			anchors.bottom: tmZagolovok.bottom
-			anchors.left: tmZagolovok.left
-			anchors.right: tmZagolovok.right
-			
-			text: qsTr("ОСТАНОВИТЬ ТРАНСКРИБАЦИЮ?")
+			id: vprTranscribeStop
+			ntWidth: root.ntWidth; ntCoff: root.ntCoff
+			anchors.top: tmZagolovok.top; anchors.bottom: tmZagolovok.bottom
+			anchors.left: tmZagolovok.left; anchors.right: tmZagolovok.right
+			clrFona: root.clrVnimanie; clrTexta: root.clrFona
+			clrKnopki: root.clrFona; clrBorder: root.clrFona
+			tapKnopkaZakrit: root.tapZagolovokLevi; tapKnopkaOk: root.tapZagolovokPravi
 			visible: false
-			
-			clrFona: "red"
-			clrTexta: root.clrFona
-			clrKnopki: root.clrFona
-			clrBorder: root.clrFona
-			
-			tapKnopkaZakrit: root.tapZagolovokLevi
-			tapKnopkaOk: root.tapZagolovokPravi
-			
+			text: qsTr("ОСТАНОВИТЬ ТРАНСКРИБАЦИЮ?")
 			onClickedOk: {
-				stopDialog.visible = false//Делаем невидимый диалог
+				vprTranscribeStop.visible = false//Делаем невидимый диалог
         		root.forceActiveFocus()//Переводим фокус на основное окно, чтоб работали горячие кнопки.
 				pyTranscriber.stop()//Останавливаем принудительно транскрибацию.
 				fnStopTranscriber()//Останавливаем транскрибацию.
 			}
 			onClickedOtmena: {
-				stopDialog.visible = false//Делаем невидимый диалог.
+				vprTranscribeStop.visible = false//Делаем невидимый диалог.
         		root.forceActiveFocus()//Переводим фокус на основное окно, чтоб работали горячие кнопки.
 				knopkaNazad.visible = true//видимая кнопка, чтоб она нажималась
 				knopkaMenu.visible = true// видимая кнопка, чтоб она нажималась

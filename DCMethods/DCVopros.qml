@@ -3,36 +3,49 @@
 import DCButtons 1.0//Импортируем кнопки
 //Шаблон DCVopros.qml - Задаёт вопрос и предлагает его подтвердить или отменить.
 Item {
-    id: root
-    //Свойства.
-    property int  ntWidth: 2
-    property int ntCoff: 8
-    property alias radius: rctVopros.radius//Радиус зоны отображения удаляемого документа.
-    property alias clrFona: rctVopros.color//цвет фона
-    property alias clrTexta: txtVopros.color//цвет текста
-    property color clrKnopki: "red"//цвет Кнопок
-    property color clrBorder: "transparent"//цвет границы
-    property string text: "?" //Вопрос.
-    property alias bold: txtVopros.font.bold
-    property alias italic: txtVopros.font.italic
-    property alias textVopros: txtVopros//Передаём в виде свойства весь объект Text
-    property real tapKnopkaZakrit: 1
-    property real tapKnopkaOk: 1
-    //Сигналы.
-    signal clickedOk();//Сигнал Подтверждения.
-    signal clickedOtmena();//Сигнал Отмены.
-    //Функции.
-    function fnClickedZakrit(){//Функция Закрытия виджета.
-        root.clickedOtmena();//Запускаем сигнал отмены.
-    }
-    Rectangle {//Основной прямоугольник.
-        id: rctVopros
-        anchors.fill: root
-        color: "transparent"
-        radius: root.ntCoff/2
-        visible: {
-            if(root.visible){//Если виджет видимый, то...
-                focus = true;//Фокусируемся на виджете
+	id: root
+	//Свойства.
+	property int  ntWidth: 2
+	property int ntCoff: 8
+	property alias radius: rctVopros.radius//Радиус зоны отображения удаляемого документа.
+	property alias clrFona: rctVopros.color//цвет фона
+	property alias clrTexta: txtVopros.color//цвет текста
+	property color clrKnopki: "red"//цвет Кнопок
+	property color clrBorder: "transparent"//цвет границы
+	property string text: "?" //Вопрос.
+	property alias bold: txtVopros.font.bold
+	property alias italic: txtVopros.font.italic
+	property alias textVopros: txtVopros//Передаём в виде свойства весь объект Text
+	property real tapKnopkaZakrit: 1
+	property real tapKnopkaOk: 1
+	//Сигналы.
+	signal clickedOk();//Сигнал Подтверждения.
+	signal clickedOtmena();//Сигнал Отмены.
+	//Функции.
+	Keys.onPressed: (event) => {//Это запись для Qt6, для Qt5 нужно удалить event =>
+		if(event.key === Qt.Key_Escape){//Если нажат Escape, то...
+			fnClickedZakrit();//Функция закрытия виджета.
+			event.accepted = true;//Завершаем обработку эвента.
+		} else if (event.key === Qt.Key_Enter || event.key === Qt.Key_Return) {
+			fnClickedEnter();//Функция нажатия Ок
+			event.accepted = true
+		}
+		//console.log(event.key);
+	}
+	function fnClickedZakrit(){//Функция Закрытия виджета.
+		root.clickedOtmena();//Запускаем сигнал отмены.
+	}
+	function fnClickedEnter(){//Функция нажатия Ок
+		root.clickedOk();//Сигнал Подтверждения.
+	}
+	Rectangle {//Основной прямоугольник.
+		id: rctVopros
+		anchors.fill: root
+		color: "transparent"
+		radius: root.ntCoff/2
+		visible: {
+			if(root.visible){//Если виджет видимый, то...
+				focus = true;//Фокусируемся на виджете
                 forceActiveFocus();//Напрямую форсируем фокус, по другому не работает.
                 return true;//Видимый виджет
             }
@@ -40,14 +53,7 @@ Item {
                 focus =  false;//Не фокусируемся на виджете.
                 return false;//невидимый виджет
             }
-        }
-        Keys.onPressed: (event) => {//Это запись для Qt6, для Qt5 нужно удалить event =>
-            if(event.key === Qt.Key_Escape){//Если нажат Escape, то...
-                fnClickedZakrit();//Функция закрытия виджета.
-                event.accepted = true;//Завершаем обработку эвента.
-            }
-            //console.log(event.key);
-        }
+        } 
         DCKnopkaZakrit {//Кнопка Отмены.
             id: knopkaOtmena
             ntWidth: root.ntWidth
@@ -131,7 +137,7 @@ Item {
             anchors.right: rctVopros.right
             clrKnopki: root.clrKnopki
             tapHeight: root.ntWidth*root.ntCoff+root.ntCoff; tapWidth: tapHeight*root.tapKnopkaOk
-            onClicked: root.clickedOk();//Сигнал Подтверждения.
+            onClicked: fnClickedEnter()//Функция нажатия Ок 
         }
     }
 }

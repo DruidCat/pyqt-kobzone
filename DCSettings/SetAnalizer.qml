@@ -445,8 +445,8 @@ Item {
 				isNumber: true//Вводим только цифры
 				clrTexta: root.clrTexta; clrFona: root.clrMenuFon
 				radius: root.ntCoff/2
-				textInput.font.capitalization: Font.AllUppercase//Отображает текст весь с заглавных букв.
-				textInput.inputMethodHints: Qt.ImhUppercaseOnly//Буквы в виртуальной клавиатуре заглавные
+				//textInput.font.capitalization: Font.AllUppercase//Отображает текст весь с заглавных букв.
+				//textInput.inputMethodHints: Qt.ImhUppercaseOnly//Буквы в виртуальной клавиатуре заглавные
 				textInput.maximumLength: 6//Ограницение по вводу максимальны токенов для локальной модели
 				onSgnDebug: function (strDebug) { root.toolbar(strDebug) }//Ошибка из виджета в программу.
 				onVisibleChanged: {//Если видимость DCTextInput изменился, то...
@@ -455,7 +455,6 @@ Item {
 						knopkaZakrit.visible = true;//Кнопка закрыть Видимая
 						knopkaOk.visible = true;//Кнопка Ок Видимая.
 						text = DCSettings.analizer_max_context//Показываем значение максимального контекста
-						textInput.focus = true//Фокус на виджете, чтоб горячие клавиши работали.
 					}
 					else{//Если DCTextInput не видим, то...
 						knopkaNazad.visible = true;//Конопка Информация Видимая.

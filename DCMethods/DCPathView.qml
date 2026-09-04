@@ -232,9 +232,15 @@ Item {
             id: rctStroka
             width: rctKarusel.width
             height: root.ntWidth*root.ntCoff+root.ntCoff
+			/*
             opacity: PathView.prozrachnost//Прозрачность
             z: PathView.z//Номер отображаемого элемента списка
             scale: PathView.masshtab//Масштаб
+			*/
+			//Защита от значений undefine, когда значения ещё не определены.
+		    opacity: PathView.prozrachnost !== undefined ? PathView.prozrachnost : 1.0//Прозрачность
+            z: PathView.z !== undefined ? PathView.z : 0//Номер отображаемого элемента списка
+            scale: PathView.masshtab !== undefined ? PathView.masshtab : 1.0//Масштаб
 
             color: maStroka.containsPress ? Qt.darker(root.clrMenuFon, 1.3) : root.clrMenuFon
             radius: (width/(root.ntWidth*root.ntCoff))/root.ntCoff
