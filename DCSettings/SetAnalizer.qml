@@ -112,10 +112,19 @@ Item {
 		function onSigServerOk() {
 			root.isLMStart = true//Запущена и доступна.
 		}
-        function onSigError(errorMsg) {
+        function onSigError(ntError, errorMsg) {
 			root.isLMStart = false//Не доступна.
-            root.log(`Ошибка: ${errorMsg}`)
+            root.log(`Ошибка ${ntError}: ${errorMsg}`)
         }
+		//0 - Ошибка HTTP при запросе списка моделей (сервер ответил кодом, отличным от 200).
+		//1 - Ошибка сетевого подключения к LM Studio (сервер недоступен или не запущен).
+		//2 - Неизвестная критическая ошибка при парсинге или загрузке списка моделей.
+		//3 - Не удалось найти исполняемый файл LM Studio (требуется указать путь вручную в настройках).
+		//4 - Ошибка при инициализации процесса запуска (сбой до или во время создания потока).
+		//5 - Ошибка при попытке принудительной остановки процесса LM Studio (нет прав или процесс уже мертв).
+		//6 - Сервер LM Studio не отвечает на прямой запрос проверки статуса (метод proverkaServera).
+		//7 - Ошибка системного запуска процесса (сбой subprocess.Popen в фоновом потоке).
+		//8 - Превышено время ожидания запуска (сервер не стал доступен после 10 попыток по 3 секунды).
 		function onSigZapuschen() {
 			root.toolbar("LM Studio запущен!")
 			pyLMStudio.proverkaServera()//Перепроверяем доступность
@@ -336,6 +345,8 @@ Item {
 		}
 		else{//Если невидимый виджет, то...
 			Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModels. ВАЖНО!!!
+				pyLMStudio.proverkaServera()//Перепроверяем доступность
+				pyLMStudio.zagruzitModeli()//загружаем модели
 				pvModels.visible = true//Делаем видимым виджет
 				pvModels.karusel.forceActiveFocus()//фокус PathView, чтоб hotkey работали.
 			})
@@ -549,7 +560,7 @@ Item {
 							}
 						}
 					}
-					onPressedChanged: {
+					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseContextIfOpen()) {//Сначала закрываем меню если открыто
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
@@ -578,7 +589,7 @@ Item {
 						root.currentIndex = 1
 						dialogLMPut.open()//Функция выбора пути к LM Studio.
 					}
-					onPressedChanged: {
+					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseContextIfOpen()) {//Сначала закрываем меню если открыто
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
@@ -599,12 +610,10 @@ Item {
 						}
 						return ltText;
                     }
-                    ntHeight: root.ntWidth
-                    ntCoff: root.ntCoff
-					anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.leftMargin: root.ntCoff * 2
-                    anchors.rightMargin: root.ntCoff * 2
+                    ntHeight: root.ntWidth; ntCoff: root.ntCoff
+					anchors.left: parent.left; anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
+					enabled: !knopkaLMStart.isPerehodniProces
 					clrTexta: root.clrMenuText
                     clrKnopki: (root.currentIndex === 2) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
@@ -612,7 +621,7 @@ Item {
 						root.currentIndex = 2
 						fnClickedModel()//Функция выбора Модели.
 					}
-					onPressedChanged: {
+					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseContextIfOpen()) {//Сначала закрываем меню если открыто
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed)fnPress()
@@ -641,7 +650,7 @@ Item {
 						root.currentIndex = 3
 						fnClickedTemperatura()//Функция выбора Температуры ИИ
 					}
-					onPressedChanged: {
+					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseContextIfOpen()) {//Сначала закрываем меню если открыто
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
@@ -669,7 +678,7 @@ Item {
 						root.currentIndex = 4
 						fnClickedContext()//Функция выбора максимального контекста
 					}
-					onPressedChanged: {
+					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseContextIfOpen()) {//Сначала закрываем меню если открыто
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()

@@ -17,7 +17,7 @@ class DCLMStudio(QObject):
     sigServerOk = pyqtSignal()              # Сервер доступен
     sigZapuschen = pyqtSignal()             # LM Studio запущен
     sigOstanovlen = pyqtSignal()            # LM Studio остановлен
-    sigError = pyqtSignal(str)              # Ошибка
+    sigError = pyqtSignal(int, str)         # Ошибка
     sigLog = pyqtSignal(str)                # Лог
     sigStarted = pyqtSignal()               # Начата проверка запуска
     
@@ -66,19 +66,19 @@ class DCLMStudio(QObject):
             else:
                 error_msg = f"Ошибка {response.status_code}: {response.text}"
                 print(f"✗ {error_msg}")
-                self.sigError.emit(error_msg)
+                self.sigError.emit(0, error_msg)
                 self.sigModelsLoaded.emit(["(автовыбор модели)"])
         
         except requests.exceptions.ConnectionError:
             error_msg = f"Не удалось подключиться к LM Studio ({LM_STUDIO_URL})"
             print(f"✗ {error_msg}")
-            self.sigError.emit(error_msg)
+            self.sigError.emit(1, error_msg)
             self.sigModelsLoaded.emit(["(автовыбор модели)"])
         
         except Exception as e:
             error_msg = f"Ошибка загрузки моделей: {str(e)}"
             print(f"✗ {error_msg}")
-            self.sigError.emit(error_msg)
+            self.sigError.emit(2, error_msg)
             self.sigModelsLoaded.emit(["(автовыбор модели)"])
     
     @pyqtSlot(str)
@@ -121,7 +121,7 @@ class DCLMStudio(QObject):
         
         if not lms_path:
             error_msg = "Не удалось найти LM Studio. Укажите путь в настройках."
-            self.sigError.emit(error_msg)
+            self.sigError.emit(3, error_msg)
             return
         
         try:
@@ -146,7 +146,7 @@ class DCLMStudio(QObject):
         
         except Exception as e:
             error_msg = f"Ошибка запуска: {str(e)}"
-            self.sigError.emit(error_msg)
+            self.sigError.emit(4, error_msg)
             self._zapusk_v_processe = False
     
     @pyqtSlot()
@@ -186,7 +186,7 @@ class DCLMStudio(QObject):
         
         except Exception as e:
             error_msg = f"Ошибка остановки: {str(e)}"
-            self.sigError.emit(error_msg)
+            self.sigError.emit(5, error_msg)
     
     @pyqtSlot()
     def proverkaServera(self):
@@ -194,7 +194,7 @@ class DCLMStudio(QObject):
         if self._proverkaZapushen():
             self.sigServerOk.emit()
         else:
-            self.sigError.emit("LM Studio не запущен")
+            self.sigError.emit(6, "LM Studio не запущен")
     
     # ==================== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ====================
     
@@ -226,7 +226,7 @@ class DCLMStudio(QObject):
         
         except Exception as e:
             error_msg = f"Ошибка запуска: {str(e)}"
-            self.sigError.emit(error_msg)
+            self.sigError.emit(7, error_msg)
             self._zapusk_v_processe = False
     
     def _proverkaZapushen(self):
@@ -255,7 +255,7 @@ class DCLMStudio(QObject):
                 self._popitki = 0
                 self._zapusk_v_processe = False
                 error_msg = "LM Studio не отвечает. Запустите вручную или проверьте путь."
-                self.sigError.emit(error_msg)
+                self.sigError.emit(8, error_msg)
             else:
                 self.sigLog.emit(f"⏳ Попытка {self._popitki}/{self._max_popitok}...")
     
