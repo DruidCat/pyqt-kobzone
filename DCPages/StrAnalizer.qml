@@ -104,15 +104,6 @@ Item {
 			root.log("✓ Начался финальный анализ")
 			if (ldrProgress.item) {//Всегда показываем "Финальный анализ..."
 				ldrProgress.item.text = "Финальный анализ..."
-				/*
-				//Если чанков несколько — устанавливаем прогресс перед финалом
-				var kolichestvo_chankov = fnKolichestvoChankov(txaContent.text)
-				if (kolichestvo_chankov > 1 && root.rlProgress < 90) {
-					//Доводим до ~90% перед финальным анализом
-					root.rlProgress = 90
-					ldrProgress.item.progress = 90
-				}
-				*/
 			}
 		}
 		function onSigAnalizStart() {//Сигнал Начала анализа.
@@ -356,7 +347,7 @@ Item {
 		txfPromt.text = ""//Очищаем промт.
 	}
     function fnClickedAnaliz() {//Функция запускающая нейро анализ документов
-		pyLMStudio.proverkaServera()//Проверяем запуск сервера и самой LM Studio
+		pyLMStudio.lmsProverka()//Проверяем запуск сервера и самой LM Studio
         pyAnalyzer.startAnaliza(txaContent.text, txfPromt.text)
     }
     function fnClickedSohranit() {//Функция сохранения результата анализа.

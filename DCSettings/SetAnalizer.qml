@@ -57,7 +57,7 @@ Item {
     signal log(var strLog)
 	//Методы
 	Component.onCompleted: {
-        knopkiMassiv = [knopkaLMStart, knopkaLMPut, knopkaModeli, knopkaTemperatura, knopkaContext]
+        knopkiMassiv = [knopkaLMStart, knopkaLMStop, knopkaLMPut, knopkaModeli, knopkaTemperatura, knopkaContext]
 		if (DCSettings.analizer_lms_put !== "")//Передаём путь из настроек в Python
 			pyLMStudio.ustPut(DCSettings.analizer_lms_put)
 		root.forceActiveFocus()
@@ -111,7 +111,7 @@ Item {
             }
             root.log(`Загружено моделей: ${models.length}`)
         }
-		function onSigServerOk() {
+		function onSigLMSProverkaOK() {
 			root.isLMStart = true//Запущена и доступна.
 		}
         function onSigError(ntError, errorMsg) {
@@ -129,20 +129,40 @@ Item {
 		//8 - Превышено время ожидания запуска (сервер не стал доступен после 10 попыток по 3 секунды).
 		function onSigZapuschen() {
 			root.toolbar("LM Studio запущен!")
-			pyLMStudio.proverkaServera()//Перепроверяем доступность
-			pyLMStudio.zagruzitModeli()//загружаем модели
-			knopkaLMStart.isPerehodniProces = false
+			pyLMStudio.poluchitStatusServera()	
 		}
 		function onSigOstanovlen() {
 			root.toolbar("LM Studio остановлен")
 			root.isLMStart = false
-			knopkaLMStart.isPerehodniProces = false
+			knopkaLMStop.isPerehodniProces = false
 		}
-		function onSigLog(logMsg) {//Обработка согнала сообщений из Класса
+		function onSigLog(logMsg) {//Обработка сигнала сообщений из Класса
 			root.log(logMsg)
 		}
 		function onSigStarted() {//Обработка сигнала старта LM Studio
 			knopkaLMStart.isPerehodniProces = true;//Запуск LM Studio.
+		}
+		function onSigServerStatus(blStatus) {
+			if(blStatus){
+				pyLMStudio.zagruzitModeli()//загружаем модели
+				knopkaLMStart.isPerehodniProces = false
+			} else {
+			   	pyLMStudio.zapustitServer()
+			}
+		}
+		function onSigServerZapuschen() {
+			root.toolbar("✓ Сервер LM Studio готов")
+			root.isLMStart = true
+			pyLMStudio.zagruzitModeli()//Загружаем модели после запуска сервера
+		}
+
+		function onSigServerOstanovlen() {
+			root.toolbar("Сервер остановлен")
+			root.isLMStart = false
+		}
+
+		function onSigServerError(errorMsg) {
+			root.toolbar(errorMsg)
 		}
 	}
 	Keys.onPressed: (event) => {
@@ -236,10 +256,17 @@ Item {
 				pyLMStudio.zapustit()//Запускаем LM Studio.
 				root.toolbar("⏳ Запуск LM Studio...")
 			}
+			if(knopkaLMStop.isStopBezPuti){//Если путь к LM Studio выбран и была попытка остановки, то...
+				knopkaLMStop.isStopBezPuti = false;//Сбрасываем флаг.
+				pyLMStudio.ostanovit()//Останавливаем LM Studio.
+				root.toolbar("Остановка LM Studio...")
+			}
 		}
 		onRejected: {//Если нажата кнопка отмены, то...
 			knopkaLMStart.isStartBezPuti = false;//Сбрасываем флаг.
+			knopkaLMStop.isStopBezPuti = false;//Сбрасываем флаг.
 			knopkaLMStart.isPerehodniProces = false//Деактивируем переходный процесс.
+			knopkaLMStop.isPerehodniProces = false//Деактивируем переходный процесс.
 		}
 	}
 	function fnClickedEnter() {//Функция обработки нажатия клавиши Enter
@@ -347,7 +374,8 @@ Item {
 		}
 		else{//Если невидимый виджет, то...
 			Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModels. ВАЖНО!!!
-				pyLMStudio.proverkaServera()//Перепроверяем доступность
+				pyLMStudio.poluchitStatusServera()	
+				//pyLMStudio.proverkaServera()//Перепроверяем доступность
 				pyLMStudio.zagruzitModeli()//загружаем модели
 				pvModels.visible = true//Делаем видимым виджет
 				pvModels.karusel.forceActiveFocus()//фокус PathView, чтоб hotkey работали.
@@ -531,13 +559,10 @@ Item {
 				//ТУТ КОНТЕНТ НАСТРОЕК
 				DCKnopkaOriginal {//Кнопка запуска/остановки LM Studio
 					id: knopkaLMStart
-					text: root.isLMStart ? qsTr("остановить LM Studio") : qsTr("запустить LM Studio")
-					ntHeight: root.ntWidth
-					ntCoff: root.ntCoff
-					anchors.left: parent.left
-					anchors.right: parent.right
-					anchors.leftMargin: root.ntCoff * 2
-					anchors.rightMargin: root.ntCoff * 2
+					text: qsTr("запустить LM Studio")
+					ntHeight: root.ntWidth; ntCoff: root.ntCoff
+					anchors.left: parent.left; anchors.right: parent.right
+					anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
                     clrKnopki: (root.currentIndex === 0) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
@@ -547,20 +572,50 @@ Item {
 					function fnPress() {
 						root.currentIndex = 0
 						knopkaLMStart.isPerehodniProces = true//Активируем переходный процесс.
-						if(root.isLMStart){
+						if (root.putLMStudio === "") {//Если путь не задан
+							knopkaLMStart.isStartBezPuti = true;//Попутка запустить LM Studio.
+							dialogLMPut.open()//Функция выбора пути к LM Studio.
+						}
+						else{
+							pyLMStudio.zapustit()
+							root.toolbar("⏳ Запуск LM Studio...")
+						}
+					}
+					onClicked: {
+						if (pressed) {
+							if (!fnCloseMenuIfOpen() && !fnCloseContextIfOpen()) {//Сначала закрываем меню
+								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
+							}
+						}
+					}
+				}
+				DCKnopkaOriginal {//Кнопка остановки LM Studio
+					id: knopkaLMStop
+					text: qsTr("остановить LM Studio")
+					ntHeight: root.ntWidth; ntCoff: root.ntCoff
+					anchors.left: parent.left; anchors.right: parent.right
+					anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
+					clrTexta: root.clrMenuText
+                    clrKnopki: (root.currentIndex === 1) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    opacityKnopki: 0.9
+					enabled: !isPerehodniProces//Делаем неактивной кнопку, если переходный процесс.
+					property bool isStopBezPuti: false//true - попытка запуска LM Studio без заданного пути.
+					property bool isPerehodniProces: false//true-когда запуск или становка LM Studio началась
+					function fnPress() {
+						root.currentIndex = 1
+						
+			   			pyLMStudio.zapustitServer()
+						/*
+						knopkaLMStop.isPerehodniProces = true//Активируем переходный процесс.
+						if (root.putLMStudio === "") {//Если путь не задан
+							knopkaLMStop.isStopBezPuti = true;//Попытка остановить LM Studio.
+							dialogLMPut.open()//Функция выбора пути к LM Studio.
+						}
+						else{
 							pyLMStudio.ostanovit()
 							root.toolbar("Остановка LM Studio...")
 						}
-						else{
-							if (root.putLMStudio === "") {//Если путь не задан
-								knopkaLMStart.isStartBezPuti = true;//Попутка запустить LM Studio.
-								dialogLMPut.open()//Функция выбора пути к LM Studio.
-							}
-							else{
-								pyLMStudio.zapustit()
-								root.toolbar("⏳ Запуск LM Studio...")
-							}
-						}
+						*/
 					}
 					onClicked: {
 						if (pressed) {
@@ -578,17 +633,14 @@ Item {
 						else ltText += root.putLMStudio
 						return ltText;
                     }
-                    ntHeight: root.ntWidth
-                    ntCoff: root.ntCoff
-					anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.leftMargin: root.ntCoff * 2
-                    anchors.rightMargin: root.ntCoff * 2
+                    ntHeight: root.ntWidth; ntCoff: root.ntCoff
+					anchors.left: parent.left; anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 1) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 2) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					function fnPress() {
-						root.currentIndex = 1
+						root.currentIndex = 2
 						dialogLMPut.open()//Функция выбора пути к LM Studio.
 					}
 					onClicked: {
@@ -617,10 +669,10 @@ Item {
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					enabled: !knopkaLMStart.isPerehodniProces
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 2) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 3) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					function fnPress() {
-						root.currentIndex = 2
+						root.currentIndex = 3
 						fnClickedModel()//Функция выбора Модели.
 					}
 					onClicked: {
@@ -639,17 +691,14 @@ Item {
                         pvTemperatura.currentIndex = root.rlTemperatura*10//Выставляем в карусели нужную Темп.
 						return ltText;
                     }
-                    ntHeight: root.ntWidth
-                    ntCoff: root.ntCoff
-					anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.leftMargin: root.ntCoff * 2
-                    anchors.rightMargin: root.ntCoff * 2
+                    ntHeight: root.ntWidth; ntCoff: root.ntCoff
+					anchors.left: parent.left; anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 3) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 4) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					function fnPress() {
-						root.currentIndex = 3
+						root.currentIndex = 4
 						fnClickedTemperatura()//Функция выбора Температуры ИИ
 					}
 					onClicked: {
@@ -667,17 +716,14 @@ Item {
 						ltText += root.maxContext//Добавляем в строчку значения максимального контекста.
 						return ltText;
                     }
-                    ntHeight: root.ntWidth
-                    ntCoff: root.ntCoff
-					anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.leftMargin: root.ntCoff * 2
-                    anchors.rightMargin: root.ntCoff * 2
+                    ntHeight: root.ntWidth; ntCoff: root.ntCoff
+					anchors.left: parent.left; anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 4) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 5) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					function fnPress() {
-						root.currentIndex = 4
+						root.currentIndex = 5
 						fnClickedContext()//Функция выбора максимального контекста
 					}
 					onClicked: {
