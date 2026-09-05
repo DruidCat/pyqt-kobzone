@@ -297,7 +297,7 @@ Item {
                 Qt.callLater(function () {//Делаем паузу на такт,иначе не успеет пересчитаться высота!
                     txtText.font.pixelSize = rctStroka.height-ltCoff
                     if(rctStroka.width > txtText.width){//Если длина строки больше длины текста, то...
-                        for(var ltShag=txtText.font.pixelSize;ltShag<rctStroka.height-root.ntCoff;ltShag++){
+                        for(var ltShag=txtText.font.pixelSize;ltShag<rctStroka.height-ltCoff;ltShag++){
                             if(txtText.width < rctStroka.width){//Если длина текста меньше динны строки
                                 txtText.font.pixelSize = ltShag;//Увеличиваем размер шрифта
                                 if(txtText.width > rctStroka.width){//Но, если переборщили
