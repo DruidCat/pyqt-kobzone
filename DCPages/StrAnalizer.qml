@@ -52,6 +52,11 @@ Item {
 	DCMarkdown {//Подключаем конвертер Markdown
 		id: dcMarkdown
 	}	
+	Component.onCompleted: {
+        root.forceActiveFocus()
+		pyAnalyzer.ustModelSettings(DCSettings.analizer_model_imya, DCSettings.analizer_max_context,
+			DCSettings.analizer_temperatura, DCSettings.analizer_perekritie)//Передаём настройки в Python
+    }
 	Connections {//CONNECTIONS для прогресса
 		target: pyAnalyzer
 		function onSigResultReady(result) {//Сигнал готовности результата анализа.
@@ -128,11 +133,28 @@ Item {
 			root.toolbar(`Загружено файлов: ${filesCount}`)
 		}
 	}
-	Component.onCompleted: {
-        root.forceActiveFocus()
-		pyAnalyzer.ustModelSettings(DCSettings.analizer_model_imya, DCSettings.analizer_max_context,
-			DCSettings.analizer_temperatura, DCSettings.analizer_perekritie)//Передаём настройки в Python
-    }
+	Connections {//Обработчик загрузки моделей из Python
+        target: pyLMStudio
+
+		function onSigZapuschen() {//Если запущена LM Studio
+			vprLMStart.visible = false//Эта строка закрывает плашку с вопросом, которая автоматич. появляется
+		}
+        function onSigError(ntError, errorMsg) {
+            root.log(`Ошибка ${ntError}: ${errorMsg}`)
+			if(ntError === 6){//6 - Сервер LM Studio не отвечает на прямой запрос проверки статуса
+				vprLMStart.visible = true
+			}
+        }
+		//0 - Ошибка HTTP при запросе списка моделей (сервер ответил кодом, отличным от 200).
+		//1 - Ошибка сетевого подключения к LM Studio (сервер недоступен или не запущен).
+		//2 - Неизвестная критическая ошибка при парсинге или загрузке списка моделей.
+		//3 - Не удалось найти исполняемый файл LM Studio (требуется указать путь вручную в настройках).
+		//4 - Ошибка при инициализации процесса запуска (сбой до или во время создания потока).
+		//5 - Ошибка при попытке принудительной остановки процесса LM Studio (нет прав или процесс уже мертв).
+		//6 - Сервер LM Studio не отвечает на прямой запрос проверки статуса (метод proverkaServera).
+		//7 - Ошибка системного запуска процесса (сбой subprocess.Popen в фоновом потоке).
+		//8 - Превышено время ожидания запуска (сервер не стал доступен после 10 попыток по 3 секунды).
+	}	
 	Keys.onPressed: (event) => {//Обработка горячих клавиш
         if (event.modifiers & Qt.AltModifier) {
             if (event.key === Qt.Key_Left) {
@@ -334,6 +356,7 @@ Item {
 		txfPromt.text = ""//Очищаем промт.
 	}
     function fnClickedAnaliz() {//Функция запускающая нейро анализ документов
+		pyLMStudio.proverkaServera()//Проверяем запуск сервера и самой LM Studio
         pyAnalyzer.startAnaliza(txaContent.text, txfPromt.text)
     }
     function fnClickedSohranit() {//Функция сохранения результата анализа.
@@ -341,7 +364,10 @@ Item {
     }
     function fnToggleMenu() {//Функция изменяет состояние всплывающего меню если открыто, закрывает и наоборот
         if (menuMenu.visible) menuMenu.visible = false
-        else menuMenu.visible = true
+		else {
+			if (vprLMStart.visible) vprLMStart.visible = false
+			menuMenu.visible = true
+		}
     }
     function fnCloseMenuIfOpen() {//ЗАкрывает всплывающее меню, если оно открыто.
         if (menuMenu.visible) {
@@ -350,6 +376,13 @@ Item {
         }
         return false
     }
+	function fnCloseLMStartIfOpen() {
+		if (vprLMStart.visible) {
+			vprLMStart.visible = false
+			return true
+		}
+		return false
+	}
     Item {//Заголовок
         id: tmZagolovok
         DCKnopkaNazad {
@@ -381,6 +414,34 @@ Item {
                 }
             }
         }
+		DCVopros {
+			id: vprLMStart
+			ntWidth: root.ntWidth; ntCoff: root.ntCoff
+			anchors.top: tmZagolovok.top; anchors.bottom: tmZagolovok.bottom
+			anchors.left: tmZagolovok.left; anchors.right: tmZagolovok.right
+			clrFona: root.clrVnimanie; clrTexta: root.clrFona
+			clrKnopki: root.clrFona; clrBorder: root.clrFona
+			tapKnopkaZakrit: root.tapZagolovokLevi; tapKnopkaOk: root.tapZagolovokPravi
+			visible: false
+			text: qsTr("LM Studio не запущена. Перейти к настройкам запуска LM Studio?")
+			onVisibleChanged: {
+				if(visible) {
+					knopkaNazad.visible = false
+					knopkaMenu.visible = false
+				} else {
+					knopkaNazad.visible = true
+					knopkaMenu.visible = true
+        			root.forceActiveFocus()//Переводим фокус на основное окно, чтоб работали горячие кнопки.
+				}
+			}
+			onClickedOk: {
+				vprLMStart.visible = false//Делаем невидимый диалог
+				fnClickedMenu()//Функция открытия настроек анализа документов.
+			}
+			onClickedOtmena: {
+				vprLMStart.visible = false//Делаем невидимый диалог.
+			}
+		}
     }
     Item {//Рабочая зона
         id: tmZona
@@ -404,7 +465,10 @@ Item {
             opacity: 0.9//ГЛАВНАЯ ПРОЗРАЧНОСТЬ!!!
 
 			TapHandler {//Нажимаем на всю область
-				onTapped: fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
+				onTapped: {
+					if(!knopkaAnaliz.pressedTmr550)fnCloseLMStartIfOpen()
+					fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
+				}
 			}
             Behavior on opacity {
                 NumberAnimation {
@@ -475,7 +539,10 @@ Item {
                             background: null
                             onTextChanged: pyAnalyzer.ustContentText(text)
 							TapHandler {//Нажимаем на всю область
-								onTapped: fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
+								onTapped: {
+									fnCloseLMStartIfOpen()
+									fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
+								}
 							}
                         }
                     }
@@ -527,7 +594,10 @@ Item {
 							pyAnalyzer.ustPromt(text)//Сохраняем промт при изменении
 						}
 						TapHandler {//Нажимаем на всю область
-							onTapped: fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
+							onTapped: {
+								fnCloseLMStartIfOpen()
+								fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
+							}
 						}
 					}	
 					DCKnopkaZakrit {
@@ -595,7 +665,10 @@ Item {
 							background: null
 							textFormat: TextEdit.RichText//ВКЛЮЧАЕМ HTML 
 							TapHandler {//Нажимаем на всю область
-								onTapped: fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
+								onTapped: {
+									fnCloseLMStartIfOpen()
+									fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
+								}
 							}
                         }
                     }
@@ -719,7 +792,7 @@ Item {
             tapHeight: root.ntWidth * root.ntCoff + root.ntCoff
             tapWidth: tapHeight * root.tapToolbarLevi
             onClicked: {
-                if (!fnCloseMenuIfOpen()) {
+                if (!fnCloseMenuIfOpen() && !fnCloseLMStartIfOpen()) {
                     fnClickedInfo()//Функция открытия помощи.
                 }
             }
@@ -746,8 +819,9 @@ Item {
         propagateComposedEvents: true
         onClicked: (mouse) => {
             mouse.accepted = false
-            if (menuMenu.visible) {
+            if (menuMenu.visible || vprLMStart.visible) {
                 menuMenu.visible = false
+				//vprLMStart.visible = false
             } else {
                 root.forceActiveFocus()
             }
