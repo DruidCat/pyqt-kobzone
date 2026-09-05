@@ -42,9 +42,9 @@ Item {
     property var knopkiMassiv: []//Массив кнопок, между которыми нужно листать.
     property int currentIndex: 0//Выбранная кнопка.
 	//Модель
-	property string strModel: DCSettings.analizer_model_imya//Имя модели ИИ
 	property bool isLMStart: false;//true - LM Studio запущена и доступна в виде сервера.
 	property string putLMStudio: DCSettings.analizer_lms_put//Путь к приложению LM Studio из реестра.
+	property string strModel: DCSettings.analizer_model_imya//Имя модели ИИ
 	property real rlTemperatura: DCSettings.analizer_temperatura//Температура ИИ
 	property int maxContext: DCSettings.analizer_max_context//Максимальное количество токенов
 	//Настройки
@@ -58,16 +58,11 @@ Item {
 	//Методы
 	Component.onCompleted: {
         knopkiMassiv = [knopkaLMStart, knopkaLMPut, knopkaModeli, knopkaTemperatura, knopkaContext]
-		if(Qt.application.os !== "windows"){//TODO ЭТО ДЛЯ ОТЛАДКИ ПРОГРАММЫ, ЧТОБ БЫСТРЕЕ ЗАПУСКАЛАСЬ.
-			pyLMStudio.proverkaServera()//Проверяем сервер перед загрузкой моделей
-			pyLMStudio.zagruzitModeli()//Загружаем модели при открытии страницы
-			if (DCSettings.analizer_lms_put !== "")//Передаём путь из настроек в Python
-				pyLMStudio.ustPut(DCSettings.analizer_lms_put)
-		}
+		if (DCSettings.analizer_lms_put !== "")//Передаём путь из настроек в Python
+			pyLMStudio.ustPut(DCSettings.analizer_lms_put)
 		root.forceActiveFocus()
 	}
 	onStrModelChanged: {//Если Модель изменится, то...
-        DCSettings.analizer_model_imya = root.strModel//Сохраняем в реестре имя Модели.
         pyLMStudio.ustModel(root.strModel)//Отправляем в Python
         //Обновляем настройки анализатора
         let ltMaxContext = DCSettings.analizer_max_context
@@ -75,9 +70,16 @@ Item {
         let ltPerekritie = DCSettings.analizer_perekritie
         pyAnalyzer.ustModelSettings(root.strModel, ltMaxContext, ltTemperatura, ltPerekritie)
 	}
-	onRlTemperaturaChanged: {
+	onRlTemperaturaChanged: {	
         //Обновляем настройки анализатора
         let ltMaxContext = DCSettings.analizer_max_context
+		let ltTemperatura = DCSettings.analizer_temperatura
+        let ltPerekritie = DCSettings.analizer_perekritie
+        pyAnalyzer.ustModelSettings(root.strModel, ltMaxContext, ltTemperatura, ltPerekritie)
+	}
+	onMaxContextChanged: {
+        //Обновляем настройки анализатора
+		let ltMaxContext = DCSettings.analizer_max_context
 		let ltTemperatura = DCSettings.analizer_temperatura
         let ltPerekritie = DCSettings.analizer_perekritie
         pyAnalyzer.ustModelSettings(root.strModel, ltMaxContext, ltTemperatura, ltPerekritie)
@@ -719,7 +721,7 @@ Item {
             onClicked: function(strModel) {
 				Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModels. ВАЖНО!!!
 					pvModels.visible = false//Делаем невидимым виджет
-					root.strModel = strModel//Сохраняем выбор
+					DCSettings.analizer_model_imya = strModel//Сохраняем в Реестре
 				})
             }
 			onVisibleChanged: {//Если видимость поменялась, то...
