@@ -232,8 +232,6 @@ Item {
     }
 	function fnClickedNazad() {//Функция закрытия страницы.
 		if (isTranscribing) {//Если транскрибация идёт, то...
-			knopkaNazad.visible = false//Невидимая кнопка, чтоб она не нажималась, при нажатии Отмены.
-			knopkaMenu.visible = false// Невидимая кнопка, чтоб она не нажималась, при нажатии Ок.
 			vprTranscribeStop.visible = true//Выдаём вопрос об остановке транскрибации.
 		} else {
 			fnClickedEscape()//Функция нажатия на клавишу Escape
@@ -270,9 +268,9 @@ Item {
 		dialogOtkrit.open()
 	}
     function fnToggleMenu() {
-        if (menuMenu.visible) {
-            menuMenu.visible = false
-        } else {
+        if (menuMenu.visible) menuMenu.visible = false
+        else {
+			if (vprTranscribeStop.visible) vprTranscribeStop.visible = false
             menuMenu.visible = true
         }
     }
@@ -283,6 +281,13 @@ Item {
         }
         return false
     }
+	function fnCloseTranscribeStopIfOpen() {
+		if (vprTranscribeStop.visible) {
+			vprTranscribeStop.visible = false
+			return true
+		}
+		return false
+	}
 	function fnPathToUrl(localPath) {//Функция кроссплатформенного преобразования пути в URL
 		if (!localPath) return ""
 		if (localPath.startsWith("file://")) return localPath//Если это уже URL — возвращаем как есть
@@ -405,17 +410,23 @@ Item {
 			tapKnopkaZakrit: root.tapZagolovokLevi; tapKnopkaOk: root.tapZagolovokPravi
 			visible: false
 			text: qsTr("ОСТАНОВИТЬ ТРАНСКРИБАЦИЮ?")
+			onVisibleChanged: {
+				if(visible) {
+					knopkaNazad.visible = false
+					knopkaMenu.visible = false
+				} else {
+					knopkaNazad.visible = true
+					knopkaMenu.visible = true
+        			root.forceActiveFocus()//Переводим фокус на основное окно, чтоб работали горячие кнопки.
+				}
+			}
 			onClickedOk: {
 				vprTranscribeStop.visible = false//Делаем невидимый диалог
-        		root.forceActiveFocus()//Переводим фокус на основное окно, чтоб работали горячие кнопки.
 				pyTranscriber.stop()//Останавливаем принудительно транскрибацию.
 				fnStopTranscriber()//Останавливаем транскрибацию.
 			}
 			onClickedOtmena: {
 				vprTranscribeStop.visible = false//Делаем невидимый диалог.
-        		root.forceActiveFocus()//Переводим фокус на основное окно, чтоб работали горячие кнопки.
-				knopkaNazad.visible = true//видимая кнопка, чтоб она нажималась
-				knopkaMenu.visible = true// видимая кнопка, чтоб она нажималась
 			}
 		}
     }
@@ -446,7 +457,10 @@ Item {
                 }
             }
 			TapHandler {//Нажимаем на всю область виджета.
-				onTapped: fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
+				onTapped: {
+					fnCloseTranscribeStopIfOpen()
+					fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
+				}
 			}
             Column {
                 id: clmnContent
@@ -468,7 +482,7 @@ Item {
                     anchors.leftMargin: root.ntCoff * 2
                     anchors.rightMargin: root.ntCoff * 2
                     onClicked: {
-                        if (!fnCloseMenuIfOpen()) {
+                        if (!fnCloseMenuIfOpen() && !fnCloseTranscribeStopIfOpen()) {
                             fnClickedTranscribe()
                         }
                     }
@@ -493,7 +507,7 @@ Item {
                     anchors.rightMargin: root.ntCoff * 2
 					
 					onClicked: {
-						if (!fnCloseMenuIfOpen()) {
+						if (!fnCloseMenuIfOpen() && !fnCloseTranscribeStopIfOpen()) {
 							fnClickedPutAudio()
 						}
 					}
@@ -518,7 +532,7 @@ Item {
                     anchors.rightMargin: root.ntCoff * 2
 					
 					onClicked: {
-						if (!fnCloseMenuIfOpen()) {
+						if (!fnCloseMenuIfOpen() && !fnCloseTranscribeStopIfOpen()) {
 							fnClickedPutText()
 						}
 					}
@@ -552,7 +566,10 @@ Item {
                         radius: root.ntCoff / 4
                         clrFona: "transparent"
                         clrTexta: root.clrTexta   
-                        onPressed: fnCloseMenuIfOpen()
+						onPressed: {
+							fnCloseTranscribeStopIfOpen()
+							fnCloseMenuIfOpen()
+						}
                     }
                 }
 				DCKnopkaOriginal {//Кнопка "Открыть результат транскрибации."
@@ -567,7 +584,7 @@ Item {
                     anchors.leftMargin: root.ntCoff * 2
                     anchors.rightMargin: root.ntCoff * 2
                     onClicked: {
-                        if (!fnCloseMenuIfOpen()) {
+                        if (!fnCloseMenuIfOpen() && !fnCloseTranscribeStopIfOpen()) {
                             fnClickedOtkrit()
                         }
                     }
@@ -667,7 +684,7 @@ Item {
             tapWidth: tapHeight * root.tapToolbarLevi
             
             onClicked: {
-                if (!fnCloseMenuIfOpen()) {
+                if (!fnCloseMenuIfOpen() && !fnCloseTranscribeStopIfOpen()) {
                     fnClickedInfo()
                 }
             }

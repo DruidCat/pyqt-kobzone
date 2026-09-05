@@ -630,10 +630,11 @@ Item {
 		propagateComposedEvents: true
 		onClicked: (mouse) => {
 			mouse.accepted = false
-			if (menuMenu.visible || pvModeli.visible || txnZagolovok.visible){
+			if (menuMenu.visible || pvModeli.visible || txnZagolovok.visible || vprGPUStart.visible){
 				menuMenu.visible = false
 				pvModeli.visible = false
 				txnZagolovok.visible = false
+				//vprGPUStart.visible = false
 			}
 			else 
 				root.forceActiveFocus()

@@ -222,8 +222,6 @@ Item {
     }
 	function fnClickedNazad() {//Функция закрытия страницы.
 		if (isRAG) {//Если создание RAG идёт, то...
-			knopkaNazad.visible = false//Невидимая кнопка, чтоб она не нажималась, при нажатии Отмены.
-			knopkaMenu.visible = false// Невидимая кнопка, чтоб она не нажималась, при нажатии Ок.
 			vprRAGStop.visible = true//Выдаём вопрос об остановке создания RAG.
 		} else {
 			fnClickedEscape()//Функция нажатия на клавишу Escape
@@ -259,9 +257,9 @@ Item {
         dialogDB.open()
     }
     function fnToggleMenu() {
-        if (menuMenu.visible) {
-            menuMenu.visible = false
-        } else {
+        if (menuMenu.visible) menuMenu.visible = false
+        else {
+			if (vprRAGStop.visible) vprRAGStop.visible = false
             menuMenu.visible = true
         }
     }
@@ -272,6 +270,13 @@ Item {
         }
         return false
     }
+	function fnCloseRAGStopIfOpen() {
+		if (vprRAGStop.visible) {
+			vprRAGStop.visible = false
+			return true
+		}
+		return false
+	}
 	function fnPathToUrl(localPath) {//Функция кроссплатформенного преобразования пути в URL
 		if (!localPath) return ""
 		if (localPath.startsWith("file://")) return localPath//Если это уже URL — возвращаем как есть
@@ -374,17 +379,23 @@ Item {
 			tapKnopkaZakrit: root.tapZagolovokLevi; tapKnopkaOk: root.tapZagolovokPravi
 			visible: false
 			text: qsTr("ОСТАНОВИТЬ СОЗДАНИЕ RAG БАЗЫ ДАННЫХ?")
+			onVisibleChanged: {
+				if(visible) {
+					knopkaNazad.visible = false
+					knopkaMenu.visible = false
+				} else {
+					knopkaNazad.visible = true
+					knopkaMenu.visible = true
+        			root.forceActiveFocus()//Переводим фокус на основное окно, чтоб работали горячие кнопки.
+				}
+			}
 			onClickedOk: {
 				vprRAGStop.visible = false//Делаем невидимый диалог
-        		root.forceActiveFocus()//Переводим фокус на основное окно, чтоб работали горячие кнопки.
 				pyRAG.stop()//Останавливаем принудительно транскрибацию.
 				fnStopRAG()//Останавливаем создание RAG.
 			}
 			onClickedOtmena: {
 				vprRAGStop.visible = false//Делаем невидимый диалог.
-        		root.forceActiveFocus()//Переводим фокус на основное окно, чтоб работали горячие кнопки.
-				knopkaNazad.visible = true//видимая кнопка, чтоб она нажималась
-				knopkaMenu.visible = true// видимая кнопка, чтоб она нажималась
 			}
 		}
     }
@@ -415,7 +426,10 @@ Item {
                 }
             }
 			TapHandler {//Нажимаем на всю область виджета.
-				onTapped: fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
+				onTapped: {
+					fnCloseRAGStopIfOpen()
+					fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
+				}
 			}
             Column {
                 id: clmnContent
@@ -437,7 +451,7 @@ Item {
                     anchors.leftMargin: root.ntCoff * 2
                     anchors.rightMargin: root.ntCoff * 2
                     onClicked: {
-                        if (!fnCloseMenuIfOpen()) {
+                        if (!fnCloseMenuIfOpen() && !fnCloseRAGStopIfOpen()) {
                             fnClickedRAG()
                         }
                     }
@@ -462,7 +476,7 @@ Item {
                     anchors.rightMargin: root.ntCoff * 2
 					
 					onClicked: {
-						if (!fnCloseMenuIfOpen()) {
+						if (!fnCloseMenuIfOpen() && !fnCloseRAGStopIfOpen()) {
 							fnClickedPutDoc()
 						}
 					}
@@ -487,7 +501,7 @@ Item {
                     anchors.rightMargin: root.ntCoff * 2
 					
 					onClicked: {
-						if (!fnCloseMenuIfOpen()) {
+						if (!fnCloseMenuIfOpen() && !fnCloseRAGStopIfOpen()) {
 							fnClickedPutDB()
 						}
 					}
@@ -521,7 +535,10 @@ Item {
                         radius: root.ntCoff / 4
                         clrFona: "transparent"
                         clrTexta: root.clrTexta   
-                        onPressed: fnCloseMenuIfOpen()
+						onPressed: {
+							fnCloseRAGStopIfOpen()
+							fnCloseMenuIfOpen()
+						}
                     }
                 }
             }
@@ -617,7 +634,7 @@ Item {
             tapWidth: tapHeight * root.tapToolbarLevi
             
             onClicked: {
-                if (!fnCloseMenuIfOpen()) {
+                if (!fnCloseMenuIfOpen() && !fnCloseRAGStopIfOpen()) {
                     fnClickedInfo()
                 }
             }
