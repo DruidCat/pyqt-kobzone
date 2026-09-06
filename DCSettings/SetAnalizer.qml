@@ -42,7 +42,6 @@ Item {
     property var knopkiMassiv: []//Массив кнопок, между которыми нужно листать.
     property int currentIndex: 0//Выбранная кнопка.
 	//Модель
-	property bool isLMStart: false;//true - LM Studio запущена и доступна в виде сервера.
 	property string putLMStudio: DCSettings.analizer_lms_put//Путь к приложению LM Studio из реестра.
 	property string strModel: DCSettings.analizer_model_imya//Имя модели ИИ
 	property real rlTemperatura: DCSettings.analizer_temperatura//Температура ИИ
@@ -92,7 +91,60 @@ Item {
     Connections {//Обработчик загрузки моделей из Python
         target: pyLMStudio
 
-        function onSigModelsLoaded(models) {
+		function onSigLog(logMsg) {//Обработка сигнала сообщений из Класса
+			root.log(logMsg)
+		}
+        function onSigError(ntError, errorMsg) {
+            root.log(`Ошибка ${ntError}: ${errorMsg}`)
+			if(ntError === 6){//6 - LM Studio не запущен.
+				vprLMStart.visible = true
+			} else {
+				knopkaLMStart.isPerehodniProces = false
+				knopkaLMStop.isPerehodniProces = false
+				pvModels.isServerZapustit = false
+			}
+        }
+		//0 - Ошибка HTTP при запросе списка моделей (сервер ответил кодом, отличным от 200).
+		//1 - Ошибка сетевого подключения к LM Studio (сервер недоступен или не запущен).
+		//2 - Неизвестная критическая ошибка при парсинге или загрузке списка моделей.
+		//3 - Не удалось найти исполняемый файл LM Studio (требуется указать путь вручную в настройках).
+		//4 - Ошибка при инициализации процесса запуска (сбой до или во время создания потока).
+		//5 - Ошибка при попытке принудительной остановки процесса LM Studio (нет прав или процесс уже мертв).
+		//6 - LM Studio не запущен.
+		//7 - Ошибка системного запуска процесса (сбой subprocess.Popen в фоновом потоке).
+		//8 - Превышено время ожидания запуска (сервер не стал доступен после 10 попыток по 3 секунды).
+		function onSigStudioStarted() {//Обработка сигнала старта LM Studio
+			knopkaLMStart.isPerehodniProces = true;//Запуск LM Studio.
+		}
+		function onSigStudioZapuschen() {
+			root.toolbar("LM Studio запущен!")
+			knopkaLMStart.isPerehodniProces = false
+			vprLMStart.visible = false
+			pyLMStudio.poluchitStatusServera()	
+		}
+		function onSigStudioOstanovlen() {
+			root.toolbar("LM Studio остановлен")
+			knopkaLMStop.isPerehodniProces = false
+		}		
+		function onSigServerZapuschen() {
+			if(pvModels.isServerZapustit){
+				root.toolbar("✓ Сервер LM Studio готов")
+				pyLMStudio.zagruzitModeli()//Загружаем модели после запуска сервера
+				pvModels.visible = true//Делаем видимым виджет
+				pvModels.karusel.forceActiveFocus()//фокус PathView, чтоб hotkey работали.
+				pvModels.isServerZapustit = false
+			}
+		}
+		function onSigServerOstanovlen() {
+			root.toolbar("Сервер остановлен")
+		}
+		function onSigServerStatus(blStatus) {
+
+		}
+		function onSigServerError(errorMsg) {
+			root.toolbar(errorMsg)
+		}
+		function onSigModelsLoaded(models) {
             modelModels.clear()//Очищаем старую модель
             for (let i = 0; i < models.length; i++) {//Заполняем новыми данными
                 modelModels.append({ spisok: models[i] })
@@ -111,59 +163,6 @@ Item {
             }
             root.log(`Загружено моделей: ${models.length}`)
         }
-		function onSigLMSProverkaOK() {
-			root.isLMStart = true//Запущена и доступна.
-		}
-        function onSigError(ntError, errorMsg) {
-			root.isLMStart = false//Не доступна.
-            root.log(`Ошибка ${ntError}: ${errorMsg}`)
-        }
-		//0 - Ошибка HTTP при запросе списка моделей (сервер ответил кодом, отличным от 200).
-		//1 - Ошибка сетевого подключения к LM Studio (сервер недоступен или не запущен).
-		//2 - Неизвестная критическая ошибка при парсинге или загрузке списка моделей.
-		//3 - Не удалось найти исполняемый файл LM Studio (требуется указать путь вручную в настройках).
-		//4 - Ошибка при инициализации процесса запуска (сбой до или во время создания потока).
-		//5 - Ошибка при попытке принудительной остановки процесса LM Studio (нет прав или процесс уже мертв).
-		//6 - Сервер LM Studio не отвечает на прямой запрос проверки статуса (метод proverkaServera).
-		//7 - Ошибка системного запуска процесса (сбой subprocess.Popen в фоновом потоке).
-		//8 - Превышено время ожидания запуска (сервер не стал доступен после 10 попыток по 3 секунды).
-		function onSigZapuschen() {
-			root.toolbar("LM Studio запущен!")
-			pyLMStudio.poluchitStatusServera()	
-		}
-		function onSigOstanovlen() {
-			root.toolbar("LM Studio остановлен")
-			root.isLMStart = false
-			knopkaLMStop.isPerehodniProces = false
-		}
-		function onSigLog(logMsg) {//Обработка сигнала сообщений из Класса
-			root.log(logMsg)
-		}
-		function onSigStarted() {//Обработка сигнала старта LM Studio
-			knopkaLMStart.isPerehodniProces = true;//Запуск LM Studio.
-		}
-		function onSigServerStatus(blStatus) {
-			if(blStatus){
-				pyLMStudio.zagruzitModeli()//загружаем модели
-				knopkaLMStart.isPerehodniProces = false
-			} else {
-			   	pyLMStudio.zapustitServer()
-			}
-		}
-		function onSigServerZapuschen() {
-			root.toolbar("✓ Сервер LM Studio готов")
-			root.isLMStart = true
-			pyLMStudio.zagruzitModeli()//Загружаем модели после запуска сервера
-		}
-
-		function onSigServerOstanovlen() {
-			root.toolbar("Сервер остановлен")
-			root.isLMStart = false
-		}
-
-		function onSigServerError(errorMsg) {
-			root.toolbar(errorMsg)
-		}
 	}
 	Keys.onPressed: (event) => {
 		if (event.modifiers & Qt.AltModifier) {
@@ -332,6 +331,7 @@ Item {
 			if (pvModels.visible) pvModels.visible = false
 			if (pvTemperatura.visible) pvTemperatura.visible = false
 			if (txnZagolovok.visible) txnZagolovok.visible = false
+			if (vprLMStart.visible) vprLMStart.visible = false
 			menuMenu.visible = true
 		}
 	}
@@ -365,6 +365,13 @@ Item {
 		}
 		return false
 	}
+	function fnCloseLMStartIfOpen() {
+		if (vprLMStart.visible) {
+			vprLMStart.visible = false
+			return true
+		}
+		return false
+	}
 	function fnClickedModel(){//Функция выбора Модели
 		if(pvModels.visible){//Если видимый виджет, то...
 			Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModels. ВАЖНО!!!
@@ -374,12 +381,21 @@ Item {
 		}
 		else{//Если невидимый виджет, то...
 			Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModels. ВАЖНО!!!
-				pyLMStudio.poluchitStatusServera()	
-				//pyLMStudio.proverkaServera()//Перепроверяем доступность
-				pyLMStudio.zagruzitModeli()//загружаем модели
-				pvModels.visible = true//Делаем видимым виджет
-				pvModels.karusel.forceActiveFocus()//фокус PathView, чтоб hotkey работали.
+				pvModels.isServerZapustit = true
+			   	pyLMStudio.zapustitServer()//Всегда запускаем сервер, даже если он запущен.
+				root.toolbar(qsTr("Ожидайте."))
 			})
+		}
+	}
+	function fnClickedLMSZapustit(){//Функция запуска LM Studio
+		knopkaLMStart.isPerehodniProces = true//Активируем переходный процесс.
+		if (root.putLMStudio === "") {//Если путь не задан
+			knopkaLMStart.isStartBezPuti = true;//Попутка запустить LM Studio.
+			dialogLMPut.open()//Функция выбора пути к LM Studio.
+		}
+		else{
+			pyLMStudio.zapustit()
+			root.toolbar("⏳ Запуск LM Studio...")
 		}
 	}
 	function fnClickedTemperatura(){//Функция выбора Температуры ИИ
@@ -432,16 +448,27 @@ Item {
 		id: tmZagolovok
 		DCKnopkaNazad {
 			id: knopkaNazad
-			ntWidth: root.ntWidth
-			ntCoff: root.ntCoff
-			anchors.verticalCenter: tmZagolovok.verticalCenter
-			anchors.left: tmZagolovok.left
-			clrKnopki: root.clrTexta
-			clrFona: root.clrFona
-			tapHeight: root.ntWidth * root.ntCoff + root.ntCoff
-			tapWidth: tapHeight * root.tapZagolovokLevi
+			ntWidth: root.ntWidth; ntCoff: root.ntCoff
+			anchors.verticalCenter: tmZagolovok.verticalCenter; anchors.left: tmZagolovok.left
+			clrKnopki: root.clrTexta; clrFona: root.clrFona
+			tapHeight: root.ntWidth * root.ntCoff + root.ntCoff; tapWidth: tapHeight * root.tapZagolovokLevi
 			onClicked: fnClickedNazad()
 		}
+		DCKnopkaLM {
+            id: knopkaLM
+            ntWidth: root.ntWidth; ntCoff: root.ntCoff
+            visible: true
+            anchors.verticalCenter: tmZagolovok.verticalCenter; anchors.right: tmZagolovok.right
+            clrKnopki: root.clrTexta; clrFona: root.clrFona
+            tapHeight: root.ntWidth * root.ntCoff + root.ntCoff; tapWidth: tapHeight * root.tapZagolovokPravi
+			enabled: false
+			isLMZapuschen: true
+            onClicked: {
+                if (!fnCloseMenuIfOpen()) {
+
+                }
+            }
+        }
 		DCKnopkaZakrit {
             id: knopkaZakrit
             ntWidth: root.ntWidth
@@ -513,6 +540,32 @@ Item {
 				}
 			}
 		}
+		DCVopros {
+			id: vprLMStart
+			ntWidth: root.ntWidth; ntCoff: root.ntCoff
+			anchors.top: tmZagolovok.top; anchors.bottom: tmZagolovok.bottom
+			anchors.left: tmZagolovok.left; anchors.right: tmZagolovok.right
+			clrFona: root.clrVnimanie; clrTexta: root.clrFona
+			clrKnopki: root.clrFona; clrBorder: root.clrFona
+			tapKnopkaZakrit: root.tapZagolovokLevi; tapKnopkaOk: root.tapZagolovokPravi
+			visible: false
+			text: qsTr("LM Studio не запущена. Запустить?")
+			onVisibleChanged: {
+				if(visible) {
+					knopkaNazad.visible = false
+				} else {
+					knopkaNazad.visible = true
+        			root.forceActiveFocus()//Переводим фокус на основное окно, чтоб работали горячие кнопки.
+				}
+			}
+			onClickedOk: {
+				vprLMStart.visible = false//Делаем невидимый диалог
+				fnClickedLMSZapustit()//Функция запуска LM Studio
+			}
+			onClickedOtmena: {
+				vprLMStart.visible = false//Делаем невидимый диалог.
+			}
+		}
 	}
 	Item {//Рабочая зона
 		id: tmZona
@@ -546,6 +599,7 @@ Item {
 					if(!knopkaContext.pressedTmr550) fnCloseContextIfOpen()//Закрываем контекст максимальный
 					if(!pvModels.jdi && !pvModels.pressed) fnCloseModelsIfOpen()//Закрываем карусель pv....
 					if(!pvTemperatura.jdi && !pvTemperatura.pressed) fnCloseTemperaturaIfOpen()//Закрываем
+					if(!knopkaModeli.pressedTmr550)fnCloseLMStartIfOpen()
 				}
 			}
 			Column {
@@ -571,19 +625,11 @@ Item {
 					property bool isPerehodniProces: false//true-когда запуск или становка LM Studio началась
 					function fnPress() {
 						root.currentIndex = 0
-						knopkaLMStart.isPerehodniProces = true//Активируем переходный процесс.
-						if (root.putLMStudio === "") {//Если путь не задан
-							knopkaLMStart.isStartBezPuti = true;//Попутка запустить LM Studio.
-							dialogLMPut.open()//Функция выбора пути к LM Studio.
-						}
-						else{
-							pyLMStudio.zapustit()
-							root.toolbar("⏳ Запуск LM Studio...")
-						}
+						fnClickedLMSZapustit()//Функция запуска LM Studio
 					}
 					onClicked: {
 						if (pressed) {
-							if (!fnCloseMenuIfOpen() && !fnCloseContextIfOpen()) {//Сначала закрываем меню
+							if (!fnCloseMenuIfOpen() && !fnCloseContextIfOpen() && !fnCloseLMStartIfOpen()){
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
 							}
 						}
@@ -603,9 +649,6 @@ Item {
 					property bool isPerehodniProces: false//true-когда запуск или становка LM Studio началась
 					function fnPress() {
 						root.currentIndex = 1
-						
-			   			pyLMStudio.zapustitServer()
-						/*
 						knopkaLMStop.isPerehodniProces = true//Активируем переходный процесс.
 						if (root.putLMStudio === "") {//Если путь не задан
 							knopkaLMStop.isStopBezPuti = true;//Попытка остановить LM Studio.
@@ -615,11 +658,10 @@ Item {
 							pyLMStudio.ostanovit()
 							root.toolbar("Остановка LM Studio...")
 						}
-						*/
 					}
 					onClicked: {
 						if (pressed) {
-							if (!fnCloseMenuIfOpen() && !fnCloseContextIfOpen()) {//Сначала закрываем меню если открыто
+							if (!fnCloseMenuIfOpen() && !fnCloseContextIfOpen() && !fnCloseLMStartIfOpen()) {
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
 							}
 						}
@@ -645,7 +687,7 @@ Item {
 					}
 					onClicked: {
 						if (pressed) {
-							if (!fnCloseMenuIfOpen() && !fnCloseContextIfOpen()) {//Сначала закрываем меню если открыто
+							if (!fnCloseMenuIfOpen() && !fnCloseContextIfOpen() && !fnCloseLMStartIfOpen()) {
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
 							}
 						}
@@ -677,7 +719,7 @@ Item {
 					}
 					onClicked: {
 						if (pressed) {
-							if (!fnCloseMenuIfOpen() && !fnCloseContextIfOpen()) {//Сначала закрываем меню если открыто
+							if (!fnCloseMenuIfOpen() && !fnCloseContextIfOpen() && !fnCloseLMStartIfOpen()) {
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed)fnPress()
 							}
 						}
@@ -703,7 +745,7 @@ Item {
 					}
 					onClicked: {
 						if (pressed) {
-							if (!fnCloseMenuIfOpen() && !fnCloseContextIfOpen()) {//Сначала закрываем меню если открыто
+							if (!fnCloseMenuIfOpen() && !fnCloseContextIfOpen() && !fnCloseLMStartIfOpen()) {
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
 							}
 						}
@@ -728,7 +770,7 @@ Item {
 					}
 					onClicked: {
 						if (pressed) {
-							if (!fnCloseMenuIfOpen() && !fnCloseContextIfOpen()) {//Сначала закрываем меню если открыто
+							if (!fnCloseMenuIfOpen() && !fnCloseContextIfOpen() && !fnCloseLMStartIfOpen()) {
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
 							}
 						}
@@ -764,6 +806,7 @@ Item {
             anchors.leftMargin: dcScrollbar.width; anchors.rightMargin: dcScrollbar.width
             clrFona: root.clrFona; clrTexta: root.clrMenuText; clrMenuFon: root.clrMenuFon
             modelData: modelModels
+			property bool isServerZapustit: false//true - запускаем сервер для показа списка моделей.
             onClicked: function(strModel) {
 				Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModels. ВАЖНО!!!
 					pvModels.visible = false//Делаем невидимым виджет
@@ -851,7 +894,7 @@ Item {
 			tapHeight: root.ntWidth * root.ntCoff + root.ntCoff
 			tapWidth: tapHeight * root.tapToolbarLevi
 			onClicked: {
-				if (!fnCloseMenuIfOpen() && !fnCloseContextIfOpen()) {
+				if (!fnCloseMenuIfOpen() && !fnCloseContextIfOpen() && !fnCloseLMStartIfOpen()) {
 					fnClickedInfo()
 				}
 			}

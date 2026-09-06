@@ -11,17 +11,14 @@ LM_STUDIO_URL = "http://localhost:1234/v1"
 class DCLMStudio(QObject):
     """Управление LM Studio: запуск/остановка и работа с моделями"""
     
-    # Сигналы
-    sigModelsLoaded = pyqtSignal(list)      # Список моделей загружен
-    sigModelChanged = pyqtSignal(str)       # Модель изменена
-    sigLMSProverkaOK = pyqtSignal()         # Сигнал о том, что LM Studio запущен,после проверки lmsProverka()
-    sigZapuschen = pyqtSignal()             # LM Studio запущен
-    sigOstanovlen = pyqtSignal()            # LM Studio остановлен
-    sigError = pyqtSignal(int, str)         # Ошибка
+    #Сигналы для LM Studio
     sigLog = pyqtSignal(str)                # Лог
-    sigStarted = pyqtSignal()               # Начата проверка запуска
-    
-    # Новые сигналы для сервера
+    sigError = pyqtSignal(int, str)         # Ошибка
+    sigStudioStarted = pyqtSignal()         # Начата проверка запуска
+    sigStudioZapuschen = pyqtSignal()       # LM Studio запущен
+    sigStudioOstanovlen = pyqtSignal()      # LM Studio остановлен
+    sigModelsLoaded = pyqtSignal(list)      # Список моделей загружен
+    #Сигналы для сервера
     sigServerZapuschen = pyqtSignal()       # Сервер запущен
     sigServerOstanovlen = pyqtSignal()      # Сервер остановлен
     sigServerStatus = pyqtSignal(bool)      # Статус сервера (True - запущен, False - остановлен)
@@ -97,9 +94,6 @@ class DCLMStudio(QObject):
            self._current_model = ""
         else:
             self._current_model = model_name
-        
-        self.sigModelChanged.emit(self._current_model)
-        print(f"✓ Выбрана модель: {model_name}")
     
     @pyqtSlot(result=str)
     def poluchitModel(self):
@@ -137,6 +131,7 @@ class DCLMStudio(QObject):
         """Запускает сервер LM Studio через CLI команду"""
         if self._proverkaServeraZapuschen():
             self.sigLog.emit("⚠ Сервер уже запущен")
+            self.sigServerZapuschen.emit()
             self.sigServerStatus.emit(True)
             self._server_zapuschen = True
             return
@@ -145,7 +140,7 @@ class DCLMStudio(QObject):
         if not self._proverkaZapushen():
             error_msg = "LM Studio не запущен. Сначала запустите приложение."
             self.sigServerError.emit(error_msg)
-            self.sigError.emit(9, error_msg)
+            self.sigError.emit(6, error_msg)
             return
         
         try:
@@ -188,6 +183,7 @@ class DCLMStudio(QObject):
         """Останавливает сервер LM Studio через CLI команду"""
         if not self._proverkaServeraZapuschen():
             self.sigLog.emit("⚠ Сервер уже остановлен")
+            self.sigServerOstanovlen.emit()
             self.sigServerStatus.emit(False)
             self._server_zapuschen = False
             return
@@ -288,7 +284,7 @@ class DCLMStudio(QObject):
         
         if self._proverkaZapushen():
             self.sigLog.emit("LM Studio уже работает")
-            self.sigZapuschen.emit()
+            self.sigStudioZapuschen.emit()
             # Проверяем статус сервера
             self.proveritServer()
             return
@@ -317,7 +313,7 @@ class DCLMStudio(QObject):
             self._initTimer()
             self._popitki = 0
             self._timer.start(3000)
-            self.sigStarted.emit()
+            self.sigStudioStarted.emit()
             self.sigLog.emit("Ожидание запуска приложения...")
         
         except Exception as e:
@@ -347,7 +343,7 @@ class DCLMStudio(QObject):
                     
                     self._server_zapuschen = False
                     self.sigLog.emit("LM Studio остановлен")
-                    self.sigOstanovlen.emit()
+                    self.sigStudioOstanovlen.emit()
                     self.sigServerStatus.emit(False)
                 else:
                     self.sigLog.emit("LM Studio не запущен")
@@ -356,14 +352,14 @@ class DCLMStudio(QObject):
                 subprocess.run(["pkill", "-f", "LM Studio"])
                 self._server_zapuschen = False
                 self.sigLog.emit("LM Studio остановлен")
-                self.sigOstanovlen.emit()
+                self.sigStudioOstanovlen.emit()
                 self.sigServerStatus.emit(False)
             
             elif platform.system() == "Windows":
                 subprocess.run(["taskkill", "/F", "/IM", "LM Studio.exe"], shell=True)
                 self._server_zapuschen = False
                 self.sigLog.emit("LM Studio остановлен")
-                self.sigOstanovlen.emit()
+                self.sigStudioOstanovlen.emit()
                 self.sigServerStatus.emit(False)
         
         except Exception as e:
@@ -374,11 +370,10 @@ class DCLMStudio(QObject):
     def lmsProverka(self):
         """Проверяет доступность LM Studio (приложения)"""
         if self._proverkaZapushen():
-            self.sigLMSProverkaOK.emit()
-            # Также проверяем сервер
-            self.proveritServer()
+            self.sigStudioZapuschen.emit()
+            self.proveritServer()#Также проверяем сервер
         else:
-            self.sigError.emit(6, "LM Studio не запущен")
+            self.sigError.emit(6, "LM Studio не запущен. Сначала запустите приложение.")
             self._server_zapuschen = False
             self.sigServerStatus.emit(False)
     
@@ -461,7 +456,7 @@ class DCLMStudio(QObject):
             self._popitki = 0
             self._zapusk_v_processe = False
             self.sigLog.emit("✓ LM Studio приложение запущено!")
-            self.sigZapuschen.emit()
+            self.sigStudioZapuschen.emit()
             
             # Теперь проверяем сервер отдельно
             self.sigLog.emit("Проверка статуса сервера...")

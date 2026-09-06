@@ -126,13 +126,10 @@ Item {
 	}
 	Connections {//Обработчик загрузки моделей из Python
         target: pyLMStudio
-
-		function onSigZapuschen() {//Если запущена LM Studio
-			vprLMStart.visible = false//Эта строка закрывает плашку с вопросом, которая автоматич. появляется
-		}
+	
         function onSigError(ntError, errorMsg) {
             root.log(`Ошибка ${ntError}: ${errorMsg}`)
-			if(ntError === 6){//6 - Сервер LM Studio не отвечает на прямой запрос проверки статуса
+			if(ntError === 6){//6 - LM Studio не запущена 
 				vprLMStart.visible = true
 			}
         }
@@ -142,9 +139,15 @@ Item {
 		//3 - Не удалось найти исполняемый файл LM Studio (требуется указать путь вручную в настройках).
 		//4 - Ошибка при инициализации процесса запуска (сбой до или во время создания потока).
 		//5 - Ошибка при попытке принудительной остановки процесса LM Studio (нет прав или процесс уже мертв).
-		//6 - Сервер LM Studio не отвечает на прямой запрос проверки статуса (метод proverkaServera).
+		//6 - LM Studio не запущен.
 		//7 - Ошибка системного запуска процесса (сбой subprocess.Popen в фоновом потоке).
 		//8 - Превышено время ожидания запуска (сервер не стал доступен после 10 попыток по 3 секунды).
+		function onSigStudioZapuschen() {//Если запущена LM Studio
+			vprLMStart.visible = false//Эта строка закрывает плашку с вопросом, которая автоматич. появляется
+		}
+		function onSigServerZapuschen() {//Если сервер запустился, то начинаем анализ Документов.
+        	pyAnalyzer.startAnaliza(txaContent.text, txfPromt.text)//Запуск анализа Документов.
+		}
 	}	
 	Keys.onPressed: (event) => {//Обработка горячих клавиш
         if (event.modifiers & Qt.AltModifier) {
@@ -347,8 +350,8 @@ Item {
 		txfPromt.text = ""//Очищаем промт.
 	}
     function fnClickedAnaliz() {//Функция запускающая нейро анализ документов
-		pyLMStudio.lmsProverka()//Проверяем запуск сервера и самой LM Studio
-        pyAnalyzer.startAnaliza(txaContent.text, txfPromt.text)
+		pyLMStudio.zapustitServer()//Всегда запускаем сервер, даже если он запущен.
+		root.toolbar(qsTr("Ожидайте."))
     }
     function fnClickedSohranit() {//Функция сохранения результата анализа.
         pyAnalyzer.sohranitAnaliz(DCSettings.analizer_put_sohranit)//Открываем Диалог в папке (путь из реестра).
