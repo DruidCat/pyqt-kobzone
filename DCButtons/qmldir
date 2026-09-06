@@ -2,6 +2,7 @@ module DCButtons
 
 DCKnopkaInfo 1.0 DCKnopkaInfo.qml
 DCKnopkaKruglaya 1.0 DCKnopkaKruglaya.qml
+DCKnopkaLM 1.0 DCKnopkaLM.qml
 DCKnopkaMenu 1.0 DCKnopkaMenu.qml
 DCKnopkaMinus 1.0 DCKnopkaMinus.qml
 DCKnopkaNastroiki 1.0 DCKnopkaNastroiki.qml
