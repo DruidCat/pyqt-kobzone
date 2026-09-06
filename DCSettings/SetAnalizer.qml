@@ -121,7 +121,7 @@ Item {
 			root.toolbar("LM Studio запущен!")
 			knopkaLMStart.isPerehodniProces = false
 			vprLMStart.visible = false
-			pyLMStudio.poluchitStatusServera()	
+			pyLMStudio.proverkaServera()	
 		}
 		function onSigStudioOstanovlen() {
 			root.toolbar("LM Studio остановлен")
@@ -256,12 +256,12 @@ Item {
 			DCSettings.analizer_lms_put = vrPut
 			if(knopkaLMStart.isStartBezPuti){//Если путь к LM Studio выбран и была попытка старта, то...
 				knopkaLMStart.isStartBezPuti = false;//Сбрасываем флаг.
-				pyLMStudio.zapustit()//Запускаем LM Studio.
+				pyLMStudio.zapustitStudio()//Запускаем LM Studio.
 				root.toolbar("⏳ Запуск LM Studio...")
 			}
 			if(knopkaLMStop.isStopBezPuti){//Если путь к LM Studio выбран и была попытка остановки, то...
 				knopkaLMStop.isStopBezPuti = false;//Сбрасываем флаг.
-				pyLMStudio.ostanovit()//Останавливаем LM Studio.
+				pyLMStudio.ostanovitStudio()//Останавливаем LM Studio.
 				root.toolbar("Остановка LM Studio...")
 			}
 		}
@@ -408,7 +408,7 @@ Item {
 			dialogLMPut.open()//Функция выбора пути к LM Studio.
 		}
 		else{
-			pyLMStudio.zapustit()
+			pyLMStudio.zapustitStudio()
 			root.toolbar("⏳ Запуск LM Studio...")
 		}
 	}
@@ -676,7 +676,7 @@ Item {
 							dialogLMPut.open()//Функция выбора пути к LM Studio.
 						}
 						else{
-							pyLMStudio.ostanovit()
+							pyLMStudio.ostanovitStudio()
 							root.toolbar("Остановка LM Studio...")
 						}
 					}

@@ -225,6 +225,11 @@ class DCLMStudio(QObject):
             self.sigServerError.emit(error_msg)
             self.sigLog.emit(f"✗ {error_msg}")
 
+    @pyqtSlot(result=bool)
+    def proverkaServera(self):
+        """Возвращает текущий статус сервера"""
+        return self._server_zapuschen
+
     def _zapustitProverkuServera(self):
         """Запускает автоматическую проверку запуска сервера"""
         self.sigLog.emit("⏳ Ожидание запуска сервера...")
@@ -236,7 +241,7 @@ class DCLMStudio(QObject):
             self._server_timer = QTimer()
             self._server_timer.timeout.connect(self._proverkaServeraAvto)
         
-        self._server_timer.start(2000)  # Проверяем каждые 2 секунды
+        self._server_timer.start(2000)  # Проверяем каждые 2 секунды 
 
     def _proverkaServeraAvto(self):
         """Автоматическая проверка запуска сервера"""
@@ -261,12 +266,7 @@ class DCLMStudio(QObject):
                 self.sigServerError.emit(error_msg)
                 self.sigLog.emit(f"⚠ {error_msg}")
             else:
-                self.sigLog.emit(f"⏳ Проверка сервера... ({self._server_popitki}/{self._server_max_popitok})")
-    
-    @pyqtSlot(result=bool)
-    def poluchitStatusServera(self):
-        """Возвращает текущий статус сервера"""
-        return self._server_zapuschen
+                self.sigLog.emit(f"⏳ Проверка сервера... ({self._server_popitki}/{self._server_max_popitok})") 
     
     # ==================== ЗАПУСК/ОСТАНОВКА ПРИЛОЖЕНИЯ ====================
     
@@ -277,7 +277,7 @@ class DCLMStudio(QObject):
         print(f"✓ Путь к LM Studio: {path}")
     
     @pyqtSlot()
-    def zapustit(self):
+    def zapustitStudio(self):
         """Запускает LM Studio"""
         if self._zapusk_v_processe:
             print("⚠ Запуск уже выполняется")
@@ -323,7 +323,7 @@ class DCLMStudio(QObject):
             self._zapusk_v_processe = False
     
     @pyqtSlot()
-    def ostanovit(self):
+    def ostanovitStudio(self):
         """Останавливает LM Studio"""
         try:
             if platform.system() == "Linux":
