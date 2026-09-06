@@ -46,6 +46,7 @@ Item {
 	property string strModel: DCSettings.analizer_model_imya//Имя модели ИИ
 	property real rlTemperatura: DCSettings.analizer_temperatura//Температура ИИ
 	property int maxContext: DCSettings.analizer_max_context//Максимальное количество токенов
+	property bool isStudioOn: false//true - LM Studio запущена.
 	//Настройки
 	anchors.fill: parent
 	focus: true
@@ -59,7 +60,7 @@ Item {
         knopkiMassiv = [knopkaLMStart, knopkaLMStop, knopkaLMPut, knopkaModeli, knopkaTemperatura, knopkaContext]
 		if (DCSettings.analizer_lms_put !== "")//Передаём путь из настроек в Python
 			pyLMStudio.ustPut(DCSettings.analizer_lms_put)
-		root.forceActiveFocus()
+		root.forceActiveFocus()	
 	}
 	onStrModelChanged: {//Если Модель изменится, то...
         pyLMStudio.ustModel(root.strModel)//Отправляем в Python
@@ -126,6 +127,9 @@ Item {
 			root.toolbar("LM Studio остановлен")
 			knopkaLMStop.isPerehodniProces = false
 		}		
+		function onSigStudioStatus(blStatus) {
+			root.isStudioOn = blStatus
+		}
 		function onSigServerZapuschen() {
 			if(pvModels.isServerZapustit){
 				root.toolbar("✓ Сервер LM Studio готов")
@@ -309,6 +313,7 @@ Item {
     }
 	function fnClickedNazad() {
 		fnClickedEscape()//Функция нажатия на клавишу Escape
+		fnStudioStatus(false)//Функция, которая останавливает работу статуса работы LM Studio
 		root.clickedNazad()
 	}
 	function fnClickedZakrit(){//Функция обрабатывающая кнопку Закрыть.
@@ -333,6 +338,15 @@ Item {
 			if (txnZagolovok.visible) txnZagolovok.visible = false
 			if (vprLMStart.visible) vprLMStart.visible = false
 			menuMenu.visible = true
+		}
+	}
+	function fnStudioStatus(blFlag){//Функция, которая запускает/останавливает работу статуса работы LM Studio
+		if(blFlag){
+			pyLMStudio.proverkaStudio()
+			tmrStudio.running = true
+		} else {
+			root.isStudioOn = false//Сбрасываем флаг
+			tmrStudio.running = false
 		}
 	}
 	function fnCloseMenuIfOpen() {
@@ -444,6 +458,13 @@ Item {
 		}
 		return path
 	}
+	Timer {//ТАЙМЕР анимации логотипа
+        id: tmrStudio
+        interval: 3300; running: false; repeat: true
+        onTriggered: {
+           pyLMStudio.proverkaStudio()
+        }
+    }
 	Item {//Заголовок
 		id: tmZagolovok
 		DCKnopkaNazad {
@@ -462,7 +483,7 @@ Item {
             clrKnopki: root.clrTexta; clrFona: root.clrFona
             tapHeight: root.ntWidth * root.ntCoff + root.ntCoff; tapWidth: tapHeight * root.tapZagolovokPravi
 			enabled: false
-			isLMZapuschen: true
+			isLMZapuschen: root.isStudioOn
             onClicked: {
                 if (!fnCloseMenuIfOpen()) {
 

@@ -17,6 +17,7 @@ class DCLMStudio(QObject):
     sigStudioStarted = pyqtSignal()         # Начата проверка запуска
     sigStudioZapuschen = pyqtSignal()       # LM Studio запущен
     sigStudioOstanovlen = pyqtSignal()      # LM Studio остановлен
+    sigStudioStatus = pyqtSignal(bool)      # Статус LM Studio (True - запущен, False - остановлен)
     sigModelsLoaded = pyqtSignal(list)      # Список моделей загружен
     #Сигналы для сервера
     sigServerZapuschen = pyqtSignal()       # Сервер запущен
@@ -367,15 +368,12 @@ class DCLMStudio(QObject):
             self.sigError.emit(5, error_msg)
     
     @pyqtSlot()
-    def lmsProverka(self):
+    def proverkaStudio(self):
         """Проверяет доступность LM Studio (приложения)"""
         if self._proverkaZapushen():
-            self.sigStudioZapuschen.emit()
-            self.proveritServer()#Также проверяем сервер
+            self.sigStudioStatus.emit(True)
         else:
-            self.sigError.emit(6, "LM Studio не запущен. Сначала запустите приложение.")
-            self._server_zapuschen = False
-            self.sigServerStatus.emit(False)
+            self.sigStudioStatus.emit(False)
     
     # ==================== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ====================
     
