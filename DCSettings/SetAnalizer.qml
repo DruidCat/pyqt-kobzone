@@ -104,7 +104,7 @@ Item {
 			} else if (ntError === 6){//6 - LM Studio не запущен.
 				vprLMStart.visible = true
 			} else if (ntError === 9){//9 - CLI lms не найден. Укажите путь в настройках
-				
+				fnClickedCLIPut()//Функция задания пути для cli lms	
 			}
 			knopkaLMStart.isPerehodniProces = false
 			knopkaLMStop.isPerehodniProces = false
@@ -282,27 +282,6 @@ Item {
 			knopkaLMStop.isPerehodniProces = false//Деактивируем переходный процесс.
 		}
 	}
-	FolderDialog {
-		id: dialogCLIPut
-		title: qsTr("Выберите папку с lms (обычно ~/.lmstudio/bin)")
-		options: FolderDialog.ShowDirsOnly | FolderDialog.DontUseNativeDialog
-		currentFolder: {
-			if (DCSettings.analizer_cli_put !== "") {
-				var vrPut = DCSettings.analizer_cli_put
-				vrPut = fnPathToUrl(vrPut)
-				return vrPut.substring(0, vrPut.lastIndexOf("/"))
-			}
-			else return StandardPaths.writableLocation(StandardPaths.HomeLocation)
-		}
-		onAccepted: {
-			var vrPut = fnUrlToLocalPath(selectedFolder)
-			// Добавляем /lms к пути
-			var fullPath = vrPut + "/lms"
-			DCSettings.analizer_cli_put = fullPath
-			pyLMStudio.ustPutCLI(fullPath)
-			root.toolbar("✓ Путь к lms: " + fullPath)
-		}
-	}	
 	function fnClickedEnter() {//Функция обработки нажатия клавиши Enter
         if (root.currentIndex >= 0 && root.currentIndex < knopkiMassiv.length) {
             var vrKnopkaID = knopkiMassiv[root.currentIndex]
@@ -351,10 +330,20 @@ Item {
 		txnZagolovok.visible = false//Делаем невидимым ввот чисел
 	}
 	function fnClickedOk(){//Нажимаем на Ок(Сохранить)
-		let ltContext = Number(txnZagolovok.text)//Явно приобразовываем в число.
-		let ltResult = Math.round(ltContext / 64) * 64;//Получаем число кратное 64.
-		DCSettings.analizer_max_context = ltResult//Сохраняем в реестре значение.
-		txnZagolovok.visible = false//Делаем невидимым ввот чисел
+		if(txnZagolovok.ntFlag === 0){//Максимальный контекст
+			let ltContext = Number(txnZagolovok.text)//Явно приобразовываем в число.
+			let ltResult = Math.round(ltContext / 64) * 64;//Получаем число кратное 64.
+			DCSettings.analizer_max_context = ltResult//Сохраняем в реестре значение.
+		} else if(txnZagolovok.ntFlag === 1){//Путь к cli lms
+			var vrPutCLI = txnZagolovok.text
+			if(pyLMStudio.proverkaFaila(vrPutCLI)){//Если такой путь существует, то...
+				DCSettings.analizer_cli_put  = vrPutCLI
+				pyLMStudio.ustPutCLI(vrPutCLI)
+			} else {
+				root.toolbar("Указан неверный путь до lms.")
+			}
+		}
+		txnZagolovok.visible = false//Делаем невидимым данных
 	}
 	function fnClickedInfo() {
 		fnClickedEscape()//Функция нажатия на клавишу Escape
@@ -403,7 +392,7 @@ Item {
 		}
 		return false
 	}
-	function fnCloseContextIfOpen() {
+	function fnCloseTXNtIfOpen() {
 		if (txnZagolovok.visible) {
 			txnZagolovok.visible = false
 			return true
@@ -458,6 +447,11 @@ Item {
 		}
 	}
 	function fnClickedContext(){//Функция выбора максимального контекста
+		txnZagolovok.ntFlag = 0//Режим максимального контекста
+		txnZagolovok.visible = !txnZagolovok.visible
+	}
+	function fnClickedCLIPut(){//Функция задания пути для cli lms
+		txnZagolovok.ntFlag = 1//Режим установки пути cli lms
 		txnZagolovok.visible = !txnZagolovok.visible
 	}
 	function fnPathToUrl(localPath) {//Функция кроссплатформенного преобразования пути в URL
@@ -562,22 +556,39 @@ Item {
 				ntCoff: root.ntCoff
 				anchors.fill: tmTextInput
 				visible: false
-				isNumber: true//Вводим только цифры
+				isNumber: {
+					if (ntFlag === 0) return true//Вводим только цифры
+					else if(ntFlag === 1) return false//Не вводим только цифры
+				}
 				clrTexta: root.clrTexta; clrFona: root.clrMenuFon
 				radius: root.ntCoff/2
 				//textInput.font.capitalization: Font.AllUppercase//Отображает текст весь с заглавных букв.
 				//textInput.inputMethodHints: Qt.ImhUppercaseOnly//Буквы в виртуальной клавиатуре заглавные
-				textInput.maximumLength: 6//Ограницение по вводу максимальны токенов для локальной модели
+				textInput.maximumLength: {
+			   		if(ntFlag === 0 ) return 6//Ограницение по вводу максимальны токенов для локальной модели
+					else if (ntFlag === 1) return 111//Длина пути до cli lms
+				}
+				blSqlProtect: {//Настройка по SQL инъекции.
+					if(ntFlag === 0) return false
+					else if (ntFlag === 1) return true
+				}
+				property int ntFlag: 0//0 - max_context, 1 - cli_lms
 				onSgnDebug: function (strDebug) { root.toolbar(strDebug) }//Ошибка из виджета в программу.
 				onVisibleChanged: {//Если видимость DCTextInput изменился, то...
 					if(txnZagolovok.visible){//Если DCTextInput видим, то...
 						knopkaNazad.visible = false;//Конопка Назад Невидимая.
+						knopkaLM.visible = false;//Кнопка LM невидимая.
 						knopkaZakrit.visible = true;//Кнопка закрыть Видимая
 						knopkaOk.visible = true;//Кнопка Ок Видимая.
-						text = DCSettings.analizer_max_context//Показываем значение максимального контекста
+						if(ntFlag === 0){//Максимальный контекст
+							text = DCSettings.analizer_max_context//Показываем значение макс контекста
+						} else if(ntFlag === 1){//Путь к cli lms
+							text = DCSettings.analizer_cli_put//Путь к cli lms
+						}
 					}
 					else{//Если DCTextInput не видим, то...
 						knopkaNazad.visible = true;//Конопка Информация Видимая.
+						knopkaLM.visible = true;//Кнопка LM видимая.
 						knopkaZakrit.visible = false;//Кнопка закрыть Невидимая
 						knopkaOk.visible = false;//Кнопка Ок Невидимая.
 						txnZagolovok.text = "";//Текст обнуляем вводимый.
@@ -648,7 +659,7 @@ Item {
 			TapHandler {//Нажимаем на всю область
 				onTapped: {
 					fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
-					if(!knopkaContext.pressedTmr550) fnCloseContextIfOpen()//Закрываем контекст максимальный
+					if(!knopkaContext.pressedTmr550 && !knopkaCLIPut.pressedTmr550) fnCloseTXNtIfOpen()
 					if(!pvModels.jdi && !pvModels.pressed) fnCloseModelsIfOpen()//Закрываем карусель pv....
 					if(!pvTemperatura.jdi && !pvTemperatura.pressed) fnCloseTemperaturaIfOpen()//Закрываем
 					if(!knopkaModeli.pressedTmr550)fnCloseLMStartIfOpen()
@@ -681,7 +692,7 @@ Item {
 					}
 					onClicked: {
 						if (pressed) {
-							if (!fnCloseMenuIfOpen() && !fnCloseContextIfOpen() && !fnCloseLMStartIfOpen()){
+							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseLMStartIfOpen()){
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
 							}
 						}
@@ -713,7 +724,7 @@ Item {
 					}
 					onClicked: {
 						if (pressed) {
-							if (!fnCloseMenuIfOpen() && !fnCloseContextIfOpen() && !fnCloseLMStartIfOpen()) {
+							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseLMStartIfOpen()) {
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
 							}
 						}
@@ -739,7 +750,7 @@ Item {
 					}
 					onClicked: {
 						if (pressed) {
-							if (!fnCloseMenuIfOpen() && !fnCloseContextIfOpen() && !fnCloseLMStartIfOpen()) {
+							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseLMStartIfOpen()) {
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
 							}
 						}
@@ -749,7 +760,7 @@ Item {
                     id: knopkaCLIPut
                     text: {
                         let ltText = qsTr("путь к lms: ");//
-						if (root.putCLI === "") ltText += qsTr("не задан")
+						if (root.putCLI === "") ltText += qsTr("...")
 						else ltText += root.putCLI
 						return ltText;
                     }
@@ -761,11 +772,11 @@ Item {
                     opacityKnopki: 0.9
 					function fnPress() {
 						root.currentIndex = 3
-						dialogCLIPut.open()//Функция выбора пути к lms
+						fnClickedCLIPut()//Функция задающая путь к cli lms
 					}
 					onClicked: {
 						if (pressed) {
-							if (!fnCloseMenuIfOpen() && !fnCloseContextIfOpen() && !fnCloseLMStartIfOpen()) {
+							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseLMStartIfOpen()) {
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
 							}
 						}
@@ -797,7 +808,7 @@ Item {
 					}
 					onClicked: {
 						if (pressed) {
-							if (!fnCloseMenuIfOpen() && !fnCloseContextIfOpen() && !fnCloseLMStartIfOpen()) {
+							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseLMStartIfOpen()) {
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed)fnPress()
 							}
 						}
@@ -823,7 +834,7 @@ Item {
 					}
 					onClicked: {
 						if (pressed) {
-							if (!fnCloseMenuIfOpen() && !fnCloseContextIfOpen() && !fnCloseLMStartIfOpen()) {
+							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseLMStartIfOpen()) {
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
 							}
 						}
@@ -848,7 +859,7 @@ Item {
 					}
 					onClicked: {
 						if (pressed) {
-							if (!fnCloseMenuIfOpen() && !fnCloseContextIfOpen() && !fnCloseLMStartIfOpen()) {
+							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseLMStartIfOpen()) {
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
 							}
 						}
@@ -972,7 +983,7 @@ Item {
 			tapHeight: root.ntWidth * root.ntCoff + root.ntCoff
 			tapWidth: tapHeight * root.tapToolbarLevi
 			onClicked: {
-				if (!fnCloseMenuIfOpen() && !fnCloseContextIfOpen() && !fnCloseLMStartIfOpen()) {
+				if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseLMStartIfOpen()) {
 					fnClickedInfo()
 				}
 			}

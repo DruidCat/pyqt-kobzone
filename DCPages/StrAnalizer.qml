@@ -131,11 +131,16 @@ Item {
 	
         function onSigError(ntError, errorMsg) {
             root.log(`Ошибка ${ntError}: ${errorMsg}`)
-			if(ntError === 6){//6 - LM Studio не запущена 
-				vprLMStart.visible = true
-			}else{
-				root.isServerZapustit = false
+			if(ntError === 3){//3 - Не удалось найти исполняемый файл LM Studio
+
+			} else if (ntError === 6){//6 - LM Studio не запущен.
+				vprVopros.ntFlag = 0//0 - вопрос, что не запустилась LM Studio
+				vprVopros.visible = true
+			} else if (ntError === 9){//9 - CLI lms не найден. Укажите путь в настройках
+				vprVopros.ntFlag = 1//1 - вопрос, что не найден cli lms
+				vprVopros.visible = true
 			}
+			root.isServerZapustit = false
         }
 		//0 - Ошибка HTTP при запросе списка моделей (сервер ответил кодом, отличным от 200).
 		//1 - Ошибка сетевого подключения к LM Studio (сервер недоступен или не запущен).
@@ -148,7 +153,7 @@ Item {
 		//8 - Превышено время ожидания запуска (сервер не стал доступен после 10 попыток по 3 секунды).
 		//9 - CLI lms не найден. Укажите путь в настройках
 		function onSigStudioZapuschen() {//Если запущена LM Studio
-			vprLMStart.visible = false//Эта строка закрывает плашку с вопросом, которая автоматич. появляется
+			vprVopros.visible = false//Эта строка закрывает плашку с вопросом, которая автоматич. появляется
 		}
 		function onSigServerZapuschen() {//Если сервер запустился, то начинаем анализ Документов.
 			if(root.isServerZapustit){
@@ -368,7 +373,7 @@ Item {
     function fnToggleMenu() {//Функция изменяет состояние всплывающего меню если открыто, закрывает и наоборот
         if (menuMenu.visible) menuMenu.visible = false
 		else {
-			if (vprLMStart.visible) vprLMStart.visible = false
+			if (vprVopros.visible) vprVopros.visible = false
 			menuMenu.visible = true
 		}
     }
@@ -379,9 +384,9 @@ Item {
         }
         return false
     }
-	function fnCloseLMStartIfOpen() {
-		if (vprLMStart.visible) {
-			vprLMStart.visible = false
+	function fnCloseVoprosIfOpen() {
+		if (vprVopros.visible) {
+			vprVopros.visible = false
 			return true
 		}
 		return false
@@ -418,7 +423,7 @@ Item {
             }
         }
 		DCVopros {
-			id: vprLMStart
+			id: vprVopros
 			ntWidth: root.ntWidth; ntCoff: root.ntCoff
 			anchors.top: tmZagolovok.top; anchors.bottom: tmZagolovok.bottom
 			anchors.left: tmZagolovok.left; anchors.right: tmZagolovok.right
@@ -426,7 +431,11 @@ Item {
 			clrKnopki: root.clrFona; clrBorder: root.clrFona
 			tapKnopkaZakrit: root.tapZagolovokLevi; tapKnopkaOk: root.tapZagolovokPravi
 			visible: false
-			text: qsTr("LM Studio не запущена. Перейти к настройкам запуска LM Studio?")
+			text: {
+				if(ntFlag === 0) return qsTr("LM Studio не запущена. Перейти к настройкам запуска LM Studio?")
+				else if (ntFlag === 1) return qsTr("Сервер LM Studio не запущен. Перейти к настройкам cli lms?")
+			}
+			property int ntFlag: 0;//0 - не запущена LM Studio, 1 - не найдена cli lms
 			onVisibleChanged: {
 				if(visible) {
 					knopkaNazad.visible = false
@@ -438,11 +447,11 @@ Item {
 				}
 			}
 			onClickedOk: {
-				vprLMStart.visible = false//Делаем невидимый диалог
+				vprVopros.visible = false//Делаем невидимый диалог
 				fnClickedMenu()//Функция открытия настроек анализа документов.
 			}
 			onClickedOtmena: {
-				vprLMStart.visible = false//Делаем невидимый диалог.
+				vprVopros.visible = false//Делаем невидимый диалог.
 			}
 		}
     }
@@ -469,7 +478,7 @@ Item {
 
 			TapHandler {//Нажимаем на всю область
 				onTapped: {
-					if(!knopkaAnaliz.pressedTmr550)fnCloseLMStartIfOpen()
+					if(!knopkaAnaliz.pressedTmr550)fnCloseVoprosIfOpen()
 					fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
 				}
 			}
@@ -543,7 +552,7 @@ Item {
                             onTextChanged: pyAnalyzer.ustContentText(text)
 							TapHandler {//Нажимаем на всю область
 								onTapped: {
-									fnCloseLMStartIfOpen()
+									fnCloseVoprosIfOpen()
 									fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
 								}
 							}
@@ -598,7 +607,7 @@ Item {
 						}
 						TapHandler {//Нажимаем на всю область
 							onTapped: {
-								fnCloseLMStartIfOpen()
+								fnCloseVoprosIfOpen()
 								fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
 							}
 						}
@@ -669,7 +678,7 @@ Item {
 							textFormat: TextEdit.RichText//ВКЛЮЧАЕМ HTML 
 							TapHandler {//Нажимаем на всю область
 								onTapped: {
-									fnCloseLMStartIfOpen()
+									fnCloseVoprosIfOpen()
 									fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
 								}
 							}
@@ -795,7 +804,7 @@ Item {
             tapHeight: root.ntWidth * root.ntCoff + root.ntCoff
             tapWidth: tapHeight * root.tapToolbarLevi
             onClicked: {
-                if (!fnCloseMenuIfOpen() && !fnCloseLMStartIfOpen()) {
+                if (!fnCloseMenuIfOpen() && !fnCloseVoprosIfOpen()) {
                     fnClickedInfo()//Функция открытия помощи.
                 }
             }
@@ -822,9 +831,9 @@ Item {
         propagateComposedEvents: true
         onClicked: (mouse) => {
             mouse.accepted = false
-            if (menuMenu.visible || vprLMStart.visible) {
+            if (menuMenu.visible || vprVopros.visible) {
                 menuMenu.visible = false
-				//vprLMStart.visible = false
+				//vprVopros.visible = false
             } else {
                 root.forceActiveFocus()
             }
