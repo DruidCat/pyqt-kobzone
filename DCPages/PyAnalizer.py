@@ -4,6 +4,8 @@ from pathlib import Path
 from PyQt6.QtCore import QObject, pyqtSignal, pyqtSlot, QThread
 from PyQt6.QtWidgets import QFileDialog
 
+TIMEOUT_ANALYSIS = 300 #Увеличим с 120 до 300 секунд для чанков
+TIMEOUT_FINAL = 600 #Увеличим с 180 до 600 секунд для финального анализа
 LM_STUDIO_URL = "http://localhost:1234/v1"
 
 
@@ -217,7 +219,7 @@ class DCAnalyzer(QObject):
                     f"{LM_STUDIO_URL}/chat/completions",
                     headers=headers,
                     json=data,
-                    timeout=120
+                    timeout=TIMEOUT_ANALYSIS
                 )
                 
                 if response.status_code == 200:
@@ -262,7 +264,7 @@ class DCAnalyzer(QObject):
                     f"{LM_STUDIO_URL}/chat/completions",
                     headers=headers,
                     json=data,
-                    timeout=120
+                    timeout=TIMEOUT_ANALYSIS
                 )
                 
                 if response.status_code == 200:
@@ -378,7 +380,7 @@ class DCAnalyzer(QObject):
                 f"{LM_STUDIO_URL}/chat/completions",
                 headers=headers,
                 json=data,
-                timeout=180
+                timeout=TIMEOUT_FINAL
             )
             
             if response.status_code == 200:

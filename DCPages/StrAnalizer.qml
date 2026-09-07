@@ -39,6 +39,8 @@ Item {
     property string logoImya: "kobzone"//Имя логотипа в DCLogo
     property real rlProgress: 0
     property real rlLoader: 1
+
+	property bool isServerZapustit: false//true - запускаем сервер для начала анализа
 	//Настройки
     anchors.fill: parent
     focus: true
@@ -131,6 +133,8 @@ Item {
             root.log(`Ошибка ${ntError}: ${errorMsg}`)
 			if(ntError === 6){//6 - LM Studio не запущена 
 				vprLMStart.visible = true
+			}else{
+				root.isServerZapustit = false
 			}
         }
 		//0 - Ошибка HTTP при запросе списка моделей (сервер ответил кодом, отличным от 200).
@@ -146,7 +150,10 @@ Item {
 			vprLMStart.visible = false//Эта строка закрывает плашку с вопросом, которая автоматич. появляется
 		}
 		function onSigServerZapuschen() {//Если сервер запустился, то начинаем анализ Документов.
-        	pyAnalyzer.startAnaliza(txaContent.text, txfPromt.text)//Запуск анализа Документов.
+			if(root.isServerZapustit){
+        		pyAnalyzer.startAnaliza(txaContent.text, txfPromt.text)//Запуск анализа Документов.
+				root.isServerZapustit = false
+			}
 		}
 	}	
 	Keys.onPressed: (event) => {//Обработка горячих клавиш
@@ -350,8 +357,9 @@ Item {
 		txfPromt.text = ""//Очищаем промт.
 	}
     function fnClickedAnaliz() {//Функция запускающая нейро анализ документов
+		root.isServerZapustit = true
 		pyLMStudio.zapustitServer()//Всегда запускаем сервер, даже если он запущен.
-		root.toolbar(qsTr("Ожидайте."))
+		//root.toolbar(qsTr("Ожидайте."))
     }
     function fnClickedSohranit() {//Функция сохранения результата анализа.
         pyAnalyzer.sohranitAnaliz(DCSettings.analizer_put_sohranit)//Открываем Диалог в папке (путь из реестра).
