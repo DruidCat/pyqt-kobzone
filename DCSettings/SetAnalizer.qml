@@ -43,6 +43,7 @@ Item {
     property int currentIndex: 0//Выбранная кнопка.
 	//Модель
 	property string putLMStudio: DCSettings.analizer_lms_put//Путь к приложению LM Studio из реестра.
+	property string putCLI: DCSettings.analizer_cli_put//Путь к cli lms LM Studio из реестра.
 	property string strModel: DCSettings.analizer_model_imya//Имя модели ИИ
 	property real rlTemperatura: DCSettings.analizer_temperatura//Температура ИИ
 	property int maxContext: DCSettings.analizer_max_context//Максимальное количество токенов
@@ -57,9 +58,10 @@ Item {
     signal log(var strLog)
 	//Методы
 	Component.onCompleted: {
-        knopkiMassiv = [knopkaLMStart, knopkaLMStop, knopkaLMPut, knopkaModeli, knopkaTemperatura, knopkaContext]
+		knopkiMassiv = [knopkaLMStart, knopkaLMStop, knopkaLMPut, knopkaCLIPut, knopkaModeli,
+						knopkaTemperatura, knopkaContext]
 		if (DCSettings.analizer_lms_put !== "")//Передаём путь из настроек в Python
-			pyLMStudio.ustPut(DCSettings.analizer_lms_put)
+			pyLMStudio.ustPutStudio(DCSettings.analizer_lms_put)
 		root.forceActiveFocus()	
 	}
 	onStrModelChanged: {//Если Модель изменится, то...
@@ -86,7 +88,7 @@ Item {
 	}
 	onPutLMStudioChanged: {//Если путь к LM Studio изменился, то...
 		if (root.putLMStudio !== ""){//Если он не пустой, то...
-			pyLMStudio.ustPut(root.putLMStudio)//Передаём его в логику Python
+			pyLMStudio.ustPutStudio(root.putLMStudio)//Передаём его в логику Python
 		}
 	}
     Connections {//Обработчик загрузки моделей из Python
@@ -97,13 +99,16 @@ Item {
 		}
         function onSigError(ntError, errorMsg) {
             root.log(`Ошибка ${ntError}: ${errorMsg}`)
-			if(ntError === 6){//6 - LM Studio не запущен.
+			if(ntError === 3){//3 - Не удалось найти исполняемый файл LM Studio
+
+			} else if (ntError === 6){//6 - LM Studio не запущен.
 				vprLMStart.visible = true
-			} else {
-				knopkaLMStart.isPerehodniProces = false
-				knopkaLMStop.isPerehodniProces = false
-				pvModels.isServerZapustit = false
+			} else if (ntError === 9){//9 - CLI lms не найден. Укажите путь в настройках
+				
 			}
+			knopkaLMStart.isPerehodniProces = false
+			knopkaLMStop.isPerehodniProces = false
+			pvModels.isServerZapustit = false
         }
 		//0 - Ошибка HTTP при запросе списка моделей (сервер ответил кодом, отличным от 200).
 		//1 - Ошибка сетевого подключения к LM Studio (сервер недоступен или не запущен).
@@ -114,6 +119,10 @@ Item {
 		//6 - LM Studio не запущен.
 		//7 - Ошибка системного запуска процесса (сбой subprocess.Popen в фоновом потоке).
 		//8 - Превышено время ожидания запуска (сервер не стал доступен после 10 попыток по 3 секунды).
+		//9 - CLI lms не найден. Укажите путь в настройках
+		function onSigCLIPut(strCLIPut){//Если путь автоматически обнаружен, то он придёт из pyLMStudio
+			DCSettings.analizer_cli_put	= strCLIPut;//Запоминаем в реестре настроек.
+		}
 		function onSigStudioStarted() {//Обработка сигнала старта LM Studio
 			knopkaLMStart.isPerehodniProces = true;//Запуск LM Studio.
 		}
@@ -237,6 +246,7 @@ Item {
 	FileDialog {
 		id: dialogLMPut
 		title: qsTr("Выберите путь к LM Studio")
+		fileMode: FileDialog.OpenFile//Открыть один файл
 		nameFilters: {
 			if(Qt.application.os === "windows") return ["Исполняемые файлы (*.exe)", "Все файлы (*)"]
 			else if (Qt.application.os === "linux") return ["AppImage (*.AppImage)", "Все файлы (*)"]
@@ -272,6 +282,27 @@ Item {
 			knopkaLMStop.isPerehodniProces = false//Деактивируем переходный процесс.
 		}
 	}
+	FolderDialog {
+		id: dialogCLIPut
+		title: qsTr("Выберите папку с lms (обычно ~/.lmstudio/bin)")
+		options: FolderDialog.ShowDirsOnly | FolderDialog.DontUseNativeDialog
+		currentFolder: {
+			if (DCSettings.analizer_cli_put !== "") {
+				var vrPut = DCSettings.analizer_cli_put
+				vrPut = fnPathToUrl(vrPut)
+				return vrPut.substring(0, vrPut.lastIndexOf("/"))
+			}
+			else return StandardPaths.writableLocation(StandardPaths.HomeLocation)
+		}
+		onAccepted: {
+			var vrPut = fnUrlToLocalPath(selectedFolder)
+			// Добавляем /lms к пути
+			var fullPath = vrPut + "/lms"
+			DCSettings.analizer_cli_put = fullPath
+			pyLMStudio.ustPutCLI(fullPath)
+			root.toolbar("✓ Путь к lms: " + fullPath)
+		}
+	}	
 	function fnClickedEnter() {//Функция обработки нажатия клавиши Enter
         if (root.currentIndex >= 0 && root.currentIndex < knopkiMassiv.length) {
             var vrKnopkaID = knopkiMassiv[root.currentIndex]
@@ -714,6 +745,32 @@ Item {
 						}
 					}	
                 }
+				DCKnopkaOriginal {//Кнопка выбора пути cli lms
+                    id: knopkaCLIPut
+                    text: {
+                        let ltText = qsTr("путь к lms: ");//
+						if (root.putCLI === "") ltText += qsTr("не задан")
+						else ltText += root.putCLI
+						return ltText;
+                    }
+                    ntHeight: root.ntWidth; ntCoff: root.ntCoff
+					anchors.left: parent.left; anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
+					clrTexta: root.clrMenuText
+                    clrKnopki: (root.currentIndex === 3) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    opacityKnopki: 0.9
+					function fnPress() {
+						root.currentIndex = 3
+						dialogCLIPut.open()//Функция выбора пути к lms
+					}
+					onClicked: {
+						if (pressed) {
+							if (!fnCloseMenuIfOpen() && !fnCloseContextIfOpen() && !fnCloseLMStartIfOpen()) {
+								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
+							}
+						}
+					}	
+                }
 				DCKnopkaOriginal {//Кнопка выбора размера шрифта
                     id: knopkaModeli
                     text: {
@@ -732,10 +789,10 @@ Item {
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					enabled: !knopkaLMStart.isPerehodniProces
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 3) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 4) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					function fnPress() {
-						root.currentIndex = 3
+						root.currentIndex = 4
 						fnClickedModel()//Функция выбора Модели.
 					}
 					onClicked: {
@@ -758,10 +815,10 @@ Item {
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 4) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 5) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					function fnPress() {
-						root.currentIndex = 4
+						root.currentIndex = 5
 						fnClickedTemperatura()//Функция выбора Температуры ИИ
 					}
 					onClicked: {
@@ -783,10 +840,10 @@ Item {
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 5) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 6) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					function fnPress() {
-						root.currentIndex = 5
+						root.currentIndex = 6
 						fnClickedContext()//Функция выбора максимального контекста
 					}
 					onClicked: {

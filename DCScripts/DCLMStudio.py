@@ -14,6 +14,7 @@ class DCLMStudio(QObject):
     #Сигналы для LM Studio
     sigLog = pyqtSignal(str)                # Лог
     sigError = pyqtSignal(int, str)         # Ошибка
+    sigCLIPut = pyqtSignal(str)             # Возвращает путь к cli lms
     sigStudioStarted = pyqtSignal()         # Начата проверка запуска
     sigStudioZapuschen = pyqtSignal()       # LM Studio запущен
     sigStudioOstanovlen = pyqtSignal()      # LM Studio остановлен
@@ -43,7 +44,6 @@ class DCLMStudio(QObject):
         self._server_zapuschen = False
     
     # ==================== РАБОТА С МОДЕЛЯМИ ====================
-    
     @pyqtSlot()
     def zagruzitModeli(self):
         """Загружает список доступных моделей из LM Studio"""
@@ -99,34 +99,74 @@ class DCLMStudio(QObject):
     @pyqtSlot(result=str)
     def poluchitModel(self):
         """Возвращает текущую модель"""
-        return self._current_model
-    
-    # ==================== ПРОВЕРКА СЕРВЕРА ====================
-    
-    @pyqtSlot()
-    def proveritServer(self):
-        """Проверяет, запущен ли сервер LM Studio"""
-        zapuschen = self._proverkaServeraZapuschen()
-        self._server_zapuschen = zapuschen
-        self.sigServerStatus.emit(zapuschen)
-        
-        if zapuschen:
-            self.sigLog.emit("✓ Сервер LM Studio запущен")
-        else:
-            self.sigLog.emit("✗ Сервер LM Studio остановлен")
-        
-        return zapuschen
-    
-    def _proverkaServeraZapuschen(self):
-        """Внутренняя проверка статуса сервера"""
-        try:
-            response = requests.get(f"{LM_STUDIO_URL}/models", timeout=2)
-            return response.status_code == 200
-        except:
-            return False
+        return self._current_model 
     
     # ==================== УПРАВЛЕНИЕ СЕРВЕРОМ ====================
-    
+    @pyqtSlot(str)
+    def ustPutCLI(self, path):
+        """Устанавливает путь к CLI lms"""
+        self._cli_path = path
+        print(f"✓ Путь к lms CLI: {path}")
+
+    def _naitiLMS_CLI(self):
+        """Находит путь к lms CLI"""
+        # Если задан пользовательский путь
+        if hasattr(self, '_cli_path') and self._cli_path:
+            cli = Path(self._cli_path)
+            if cli.exists():
+                print(f"✓ Используется путь к CLI из настроек: {cli}")
+                return str(cli)
+        
+        # Автопоиск в стандартных местах
+        home = Path.home()
+        
+        if platform.system() == "Linux" or platform.system() == "Darwin":
+            search_paths = [
+                home / ".lmstudio" / "bin" / "lms",
+                home / ".local" / "bin" / "lms",
+                Path("/usr/local/bin/lms"),
+                Path("/usr/bin/lms"),
+            ]
+            
+            for path in search_paths:
+                if path.exists():
+                    print(f"✓ Найден lms CLI: {path}")
+                    self.sigCLIPut.emit(str(path))
+                    return str(path)
+        
+        elif platform.system() == "Windows":
+            import os
+            search_paths = [
+                Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "LMStudio" / "lms.exe",
+                Path(os.environ.get("APPDATA", "")) / "LMStudio" / "lms.exe",
+            ]
+            
+            for path in search_paths:
+                if path.exists():
+                    print(f"✓ Найден lms CLI: {path}")
+                    self.sigCLIPut.emit(str(path))
+                    return str(path)
+        
+        # Проверяем, доступен ли lms в PATH
+        try:
+            result = subprocess.run(
+                ["which", "lms"] if platform.system() != "Windows" else ["where", "lms"],
+                capture_output=True,
+                text=True,
+                timeout=2
+            )
+            if result.returncode == 0:
+                lms_path = result.stdout.strip().split('\n')[0]
+                print(f"✓ Найден lms в PATH: {lms_path}")
+                self.sigCLIPut.emit(str(path))
+                return lms_path
+        except:
+            pass
+        
+        error_msg = "CLI lms не найден. Укажите путь в настройках (~/.lmstudio/bin/lms)"
+        self.sigError.emit(9, error_msg)
+        return None
+
     @pyqtSlot()
     def zapustitServer(self):
         """Запускает сервер LM Studio через CLI команду"""
@@ -137,11 +177,19 @@ class DCLMStudio(QObject):
             self._server_zapuschen = True
             return
         
-        # Проверяем, что LM Studio запущен
         if not self._proverkaZapushen():
             error_msg = "LM Studio не запущен. Сначала запустите приложение."
             self.sigServerError.emit(error_msg)
             self.sigError.emit(6, error_msg)
+            return
+        
+        # Находим lms CLI
+        lms_cli = self._naitiLMS_CLI()
+        
+        if not lms_cli:
+            error_msg = "CLI lms не найден. Укажите путь в настройках (~/.lmstudio/bin/lms)"
+            self.sigServerError.emit(error_msg)
+            self.sigError.emit(9, error_msg)
             return
         
         try:
@@ -149,7 +197,7 @@ class DCLMStudio(QObject):
             
             # Выполняем команду запуска сервера
             result = subprocess.run(
-                ["lms", "server", "start"],
+                [lms_cli, "server", "start"],
                 capture_output=True,
                 text=True,
                 timeout=10
@@ -157,22 +205,11 @@ class DCLMStudio(QObject):
             
             if result.returncode == 0:
                 self.sigLog.emit("✓ Команда запуска выполнена")
-                # Запускаем проверку с задержкой
                 self._zapustitProverkuServera()
             else:
                 error_msg = f"Ошибка выполнения команды: {result.stderr}"
                 self.sigServerError.emit(error_msg)
                 self.sigLog.emit(f"✗ {error_msg}")
-        
-        except FileNotFoundError:
-            error_msg = "Команда 'lms' не найдена. Убедитесь, что LM Studio CLI установлен."
-            self.sigServerError.emit(error_msg)
-            self.sigLog.emit(f"✗ {error_msg}")
-        
-        except subprocess.TimeoutExpired:
-            error_msg = "Превышено время ожидания выполнения команды"
-            self.sigServerError.emit(error_msg)
-            self.sigLog.emit(f"✗ {error_msg}")
         
         except Exception as e:
             error_msg = f"Ошибка запуска сервера: {str(e)}"
@@ -189,12 +226,18 @@ class DCLMStudio(QObject):
             self._server_zapuschen = False
             return
         
+        lms_cli = self._naitiLMS_CLI()
+        
+        if not lms_cli:
+            error_msg = "CLI lms не найден. Укажите путь в настройках"
+            self.sigServerError.emit(error_msg)
+            return
+        
         try:
             self.sigLog.emit("🔄 Остановка сервера LM Studio...")
             
-            # Выполняем команду остановки сервера
             result = subprocess.run(
-                ["lms", "server", "stop"],
+                [lms_cli, "server", "stop"],
                 capture_output=True,
                 text=True,
                 timeout=10
@@ -210,68 +253,23 @@ class DCLMStudio(QObject):
                 self.sigServerError.emit(error_msg)
                 self.sigLog.emit(f"✗ {error_msg}")
         
-        except FileNotFoundError:
-            error_msg = "Команда 'lms' не найдена. Убедитесь, что LM Studio CLI установлен."
-            self.sigServerError.emit(error_msg)
-            self.sigLog.emit(f"✗ {error_msg}")
-        
-        except subprocess.TimeoutExpired:
-            error_msg = "Превышено время ожидания выполнения команды"
-            self.sigServerError.emit(error_msg)
-            self.sigLog.emit(f"✗ {error_msg}")
-        
         except Exception as e:
             error_msg = f"Ошибка остановки сервера: {str(e)}"
             self.sigServerError.emit(error_msg)
             self.sigLog.emit(f"✗ {error_msg}")
 
-    @pyqtSlot(result=bool)
+    @pyqtSlot()
     def proverkaServera(self):
-        """Возвращает текущий статус сервера"""
-        return self._server_zapuschen
+        """Проверяет, запущен ли сервер LM Studio"""
+        zapuschen = self._proverkaServeraZapuschen()
+        self._server_zapuschen = zapuschen
+        self.sigServerStatus.emit(zapuschen)
+        self.sigLog.emit(f"Сервер LM Studio: {zapuschen}")
+        return zapuschen
 
-    def _zapustitProverkuServera(self):
-        """Запускает автоматическую проверку запуска сервера"""
-        self.sigLog.emit("⏳ Ожидание запуска сервера...")
-        
-        self._server_popitki = 0
-        self._server_max_popitok = 10  # 10 попыток по 2 секунды = 20 секунд
-        
-        if not hasattr(self, '_server_timer') or self._server_timer is None:
-            self._server_timer = QTimer()
-            self._server_timer.timeout.connect(self._proverkaServeraAvto)
-        
-        self._server_timer.start(2000)  # Проверяем каждые 2 секунды 
-
-    def _proverkaServeraAvto(self):
-        """Автоматическая проверка запуска сервера"""
-        self._server_popitki += 1
-        
-        if self._proverkaServeraZapuschen():
-            if hasattr(self, '_server_timer') and self._server_timer:
-                self._server_timer.stop()
-            
-            self._server_popitki = 0
-            self._server_zapuschen = True
-            self.sigLog.emit("✓ Сервер запущен и готов к работе!")
-            self.sigServerZapuschen.emit()
-            self.sigServerStatus.emit(True)
-        else:
-            if self._server_popitki >= self._server_max_popitok:
-                if hasattr(self, '_server_timer') and self._server_timer:
-                    self._server_timer.stop()
-                
-                self._server_popitki = 0
-                error_msg = "Сервер не запустился за отведённое время"
-                self.sigServerError.emit(error_msg)
-                self.sigLog.emit(f"⚠ {error_msg}")
-            else:
-                self.sigLog.emit(f"⏳ Проверка сервера... ({self._server_popitki}/{self._server_max_popitok})") 
-    
     # ==================== ЗАПУСК/ОСТАНОВКА ПРИЛОЖЕНИЯ ====================
-    
     @pyqtSlot(str)
-    def ustPut(self, path):
+    def ustPutStudio(self, path):
         """Устанавливает путь к LM Studio"""
         self._custom_path = path
         print(f"✓ Путь к LM Studio: {path}")
@@ -287,7 +285,7 @@ class DCLMStudio(QObject):
             self.sigLog.emit("LM Studio уже работает")
             self.sigStudioZapuschen.emit()
             # Проверяем статус сервера
-            self.proveritServer()
+            self.proverkaServera()
             return
         
         lms_path = self._naitiLMStudio()
@@ -376,7 +374,6 @@ class DCLMStudio(QObject):
             self.sigStudioStatus.emit(False)
     
     # ==================== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ====================
-    
     def _initTimer(self):
         """Ленивая инициализация таймера"""
         if self._timer is None:
@@ -459,7 +456,7 @@ class DCLMStudio(QObject):
             # Теперь проверяем сервер отдельно
             self.sigLog.emit("Проверка статуса сервера...")
             # Даём время на запуск UI
-            QTimer.singleShot(2000, self.proveritServer)
+            QTimer.singleShot(2000, self.proverkaServera)
         else:
             if self._popitki >= self._max_popitok:
                 if self._timer:
@@ -558,3 +555,49 @@ class DCLMStudio(QObject):
                 continue
         
         return None
+
+    def _proverkaServeraZapuschen(self):
+        """Внутренняя проверка статуса сервера"""
+        try:
+            response = requests.get(f"{LM_STUDIO_URL}/models", timeout=2)
+            return response.status_code == 200
+        except:
+            return False
+
+    def _zapustitProverkuServera(self):
+        """Запускает автоматическую проверку запуска сервера"""
+        self.sigLog.emit("⏳ Ожидание запуска сервера...")
+        
+        self._server_popitki = 0
+        self._server_max_popitok = 10  # 10 попыток по 2 секунды = 20 секунд
+        
+        if not hasattr(self, '_server_timer') or self._server_timer is None:
+            self._server_timer = QTimer()
+            self._server_timer.timeout.connect(self._proverkaServeraAvto)
+        
+        self._server_timer.start(2000)  # Проверяем каждые 2 секунды 
+
+    def _proverkaServeraAvto(self):
+        """Автоматическая проверка запуска сервера"""
+        self._server_popitki += 1
+        
+        if self._proverkaServeraZapuschen():
+            if hasattr(self, '_server_timer') and self._server_timer:
+                self._server_timer.stop()
+            
+            self._server_popitki = 0
+            self._server_zapuschen = True
+            self.sigLog.emit("✓ Сервер запущен и готов к работе!")
+            self.sigServerZapuschen.emit()
+            self.sigServerStatus.emit(True)
+        else:
+            if self._server_popitki >= self._server_max_popitok:
+                if hasattr(self, '_server_timer') and self._server_timer:
+                    self._server_timer.stop()
+                
+                self._server_popitki = 0
+                error_msg = "Сервер не запустился за отведённое время"
+                self.sigServerError.emit(error_msg)
+                self.sigLog.emit(f"⚠ {error_msg}")
+            else:
+                self.sigLog.emit(f"⏳ Проверка сервера... ({self._server_popitki}/{self._server_max_popitok})")
