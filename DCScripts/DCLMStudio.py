@@ -42,7 +42,29 @@ class DCLMStudio(QObject):
         
         # Состояние сервера
         self._server_zapuschen = False
-    
+
+    # ==================== РАБОТА С ФАЙЛАМИ ====================
+    @pyqtSlot(str, result=bool)
+    def proverkaFaila(self, file_path: str) -> bool:
+        """
+        Проверяет, существует ли файл по указанному пути.
+        Работает со скрытыми файлами (.file) и путями с ~ (домашняя директория).
+        """
+        if not file_path or not isinstance(file_path, str):
+            return False
+            
+        try:
+            # expanduser() превращает ~/ в /home/user/, что критично для Linux
+            # resolve() очищает путь от лишних ./ или ../
+            path = Path(file_path).expanduser().resolve()
+            
+            # is_file() проверяет, что это именно файл, а не папка
+            # Если нужно проверить и папку тоже, используйте path.exists()
+            return path.is_file()
+            
+        except Exception:
+            # В случае любых ошибок (например, недопустимые символы в пути)
+            return False    
     # ==================== РАБОТА С МОДЕЛЯМИ ====================
     @pyqtSlot()
     def zagruzitModeli(self):
