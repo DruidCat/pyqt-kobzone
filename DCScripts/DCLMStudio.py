@@ -33,7 +33,6 @@ class DCLMStudio(QObject):
         # Управление моделями
         self._current_model = ""
         self._models_list = []
-        
         # Управление процессом
         self._process = None
         self._custom_path = ""
@@ -41,7 +40,6 @@ class DCLMStudio(QObject):
         self._popitki = 0
         self._max_popitok = 10
         self._zapusk_v_processe = False
-        
         # Состояние сервера
         self._server_zapuschen = False
 
