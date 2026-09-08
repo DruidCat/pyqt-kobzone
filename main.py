@@ -158,7 +158,8 @@ class MainApp:
         # Создаём ВСЕ объекты ДО загрузки QML
         self.python_info = PythonInfo()
         self.qt_info = QtInfo()
-        
+        # ВАЖНО: Связываем анализатор и LM Studio ПЕРЕД регистрацией
+        self._connect_analyzer_to_lmstudio()
         # РЕГИСТРИРУЕМ КОНТЕКСТНЫЕ СВОЙСТВА.
         self.engine.rootContext().setContextProperty("pyAnalyzer", self.analyzer)
         self.engine.rootContext().setContextProperty("pyTranscriber", self.transcriber)
@@ -203,6 +204,14 @@ class MainApp:
             self.analyzer.setCurrentFilename(path)
             print(f"✓ Установлено имя файла: {Path(path).name}")
         
+    def _connect_analyzer_to_lmstudio(self):
+        """Связывает DCAnalyzer и DCLMStudio для автоматической перезагрузки модели"""
+        def handle_model_reload(model_name, n_ctx, gpu_offload):
+            self.lm_studio.zagruzitModelSParametrami(model_name, n_ctx, gpu_offload)#Обработчик с 3 параметрам
+        
+        self.analyzer.sigModelReloadRequest.connect(handle_model_reload)
+        print("✓ DCAnalyzer связан с DCLMStudio") 
+
     def run(self):
         """Запуск приложения"""
         return self.app.exec()

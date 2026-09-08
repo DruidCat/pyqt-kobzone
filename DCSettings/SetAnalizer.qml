@@ -48,6 +48,11 @@ Item {
 	property real rlTemperatura: DCSettings.analizer_temperatura//Температура ИИ
 	property int maxContext: DCSettings.analizer_max_context//Максимальное количество токенов
 	property bool isStudioOn: false//true - LM Studio запущена.
+	property int gpuOffload: DCSettings.analizer_gpu_offload
+	property bool isModelStart: false//true - первая иннициализация уже была
+	property bool isTemperaturaStart: false//true - первая иннициализация уже была
+	property bool isContextStart: false//true - первая иннициализация уже была
+	property bool isGpuOffloadStart: false//true - первая иннициализация уже была
 	//Настройки
 	anchors.fill: parent
 	focus: true
@@ -59,32 +64,57 @@ Item {
 	//Методы
 	Component.onCompleted: {
 		knopkiMassiv = [knopkaLMStart, knopkaLMStop, knopkaLMPut, knopkaCLIPut, knopkaModeli,
-						knopkaTemperatura, knopkaContext]
+						knopkaTemperatura, knopkaContext, knopkaGPU]
 		if (DCSettings.analizer_lms_put !== "")//Передаём путь из настроек в Python
 			pyLMStudio.ustPutStudio(DCSettings.analizer_lms_put)
 		root.forceActiveFocus()	
 	}
 	onStrModelChanged: {//Если Модель изменится, то...
-        pyLMStudio.ustModel(root.strModel)//Отправляем в Python
-        //Обновляем настройки анализатора
-        let ltMaxContext = DCSettings.analizer_max_context
-		let ltTemperatura = DCSettings.analizer_temperatura
-        let ltPerekritie = DCSettings.analizer_perekritie
-        pyAnalyzer.ustModelSettings(root.strModel, ltMaxContext, ltTemperatura, ltPerekritie)
+		if (isModelStart){//Первую иннициализацию не обрабатываем, когда данные читаются из реестра
+			//Обновляем настройки анализатора
+			ldrProgress.active = true//Запускаем полосу прогресса загрузки модели
+			let ltMaxContext = DCSettings.analizer_max_context
+			let ltTemperatura = DCSettings.analizer_temperatura
+			let ltPerekritie = DCSettings.analizer_perekritie
+			let ltGPU = DCSettings.analizer_gpu_offload
+			pyAnalyzer.ustModelSettings(root.strModel, ltMaxContext, ltTemperatura, ltPerekritie, ltGPU)
+		}
+		isModelStart = true
 	}
 	onRlTemperaturaChanged: {	
-        //Обновляем настройки анализатора
-        let ltMaxContext = DCSettings.analizer_max_context
-		let ltTemperatura = DCSettings.analizer_temperatura
-        let ltPerekritie = DCSettings.analizer_perekritie
-        pyAnalyzer.ustModelSettings(root.strModel, ltMaxContext, ltTemperatura, ltPerekritie)
+		if (isTemperaturaStart){//Первую иннициализацию не обрабатываем, когда данные читаются из реестра
+			//Обновляем настройки анализатора
+			ldrProgress.active = true//Запускаем полосу прогресса загрузки модели
+			let ltMaxContext = DCSettings.analizer_max_context
+			let ltTemperatura = DCSettings.analizer_temperatura
+			let ltPerekritie = DCSettings.analizer_perekritie
+			let ltGPU = DCSettings.analizer_gpu_offload
+			pyAnalyzer.ustModelSettings(root.strModel, ltMaxContext, ltTemperatura, ltPerekritie, ltGPU)
+		}
+		isTemperaturaStart = true
 	}
 	onMaxContextChanged: {
-        //Обновляем настройки анализатора
-		let ltMaxContext = DCSettings.analizer_max_context
-		let ltTemperatura = DCSettings.analizer_temperatura
-        let ltPerekritie = DCSettings.analizer_perekritie
-        pyAnalyzer.ustModelSettings(root.strModel, ltMaxContext, ltTemperatura, ltPerekritie)
+		if (isContextStart){//Первую иннициализацию не обрабатываем, когда данные читаются из реестра
+			//Обновляем настройки анализатора
+			ldrProgress.active = true//Запускаем полосу прогресса загрузки модели
+			let ltMaxContext = DCSettings.analizer_max_context
+			let ltTemperatura = DCSettings.analizer_temperatura
+			let ltPerekritie = DCSettings.analizer_perekritie
+			let ltGPU = DCSettings.analizer_gpu_offload
+			pyAnalyzer.ustModelSettings(root.strModel, ltMaxContext, ltTemperatura, ltPerekritie, ltGPU)
+		}
+		isContextStart = true
+	}
+	onGpuOffloadChanged: {
+		if (isGpuOffloadStart){//Первую иннициализацию не обрабатываем, когда данные читаются из реестра
+			ldrProgress.active = true//Запускаем полосу прогресса загрузки модели
+			let ltMaxContext = DCSettings.analizer_max_context
+			let ltTemperatura = DCSettings.analizer_temperatura
+			let ltPerekritie = DCSettings.analizer_perekritie
+			let ltGPU = DCSettings.analizer_gpu_offload
+			pyAnalyzer.ustModelSettings(root.strModel, ltMaxContext, ltTemperatura, ltPerekritie, ltGPU)
+		}
+		isGpuOffloadStart = true
 	}
 	onPutLMStudioChanged: {//Если путь к LM Studio изменился, то...
 		if (root.putLMStudio !== ""){//Если он не пустой, то...
@@ -98,7 +128,7 @@ Item {
 			root.log(logMsg)
 		}
         function onSigError(ntError, errorMsg) {
-            root.log(`Ошибка ${ntError}: ${errorMsg}`)
+            root.toolbar(`Ошибка ${ntError}: ${errorMsg}`)
 			if(ntError === 3){//3 - Не удалось найти исполняемый файл LM Studio
 				vprVopros.ntVopros = 3
 				vprVopros.visible = true
@@ -108,10 +138,14 @@ Item {
 			} else if (ntError === 9){//9 - CLI lms не найден. Укажите путь в настройках
 				vprVopros.ntVopros = 9
 				vprVopros.visible = true
+			} else if (ntError === 10) {//10 - Модель не загрузилась
+				vprVopros.ntVopros = 6
+				vprVopros.visible = true
 			}
 			knopkaLMStart.isPerehodniProces = false
 			knopkaLMStop.isPerehodniProces = false
 			pvModels.isServerZapustit = false
+			ldrProgress.active = false
         }
 		//0 - Ошибка HTTP при запросе списка моделей (сервер ответил кодом, отличным от 200).
 		//1 - Ошибка сетевого подключения к LM Studio (сервер недоступен или не запущен).
@@ -179,6 +213,14 @@ Item {
             }
             root.log(`Загружено моделей: ${models.length}`)
         }
+		function onSigModelZagrujena(strModel, ntContext){//Модель загрузилась
+			ldrProgress.active = false
+		}
+		function onSigModelProgress(ntProgress) {
+			if (ldrProgress.item) {
+				ldrProgress.item.progress = ntProgress
+			}
+		}
 	}
 	Keys.onPressed: (event) => {
 		if (event.modifiers & Qt.AltModifier) {
@@ -322,7 +364,7 @@ Item {
 		if (pvTemperatura.visible) {
 			pvTemperatura.visible = false
 		}
-		txnZagolovok.visible = false//Делаем невидимым ввот чисел
+		txnVvod.visible = false//Делаем невидимым ввот чисел
     }
 	function fnClickedNazad() {
 		fnClickedEscape()//Функция нажатия на клавишу Escape
@@ -330,23 +372,30 @@ Item {
 		root.clickedNazad()
 	}
 	function fnClickedZakrit(){//Функция обрабатывающая кнопку Закрыть.
-		txnZagolovok.visible = false//Делаем невидимым ввот чисел
+		txnVvod.visible = false//Делаем невидимым ввот чисел
 	}
 	function fnClickedOk(){//Нажимаем на Ок(Сохранить)
-		if(txnZagolovok.ntZagolovok === 0){//Максимальный контекст
-			let ltContext = Number(txnZagolovok.text)//Явно приобразовываем в число.
+		if(txnVvod.ntVvod === 0){//Максимальный контекст
+			let ltContext = Number(txnVvod.text)//Явно приобразовываем в число.
 			let ltResult = Math.round(ltContext / 64) * 64;//Получаем число кратное 64.
 			DCSettings.analizer_max_context = ltResult//Сохраняем в реестре значение.
-		} else if(txnZagolovok.ntZagolovok === 1){//Путь к cli lms
-			var vrPutCLI = txnZagolovok.text
+		} else if(txnVvod.ntVvod === 1){//Путь к cli lms
+			var vrPutCLI = txnVvod.text
 			if(pyLMStudio.proverkaFaila(vrPutCLI)){//Если такой путь существует, то...
 				DCSettings.analizer_cli_put  = vrPutCLI
 				pyLMStudio.ustPutCLI(vrPutCLI)
 			} else {
 				root.toolbar("Указан неверный путь до lms.")
 			}
+		} else if (txnVvod.ntVvod === 2){//ввод gpu offload
+			let ltGPU = Number(txnVvod.text)//Явно преобразуем в число.
+			if(ltGPU >= 0 && ltGPU <= 100){
+				DCSettings.analizer_gpu_offload = ltGPU
+			} else {
+				root.toolbar("Неверно задан параметр gpu offload (0-100%).")
+			}
 		}
-		txnZagolovok.visible = false//Делаем невидимым данных
+		txnVvod.visible = false//Делаем невидимым данных
 	}
 	function fnClickedInfo() {
 		fnClickedEscape()//Функция нажатия на клавишу Escape
@@ -358,7 +407,7 @@ Item {
 		else {
 			if (pvModels.visible) pvModels.visible = false
 			if (pvTemperatura.visible) pvTemperatura.visible = false
-			if (txnZagolovok.visible) txnZagolovok.visible = false
+			if (txnVvod.visible) txnVvod.visible = false
 			if (vprVopros.visible) vprVopros.visible = false
 			menuMenu.visible = true
 		}
@@ -396,8 +445,8 @@ Item {
 		return false
 	}
 	function fnCloseTXNtIfOpen() {
-		if (txnZagolovok.visible) {
-			txnZagolovok.visible = false
+		if (txnVvod.visible) {
+			txnVvod.visible = false
 			return true
 		}
 		return false
@@ -455,16 +504,12 @@ Item {
 		} else if (flag === 6){
 			fnClickedLMSZapustit()//Функция запуска LM Studio
 		} else if (flag === 9){
-			fnClickedCLIPut()//Функция задания пути для cli lms
+			fnClickedVvod(1)//Функция задания пути для cli lms
 		}
 	}
-	function fnClickedContext(){//Функция выбора максимального контекста
-		txnZagolovok.ntZagolovok = 0//Режим максимального контекста
-		txnZagolovok.visible = !txnZagolovok.visible
-	}
-	function fnClickedCLIPut(){//Функция задания пути для cli lms
-		txnZagolovok.ntZagolovok = 1//Режим установки пути cli lms
-		txnZagolovok.visible = !txnZagolovok.visible
+	function fnClickedVvod(vvod){//Функция выбора Ввода данных
+		txnVvod.ntVvod = vvod
+		txnVvod.visible = !txnVvod.visible
 	}
 	function fnPathToUrl(localPath) {//Функция кроссплатформенного преобразования пути в URL
 		if (!localPath) return ""
@@ -563,39 +608,42 @@ Item {
             anchors.leftMargin: root.ntCoff/2
             anchors.rightMargin: root.ntCoff/2
 			DCTextInput {
-				id: txnZagolovok
+				id: txnVvod
 				ntWidth: root.ntWidth
 				ntCoff: root.ntCoff
 				anchors.fill: tmTextInput
 				visible: false
 				isNumber: {
-					if (ntZagolovok === 0) return true//Вводим только цифры
-					else if(ntZagolovok === 1) return false//Не вводим только цифры
+					if (ntVvod === 0) return true//Вводим только цифры
+					else if(ntVvod === 1) return false//Не вводим только цифры
+					else if(ntVvod === 2) return true//Вводим только цифры
 				}
 				clrTexta: root.clrTexta; clrFona: root.clrMenuFon
 				radius: root.ntCoff/2
-				//textInput.font.capitalization: Font.AllUppercase//Отображает текст весь с заглавных букв.
-				//textInput.inputMethodHints: Qt.ImhUppercaseOnly//Буквы в виртуальной клавиатуре заглавные
 				textInput.maximumLength: {
-			   		if(ntZagolovok === 0 ) return 6//Ограницение по вводу максимальны токенов для локальной модели
-					else if (ntZagolovok === 1) return 111//Длина пути до cli lms
+			   		if(ntVvod === 0 ) return 6//Ограницение по вводу максимальны токенов для локальной модели
+					else if (ntVvod === 1) return 111//Длина пути до cli lms
+					else if (ntVvod === 2) return 3//0-100
 				}
 				blSqlProtect: {//Настройка по SQL инъекции.
-					if(ntZagolovok === 0) return false
-					else if (ntZagolovok === 1) return true
+					if(ntVvod === 0) return false
+					else if (ntVvod === 1) return true
+					else if (ntVvod === 2) return false
 				}
-				property int ntZagolovok: 0//0 - max_context, 1 - cli_lms
+				property int ntVvod: 0//0 - max_context, 1 - cli_lms, 2 - gpu_offload
 				onSgnDebug: function (strDebug) { root.toolbar(strDebug) }//Ошибка из виджета в программу.
 				onVisibleChanged: {//Если видимость DCTextInput изменился, то...
-					if(txnZagolovok.visible){//Если DCTextInput видим, то...
+					if(txnVvod.visible){//Если DCTextInput видим, то...
 						knopkaNazad.visible = false;//Конопка Назад Невидимая.
 						knopkaLM.visible = false;//Кнопка LM невидимая.
 						knopkaZakrit.visible = true;//Кнопка закрыть Видимая
 						knopkaOk.visible = true;//Кнопка Ок Видимая.
-						if(ntZagolovok === 0){//Максимальный контекст
+						if(ntVvod === 0){//Максимальный контекст
 							text = DCSettings.analizer_max_context//Показываем значение макс контекста
-						} else if(ntZagolovok === 1){//Путь к cli lms
+						} else if(ntVvod === 1){//Путь к cli lms
 							text = DCSettings.analizer_cli_put//Путь к cli lms
+						} else if (ntVvod === 2){//gpu offload
+							text = DCSettings.analizer_gpu_offload
 						}
 					}
 					else{//Если DCTextInput не видим, то...
@@ -603,7 +651,7 @@ Item {
 						knopkaLM.visible = true;//Кнопка LM видимая.
 						knopkaZakrit.visible = false;//Кнопка закрыть Невидимая
 						knopkaOk.visible = false;//Кнопка Ок Невидимая.
-						txnZagolovok.text = "";//Текст обнуляем вводимый.
+						txnVvod.text = "";//Текст обнуляем вводимый.
 						root.forceActiveFocus()//Фокус на главной странице, чтоб горячие клавиши работали.
 					}
 				}
@@ -677,7 +725,8 @@ Item {
 			TapHandler {//Нажимаем на всю область
 				onTapped: {
 					fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
-					if(!knopkaContext.pressedTmr550 && !knopkaCLIPut.pressedTmr550) fnCloseTXNtIfOpen()
+					if(!knopkaContext.pressedTmr550 && !knopkaCLIPut.pressedTmr550 
+													&& !knopkaGPU.pressedTmr550) fnCloseTXNtIfOpen()
 					if(!pvModels.jdi && !pvModels.pressed) fnCloseModelsIfOpen()//Закрываем карусель pv....
 					if(!pvTemperatura.jdi && !pvTemperatura.pressed) fnCloseTemperaturaIfOpen()//Закрываем
 					if(!knopkaModeli.pressedTmr550 	&& !knopkaLMStart.pressedTmr550
@@ -791,7 +840,7 @@ Item {
                     opacityKnopki: 0.9
 					function fnPress() {
 						root.currentIndex = 3
-						fnClickedCLIPut()//Функция задающая путь к cli lms
+						fnClickedVvod(1)//Функция задающая путь к cli lms
 					}
 					onClicked: {
 						if (pressed) {
@@ -874,7 +923,34 @@ Item {
                     opacityKnopki: 0.9
 					function fnPress() {
 						root.currentIndex = 6
-						fnClickedContext()//Функция выбора максимального контекста
+						fnClickedVvod(0)//Функция выбора максимального контекста
+					}
+					onClicked: {
+						if (pressed) {
+							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
+								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
+							}
+						}
+					}
+				}
+				DCKnopkaOriginal {
+					id: knopkaGPU
+					text: {
+						let ltText = qsTr("GPU offload: ")
+						if (root.gpuOffload === 0) ltText += "CPU only"
+						else if (root.gpuOffload === 100) ltText += "Full GPU"
+						else ltText += root.gpuOffload + "%"
+						return ltText
+					}
+					ntHeight: root.ntWidth; ntCoff: root.ntCoff
+					anchors.left: parent.left; anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
+					clrTexta: root.clrMenuText
+                    clrKnopki: (root.currentIndex === 7) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    opacityKnopki: 0.9
+					function fnPress() {
+						root.currentIndex = 7
+						fnClickedVvod(2)//Функция ввода gpu offload
 					}
 					onClicked: {
 						if (pressed) {
@@ -990,6 +1066,47 @@ Item {
 	Item {//Тулбар
 		id: tmToolbar
 		clip: true
+		Loader {//LOADER для DCProgress
+            id: ldrProgress
+            anchors.fill: tmToolbar
+            source: "qrc:/DCMethods/DCProgress.qml"
+            active: false
+			onActiveChanged: {
+				if(active){
+					knopkaInfo.visible = false
+					knopkaNastroiki.visible = false
+					knopkaNazad.enabled = false
+					knopkaLMStart.enabled = false
+					knopkaLMStop.enabled = false
+					knopkaLMPut.enabled = false
+					knopkaCLIPut.enabled = false
+					knopkaModeli.enabled = false
+					knopkaTemperatura.enabled = false
+					knopkaContext.enabled = false
+					knopkaGPU.enabled = false
+				} else {
+					knopkaInfo.visible = true
+					knopkaNastroiki.visible = true
+					knopkaNazad.enabled = true
+					knopkaLMStart.enabled = true
+					knopkaLMStop.enabled = true
+					knopkaLMPut.enabled = true
+					knopkaCLIPut.enabled = true
+					knopkaModeli.enabled = true
+					knopkaTemperatura.enabled = true 
+					knopkaContext.enabled = true
+					knopkaGPU.enabled = true
+				}
+			}
+            onLoaded: {
+                ldrProgress.item.ntWidth = root.ntWidth
+                ldrProgress.item.ntCoff = root.ntCoff
+                ldrProgress.item.clrProgress = root.clrTexta
+                ldrProgress.item.clrTexta = "grey"
+                ldrProgress.item.radius = root.ntCoff / 4
+				ldrProgress.item.text = "Загрузка модели: " + root.strModel
+            }
+        }
 		DCKnopkaInfo {
 			id: knopkaInfo
 			ntWidth: root.ntWidth
@@ -1029,11 +1146,11 @@ Item {
 		propagateComposedEvents: true
 		onClicked: (mouse) => {
 			mouse.accepted = false
-			if (menuMenu.visible || pvModels.visible || pvTemperatura.visible || txnZagolovok.visible){
+			if (menuMenu.visible || pvModels.visible || pvTemperatura.visible || txnVvod.visible){
 				menuMenu.visible = false
 				pvModels.visible = false
 				pvTemperatura.visible = false
-				txnZagolovok.visible = false
+				txnVvod.visible = false
 			} else root.forceActiveFocus()
 			root.forceActiveFocus()
 		}

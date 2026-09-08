@@ -56,8 +56,8 @@ Item {
 	}	
 	Component.onCompleted: {
         root.forceActiveFocus()
-		pyAnalyzer.ustModelSettings(DCSettings.analizer_model_imya, DCSettings.analizer_max_context,
-			DCSettings.analizer_temperatura, DCSettings.analizer_perekritie)//Передаём настройки в Python
+		//pyAnalyzer.ustModelSettings(DCSettings.analizer_model_imya, DCSettings.analizer_max_context,
+			//DCSettings.analizer_temperatura, DCSettings.analizer_perekritie, DCSettings.analizer_gpu_offload)
     }
 	Connections {//CONNECTIONS для прогресса
 		target: pyAnalyzer
@@ -153,13 +153,15 @@ Item {
 		//7 - Ошибка системного запуска процесса (сбой subprocess.Popen в фоновом потоке).
 		//8 - Превышено время ожидания запуска (сервер не стал доступен после 10 попыток по 3 секунды).
 		//9 - CLI lms не найден. Укажите путь в настройках
+		//10 - Модель не загрузилась
 		function onSigStudioZapuschen() {//Если запущена LM Studio
 			vprVopros.visible = false//Эта строка закрывает плашку с вопросом, которая автоматич. появляется
 		}
 		function onSigServerZapuschen() {//Если сервер запустился, то начинаем анализ Документов.
 			if(root.isServerZapustit){
 				pyAnalyzer.ustModelSettings(DCSettings.analizer_model_imya, DCSettings.analizer_max_context,
-						DCSettings.analizer_temperatura, DCSettings.analizer_perekritie)//Передаём настройки
+											DCSettings.analizer_temperatura, DCSettings.analizer_perekritie,
+											DCSettings.analizer_gpu_offload)
         		pyAnalyzer.startAnaliza(txaContent.text, txfPromt.text)//Запуск анализа Документов.
 				root.isServerZapustit = false
 			}
