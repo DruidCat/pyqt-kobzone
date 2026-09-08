@@ -132,12 +132,13 @@ Item {
         function onSigError(ntError, errorMsg) {
             root.log(`Ошибка ${ntError}: ${errorMsg}`)
 			if(ntError === 3){//3 - Не удалось найти исполняемый файл LM Studio
-
+				vprVopros.ntFlag = 3//3 - вопрос, что не найден cli lms
+				vprVopros.visible = true
 			} else if (ntError === 6){//6 - LM Studio не запущен.
-				vprVopros.ntFlag = 0//0 - вопрос, что не запустилась LM Studio
+				vprVopros.ntFlag = 6//6 - вопрос, что не запустилась LM Studio
 				vprVopros.visible = true
 			} else if (ntError === 9){//9 - CLI lms не найден. Укажите путь в настройках
-				vprVopros.ntFlag = 1//1 - вопрос, что не найден cli lms
+				vprVopros.ntFlag = 9//9 - вопрос, что не найден cli lms
 				vprVopros.visible = true
 			}
 			root.isServerZapustit = false
@@ -157,6 +158,8 @@ Item {
 		}
 		function onSigServerZapuschen() {//Если сервер запустился, то начинаем анализ Документов.
 			if(root.isServerZapustit){
+				pyAnalyzer.ustModelSettings(DCSettings.analizer_model_imya, DCSettings.analizer_max_context,
+						DCSettings.analizer_temperatura, DCSettings.analizer_perekritie)//Передаём настройки
         		pyAnalyzer.startAnaliza(txaContent.text, txfPromt.text)//Запуск анализа Документов.
 				root.isServerZapustit = false
 			}
@@ -431,11 +434,13 @@ Item {
 			clrKnopki: root.clrFona; clrBorder: root.clrFona
 			tapKnopkaZakrit: root.tapZagolovokLevi; tapKnopkaOk: root.tapZagolovokPravi
 			visible: false
+			property int ntFlag: 0;//смотри ошибки в sigError
 			text: {
-				if(ntFlag === 0) return qsTr("LM Studio не запущена. Перейти к настройкам запуска LM Studio?")
-				else if (ntFlag === 1) return qsTr("Сервер LM Studio не запущен. Перейти к настройкам cli lms?")
+				if(ntFlag === 3) return qsTr("Путь к исполняемому файлу LM Studio не действительный. Перейти к настройкам запуска LM Studio?")
+				else if(ntFlag === 6) return qsTr("LM Studio не запущена. Перейти к настройкам запуска LM Studio?")
+				else if (ntFlag === 9) return qsTr("Сервер LM Studio не запущен. Перейти к настройкам cli lms?")
+				else return qsTr("Любовь")
 			}
-			property int ntFlag: 0;//0 - не запущена LM Studio, 1 - не найдена cli lms
 			onVisibleChanged: {
 				if(visible) {
 					knopkaNazad.visible = false
