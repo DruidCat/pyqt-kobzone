@@ -208,7 +208,11 @@ class DCAnalyzer(QObject):
         Разбиваем текст на части и отправляем каждую часть в модель.
         После обработки всех чанков делаем финальный анализ.
         """
-        max_tokens = max(8000, self.max_context - 5000)#Используем максимум доступного контекста
+        available_context = max(0, self.max_context - 5000)  # Резерв для промта
+        max_tokens = max(1000, available_context)#Минимум 1000 токенов для ответа
+        # Если контекст слишком мал - предупреждаем
+        if self.max_context < 8000:
+            print(f"⚠ Предупреждение: контекст {self.max_context} слишком мал, рекомендуется минимум 8000")
         #Разбиваем с перекрытием в %
         chunks = self.split_text_into_chunks(text_content, max_tokens, overlap_percent=self.overlap_percent)
         total_chunks = len(chunks)

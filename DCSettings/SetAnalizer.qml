@@ -378,7 +378,8 @@ Item {
 		if(txnVvod.ntVvod === 0){//Максимальный контекст
 			let ltContext = Number(txnVvod.text)//Явно приобразовываем в число.
 			let ltResult = Math.round(ltContext / 64) * 64;//Получаем число кратное 64.
-			DCSettings.analizer_max_context = ltResult//Сохраняем в реестре значение.
+			if(ltResult < 8000 || ltResult > 131072) root.toolbar("Неверное значение, необходимо от 8000 до 131072.")
+			else DCSettings.analizer_max_context = ltResult//Сохраняем в реестре значение.
 		} else if(txnVvod.ntVvod === 1){//Путь к cli lms
 			var vrPutCLI = txnVvod.text
 			if(pyLMStudio.proverkaFaila(vrPutCLI)){//Если такой путь существует, то...
