@@ -210,6 +210,7 @@ class MainApp:
             self.lm_studio.zagruzitModelSParametrami(model_name, n_ctx, gpu_offload)#Обработчик с 3 параметрам
         
         self.analyzer.sigModelReloadRequest.connect(handle_model_reload)
+        self.lm_studio.sigServerURLIzmenen.connect(self.analyzer.ustServerURL)
         print("✓ DCAnalyzer связан с DCLMStudio") 
 
     def run(self):

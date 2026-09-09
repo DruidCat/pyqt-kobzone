@@ -44,6 +44,7 @@ Item {
 	//Модель
 	property string putLMStudio: DCSettings.analizer_lms_put//Путь к приложению LM Studio из реестра.
 	property string putCLI: DCSettings.analizer_cli_put//Путь к cli lms LM Studio из реестра.
+	property string serverURL: DCSettings.analizer_server_url//URL Сервера LM Studio
 	property string strModel: DCSettings.analizer_model_imya//Имя модели ИИ
 	property real rlTemperatura: DCSettings.analizer_temperatura//Температура ИИ
 	property int maxContext: DCSettings.analizer_max_context//Максимальное количество токенов
@@ -64,10 +65,13 @@ Item {
 	//Методы
 	Component.onCompleted: {
 		knopkiMassiv = [knopkaLMStart, knopkaLMStop, knopkaLMPut, knopkaCLIPut, knopkaModeli,
-						knopkaTemperatura, knopkaContext, knopkaGPU]
+						knopkaTemperatura, knopkaContext, knopkaGPU, knopkaServerURL]
 		if (DCSettings.analizer_lms_put !== "")//Передаём путь из настроек в Python
 			pyLMStudio.ustPutStudio(DCSettings.analizer_lms_put)
 		root.forceActiveFocus()	
+	}
+	onServerURLChanged: {
+		pyLMStudio.ustServerURL(serverURL)//Загрузка при иннициации приложения и при изменении значения.
 	}
 	onStrModelChanged: {//Если Модель изменится, то...
 		if (isModelStart){//Первую иннициализацию не обрабатываем, когда данные читаются из реестра
@@ -175,6 +179,9 @@ Item {
 		}		
 		function onSigStudioStatus(blStatus) {
 			root.isStudioOn = blStatus
+		}
+		function onSigServerURLIzmenen(strServerURL){//Сигнал о том, что изменён адрес сервера
+			root.toolbar(`Адрес сервера изменён на: ${strServerURL}`)
 		}
 		function onSigServerZapuschen() {
 			if(pvModels.isServerZapustit){
@@ -395,6 +402,13 @@ Item {
 			} else {
 				root.toolbar("Неверно задан параметр gpu offload (0-100%).")
 			}
+		} else if(txnVvod.ntVvod === 3){//Server URL
+			var vrServerURL = txnVvod.text
+			//if(pyLMStudio.proverkaServerURL(vrServerURL)){//Если такой url существует, то...
+				DCSettings.analizer_server_url = vrServerURL
+			//} else {
+				//root.toolbar("Указан неверный адрес сервера.")
+			//}
 		}
 		txnVvod.visible = false//Делаем невидимым данных
 	}
@@ -618,6 +632,7 @@ Item {
 					if (ntVvod === 0) return true//Вводим только цифры
 					else if(ntVvod === 1) return false//Не вводим только цифры
 					else if(ntVvod === 2) return true//Вводим только цифры
+					else if(ntVvod === 3) return false//Не Вводим только цифры
 				}
 				clrTexta: root.clrTexta; clrFona: root.clrMenuFon
 				radius: root.ntCoff/2
@@ -625,13 +640,15 @@ Item {
 			   		if(ntVvod === 0 ) return 6//Ограницение по вводу максимальны токенов для локальной модели
 					else if (ntVvod === 1) return 111//Длина пути до cli lms
 					else if (ntVvod === 2) return 3//0-100
+					else if (ntVvod === 3) return 28//Максимальная длина адреса http://127.000.000.001:1234
 				}
 				blSqlProtect: {//Настройка по SQL инъекции.
 					if(ntVvod === 0) return false
 					else if (ntVvod === 1) return true
 					else if (ntVvod === 2) return false
+					else if (ntVvod === 3) return true
 				}
-				property int ntVvod: 0//0 - max_context, 1 - cli_lms, 2 - gpu_offload
+				property int ntVvod: 0//0 - max_context, 1 - cli_lms, 2 - gpu_offload, 3 - server_url
 				onSgnDebug: function (strDebug) { root.toolbar(strDebug) }//Ошибка из виджета в программу.
 				onVisibleChanged: {//Если видимость DCTextInput изменился, то...
 					if(txnVvod.visible){//Если DCTextInput видим, то...
@@ -645,6 +662,8 @@ Item {
 							text = DCSettings.analizer_cli_put//Путь к cli lms
 						} else if (ntVvod === 2){//gpu offload
 							text = DCSettings.analizer_gpu_offload
+						} else if (ntVvod === 3){//server_url
+							text = DCSettings.analizer_server_url
 						}
 					}
 					else{//Если DCTextInput не видим, то...
@@ -727,7 +746,8 @@ Item {
 				onTapped: {
 					fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
 					if(!knopkaContext.pressedTmr550 && !knopkaCLIPut.pressedTmr550 
-													&& !knopkaGPU.pressedTmr550) fnCloseTXNtIfOpen()
+													&& !knopkaGPU.pressedTmr550 
+													&& !knopkaServerURL) fnCloseTXNtIfOpen()
 					if(!pvModels.jdi && !pvModels.pressed) fnCloseModelsIfOpen()//Закрываем карусель pv....
 					if(!pvTemperatura.jdi && !pvTemperatura.pressed) fnCloseTemperaturaIfOpen()//Закрываем
 					if(!knopkaModeli.pressedTmr550 	&& !knopkaLMStart.pressedTmr550
@@ -937,7 +957,7 @@ Item {
 				DCKnopkaOriginal {
 					id: knopkaGPU
 					text: {
-						let ltText = qsTr("GPU offload: ")
+						let ltText = qsTr("gpu offload: ")
 						if (root.gpuOffload === 0) ltText += "CPU only"
 						else if (root.gpuOffload === 100) ltText += "Full GPU"
 						else ltText += root.gpuOffload + "%"
@@ -952,6 +972,31 @@ Item {
 					function fnPress() {
 						root.currentIndex = 7
 						fnClickedVvod(2)//Функция ввода gpu offload
+					}
+					onClicked: {
+						if (pressed) {
+							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
+								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
+							}
+						}
+					}
+				}
+				DCKnopkaOriginal {
+					id: knopkaServerURL
+					text: {
+						let ltText = qsTr("адрес сервера: ")
+						ltText += root.serverURL
+						return ltText
+					}
+					ntHeight: root.ntWidth; ntCoff: root.ntCoff
+					anchors.left: parent.left; anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
+					clrTexta: root.clrMenuText
+                    clrKnopki: (root.currentIndex === 8) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    opacityKnopki: 0.9
+					function fnPress() {
+						root.currentIndex = 8
+						fnClickedVvod(3)//Функция ввода адреса сервера
 					}
 					onClicked: {
 						if (pressed) {

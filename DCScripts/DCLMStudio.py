@@ -5,9 +5,6 @@ import threading
 from pathlib import Path
 from PyQt6.QtCore import QObject, pyqtSignal, pyqtSlot, QTimer
 
-LM_STUDIO_URL = "http://localhost:1234/v1"
-
-
 class DCLMStudio(QObject):
     """Управление LM Studio: запуск/остановка и работа с моделями"""
     
@@ -23,6 +20,7 @@ class DCLMStudio(QObject):
     sigModelZagrujena = pyqtSignal(str, int)# (model_name, n_ctx)
     sigModelProgress = pyqtSignal(int)      # Процент загрузки модели (0-100)
     #Сигналы для сервера
+    sigServerURLIzmenen = pyqtSignal(str)   # Сервера изменён
     sigServerZapuschen = pyqtSignal()       # Сервер запущен
     sigServerOstanovlen = pyqtSignal()      # Сервер остановлен
     sigServerStatus = pyqtSignal(bool)      # Статус сервера (True - запущен, False - остановлен)
@@ -42,6 +40,8 @@ class DCLMStudio(QObject):
         self._zapusk_v_processe = False
         # Состояние сервера
         self._server_zapuschen = False
+        # URL сервера (можно изменить)
+        self._server_url = "http://localhost:1234/v1"
 
     # ==================== РАБОТА С ФАЙЛАМИ ====================
     @pyqtSlot(str, result=bool)
@@ -65,13 +65,16 @@ class DCLMStudio(QObject):
         except Exception:
             # В случае любых ошибок (например, недопустимые символы в пути)
             return False    
+
+ 
+
     # ==================== РАБОТА С МОДЕЛЯМИ ====================
     @pyqtSlot()
     def zagruzitModeli(self):
         """Загружает список доступных моделей из LM Studio"""
         try:
             response = requests.get(
-                f"{LM_STUDIO_URL}/models",
+                f"{self._server_url}/models",
                 timeout=5
             )
             
@@ -99,7 +102,7 @@ class DCLMStudio(QObject):
                 self.sigModelsLoaded.emit(["(автовыбор модели)"])
         
         except requests.exceptions.ConnectionError:
-            error_msg = f"Не удалось подключиться к LM Studio ({LM_STUDIO_URL})"
+            error_msg = f"Не удалось подключиться к LM Studio ({self._server_url})"
             print(f"✗ {error_msg}")
             self.sigError.emit(1, error_msg)
             self.sigModelsLoaded.emit(["(автовыбор модели)"])
@@ -141,6 +144,31 @@ class DCLMStudio(QObject):
         return success 
 
     # ==================== УПРАВЛЕНИЕ СЕРВЕРОМ ====================
+    @pyqtSlot(str)
+    def ustServerURL(self, server_url):
+        """Устанавливает URL сервера LM Studio"""
+        server_url = server_url.strip().rstrip('/')
+        
+        if not server_url.endswith('/v1'):
+            server_url += '/v1'
+        
+        old_url = self._server_url
+        self._server_url = server_url
+        
+        self.sigLog.emit(f"✓ URL сервера обновлён: {server_url}")
+        
+        if old_url != server_url:
+            print(f"✓ Сервер URL изменён: {old_url} → {server_url}")
+            # НОВОЕ: Излучаем сигнал об изменении
+            self.sigServerURLIzmenen.emit(server_url)
+            # Проверяем доступность нового сервера
+            self.proverkaServera()
+
+    @pyqtSlot(result=str)
+    def poluchitServerURL(self):
+        """Возвращает текущий URL сервера"""
+        return self._server_url
+
     @pyqtSlot(str)
     def ustPutCLI(self, path):
         """Устанавливает путь к CLI lms"""
@@ -608,7 +636,7 @@ class DCLMStudio(QObject):
     def _proverkaServeraZapuschen(self):
         """Внутренняя проверка статуса сервера"""
         try:
-            response = requests.get(f"{LM_STUDIO_URL}/models", timeout=2)
+            response = requests.get(f"{self._server_url}/models", timeout=2)
             return response.status_code == 200
         except:
             return False
@@ -773,8 +801,6 @@ class DCLMStudio(QObject):
                 # Успех
                 self.sigModelProgress.emit(100)
                 self.sigLog.emit(f"✓ Модель загружена: {model_name}")
-                self.sigLog.emit(f"✓ Контекст: {n_ctx}")
-                self.sigLog.emit(f"✓ GPU: {gpu_description}")
                 load_success = True
             
             else:

@@ -6,8 +6,6 @@ from PyQt6.QtWidgets import QFileDialog
 
 TIMEOUT_ANALYSIS = 300 #Увеличим с 120 до 300 секунд для чанков
 TIMEOUT_FINAL = 600 #Увеличим с 180 до 600 секунд для финального анализа
-LM_STUDIO_URL = "http://localhost:1234/v1"
-
 
 class DCAnalyzerWorker(QThread):
     # Сигналы. Рабочий поток для анализа текста
@@ -56,11 +54,22 @@ class DCAnalyzer(QObject):
         self.current_filename = ""
         self.current_prompt = ""  #хранение промта
         self.model_name = "qwen3-coder-30b-a3b-instruct"  #Имя модели ИИ добавляем
-        #self.max_context = 22016  #значение из LM Studio в настройках для языковой модели.
         self.max_context = 8000  #значение из LM Studio в настройках для языковой модели.
         self.temperature = 0.5 #Температура ИИ модели.
         self.overlap_percent = 20  #Процент перекрытия по умолчанию
         self.worker = None
+        self._server_url = "http://localhost:1234/v1"
+
+
+    @pyqtSlot(str)
+    def ustServerURL(self, server_url):
+        """Устанавливает URL сервера для анализа"""
+        server_url = server_url.strip().rstrip('/')
+        if not server_url.endswith('/v1'):
+            server_url += '/v1'
+        
+        self._server_url = server_url
+        print(f"✓ PyAnalyzer: URL сервера → {server_url}")
 
     @pyqtSlot(str, int, float, int, int)
     def ustModelSettings(self, model_name, max_context, temperature, overlap_percent, gpu_offload):
@@ -238,7 +247,7 @@ class DCAnalyzer(QObject):
                     data["model"] = self.model_name
                 
                 response = requests.post(
-                    f"{LM_STUDIO_URL}/chat/completions",
+                    f"{self._server_url}/chat/completions",
                     headers=headers,
                     json=data,
                     timeout=TIMEOUT_ANALYSIS
@@ -254,7 +263,7 @@ class DCAnalyzer(QObject):
             except requests.exceptions.Timeout:
                 return "[Ошибка: таймаут при анализе]"
             except requests.exceptions.ConnectionError:
-                return f"[Ошибка: не удалось подключиться к LM Studio. Проверьте, что сервер запущен на {LM_STUDIO_URL}]"
+                return f"[Ошибка: не удалось подключиться к LM Studio. Проверьте, что сервер запущен на {self._server_url}]"
             except Exception as e:
                 return f"[Ошибка при анализе: {str(e)}]"
         
@@ -283,7 +292,7 @@ class DCAnalyzer(QObject):
                     data["model"] = self.model_name 
                 
                 response = requests.post(
-                    f"{LM_STUDIO_URL}/chat/completions",
+                    f"{self._server_url}/chat/completions",
                     headers=headers,
                     json=data,
                     timeout=TIMEOUT_ANALYSIS
@@ -298,7 +307,7 @@ class DCAnalyzer(QObject):
             except requests.exceptions.Timeout:
                 chunk_results.append(f"[Ошибка: таймаут при обработке части {current_chunk}]")
             except requests.exceptions.ConnectionError:
-                chunk_results.append(f"[Ошибка: не удалось подключиться к LM Studio. Проверьте, что сервер запущен на {LM_STUDIO_URL}]")
+                chunk_results.append(f"[Ошибка: не удалось подключиться к LM Studio. Проверьте, что сервер запущен на {self._server_url}]")
             except Exception as e:
                 chunk_results.append(f"[Ошибка при обработке части {current_chunk}: {str(e)}]")
             
@@ -399,7 +408,7 @@ class DCAnalyzer(QObject):
             print(f"  - Контекст: {self.max_context} токенов")
 
             response = requests.post(
-                f"{LM_STUDIO_URL}/chat/completions",
+                f"{self._server_url}/chat/completions",
                 headers=headers,
                 json=data,
                 timeout=TIMEOUT_FINAL
