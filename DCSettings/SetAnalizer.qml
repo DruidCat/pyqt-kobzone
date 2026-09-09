@@ -1073,6 +1073,7 @@ Item {
             active: false
 			onActiveChanged: {
 				if(active){
+					root.toolbar("")//Очищаем toolbar, чтоб ненаслаивать предыдущие сообщения и загрузку.
 					knopkaInfo.visible = false
 					knopkaNastroiki.visible = false
 					knopkaNazad.enabled = false

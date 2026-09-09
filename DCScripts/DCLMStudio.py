@@ -703,30 +703,10 @@ class DCLMStudio(QObject):
         import re
         
         try:
-            # Шаг 1: Останавливаем сервер (если запущен)
-            server_was_running = self._proverkaServeraZapuschen()
+            # УДАЛЕНО: Шаг 1 - Остановка сервера (не нужна!)
+            # УДАЛЕНО: Ожидание полной остановки (не нужно!)
             
-            if server_was_running:
-                self.sigLog.emit("🔄 Остановка сервера для перезагрузки модели...")
-                result = subprocess.run(
-                    [lms_cli, "server", "stop"],
-                    capture_output=True,
-                    text=True,
-                    timeout=10
-                )
-                
-                if result.returncode == 0:
-                    self.sigLog.emit("✓ Сервер остановлен")
-                else:
-                    self.sigLog.emit(f"⚠ Предупреждение: {result.stderr.strip() if result.stderr else 'нет вывода'}")
-                
-                # Ждём полной остановки
-                for i in range(10):
-                    if not self._proverkaServeraZapuschen():
-                        break
-                    time.sleep(0.5)
-            
-            # Шаг 1.5: ВЫГРУЖАЕМ предыдущую модель
+            # Шаг 1: ВЫГРУЖАЕМ предыдущую модель
             self._vigruzitModel(lms_cli)
             
             # Шаг 2: Преобразуем процент GPU в формат для lms
@@ -742,16 +722,24 @@ class DCLMStudio(QObject):
             
             # Шаг 3: Загружаем модель
             self.sigLog.emit("🔄 Загрузка модели с новыми параметрами...")
+            self.sigLog.emit(f"   Модель: {model_name}")
+            self.sigLog.emit(f"   Контекст: {n_ctx} токенов")
+            self.sigLog.emit(f"   GPU: {gpu_description}")
             
             # Излучаем 0% в начале
             self.sigModelProgress.emit(0)
             
-            # Запускаем процесс загрузки с live output
+            # Формируем команду загрузки
+            load_command = [
+                lms_cli, "load", model_name, 
+                "--context-length", str(n_ctx), 
+                "--gpu", gpu_param,
+                "-y"
+            ]
+            
+            # Запускаем процесс загрузки
             process = subprocess.Popen(
-                [lms_cli, "load", model_name, 
-                 "--context-length", str(n_ctx), 
-                 "--gpu", gpu_param,
-                 "-y"],
+                load_command,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
@@ -813,10 +801,15 @@ class DCLMStudio(QObject):
                         self.sigLog.emit(f"🔄 Попытка: {fb_desc}...")
                         self.sigModelProgress.emit(0)
                         
+                        fb_command = [
+                            lms_cli, "load", model_name, 
+                            "--context-length", str(n_ctx), 
+                            "--gpu", fb_gpu, 
+                            "-y"
+                        ]
+                        
                         fb_result = subprocess.run(
-                            [lms_cli, "load", model_name, 
-                             "--context-length", str(n_ctx), 
-                             "--gpu", fb_gpu, "-y"],
+                            fb_command,
                             capture_output=True,
                             text=True,
                             timeout=180
@@ -838,8 +831,6 @@ class DCLMStudio(QObject):
                                 break
                     
                     if not load_success:
-                        # НОВОЕ: Излучаем сигнал ошибки 10
-                        self.sigModelProgress.emit(0)
                         self.sigLog.emit(f"✗ Не удалось загрузить модель")
                         self.sigLog.emit(f"   Последняя ошибка: {error_msg[:200]}")
                         self.sigLog.emit("💡 Рекомендации:")
@@ -847,8 +838,7 @@ class DCLMStudio(QObject):
                         self.sigLog.emit("   2. Закройте другие приложения, использующие GPU")
                         self.sigLog.emit("   3. Уменьшите контекст (например, до 4096)")
                         
-                        error_msg_full = f"Не удалось загрузить модель {model_name}. Недостаточно памяти для всех стратегий GPU. {error_msg[:100]}"
-                        self.sigError.emit(10, error_msg_full)
+                        self.sigError.emit(10, f"Не удалось загрузить модель {model_name}: {error_msg[:200]}")
                         
                         from PyQt6.QtCore import QMetaObject, Qt, Q_ARG
                         QMetaObject.invokeMethod(
@@ -861,18 +851,14 @@ class DCLMStudio(QObject):
                         return
                 
                 else:
-                    # НОВОЕ: Излучаем сигнал ошибки 10 при других ошибках
-                    self.sigModelProgress.emit(0)
+                    # Ошибка НЕ связана с памятью
                     self.sigLog.emit(f"✗ Ошибка загрузки модели:")
                     self.sigLog.emit(f"   {error_msg[:300]}")
                     
                     if "not found" in error_msg.lower():
-                        error_msg_full = f"Модель {model_name} не найдена. Проверьте имя модели командой: lms ls"
                         self.sigLog.emit("💡 Модель не найдена. Проверьте имя модели: lms ls")
-                    else:
-                        error_msg_full = f"Ошибка загрузки модели {model_name}: {error_msg[:150]}"
                     
-                    self.sigError.emit(10, error_msg_full)
+                    self.sigError.emit(10, f"Ошибка загрузки модели {model_name}: {error_msg[:300]}")
                     
                     from PyQt6.QtCore import QMetaObject, Qt, Q_ARG
                     QMetaObject.invokeMethod(
@@ -884,40 +870,18 @@ class DCLMStudio(QObject):
                     )
                     return
             
-            # Шаг 4: Запускаем сервер обратно
-            if server_was_running:
-                self.sigLog.emit("🔄 Запуск сервера...")
-                start_result = subprocess.run(
-                    [lms_cli, "server", "start"],
-                    capture_output=True,
-                    text=True,
-                    timeout=10
-                )
-                
-                if start_result.returncode == 0:
-                    self.sigLog.emit("✓ Команда запуска сервера выполнена")
-                    from PyQt6.QtCore import QMetaObject, Qt
-                    QMetaObject.invokeMethod(
-                        self,
-                        "zapustitProverkuServera",
-                        Qt.ConnectionType.QueuedConnection
-                    )
-                else:
-                    error_msg = f"Ошибка запуска сервера: {start_result.stderr.strip() if start_result.stderr else 'неизвестная'}"
-                    self.sigLog.emit(f"✗ {error_msg}")
-                    self.sigServerError.emit(error_msg)
-            else:
-                self.sigLog.emit("⚠ Сервер не был запущен, модель загружена")
+            # УДАЛЕНО: Шаг 4 - Запуск сервера обратно (не нужен!)
+            # Сервер продолжает работать с новой моделью
             
             # Шаг 5: Сигнал успеха
             self.sigModelZagrujena.emit(model_name, n_ctx)
         
         except subprocess.TimeoutExpired:
-            # НОВОЕ: Излучаем сигнал ошибки 10
             self.sigModelProgress.emit(0)
             error_msg = "Превышено время ожидания загрузки модели (3 мин)"
             self.sigLog.emit(f"✗ {error_msg}")
-            self.sigError.emit(10, error_msg)
+            self.sigServerError.emit(error_msg)
+            self.sigError.emit(10, f"Таймаут при загрузке модели {model_name}")
             
             from PyQt6.QtCore import QMetaObject, Qt, Q_ARG
             QMetaObject.invokeMethod(
@@ -929,11 +893,11 @@ class DCLMStudio(QObject):
             )
         
         except Exception as e:
-            # НОВОЕ: Излучаем сигнал ошибки 10
             self.sigModelProgress.emit(0)
-            error_msg = f"Критическая ошибка при загрузке модели: {str(e)}"
+            error_msg = f"Критическая ошибка: {str(e)}"
             self.sigLog.emit(f"✗ {error_msg}")
-            self.sigError.emit(10, error_msg)
+            self.sigServerError.emit(error_msg)
+            self.sigError.emit(10, f"Критическая ошибка при загрузке модели {model_name}: {str(e)}")
             
             from PyQt6.QtCore import QMetaObject, Qt, Q_ARG
             QMetaObject.invokeMethod(
