@@ -131,7 +131,6 @@ Item {
         target: pyLMStudio
 	
         function onSigError(ntError, errorMsg) {
-            root.log(`Ошибка ${ntError}: ${errorMsg}`)
 			if(ntError === 3){//3 - Не удалось найти исполняемый файл LM Studio
 				vprVopros.ntFlag = 3//3 - вопрос, что не найден cli lms
 				vprVopros.visible = true
@@ -143,6 +142,7 @@ Item {
 				vprVopros.visible = true
 			}
 			root.isServerZapustit = false
+			root.isModelZagruzit = false//Сбрасываю флаг
         }
 		//0 - Ошибка HTTP при запросе списка моделей (сервер ответил кодом, отличным от 200).
 		//1 - Ошибка сетевого подключения к LM Studio (сервер недоступен или не запущен).
@@ -155,6 +155,8 @@ Item {
 		//8 - Превышено время ожидания запуска (сервер не стал доступен после 10 попыток по 3 секунды).
 		//9 - CLI lms не найден. Укажите путь в настройках
 		//10 - Модель не загрузилась
+		//11 - Ошибка запуска сервера
+		//12 - Ошибка остановки сервера
 		function onSigStudioZapuschen() {//Если запущена LM Studio
 			vprVopros.visible = false//Эта строка закрывает плашку с вопросом, которая автоматич. появляется
 		}
@@ -162,7 +164,6 @@ Item {
 			if(root.isServerZapustit){
 				pyLMStudio.ustParametri(DCSettings.analizer_model_imya, DCSettings.analizer_max_context,
 											DCSettings.analizer_temperatura, DCSettings.analizer_gpu_offload)
-        		//pyAnalyzer.startAnaliza(txaContent.text, txfPromt.text)//Запуск анализа Документов.
 				root.isServerZapustit = false
 			}
 		}

@@ -5,10 +5,29 @@ import threading
 from pathlib import Path
 from PyQt6.QtCore import QObject, pyqtSignal, pyqtSlot, QTimer
 
+
 class DCLMStudio(QObject):
     """Управление LM Studio: запуск/остановка и работа с моделями"""
     
-    #Сигналы для LM Studio
+    # ==================== КОНСТАНТЫ ====================
+    # Таймауты (секунды)
+    TIMEOUT_MODEL_LIST = 5
+    TIMEOUT_SERVER_CHECK = 2
+    TIMEOUT_SERVER_START = 10
+    TIMEOUT_MODEL_LOAD = 180
+    # Задержки (миллисекунды)
+    DELAY_SERVER_STOP = 3000
+    DELAY_SERVER_CHECK = 2000
+    DELAY_GRACEFUL_SHUTDOWN = 3  # секунды для graceful shutdown
+    # Проверки запуска
+    MAX_STARTUP_CHECKS = 10
+    STARTUP_CHECK_INTERVAL = 3000
+    MAX_SERVER_CHECKS = 10
+    SERVER_CHECK_INTERVAL = 2000
+    # Автовыбор модели
+    AUTO_MODEL_NAME = "(автовыбор модели)"
+    # ==================== СИГНАЛЫ ====================
+    # Сигналы для LM Studio
     sigLog = pyqtSignal(str)                # Лог
     sigError = pyqtSignal(int, str)         # Ошибка
     sigCLIPut = pyqtSignal(str)             # Возвращает путь к cli lms
@@ -19,9 +38,9 @@ class DCLMStudio(QObject):
     sigModelsLoaded = pyqtSignal(list)      # Список моделей загружен
     sigModelZagrujena = pyqtSignal(str, int)# (model_name, max_content)
     sigModelProgress = pyqtSignal(int)      # Процент загрузки модели (0-100)
-    #Сигналы для сервера
-    sigServerURLIzmenen = pyqtSignal(str)   # Сервера изменён
-    sigParametriIzmeneni = pyqtSignal(str, int, float)#Сигнал (model_name, max_context, temperature)
+    # Сигналы для сервера
+    sigServerURLIzmenen = pyqtSignal(str)   # URL сервера изменён
+    sigParametriIzmeneni = pyqtSignal(str, int, float)  # Сигнал (model_name, max_context, temperature)
     sigServerZapuschen = pyqtSignal()       # Сервер запущен
     sigServerOstanovlen = pyqtSignal()      # Сервер остановлен
     sigServerStatus = pyqtSignal(bool)      # Статус сервера (True - запущен, False - остановлен)
@@ -32,17 +51,37 @@ class DCLMStudio(QObject):
         # Управление моделями
         self._current_model = ""
         self._models_list = []
+        
         # Управление процессом
         self._process = None
         self._custom_path = ""
+        self._cli_path = ""
+        
         self._timer = None
+        self._server_timer = None
+        
         self._popitki = 0
-        self._max_popitok = 10
+        self._max_popitok = self.MAX_STARTUP_CHECKS
         self._zapusk_v_processe = False
+        
         # Состояние сервера
         self._server_zapuschen = False
+        self._server_popitki = 0
+        self._server_max_popitok = self.MAX_SERVER_CHECKS
+        
         # URL сервера (можно изменить)
         self._server_url = "http://localhost:1234/v1"
+    
+    def __del__(self):
+        """Очистка ресурсов при удалении объекта"""
+        try:
+            if self._timer and self._timer.isActive():
+                self._timer.stop()
+            
+            if self._server_timer and self._server_timer.isActive():
+                self._server_timer.stop()
+        except:
+            pass  # При завершении приложения Qt объекты могут быть уже удалены
 
     # ==================== РАБОТА С ФАЙЛАМИ ====================
     @pyqtSlot(str, result=bool)
@@ -51,7 +90,7 @@ class DCLMStudio(QObject):
         Проверяет, существует ли файл по указанному пути.
         Работает со скрытыми файлами (.file) и путями с ~ (домашняя директория).
         """
-        if not file_path or not isinstance(file_path, str):
+        if not file_path:
             return False
             
         try:
@@ -60,14 +99,10 @@ class DCLMStudio(QObject):
             path = Path(file_path).expanduser().resolve()
             
             # is_file() проверяет, что это именно файл, а не папка
-            # Если нужно проверить и папку тоже, используйте path.exists()
             return path.is_file()
             
         except Exception:
-            # В случае любых ошибок (например, недопустимые символы в пути)
-            return False    
-
- 
+            return False
 
     # ==================== РАБОТА С МОДЕЛЯМИ ====================
     @pyqtSlot()
@@ -76,15 +111,15 @@ class DCLMStudio(QObject):
         try:
             response = requests.get(
                 f"{self._server_url}/models",
-                timeout=5
+                timeout=self.TIMEOUT_MODEL_LIST
             )
             
             if response.status_code == 200:
                 data = response.json()
                 models = []
                 
-                # Добавляем опцию "Автовыбор"
-                models.append("(автовыбор модели)")
+                # Добавляем опцию "Автовыбор" ПЕРВЫМ элементом
+                models.append(self.AUTO_MODEL_NAME)
                 
                 # Добавляем реальные модели (фильтруем embedding)
                 for model_info in data.get("data", []):
@@ -95,30 +130,27 @@ class DCLMStudio(QObject):
                 self._models_list = models
                 self.sigModelsLoaded.emit(models)
                 
-                print(f"✓ Загружено моделей: {len(models) - 1}")
+                print(f"✓ Загружено моделей: {len(models) - 1}")  # -1 для автовыбора
             else:
-                error_msg = f"Ошибка {response.status_code}: {response.text}"
-                print(f"✗ {error_msg}")
-                self.sigError.emit(0, error_msg)
-                self.sigModelsLoaded.emit(["(автовыбор модели)"])
+                error_msg = f"HTTP {response.status_code}: {response.text}"
+                self._emit_error(0, error_msg)
+                self.sigModelsLoaded.emit([self.AUTO_MODEL_NAME])
         
         except requests.exceptions.ConnectionError:
             error_msg = f"Не удалось подключиться к LM Studio ({self._server_url})"
-            print(f"✗ {error_msg}")
-            self.sigError.emit(1, error_msg)
-            self.sigModelsLoaded.emit(["(автовыбор модели)"])
+            self._emit_error(1, error_msg)
+            self.sigModelsLoaded.emit([self.AUTO_MODEL_NAME])
         
         except Exception as e:
             error_msg = f"Ошибка загрузки моделей: {str(e)}"
-            print(f"✗ {error_msg}")
-            self.sigError.emit(2, error_msg)
-            self.sigModelsLoaded.emit(["(автовыбор модели)"])
+            self._emit_error(2, error_msg)
+            self.sigModelsLoaded.emit([self.AUTO_MODEL_NAME])
     
     @pyqtSlot(str)
     def ustModel(self, model_name):
         """Устанавливает выбранную модель"""
-        if model_name == "(автовыбор модели)":
-           self._current_model = ""
+        if model_name == self.AUTO_MODEL_NAME:
+            self._current_model = ""
         else:
             self._current_model = model_name
     
@@ -128,22 +160,22 @@ class DCLMStudio(QObject):
         return self._current_model 
     
     @pyqtSlot(str, int, float, int)
-    def ustParametri(self, model_name, max_context, temperature, gpu_offload=50):
+    def ustParametri(self, model_name, max_context, temperature, gpu_offload):
         """Публичный слот для загрузки модели с параметрами"""
-        if not self._proverkaZapushen():#Проверка запуска LM Studio
+        if not self._proverkaZapushen():  # Проверка запуска LM Studio
             error_msg = "LM Studio не запущен. Сначала запустите приложение."
-            self.sigLog.emit(f"✗ {error_msg}")
-            self.sigError.emit(6, error_msg)
+            self._emit_error(6, error_msg)
             return False
         
         # LM Studio запущен, продолжаем загрузку
         success = self._ustParametri(model_name, max_context, gpu_offload)
 
         if success:
-            self.ustModel(model_name)#приравниваем к _current_model и убираем автовыбор
+            self.ustModel(model_name)  # Приравниваем к _current_model и убираем автовыбор
             self.sigParametriIzmeneni.emit(self._current_model, max_context, temperature)
-        else:# Ошибка при начале загрузки
-            self.sigError.emit(10, f"Не удалось начать загрузку модели {model_name}")
+        else:
+            # Ошибка при начале загрузки
+            self._emit_error(10, f"Не удалось начать загрузку модели {model_name}")
         
         return success 
 
@@ -163,7 +195,7 @@ class DCLMStudio(QObject):
         
         if old_url != server_url:
             print(f"✓ Сервер URL изменён: {old_url} → {server_url}")
-            # НОВОЕ: Излучаем сигнал об изменении
+            # Излучаем сигнал об изменении
             self.sigServerURLIzmenen.emit(server_url)
             # Проверяем доступность нового сервера
             self.proverkaServera()
@@ -182,7 +214,7 @@ class DCLMStudio(QObject):
     def _naitiLMS_CLI(self):
         """Находит путь к lms CLI"""
         # Если задан пользовательский путь
-        if hasattr(self, '_cli_path') and self._cli_path:
+        if self._cli_path:
             cli = Path(self._cli_path)
             if cli.exists():
                 print(f"✓ Используется путь к CLI из настроек: {cli}")
@@ -229,13 +261,13 @@ class DCLMStudio(QObject):
             if result.returncode == 0:
                 lms_path = result.stdout.strip().split('\n')[0]
                 print(f"✓ Найден lms в PATH: {lms_path}")
-                self.sigCLIPut.emit(str(path))
+                self.sigCLIPut.emit(lms_path)
                 return lms_path
         except:
             pass
         
         error_msg = "CLI lms не найден. Укажите путь в настройках (~/.lmstudio/bin/lms)"
-        self.sigError.emit(9, error_msg)
+        self._emit_error(9, error_msg)
         return None
 
     @pyqtSlot()
@@ -250,8 +282,7 @@ class DCLMStudio(QObject):
         
         if not self._proverkaZapushen():
             error_msg = "LM Studio не запущен. Сначала запустите приложение."
-            self.sigServerError.emit(error_msg)
-            self.sigError.emit(6, error_msg)
+            self._emit_error(6, error_msg)
             return
         
         # Находим lms CLI
@@ -259,8 +290,7 @@ class DCLMStudio(QObject):
         
         if not lms_cli:
             error_msg = "CLI lms не найден. Укажите путь в настройках (~/.lmstudio/bin/lms)"
-            self.sigServerError.emit(error_msg)
-            self.sigError.emit(9, error_msg)
+            self._emit_error(9, error_msg)
             return
         
         try:
@@ -271,7 +301,7 @@ class DCLMStudio(QObject):
                 [lms_cli, "server", "start"],
                 capture_output=True,
                 text=True,
-                timeout=10
+                timeout=self.TIMEOUT_SERVER_START
             )
             
             if result.returncode == 0:
@@ -280,12 +310,10 @@ class DCLMStudio(QObject):
             else:
                 error_msg = f"Ошибка выполнения команды: {result.stderr}"
                 self.sigServerError.emit(error_msg)
-                self.sigLog.emit(f"✗ {error_msg}")
         
         except Exception as e:
             error_msg = f"Ошибка запуска сервера: {str(e)}"
-            self.sigServerError.emit(error_msg)
-            self.sigLog.emit(f"✗ {error_msg}")
+            self._emit_error(11, error_msg)
 
     @pyqtSlot()
     def ostanovitServer(self):
@@ -311,7 +339,7 @@ class DCLMStudio(QObject):
                 [lms_cli, "server", "stop"],
                 capture_output=True,
                 text=True,
-                timeout=10
+                timeout=self.TIMEOUT_SERVER_START
             )
             
             if result.returncode == 0:
@@ -322,12 +350,10 @@ class DCLMStudio(QObject):
             else:
                 error_msg = f"Ошибка выполнения команды: {result.stderr}"
                 self.sigServerError.emit(error_msg)
-                self.sigLog.emit(f"✗ {error_msg}")
         
         except Exception as e:
             error_msg = f"Ошибка остановки сервера: {str(e)}"
-            self.sigServerError.emit(error_msg)
-            self.sigLog.emit(f"✗ {error_msg}")
+            self._emit_error(12, error_msg)
 
     @pyqtSlot()
     def proverkaServera(self):
@@ -335,7 +361,7 @@ class DCLMStudio(QObject):
         zapuschen = self._proverkaServeraZapuschen()
         self._server_zapuschen = zapuschen
         self.sigServerStatus.emit(zapuschen)
-        self.sigLog.emit(f"Сервер LM Studio: {zapuschen}")
+        self.sigLog.emit(f"Сервер LM Studio: {'запущен' if zapuschen else 'остановлен'}")
         return zapuschen
 
     @pyqtSlot()
@@ -373,7 +399,7 @@ class DCLMStudio(QObject):
         
         if not lms_path:
             error_msg = "Не удалось найти LM Studio. Укажите путь в настройках."
-            self.sigError.emit(3, error_msg)
+            self._emit_error(3, error_msg)
             return
         
         try:
@@ -392,59 +418,103 @@ class DCLMStudio(QObject):
             # Начинаем проверку доступности
             self._initTimer()
             self._popitki = 0
-            self._timer.start(3000)
+            self._timer.start(self.STARTUP_CHECK_INTERVAL)
             self.sigStudioStarted.emit()
             self.sigLog.emit("Ожидание запуска приложения...")
         
         except Exception as e:
             error_msg = f"Ошибка запуска: {str(e)}"
-            self.sigError.emit(4, error_msg)
+            self._emit_error(4, error_msg)
             self._zapusk_v_processe = False
     
     @pyqtSlot()
     def ostanovitStudio(self):
-        """Останавливает LM Studio"""
+        """Останавливает LM Studio с graceful shutdown"""
+        import time
+        
         try:
             if platform.system() == "Linux":
+                # Шаг 1: Проверяем, есть ли процессы
                 result = subprocess.run(
                     ["pgrep", "-f", "lmstudio"],
                     capture_output=True,
-                    text=True
+                    text=True,
+                    timeout=2
+                )
+                
+                if result.returncode != 0:
+                    self.sigLog.emit("LM Studio не запущен")
+                    self._server_zapuschen = False
+                    self.sigStudioOstanovlen.emit()
+                    self.sigServerStatus.emit(False)
+                    return
+                
+                pids = result.stdout.strip().split('\n')
+                
+                # Шаг 2: SIGTERM (мягкая остановка)
+                self.sigLog.emit("Отправка SIGTERM...")
+                for pid in pids:
+                    if pid:
+                        try:
+                            subprocess.run(["kill", "-15", pid], timeout=2)
+                        except Exception as e:
+                            self.sigLog.emit(f"⚠ Не удалось отправить SIGTERM: {e}")
+                
+                # Шаг 3: Ждём 3 секунды
+                time.sleep(self.DELAY_GRACEFUL_SHUTDOWN)
+                
+                # Шаг 4: Проверяем, завершились ли процессы
+                result = subprocess.run(
+                    ["pgrep", "-f", "lmstudio"],
+                    capture_output=True,
+                    text=True,
+                    timeout=2
                 )
                 
                 if result.returncode == 0:
+                    # Процессы ещё живы — SIGKILL
+                    self.sigLog.emit("⚠ Процесс не завершился, использую SIGKILL...")
                     pids = result.stdout.strip().split('\n')
+                    
                     for pid in pids:
                         if pid:
                             try:
-                                subprocess.run(["kill", pid], timeout=2)
-                            except:
                                 subprocess.run(["kill", "-9", pid], timeout=2)
-                    
-                    self._server_zapuschen = False
-                    self.sigLog.emit("LM Studio остановлен")
-                    self.sigStudioOstanovlen.emit()
-                    self.sigServerStatus.emit(False)
-                else:
-                    self.sigLog.emit("LM Studio не запущен")
+                            except Exception as e:
+                                self.sigLog.emit(f"✗ Ошибка SIGKILL: {e}")
+                
+                self._server_zapuschen = False
+                self.sigLog.emit("✓ LM Studio остановлен")
+                self.sigStudioOstanovlen.emit()
+                self.sigServerStatus.emit(False)
             
             elif platform.system() == "Darwin":
-                subprocess.run(["pkill", "-f", "LM Studio"])
+                # macOS: аналогично Linux
+                subprocess.run(["pkill", "-TERM", "-f", "LM Studio"], timeout=2)
+                time.sleep(self.DELAY_GRACEFUL_SHUTDOWN)
+                subprocess.run(["pkill", "-KILL", "-f", "LM Studio"], timeout=2)
+                
                 self._server_zapuschen = False
-                self.sigLog.emit("LM Studio остановлен")
+                self.sigLog.emit("✓ LM Studio остановлен")
                 self.sigStudioOstanovlen.emit()
                 self.sigServerStatus.emit(False)
             
             elif platform.system() == "Windows":
-                subprocess.run(["taskkill", "/F", "/IM", "LM Studio.exe"], shell=True)
+                # Windows: используем /T для дерева процессов
+                subprocess.run(
+                    ["taskkill", "/F", "/T", "/IM", "LM Studio.exe"],
+                    shell=True,
+                    timeout=5
+                )
+                
                 self._server_zapuschen = False
-                self.sigLog.emit("LM Studio остановлен")
+                self.sigLog.emit("✓ LM Studio остановлен")
                 self.sigStudioOstanovlen.emit()
                 self.sigServerStatus.emit(False)
         
         except Exception as e:
             error_msg = f"Ошибка остановки: {str(e)}"
-            self.sigError.emit(5, error_msg)
+            self._emit_error(5, error_msg)
     
     @pyqtSlot()
     def proverkaStudio(self):
@@ -455,6 +525,11 @@ class DCLMStudio(QObject):
             self.sigStudioStatus.emit(False)
     
     # ==================== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ====================
+    def _emit_error(self, code, message):
+        """Централизованная обработка ошибок"""
+        self.sigLog.emit(f"✗ Ошибка {code}: {message}")
+        self.sigError.emit(code, message)
+    
     def _initTimer(self):
         """Ленивая инициализация таймера"""
         if self._timer is None:
@@ -483,7 +558,7 @@ class DCLMStudio(QObject):
         
         except Exception as e:
             error_msg = f"Ошибка запуска: {str(e)}"
-            self.sigError.emit(7, error_msg)
+            self._emit_error(7, error_msg)
             self._zapusk_v_processe = False
     
     def _proverkaZapushen(self):
@@ -545,7 +620,7 @@ class DCLMStudio(QObject):
                 self._popitki = 0
                 self._zapusk_v_processe = False
                 error_msg = "LM Studio не запустился. Запустите вручную или проверьте путь."
-                self.sigError.emit(8, error_msg)
+                self._emit_error(8, error_msg)
             else:
                 self.sigLog.emit(f"⏳ Попытка {self._popitki}/{self._max_popitok}...")
     
@@ -640,7 +715,10 @@ class DCLMStudio(QObject):
     def _proverkaServeraZapuschen(self):
         """Внутренняя проверка статуса сервера"""
         try:
-            response = requests.get(f"{self._server_url}/models", timeout=2)
+            response = requests.get(
+                f"{self._server_url}/models", 
+                timeout=self.TIMEOUT_SERVER_CHECK
+            )
             return response.status_code == 200
         except:
             return False
@@ -650,20 +728,19 @@ class DCLMStudio(QObject):
         self.sigLog.emit("⏳ Ожидание запуска сервера...")
         
         self._server_popitki = 0
-        self._server_max_popitok = 10  # 10 попыток по 2 секунды = 20 секунд
         
-        if not hasattr(self, '_server_timer') or self._server_timer is None:
+        if self._server_timer is None:
             self._server_timer = QTimer()
             self._server_timer.timeout.connect(self._proverkaServeraAvto)
         
-        self._server_timer.start(2000)  # Проверяем каждые 2 секунды 
+        self._server_timer.start(self.SERVER_CHECK_INTERVAL)
 
     def _proverkaServeraAvto(self):
         """Автоматическая проверка запуска сервера"""
         self._server_popitki += 1
         
         if self._proverkaServeraZapuschen():
-            if hasattr(self, '_server_timer') and self._server_timer:
+            if self._server_timer:
                 self._server_timer.stop()
             
             self._server_popitki = 0
@@ -673,13 +750,12 @@ class DCLMStudio(QObject):
             self.sigServerStatus.emit(True)
         else:
             if self._server_popitki >= self._server_max_popitok:
-                if hasattr(self, '_server_timer') and self._server_timer:
+                if self._server_timer:
                     self._server_timer.stop()
                 
                 self._server_popitki = 0
                 error_msg = "Сервер не запустился за отведённое время"
                 self.sigServerError.emit(error_msg)
-                self.sigLog.emit(f"⚠ {error_msg}")
             else:
                 self.sigLog.emit(f"⏳ Проверка сервера... ({self._server_popitki}/{self._server_max_popitok})")
 
@@ -719,7 +795,7 @@ class DCLMStudio(QObject):
             self.sigLog.emit("⚠ CLI lms не найден...")
             return self._zagruzitCherezConfig(model_name, max_context)
         
-        # Запускаем в потоке с новым параметром
+        # Запускаем в потоке
         thread = threading.Thread(
             target=self._zagruzitModelVPotoke,
             args=(lms_cli, model_name, max_context, gpu_offload),
@@ -735,22 +811,11 @@ class DCLMStudio(QObject):
         import re
         
         try:
-            # УДАЛЕНО: Шаг 1 - Остановка сервера (не нужна!)
-            # УДАЛЕНО: Ожидание полной остановки (не нужно!)
-            
             # Шаг 1: ВЫГРУЖАЕМ предыдущую модель
             self._vigruzitModel(lms_cli)
             
             # Шаг 2: Преобразуем процент GPU в формат для lms
-            if gpu_offload == 0:
-                gpu_param = "off"
-                gpu_description = "CPU only"
-            elif gpu_offload >= 100:
-                gpu_param = "max"
-                gpu_description = "Full GPU"
-            else:
-                gpu_param = str(gpu_offload / 100.0)
-                gpu_description = f"{gpu_offload}% GPU"
+            gpu_param, gpu_description = self._get_gpu_params(gpu_offload)
             
             # Шаг 3: Загружаем модель
             self.sigLog.emit("🔄 Загрузка модели с новыми параметрами...")
@@ -798,14 +863,16 @@ class DCLMStudio(QObject):
                         self.sigModelProgress.emit(progress)
             
             # Ждём завершения
-            process.wait(timeout=180)
+            process.wait(timeout=self.TIMEOUT_MODEL_LOAD)
             
             # Проверяем результат
             if process.returncode == 0:
                 # Успех
                 self.sigModelProgress.emit(100)
                 self.sigLog.emit(f"✓ Модель загружена: {model_name}")
-                load_success = True
+                self.sigLog.emit(f"✓ Контекст: {max_content}")
+                self.sigLog.emit(f"✓ GPU: {gpu_description}")
+                self.sigModelZagrujena.emit(model_name, max_content)
             
             else:
                 # Ошибка
@@ -814,71 +881,27 @@ class DCLMStudio(QObject):
                 self.sigModelProgress.emit(0)
                 
                 if "out of memory" in error_msg.lower() or "cuda" in error_msg.lower():
+                    # Пробуем fallback стратегии
                     self.sigLog.emit(f"⚠ {gpu_description}: не хватает памяти")
                     self.sigLog.emit("🔄 Пробуем альтернативные стратегии GPU...")
                     
-                    fallback_strategies = []
-                    if gpu_offload >= 100:
-                        fallback_strategies = [("0.5", "50% GPU"), ("0.3", "30% GPU"), ("off", "CPU only")]
-                    elif gpu_offload >= 50:
-                        fallback_strategies = [("0.3", "30% GPU"), ("off", "CPU only")]
-                    elif gpu_offload > 0:
-                        fallback_strategies = [("off", "CPU only")]
+                    success = self._try_fallback_strategies(
+                        lms_cli, model_name, max_content, gpu_offload
+                    )
                     
-                    load_success = False
+                    if success:
+                        return  # Успешно загружено через fallback
                     
-                    for fb_gpu, fb_desc in fallback_strategies:
-                        self.sigLog.emit(f"🔄 Попытка: {fb_desc}...")
-                        self.sigModelProgress.emit(0)
-                        
-                        fb_command = [
-                            lms_cli, "load", model_name, 
-                            "--context-length", str(max_content), 
-                            "--gpu", fb_gpu, 
-                            "-y"
-                        ]
-                        
-                        fb_result = subprocess.run(
-                            fb_command,
-                            capture_output=True,
-                            text=True,
-                            timeout=180
-                        )
-                        
-                        if fb_result.returncode == 0:
-                            self.sigModelProgress.emit(100)
-                            self.sigLog.emit(f"✓ Модель загружена: {model_name}")
-                            self.sigLog.emit(f"✓ Контекст: {max_content}")
-                            self.sigLog.emit(f"✓ GPU: {fb_desc} (fallback)")
-                            load_success = True
-                            break
-                        else:
-                            fb_error = fb_result.stderr.strip() if fb_result.stderr else ""
-                            if "out of memory" in fb_error.lower():
-                                self.sigLog.emit(f"⚠ {fb_desc}: всё ещё не хватает памяти")
-                                continue
-                            else:
-                                break
+                    # Если fallback не помог
+                    self.sigLog.emit(f"✗ Не удалось загрузить модель")
+                    self.sigLog.emit(f"   Последняя ошибка: {error_msg[:200]}")
+                    self.sigLog.emit("💡 Рекомендации:")
+                    self.sigLog.emit("   1. Используйте модель меньшего размера (Q3, Q2)")
+                    self.sigLog.emit("   2. Закройте другие приложения, использующие GPU")
+                    self.sigLog.emit("   3. Уменьшите контекст (например, до 4096)")
                     
-                    if not load_success:
-                        self.sigLog.emit(f"✗ Не удалось загрузить модель")
-                        self.sigLog.emit(f"   Последняя ошибка: {error_msg[:200]}")
-                        self.sigLog.emit("💡 Рекомендации:")
-                        self.sigLog.emit("   1. Используйте модель меньшего размера (Q3, Q2)")
-                        self.sigLog.emit("   2. Закройте другие приложения, использующие GPU")
-                        self.sigLog.emit("   3. Уменьшите контекст (например, до 4096)")
-                        
-                        self.sigError.emit(10, f"Не удалось загрузить модель {model_name}: {error_msg[:200]}")
-                        
-                        from PyQt6.QtCore import QMetaObject, Qt, Q_ARG
-                        QMetaObject.invokeMethod(
-                            self,
-                            "zagruzitCherezConfig",
-                            Qt.ConnectionType.QueuedConnection,
-                            Q_ARG(str, model_name),
-                            Q_ARG(int, max_content)
-                        )
-                        return
+                    self._emit_error(10, f"Не удалось загрузить модель {model_name}: {error_msg[:200]}")
+                    self._fallback_to_config(model_name, max_content)
                 
                 else:
                     # Ошибка НЕ связана с памятью
@@ -888,55 +911,98 @@ class DCLMStudio(QObject):
                     if "not found" in error_msg.lower():
                         self.sigLog.emit("💡 Модель не найдена. Проверьте имя модели: lms ls")
                     
-                    self.sigError.emit(10, f"Ошибка загрузки модели {model_name}: {error_msg[:300]}")
-                    
-                    from PyQt6.QtCore import QMetaObject, Qt, Q_ARG
-                    QMetaObject.invokeMethod(
-                        self,
-                        "zagruzitCherezConfig",
-                        Qt.ConnectionType.QueuedConnection,
-                        Q_ARG(str, model_name),
-                        Q_ARG(int, max_content)
-                    )
-                    return
-            
-            # УДАЛЕНО: Шаг 4 - Запуск сервера обратно (не нужен!)
-            # Сервер продолжает работать с новой моделью
-            
-            # Шаг 5: Сигнал успеха
-            self.sigModelZagrujena.emit(model_name, max_content)
+                    self._emit_error(10, f"Ошибка загрузки модели {model_name}: {error_msg[:300]}")
+                    self._fallback_to_config(model_name, max_content)
         
         except subprocess.TimeoutExpired:
-            self.sigModelProgress.emit(0)
-            error_msg = "Превышено время ожидания загрузки модели (3 мин)"
-            self.sigLog.emit(f"✗ {error_msg}")
-            self.sigServerError.emit(error_msg)
-            self.sigError.emit(10, f"Таймаут при загрузке модели {model_name}")
-            
-            from PyQt6.QtCore import QMetaObject, Qt, Q_ARG
-            QMetaObject.invokeMethod(
-                self,
-                "zagruzitCherezConfig",
-                Qt.ConnectionType.QueuedConnection,
-                Q_ARG(str, model_name),
-                Q_ARG(int, max_content)
-            )
+            self._handle_timeout(model_name, max_content)
         
         except Exception as e:
+            self._handle_critical_error(model_name, max_content, e)
+
+    def _get_gpu_params(self, gpu_offload):
+        """Преобразует процент GPU в формат для lms"""
+        if gpu_offload == 0:
+            return "off", "CPU only"
+        elif gpu_offload >= 100:
+            return "max", "Full GPU"
+        else:
+            return str(gpu_offload / 100.0), f"{gpu_offload}% GPU"
+
+    def _try_fallback_strategies(self, lms_cli, model_name, max_content, gpu_offload):
+        """Пробует альтернативные стратегии GPU при ошибке"""
+        fallback_strategies = self._get_fallback_strategies(gpu_offload)
+        
+        for fb_gpu, fb_desc in fallback_strategies:
+            self.sigLog.emit(f"🔄 Попытка: {fb_desc}...")
             self.sigModelProgress.emit(0)
-            error_msg = f"Критическая ошибка: {str(e)}"
-            self.sigLog.emit(f"✗ {error_msg}")
-            self.sigServerError.emit(error_msg)
-            self.sigError.emit(10, f"Критическая ошибка при загрузке модели {model_name}: {str(e)}")
             
-            from PyQt6.QtCore import QMetaObject, Qt, Q_ARG
-            QMetaObject.invokeMethod(
-                self,
-                "zagruzitCherezConfig",
-                Qt.ConnectionType.QueuedConnection,
-                Q_ARG(str, model_name),
-                Q_ARG(int, max_content)
+            fb_command = [
+                lms_cli, "load", model_name, 
+                "--context-length", str(max_content), 
+                "--gpu", fb_gpu, 
+                "-y"
+            ]
+            
+            fb_result = subprocess.run(
+                fb_command,
+                capture_output=True,
+                text=True,
+                timeout=self.TIMEOUT_MODEL_LOAD
             )
+            
+            if fb_result.returncode == 0:
+                self.sigModelProgress.emit(100)
+                self.sigLog.emit(f"✓ Модель загружена: {model_name}")
+                self.sigLog.emit(f"✓ Контекст: {max_content}")
+                self.sigLog.emit(f"✓ GPU: {fb_desc} (fallback)")
+                self.sigModelZagrujena.emit(model_name, max_content)
+                return True
+            else:
+                fb_error = fb_result.stderr.strip() if fb_result.stderr else ""
+                if "out of memory" in fb_error.lower():
+                    self.sigLog.emit(f"⚠ {fb_desc}: всё ещё не хватает памяти")
+                    continue
+                else:
+                    break
+        
+        return False
+
+    def _get_fallback_strategies(self, gpu_offload):
+        """Возвращает список fallback стратегий в зависимости от исходного offload"""
+        if gpu_offload >= 100:
+            return [("0.5", "50% GPU"), ("0.3", "30% GPU"), ("off", "CPU only")]
+        elif gpu_offload >= 50:
+            return [("0.3", "30% GPU"), ("off", "CPU only")]
+        elif gpu_offload > 0:
+            return [("off", "CPU only")]
+        else:
+            return []
+
+    def _handle_timeout(self, model_name, max_content):
+        """Обрабатывает таймаут загрузки модели"""
+        self.sigModelProgress.emit(0)
+        error_msg = "Превышено время ожидания загрузки модели (3 мин)"
+        self._emit_error(10, f"Таймаут: {model_name}")
+        self._fallback_to_config(model_name, max_content)
+
+    def _handle_critical_error(self, model_name, max_content, exception):
+        """Обрабатывает критические ошибки загрузки"""
+        self.sigModelProgress.emit(0)
+        error_msg = f"Критическая ошибка: {str(exception)}"
+        self._emit_error(10, f"{model_name}: {str(exception)}")
+        self._fallback_to_config(model_name, max_content)
+
+    def _fallback_to_config(self, model_name, max_content):
+        """Откатывается на загрузку через конфиг"""
+        from PyQt6.QtCore import QMetaObject, Qt, Q_ARG
+        QMetaObject.invokeMethod(
+            self,
+            "zagruzitCherezConfig",
+            Qt.ConnectionType.QueuedConnection,
+            Q_ARG(str, model_name),
+            Q_ARG(int, max_content)
+        )
 
     def _zagruzitCherezConfig(self, model_name, max_content):
         """Загрузка модели через обновление конфига + перезапуск сервера"""
@@ -947,7 +1013,7 @@ class DCLMStudio(QObject):
             config_updated = self._ustServerConfig(max_content)
             
             if not config_updated:
-                self.sigError.emit(10, f"Не удалось обновить конфигурацию для модели {model_name}")
+                self._emit_error(10, f"Не удалось обновить конфигурацию для модели {model_name}")
                 return False
             
             # Проверяем, запущен ли сервер
@@ -962,7 +1028,7 @@ class DCLMStudio(QObject):
                 
                 # Ждём остановки и запускаем снова (с задержкой 3 секунды)
                 self.sigLog.emit("⏳ Ожидание остановки сервера...")
-                QTimer.singleShot(3000, lambda: self._zapustitServerPosledujushii())
+                QTimer.singleShot(self.DELAY_SERVER_STOP, lambda: self._zapustitServerPosledujushii())
                 
                 self.sigLog.emit(f"✓ Конфигурация обновлена: контекст {max_content}")
                 return True
@@ -973,11 +1039,56 @@ class DCLMStudio(QObject):
         
         except Exception as e:
             error_msg = f"Ошибка настройки через конфиг: {str(e)}"
-            self.sigLog.emit(f"✗ {error_msg}")
-            self.sigError.emit(10, f"Ошибка настройки конфигурации для модели {model_name}: {str(e)}")
+            self._emit_error(10, f"Ошибка настройки конфигурации для модели {model_name}: {str(e)}")
             return False
 
     def _zapustitServerPosledujushii(self):
         """Вспомогательный метод для отложенного запуска сервера"""
         self.sigLog.emit("🔄 Запуск сервера с новыми параметрами...")
         self.zapustitServer()
+
+    def _ustServerConfig(self, max_context):
+        """Обновляет server-config.json в ~/.lmstudio/"""
+        try:
+            import json
+            
+            config_path = Path.home() / ".lmstudio" / "server-config.json"
+            
+            if not config_path.exists():
+                self.sigLog.emit(f"⚠ Конфигурация не найдена: {config_path}")
+                
+                # Создаём конфиг по умолчанию
+                default_config = {
+                    "maxContext": max_context,
+                    "temperature": 0.7,
+                    "topP": 0.9,
+                    "repeatPenalty": 1.1,
+                    "gpu": "auto"
+                }
+                
+                config_path.parent.mkdir(parents=True, exist_ok=True)
+                
+                with open(config_path, 'w') as f:
+                    json.dump(default_config, f, indent=2)
+                
+                self.sigLog.emit(f"✓ Создан конфиг: {config_path}")
+                return True
+            
+            # Читаем существующий конфиг
+            with open(config_path, 'r') as f:
+                config = json.load(f)
+            
+            # Обновляем maxContext
+            old_context = config.get('maxContext', 0)
+            config['maxContext'] = max_context
+            
+            # Сохраняем
+            with open(config_path, 'w') as f:
+                json.dump(config, f, indent=2)
+            
+            self.sigLog.emit(f"✓ Контекст обновлён: {old_context} → {max_context}")
+            return True
+        
+        except Exception as e:
+            self.sigLog.emit(f"✗ Ошибка обновления конфига: {e}")
+            return False

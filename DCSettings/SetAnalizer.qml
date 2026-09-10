@@ -161,6 +161,9 @@ Item {
 		//7 - Ошибка системного запуска процесса (сбой subprocess.Popen в фоновом потоке).
 		//8 - Превышено время ожидания запуска (сервер не стал доступен после 10 попыток по 3 секунды).
 		//9 - CLI lms не найден. Укажите путь в настройках
+		//10 - Ошибка загрузки модели
+		//11 - Ошибка запуска сервера
+		//12 - Ошибка остановки сервера
 		function onSigCLIPut(strCLIPut){//Если путь автоматически обнаружен, то он придёт из pyLMStudio
 			DCSettings.analizer_cli_put	= strCLIPut;//Запоминаем в реестре настроек.
 		}
@@ -198,8 +201,9 @@ Item {
 		function onSigServerStatus(blStatus) {
 
 		}
-		function onSigServerError(errorMsg) {
-			root.toolbar(errorMsg)
+		function onSigServerError(strError) {
+			root.log(strError)//В лог
+			root.toolbar(strError)//На панель toolbar
 		}
 		function onSigModelsLoaded(models) {
             modelModels.clear()//Очищаем старую модель
