@@ -639,6 +639,12 @@ Item {
 					else if(ntVvod === 2) return true//Вводим только цифры
 					else if(ntVvod === 3) return false//Не Вводим только цифры
 				}
+				placeholderText: {//Подсказки пользователю
+					if (ntVvod === 0) return qsTr("8000-131072")
+					else if(ntVvod === 1) return qsTr("~/.lmstudio/bin/lms")
+					else if(ntVvod === 2) return qsTr("0-100")
+					else if(ntVvod === 3) return qsTr("http://127.0.0.1:1234")
+				}
 				clrTexta: root.clrTexta; clrFona: root.clrMenuFon
 				radius: root.ntCoff/2
 				textInput.maximumLength: {
