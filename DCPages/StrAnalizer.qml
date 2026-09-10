@@ -57,8 +57,6 @@ Item {
 	}	
 	Component.onCompleted: {
         root.forceActiveFocus()
-		//pyLMStudio.ustParametri(DCSettings.analizer_model_imya, DCSettings.analizer_max_context,
-			//DCSettings.analizer_temperatura, DCSettings.analizer_gpu_offload)
     }
 	Connections {//CONNECTIONS для прогресса
 		target: pyAnalyzer
@@ -119,7 +117,6 @@ Item {
 			}
 		}
 		function onSigAnalizFinish() {//сигнал Анализ завершён. 
-			root.toolbar(`Анализ завершён: ${txfPromt.text}`)
 			tmrLogo.running = false//Останавливаем анимацию анализа и политики кнопок
 		}	
 		function onSigDocumentsLoaded(combinedText, filesCount) {//Сигнал загрузки документов (текст, кол-во)
@@ -144,6 +141,7 @@ Item {
 				vprVopros.ntFlag = 13//13 - Модель не выбрана
 				vprVopros.visible = true
 			}
+			tmrLogo.running = false//Останавливаем анимацию анализа и политики кнопок
 			ldrProgress.active = false
 			root.isServerZapustit = false
 			root.isModelZagruzit = false//Сбрасываю флаг
@@ -329,10 +327,6 @@ Item {
             if (running) {
 				root.toolbar("")//Очищаем перед запуском тулбар
                 ldrProgress.active = true
-                
-                knopkaNazad.enabled = false
-                knopkaMenu.enabled = false 
-                
                 knopkaZagruzit.enabled = false
                 knopkaSohranit.enabled = false
             } else {
@@ -347,11 +341,8 @@ Item {
         interval: 1100; running: false; repeat: false
         onTriggered: {
 			ldrProgress.active = false
-	
-			knopkaNazad.enabled = true
-			knopkaMenu.enabled = true
-			
 			knopkaZagruzit.enabled = true
+			root.toolbar(`Анализ завершён: ${txfPromt.text}`)
         }
 	}	
     
@@ -364,8 +355,14 @@ Item {
 		}
     }
     function fnClickedNazad() {//Функция закрытия страницы.
-		fnClickedEscape()//Функция нажатия на клавишу Escape
-		root.clickedNazad()
+		if(tmrLogo.running){//Если идёт анализ, то...
+			vprVopros.ntFlag = 22//22 - Остановить анализ Документов
+			vprVopros.visible = true
+		}
+		else {//Если нет Анализа, то...
+			fnClickedEscape()//Функция нажатия на клавишу Escape
+			root.clickedNazad()
+		}
 	}
     function fnClickedMenu() {//Функция открытия настроек анализа документов.
 		fnClickedEscape()//Функция нажатия на клавишу Escape
@@ -395,6 +392,10 @@ Item {
 		root.isModelZagruzit = true//Устанавливаем флаг ожидания, из StrAnalizer
 		pyLMStudio.zapustitServer()//Всегда запускаем сервер, даже если он запущен.
     }
+	function fnClickedStop() {//Функция останавливающая Анализ документов
+		pyAnalyzer.stopAnaliz()
+		root.toolbar("Анализ остановлен.")	
+	}
     function fnClickedSohranit() {//Функция сохранения результата анализа.
         pyAnalyzer.sohranitAnaliz(DCSettings.analizer_put_sohranit)//Открываем Диалог в папке (путь из реестра).
     }
@@ -465,6 +466,7 @@ Item {
 				else if(ntFlag === 6) return qsTr("LM Studio не запущена. Перейти к настройкам запуска LM Studio?")
 				else if (ntFlag === 9) return qsTr("Сервер LM Studio не запущен. Перейти к настройкам cli lms?")
 				else if (ntFlag === 13) return qsTr("Модель не выбрана. Перейти к настройкам?")
+				else if (ntFlag === 22) return qsTr("ОСТАНОВИТЬ АНАЛИЗ ДОКУМЕНТОВ?")
 				else return qsTr("Любовь")
 			}
 			onVisibleChanged: {
@@ -479,7 +481,8 @@ Item {
 			}
 			onClickedOk: {
 				vprVopros.visible = false//Делаем невидимый диалог
-				fnClickedMenu()//Функция открытия настроек анализа документов.
+				if(ntFlag === 22) fnClickedStop()//Останавливаем Анализ документов
+				else fnClickedMenu()//Функция открытия настроек анализа документов.
 			}
 			onClickedOtmena: {
 				vprVopros.visible = false//Делаем невидимый диалог.
@@ -812,11 +815,13 @@ Item {
 			onActiveChanged: {
 				if (active){//Если активировался прогресбар, то...
 					root.toolbar("")
+					knopkaMenu.enabled = false
                 	knopkaInfo.visible = false
 					knopkaNastroiki.visible = false
 					knopkaAnaliz.enabled = false
 				}
 				else{
+					knopkaMenu.enabled = true
 					knopkaInfo.visible = true
 					knopkaNastroiki.visible = true
 					knopkaAnaliz.enabled = txaContent.text.trim() !== ""

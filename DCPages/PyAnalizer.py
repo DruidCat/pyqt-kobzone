@@ -44,6 +44,7 @@ class DCAnalyzer(QObject):
     sigAnalizFinalStart = pyqtSignal() #Сигнал начала финального анализа
     sigAnalizStart = pyqtSignal() #Сигнал Начала анализа.
     sigAnalizFinish = pyqtSignal() #Сигнал Анализ завершён. 
+    sigAnalizOstanovlen = pyqtSignal() #Сигнал остановки Анализа
     sigDocumentsLoaded = pyqtSignal(str, int) #Сигнал загрузки документов (текст, количество)
     
     def __init__(self):
@@ -51,14 +52,14 @@ class DCAnalyzer(QObject):
         self.text_content = ""
         self.current_result = ""
         self.current_filename = ""
-        self.current_prompt = ""  #хранение промта
-        self.model_name = "qwen3-coder-30b-a3b-instruct"  #Имя модели ИИ добавляем
-        self.max_context = 8000  #значение из LM Studio в настройках для языковой модели.
+        self.current_prompt = "" #хранение промта
+        self.model_name = "qwen3-coder-30b-a3b-instruct" #Имя модели ИИ добавляем
+        self.max_context = 8000 #значение из LM Studio в настройках для языковой модели.
         self.temperature = 0.5 #Температура ИИ модели.
-        self.overlap_percent = 20  #Процент перекрытия по умолчанию
+        self.overlap_percent = 20 #Процент перекрытия по умолчанию
         self.worker = None
         self._server_url = "http://localhost:1234/v1"
-
+        self._stop_requested = False #Запрос на остановку Анализа
 
     @pyqtSlot(str)
     def ustServerURL(self, server_url):
@@ -111,6 +112,30 @@ class DCAnalyzer(QObject):
         self.worker.start()
         
         self.sigResultReady.emit("Анализируется...")
+
+    @pyqtSlot()
+    def stopAnaliz(self):
+        """Принудительно останавливает анализ документов"""
+        if self.worker and self.worker.isRunning():
+            self._stop_requested = True
+            
+            # Останавливаем поток
+            self.worker.quit()
+            
+            # Ждём завершения потока (максимум 3 секунды)
+            if not self.worker.wait(3000):
+                # Если не завершился — принудительно
+                self.worker.terminate()
+                self.worker.wait()
+            
+            print("⚠ Анализ остановлен пользователем")
+            self.sigAnalizOstanovlen.emit()
+            self.sigResultReady.emit("[Анализ остановлен пользователем]")
+            self.sigAnalizFinish.emit()
+            
+            self._stop_requested = False
+        else:
+            print("⚠ Нет активного анализа для остановки")
 
     def _on_analysis_finished(self, result):
         """Обработчик завершения анализа"""
@@ -195,33 +220,40 @@ class DCAnalyzer(QObject):
         Разбиваем текст на части и отправляем каждую часть в модель.
         После обработки всех чанков делаем финальный анализ.
         """
-        available_context = max(0, self.max_context - 5000)  # Резерв для промта
-        max_tokens = max(1000, available_context)#Минимум 1000 токенов для ответа
-        # Если контекст слишком мал - предупреждаем
+        # ПРОВЕРКА ОСТАНОВКИ В НАЧАЛЕ
+        if self._stop_requested:
+            return "[Анализ остановлен пользователем]"
+        
+        available_context = max(0, self.max_context - 5000)
+        max_tokens = max(1000, available_context)
+        
         if self.max_context < 8000:
             print(f"⚠ Предупреждение: контекст {self.max_context} слишком мал, рекомендуется минимум 8000")
-        #Разбиваем с перекрытием в %
+        
         chunks = self.split_text_into_chunks(text_content, max_tokens, overlap_percent=self.overlap_percent)
         total_chunks = len(chunks)
         
-        #Если чанк один — сразу финальный анализ
+        # Если чанк один — сразу финальный анализ
         if total_chunks == 1:
+            # ПРОВЕРКА ОСТАНОВКИ
+            if self._stop_requested:
+                return "[Анализ остановлен пользователем]"
+            
             if final_analysis_callback:
                 final_analysis_callback()
             
-            # Обрабатываем единственный чанк как финальный анализ
             full_prompt = f"{prompt}\n\nТекст:\n{chunks[0]}"
             
             try:
                 headers = {"Content-Type": "application/json"}
-                data = {#В запросе к LM Studio:
+                data = {
                     "messages": [
                         {"role": "user", "content": full_prompt}
                     ],
                     "temperature": self.temperature,
                     "max_tokens": max_tokens - 1000
                 }
-                if self.model_name:#Добавляем model только если задано
+                if self.model_name:
                     data["model"] = self.model_name
                 
                 response = requests.post(
@@ -230,6 +262,10 @@ class DCAnalyzer(QObject):
                     json=data,
                     timeout=TIMEOUT_ANALYSIS
                 )
+                
+                # ПРОВЕРКА ОСТАНОВКИ ПОСЛЕ ЗАПРОСА
+                if self._stop_requested:
+                    return "[Анализ остановлен пользователем]"
                 
                 if response.status_code == 200:
                     result = response.json().get("choices", [{}])[0].get("message", {}).get("content", "Ошибка")
@@ -245,16 +281,19 @@ class DCAnalyzer(QObject):
             except Exception as e:
                 return f"[Ошибка при анализе: {str(e)}]"
         
-        #Если чанков больше одного — стандартная логика
-        #ШАГ 1: Анализ каждого чанка
+        # Если чанков больше одного — стандартная логика
+        # ШАГ 1: Анализ каждого чанка
         chunk_results = []
         for i, chunk in enumerate(chunks):
+            # ПРОВЕРКА ОСТАНОВКИ ПЕРЕД КАЖДЫМ ЧАНКОМ
+            if self._stop_requested:
+                return "[Анализ остановлен пользователем]"
+            
             current_chunk = i + 1
             
-            # Сигнал: чанк начал обрабатываться
             if chunk_start_callback:
-                chunk_start_callback(current_chunk, total_chunks) 
-                
+                chunk_start_callback(current_chunk, total_chunks)
+            
             full_prompt = f"{prompt}\n\nТекст (часть {current_chunk} из {total_chunks}):\n{chunk}"
             
             try:
@@ -266,8 +305,8 @@ class DCAnalyzer(QObject):
                     "temperature": self.temperature,
                     "max_tokens": max_tokens - 1000
                 }
-                if self.model_name:  # Добавляем model только если задано
-                    data["model"] = self.model_name 
+                if self.model_name:
+                    data["model"] = self.model_name
                 
                 response = requests.post(
                     f"{self._server_url}/chat/completions",
@@ -275,6 +314,10 @@ class DCAnalyzer(QObject):
                     json=data,
                     timeout=TIMEOUT_ANALYSIS
                 )
+                
+                # ПРОВЕРКА ОСТАНОВКИ ПОСЛЕ ЗАПРОСА
+                if self._stop_requested:
+                    return "[Анализ остановлен пользователем]"
                 
                 if response.status_code == 200:
                     result = response.json().get("choices", [{}])[0].get("message", {}).get("content", "Ошибка")
@@ -289,17 +332,24 @@ class DCAnalyzer(QObject):
             except Exception as e:
                 chunk_results.append(f"[Ошибка при обработке части {current_chunk}: {str(e)}]")
             
-            #Сигнал: чанк завершён
             if chunk_finish_callback:
                 chunk_finish_callback(current_chunk, total_chunks)
         
-        #ШАГ 2: Финальный анализ всех результатов
+        # ПРОВЕРКА ОСТАНОВКИ ПЕРЕД ФИНАЛЬНЫМ АНАЛИЗОМ
+        if self._stop_requested:
+            return "[Анализ остановлен пользователем]"
+        
+        # ШАГ 2: Финальный анализ всех результатов
         if final_analysis_callback:
             final_analysis_callback()
         
         final_result = self._perform_final_analysis(chunk_results, prompt, total_chunks)
         
-        #ШАГ 3: Формируем итоговый текст
+        # ПРОВЕРКА ОСТАНОВКИ ПОСЛЕ ФИНАЛЬНОГО АНАЛИЗА
+        if self._stop_requested:
+            return "[Анализ остановлен пользователем]"
+        
+        # ШАГ 3: Формируем итоговый текст
         output_parts = []
         
         for i, result in enumerate(chunk_results):
@@ -327,6 +377,10 @@ class DCAnalyzer(QObject):
         """
         Выполняет финальный анализ на основе результатов всех чанков
         """
+        # ПРОВЕРКА ОСТАНОВКИ
+        if self._stop_requested:
+            return "[Анализ остановлен пользователем]"
+        
         # Сокращаем каждый результат чанка
         summarized_results = []
         for i, result in enumerate(chunk_results):
@@ -346,14 +400,15 @@ class DCAnalyzer(QObject):
 
     Задача: На основе всех этих частичных анализов составь единый, связный итоговый анализ документа. 
     Объедини ключевые моменты, устрани дублирование, выдели главное. Ответ должен быть структурированным и понятным."""
- 
-        max_response_tokens = int(self.max_context * 0.7)#Вычисляем оптимальный размер ответа,70% контекста для ответа,30% для промта и резерва
-        estimated_prompt_tokens = len(final_prompt) // 2.5  # Приблизительно
-        if estimated_prompt_tokens > (self.max_context * 0.3):#Проверяем, что промт не превышает 30% контекста
-            print(f"⚠ Промт слишком длинный ({estimated_prompt_tokens} токенов), сокращаем резюме...") 
+
+        max_response_tokens = int(self.max_context * 0.7)
+        estimated_prompt_tokens = len(final_prompt) // 2.5
+        
+        if estimated_prompt_tokens > (self.max_context * 0.3):
+            print(f"⚠ Промт слишком длинный ({estimated_prompt_tokens} токенов), сокращаем резюме...")
             summarized_results = []
             for i, result in enumerate(chunk_results):
-                summarized = self._summarize_chunk_result(result, max_length=800)#резюме чанков
+                summarized = self._summarize_chunk_result(result, max_length=800)
                 summarized_results.append(f"Часть {i+1}: {summarized}")
             
             combined_results = "\n\n".join(summarized_results)
@@ -378,7 +433,7 @@ class DCAnalyzer(QObject):
                 "n_ctx": self.max_context
             }
             if self.model_name:
-                data["model"] = self.model_name 
+                data["model"] = self.model_name
 
             print(f"✓ Финальный анализ:")
             print(f"  - Промт: ~{int(len(final_prompt) / 2.5)} токенов")
@@ -391,6 +446,10 @@ class DCAnalyzer(QObject):
                 json=data,
                 timeout=TIMEOUT_FINAL
             )
+            
+            # ПРОВЕРКА ОСТАНОВКИ ПОСЛЕ ЗАПРОСА
+            if self._stop_requested:
+                return "[Анализ остановлен пользователем]"
             
             if response.status_code == 200:
                 return response.json().get("choices", [{}])[0].get("message", {}).get("content", "Ошибка финального анализа")
