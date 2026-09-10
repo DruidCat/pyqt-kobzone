@@ -14,7 +14,7 @@ QtObject {
 	//Нейро Анализ
     property string analizer_put_text: ""
     property string analizer_put_sohranit: ""
-	property string analizer_model_imya: "(автовыбор модели)"//По умолчанию автовыбор
+	property string analizer_model_imya: "(отсутствует)"//По умолчанию отсутствует
 	property string analizer_lms_put: ""//По умолчанию путь не задан
 	property string analizer_cli_put: ""//По умолчанию путь не задан
 	property int analizer_gpu_offload: 85//по умолчанию 50%	

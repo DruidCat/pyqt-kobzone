@@ -164,6 +164,7 @@ Item {
 		//10 - Ошибка загрузки модели
 		//11 - Ошибка запуска сервера
 		//12 - Ошибка остановки сервера
+		//13 - Модель не выбрана
 		function onSigCLIPut(strCLIPut){//Если путь автоматически обнаружен, то он придёт из pyLMStudio
 			DCSettings.analizer_cli_put	= strCLIPut;//Запоминаем в реестре настроек.
 		}
@@ -212,8 +213,8 @@ Item {
             }
             let savedModel = DCSettings.analizer_model_imya//Устанавливаем текущий индекс
 
-            if (savedModel === "" || savedModel === "(автовыбор модели)") {
-                pvModels.currentIndex = 0//Первый элемент = автовыбор
+            if (savedModel === "" || savedModel === "(отсутствует)") {
+                pvModels.currentIndex = 0//Первый элемент = отсутствует
             } else {
                 for (let i = 0; i < models.length; i++) {//Ищем сохранённую модель в списке
                     if (models[i] === savedModel) {
@@ -408,11 +409,11 @@ Item {
 			}
 		} else if(txnVvod.ntVvod === 3){//Server URL
 			var vrServerURL = txnVvod.text
-			//if(pyLMStudio.proverkaServerURL(vrServerURL)){//Если такой url существует, то...
+			if(pyLMStudio.proverkaServerURL(vrServerURL)){//Если такой url существует, то...
 				DCSettings.analizer_server_url = vrServerURL
-			//} else {
-				//root.toolbar("Указан неверный адрес сервера.")
-			//}
+			} else {
+				root.toolbar("Указан неверный адрес сервера.")
+			}
 		}
 		txnVvod.visible = false//Делаем невидимым данных
 	}
@@ -644,7 +645,7 @@ Item {
 			   		if(ntVvod === 0 ) return 6//Ограницение по вводу максимальны токенов для локальной модели
 					else if (ntVvod === 1) return 111//Длина пути до cli lms
 					else if (ntVvod === 2) return 3//0-100
-					else if (ntVvod === 3) return 28//Максимальная длина адреса http://127.000.000.001:1234
+					else if (ntVvod === 3) return 30//Максимальная длина адреса http://127.000.000.001:1234
 				}
 				blSqlProtect: {//Настройка по SQL инъекции.
 					if(ntVvod === 0) return false
@@ -879,8 +880,8 @@ Item {
                     id: knopkaModeli
                     text: {
                         let ltText = qsTr("модель ");//
-						if (root.strModel === "" || root.strModel === "(автовыбор модели)") {
-							ltText += qsTr("автовыбор")
+						if (root.strModel === "" || root.strModel === "(отсутствует)") {
+							ltText += qsTr("отсутствует")
 						} else {
 							// Показываем только последнюю часть имени (без пути)
 							let parts = root.strModel.split("/")

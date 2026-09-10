@@ -140,7 +140,11 @@ Item {
 			} else if (ntError === 9){//9 - CLI lms не найден. Укажите путь в настройках
 				vprVopros.ntFlag = 9//9 - вопрос, что не найден cli lms
 				vprVopros.visible = true
+			} else if (ntError === 13){//13 - Модель не выбрана
+				vprVopros.ntFlag = 13//13 - Модель не выбрана
+				vprVopros.visible = true
 			}
+
 			root.isServerZapustit = false
 			root.isModelZagruzit = false//Сбрасываю флаг
         }
@@ -157,6 +161,7 @@ Item {
 		//10 - Модель не загрузилась
 		//11 - Ошибка запуска сервера
 		//12 - Ошибка остановки сервера
+		//13 - Модель не выбрана
 		function onSigStudioZapuschen() {//Если запущена LM Studio
 			vprVopros.visible = false//Эта строка закрывает плашку с вопросом, которая автоматич. появляется
 		}
@@ -448,6 +453,7 @@ Item {
 				if(ntFlag === 3) return qsTr("Путь к исполняемому файлу LM Studio не действительный. Перейти к настройкам запуска LM Studio?")
 				else if(ntFlag === 6) return qsTr("LM Studio не запущена. Перейти к настройкам запуска LM Studio?")
 				else if (ntFlag === 9) return qsTr("Сервер LM Studio не запущен. Перейти к настройкам cli lms?")
+				else if (ntFlag === 13) return qsTr("Модель не выбрана. Перейти к настройкам?")
 				else return qsTr("Любовь")
 			}
 			onVisibleChanged: {

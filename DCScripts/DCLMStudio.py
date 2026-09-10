@@ -24,8 +24,8 @@ class DCLMStudio(QObject):
     STARTUP_CHECK_INTERVAL = 3000
     MAX_SERVER_CHECKS = 10
     SERVER_CHECK_INTERVAL = 2000
-    # Автовыбор модели
-    AUTO_MODEL_NAME = "(автовыбор модели)"
+    # Модели
+    NO_MODEL_NAME = "(отсутствует)"
     # ==================== СИГНАЛЫ ====================
     # Сигналы для LM Studio
     sigLog = pyqtSignal(str)                # Лог
@@ -51,7 +51,6 @@ class DCLMStudio(QObject):
         # Управление моделями
         self._current_model = ""
         self._models_list = []
-        
         # Управление процессом
         self._process = None
         self._custom_path = ""
@@ -63,12 +62,10 @@ class DCLMStudio(QObject):
         self._popitki = 0
         self._max_popitok = self.MAX_STARTUP_CHECKS
         self._zapusk_v_processe = False
-        
         # Состояние сервера
         self._server_zapuschen = False
         self._server_popitki = 0
         self._server_max_popitok = self.MAX_SERVER_CHECKS
-        
         # URL сервера (можно изменить)
         self._server_url = "http://localhost:1234/v1"
     
@@ -84,6 +81,75 @@ class DCLMStudio(QObject):
             pass  # При завершении приложения Qt объекты могут быть уже удалены
 
     # ==================== РАБОТА С ФАЙЛАМИ ====================
+    @pyqtSlot(str, result=bool)
+    def proverkaServerURL(self, server_url):
+        """
+        Проверяет корректность URL сервера LM Studio
+        
+        Args:
+            server_url: Адрес сервера (например: http://localhost:1234)
+        
+        Returns:
+            True - если URL корректен
+            False - если URL некорректен
+        """
+        import re
+        
+        if not server_url:
+            return False
+        
+        # Удаляем пробелы по краям
+        server_url = server_url.strip()
+        
+        # Проверяем максимальную длину (30 символов)
+        if len(server_url) > 30:
+            self.sigLog.emit(f"⚠ URL слишком длинный: {len(server_url)} символов (максимум 30)")
+            return False
+        
+        # Регулярное выражение для проверки формата
+        # Допустимые форматы:
+        # http://localhost:порт
+        # http://127.0.0.1:порт
+        # http://IP:порт (например: http://192.168.1.100:1234)
+        pattern = re.compile(
+            r'^http://'                          # Обязательно начинается с http://
+            r'('                                 # Начало группы для хоста
+            r'localhost|'                        # localhost ИЛИ
+            r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}'  # IP адрес (например: 127.0.0.1)
+            r')'                                 # Конец группы для хоста
+            r':'                                 # Обязательное двоеточие
+            r'(\d{1,5})'                         # Порт (от 1 до 5 цифр)
+            r'$'                                 # Конец строки
+        )
+        
+        match = pattern.match(server_url)
+        
+        if not match:
+            self.sigLog.emit(f"⚠ Неверный формат URL: {server_url}")
+            self.sigLog.emit("   Допустимый формат: http://localhost:1234 или http://127.0.0.1:1234")
+            return False
+        
+        # Проверяем корректность IP адреса (если не localhost)
+        host = match.group(1)
+        port = int(match.group(2))
+        
+        if host != "localhost":
+            # Проверяем, что каждый октет IP <= 255
+            octets = host.split('.')
+            for octet in octets:
+                if int(octet) > 255:
+                    self.sigLog.emit(f"⚠ Неверный IP адрес: {host} (октет {octet} > 255)")
+                    return False
+        
+        # Проверяем корректность порта (1-65535)
+        if port < 1 or port > 65535:
+            self.sigLog.emit(f"⚠ Неверный порт: {port} (допустимый диапазон: 1-65535)")
+            return False
+        
+        # Все проверки пройдены
+        self.sigLog.emit(f"✓ URL корректен: {server_url}")
+        return True
+
     @pyqtSlot(str, result=bool)
     def proverkaFaila(self, file_path: str) -> bool:
         """
@@ -118,9 +184,9 @@ class DCLMStudio(QObject):
                 data = response.json()
                 models = []
                 
-                # Добавляем опцию "Автовыбор" ПЕРВЫМ элементом
-                models.append(self.AUTO_MODEL_NAME)
-                
+                # Добавляем опцию "отсутствует" ПЕРВЫМ элементом
+                models.append(self.NO_MODEL_NAME)  # "отсутствует" первым
+
                 # Добавляем реальные модели (фильтруем embedding)
                 for model_info in data.get("data", []):
                     model_id = model_info.get("id", "")
@@ -149,19 +215,26 @@ class DCLMStudio(QObject):
     @pyqtSlot(str)
     def ustModel(self, model_name):
         """Устанавливает выбранную модель"""
-        if model_name == self.AUTO_MODEL_NAME:
+        if model_name == self.NO_MODEL_NAME or not model_name:
             self._current_model = ""
         else:
-            self._current_model = model_name
+            self._current_model = model_name 
     
     @pyqtSlot(result=str)
-    def poluchitModel(self):
+    def polModel(self):
         """Возвращает текущую модель"""
         return self._current_model 
     
     @pyqtSlot(str, int, float, int)
     def ustParametri(self, model_name, max_context, temperature, gpu_offload):
         """Публичный слот для загрузки модели с параметрами"""
+        # если модель "(отсутствует)" или пустая
+        if not model_name or model_name == self.NO_MODEL_NAME:
+            self._current_model = model_name#чтоб я мог понять по polModel что модель не задана.
+            error_msg = "Модель не выбрана. Выберите модель из списка."
+            self._emit_error(13, error_msg)  # КОД ОШИБКИ 13
+            return False
+
         if not self._proverkaZapushen():  # Проверка запуска LM Studio
             error_msg = "LM Studio не запущен. Сначала запустите приложение."
             self._emit_error(6, error_msg)
@@ -201,7 +274,7 @@ class DCLMStudio(QObject):
             self.proverkaServera()
 
     @pyqtSlot(result=str)
-    def poluchitServerURL(self):
+    def polServerURL(self):
         """Возвращает текущий URL сервера"""
         return self._server_url
 
