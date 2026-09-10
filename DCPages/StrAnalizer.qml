@@ -144,7 +144,7 @@ Item {
 				vprVopros.ntFlag = 13//13 - Модель не выбрана
 				vprVopros.visible = true
 			}
-
+			ldrProgress.active = false
 			root.isServerZapustit = false
 			root.isModelZagruzit = false//Сбрасываю флаг
         }
@@ -167,15 +167,31 @@ Item {
 		}
 		function onSigServerZapuschen() {//Если сервер запустился, то начинаем анализ Документов.
 			if(root.isServerZapustit){
-				pyLMStudio.ustParametri(DCSettings.analizer_model_imya, DCSettings.analizer_max_context,
+				root.isServerZapustit = false//Сбрасываем флаг.
+				let ltModel = pyLMStudio.polModel()//Получаем имя модели.
+				if (ltModel){//Если это не пустая строка, то...
+					if (root.isModelZagruzit) {//Если модель загружена по просьбе StrAnalizer, то...
+						root.isModelZagruzit = false//Сбрасываю флаг
+						pyAnalyzer.startAnaliza(txaContent.text, txfPromt.text)//Начинаю Анализ документов.
+					}
+				} else {//Если пустая строка, то...
+					ldrProgress.active = true//Запускаем полосу прогресса загрузки модели
+					ldrProgress.item.text = "Загрузка модели: " + DCSettings.analizer_model_imya
+					pyLMStudio.ustParametri(DCSettings.analizer_model_imya, DCSettings.analizer_max_context,
 											DCSettings.analizer_temperatura, DCSettings.analizer_gpu_offload)
-				root.isServerZapustit = false
+				}
 			}
 		}
 		function onSigModelZagrujena(strModel, ntContext) {
+			ldrProgress.active = false//Отключаем прогрессбар, после загрузки Модели.
 			if (root.isModelZagruzit) {//Если модель загружена по просьбе StrAnalizer, то...
 				root.isModelZagruzit = false//Сбрасываю флаг
 				pyAnalyzer.startAnaliza(txaContent.text, txfPromt.text)//Начинаю Анализ документов.
+			}
+		}
+		function onSigModelProgress(ntProgress) {
+			if (ldrProgress.item) {
+				ldrProgress.item.progress = ntProgress
 			}
 		}
 	}	
@@ -314,13 +330,10 @@ Item {
 				root.toolbar("")//Очищаем перед запуском тулбар
                 ldrProgress.active = true
                 
-                knopkaInfo.visible = false
-                knopkaNastroiki.visible = false
-                knopkaMenu.enabled = false
                 knopkaNazad.enabled = false
+                knopkaMenu.enabled = false 
                 
                 knopkaZagruzit.enabled = false
-                knopkaAnaliz.enabled = false
                 knopkaSohranit.enabled = false
             } else {
 				lgLogo.ntCoff = root.logoRazmer//Задаём размер логотипа.
@@ -334,18 +347,16 @@ Item {
         interval: 1100; running: false; repeat: false
         onTriggered: {
 			ldrProgress.active = false
-
-			knopkaInfo.visible = true
-			knopkaNastroiki.visible = true
-			knopkaMenu.enabled = true
+	
 			knopkaNazad.enabled = true
+			knopkaMenu.enabled = true
 			
 			knopkaZagruzit.enabled = true
-			knopkaAnaliz.enabled = txaContent.text.trim() !== ""
         }
 	}	
     
 	function fnClickedEscape() {//Функция нажатия на клавишу Escape
+		root.toolbar("")//Очищаем строку
 		if (menuMenu.visible) {
 			menuMenu.visible = false
 		} else {
@@ -646,11 +657,9 @@ Item {
                 DCKnopkaOriginal {//Кнопка анализа
                     id: knopkaAnaliz
                     text: "🚀 Анализировать"
-                    ntHeight: root.ntWidth
-                    ntCoff: root.ntCoff
-                    clrKnopki: "#2196F3"
-                    clrTexta: root.clrFona
-                    enabled: txaContent.text.trim() !== ""
+                    ntHeight: root.ntWidth; ntCoff: root.ntCoff
+                    clrKnopki: "#2196F3"; clrTexta: root.clrFona
+                    enabled: txaContent.text.trim() !== "" 
 					anchors.left: parent.left
                     anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2
@@ -800,6 +809,19 @@ Item {
             active: false
 			property int total: 1//Переменная, хранящая количество файлов на обработку
 			property int interval: 2200//Интервал между смещением полосы.
+			onActiveChanged: {
+				if (active){//Если активировался прогресбар, то...
+					root.toolbar("")
+                	knopkaInfo.visible = false
+					knopkaNastroiki.visible = false
+					knopkaAnaliz.enabled = false
+				}
+				else{
+					knopkaInfo.visible = true
+					knopkaNastroiki.visible = true
+					knopkaAnaliz.enabled = txaContent.text.trim() !== ""
+				}
+			}
             onLoaded: {
                 ldrProgress.item.ntWidth = root.ntWidth
                 ldrProgress.item.ntCoff = root.ntCoff

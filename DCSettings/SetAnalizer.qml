@@ -132,7 +132,9 @@ Item {
 			root.log(logMsg)
 		}
         function onSigError(ntError, errorMsg) {
-            root.toolbar(`Ошибка ${ntError}: ${errorMsg}`)
+			if(ntError !== 13)//Если это не пуста модель, то...
+            	root.toolbar(`Ошибка ${ntError}: ${errorMsg}`)
+
 			if(ntError === 3){//3 - Не удалось найти исполняемый файл LM Studio
 				vprVopros.ntVopros = 3
 				vprVopros.visible = true
