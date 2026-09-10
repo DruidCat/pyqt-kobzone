@@ -45,7 +45,6 @@ class DCAnalyzer(QObject):
     sigAnalizStart = pyqtSignal() #Сигнал Начала анализа.
     sigAnalizFinish = pyqtSignal() #Сигнал Анализ завершён. 
     sigDocumentsLoaded = pyqtSignal(str, int) #Сигнал загрузки документов (текст, количество)
-    sigModelReloadRequest = pyqtSignal(str, int, int)#Сигнал (model_name, n_ctx, gpu_upload)
     
     def __init__(self):
         super().__init__()
@@ -71,14 +70,8 @@ class DCAnalyzer(QObject):
         self._server_url = server_url
         print(f"✓ PyAnalyzer: URL сервера → {server_url}")
 
-    @pyqtSlot(str, int, float, int, int)
-    def ustModelSettings(self, model_name, max_context, temperature, overlap_percent, gpu_offload):
-        """Устанавливает параметры модели из настроек QML"""
-        
-        old_model = self.model_name
-        old_context = self.max_context
-        old_gpu = getattr(self, 'gpu_offload', 50)  # Безопасное получение старого значения
-        
+    @pyqtSlot(str, int, float)
+    def ustParametri(self, model_name, max_context, temperature):
         if model_name == "" or model_name == "(автовыбор модели)":
             self.model_name = None
         else:
@@ -86,25 +79,10 @@ class DCAnalyzer(QObject):
 
         self.max_context = max_context
         self.temperature = temperature
+
+    @pyqtSlot(int)
+    def ustPerekritie(self, overlap_percent):
         self.overlap_percent = overlap_percent
-        self.gpu_offload = gpu_offload
-        
-        #print(f"✓ Настройки модели обновлены:")
-        #print(f"  - Модель: {self.model_name}")
-        #print(f"  - Контекст: {self.max_context} токенов")
-        #print(f"  - Температура: {self.temperature}")
-        #print(f"  - Перекрытие: {self.overlap_percent}%")
-        #print(f"  - GPU: {self.gpu_offload}%")
-        
-        # Перезагружаем если изменились модель, контекст ИЛИ GPU
-        if (self.model_name and 
-            (old_model != self.model_name or 
-             old_context != self.max_context or 
-             old_gpu != self.gpu_offload)):
-            
-            print(f"Запрос на перезагрузку модели, так как новые данные.")
-            # Теперь передаём 3 параметра
-            self.sigModelReloadRequest.emit(self.model_name, self.max_context, self.gpu_offload) 
 
     @pyqtSlot(str, str)
     def startAnaliza(self, text_content, prompt):

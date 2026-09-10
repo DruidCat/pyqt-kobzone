@@ -206,11 +206,8 @@ class MainApp:
         
     def _connect_analyzer_to_lmstudio(self):
         """Связывает DCAnalyzer и DCLMStudio для автоматической перезагрузки модели"""
-        def handle_model_reload(model_name, n_ctx, gpu_offload):
-            self.lm_studio.zagruzitModelSParametrami(model_name, n_ctx, gpu_offload)#Обработчик с 3 параметрам
-        
-        self.analyzer.sigModelReloadRequest.connect(handle_model_reload)
         self.lm_studio.sigServerURLIzmenen.connect(self.analyzer.ustServerURL)
+        self.lm_studio.sigParametriIzmeneni.connect(self.analyzer.ustParametri)
         print("✓ DCAnalyzer связан с DCLMStudio") 
 
     def run(self):

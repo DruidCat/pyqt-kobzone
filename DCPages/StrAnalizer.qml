@@ -41,6 +41,7 @@ Item {
     property real rlLoader: 1
 
 	property bool isServerZapustit: false//true - запускаем сервер для начала анализа
+	property bool isModelZagruzit: false//true - жду загрузки модели из StrAnalizer
 	//Настройки
     anchors.fill: parent
     focus: true
@@ -56,8 +57,8 @@ Item {
 	}	
 	Component.onCompleted: {
         root.forceActiveFocus()
-		//pyAnalyzer.ustModelSettings(DCSettings.analizer_model_imya, DCSettings.analizer_max_context,
-			//DCSettings.analizer_temperatura, DCSettings.analizer_perekritie, DCSettings.analizer_gpu_offload)
+		//pyLMStudio.ustParametri(DCSettings.analizer_model_imya, DCSettings.analizer_max_context,
+			//DCSettings.analizer_temperatura, DCSettings.analizer_gpu_offload)
     }
 	Connections {//CONNECTIONS для прогресса
 		target: pyAnalyzer
@@ -159,11 +160,16 @@ Item {
 		}
 		function onSigServerZapuschen() {//Если сервер запустился, то начинаем анализ Документов.
 			if(root.isServerZapustit){
-				pyAnalyzer.ustModelSettings(DCSettings.analizer_model_imya, DCSettings.analizer_max_context,
-											DCSettings.analizer_temperatura, DCSettings.analizer_perekritie,
-											DCSettings.analizer_gpu_offload)
-        		pyAnalyzer.startAnaliza(txaContent.text, txfPromt.text)//Запуск анализа Документов.
+				pyLMStudio.ustParametri(DCSettings.analizer_model_imya, DCSettings.analizer_max_context,
+											DCSettings.analizer_temperatura, DCSettings.analizer_gpu_offload)
+        		//pyAnalyzer.startAnaliza(txaContent.text, txfPromt.text)//Запуск анализа Документов.
 				root.isServerZapustit = false
+			}
+		}
+		function onSigModelZagrujena(strModel, ntContext) {
+			if (root.isModelZagruzit) {//Если модель загружена по просьбе StrAnalizer, то...
+				root.isModelZagruzit = false//Сбрасываю флаг
+				pyAnalyzer.startAnaliza(txaContent.text, txfPromt.text)//Начинаю Анализ документов.
 			}
 		}
 	}	
@@ -369,8 +375,8 @@ Item {
 	}
     function fnClickedAnaliz() {//Функция запускающая нейро анализ документов
 		root.isServerZapustit = true
+		root.isModelZagruzit = true//Устанавливаем флаг ожидания, из StrAnalizer
 		pyLMStudio.zapustitServer()//Всегда запускаем сервер, даже если он запущен.
-		//root.toolbar(qsTr("Ожидайте."))
     }
     function fnClickedSohranit() {//Функция сохранения результата анализа.
         pyAnalyzer.sohranitAnaliz(DCSettings.analizer_put_sohranit)//Открываем Диалог в папке (путь из реестра).

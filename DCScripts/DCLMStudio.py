@@ -17,10 +17,11 @@ class DCLMStudio(QObject):
     sigStudioOstanovlen = pyqtSignal()      # LM Studio остановлен
     sigStudioStatus = pyqtSignal(bool)      # Статус LM Studio (True - запущен, False - остановлен)
     sigModelsLoaded = pyqtSignal(list)      # Список моделей загружен
-    sigModelZagrujena = pyqtSignal(str, int)# (model_name, n_ctx)
+    sigModelZagrujena = pyqtSignal(str, int)# (model_name, max_content)
     sigModelProgress = pyqtSignal(int)      # Процент загрузки модели (0-100)
     #Сигналы для сервера
     sigServerURLIzmenen = pyqtSignal(str)   # Сервера изменён
+    sigParametriIzmeneni = pyqtSignal(str, int, float)#Сигнал (model_name, max_context, temperature)
     sigServerZapuschen = pyqtSignal()       # Сервер запущен
     sigServerOstanovlen = pyqtSignal()      # Сервер остановлен
     sigServerStatus = pyqtSignal(bool)      # Статус сервера (True - запущен, False - остановлен)
@@ -126,8 +127,8 @@ class DCLMStudio(QObject):
         """Возвращает текущую модель"""
         return self._current_model 
     
-    @pyqtSlot(str, int, int)
-    def zagruzitModelSParametrami(self, model_name, n_ctx, gpu_offload=50):
+    @pyqtSlot(str, int, float, int)
+    def ustParametri(self, model_name, max_context, temperature, gpu_offload=50):
         """Публичный слот для загрузки модели с параметрами"""
         if not self._proverkaZapushen():#Проверка запуска LM Studio
             error_msg = "LM Studio не запущен. Сначала запустите приложение."
@@ -136,9 +137,12 @@ class DCLMStudio(QObject):
             return False
         
         # LM Studio запущен, продолжаем загрузку
-        success = self._zagruzitModelSParametrami(model_name, n_ctx, gpu_offload)
+        success = self._ustParametri(model_name, max_context, gpu_offload)
 
-        if not success:# Ошибка при начале загрузки
+        if success:
+            self.ustModel(model_name)#приравниваем к _current_model и убираем автовыбор
+            self.sigParametriIzmeneni.emit(self._current_model, max_context, temperature)
+        else:# Ошибка при начале загрузки
             self.sigError.emit(10, f"Не удалось начать загрузку модели {model_name}")
         
         return success 
@@ -340,9 +344,9 @@ class DCLMStudio(QObject):
         self._zapustitProverkuServera()
 
     @pyqtSlot(str, int)
-    def zagruzitCherezConfig(self, model_name, n_ctx):
+    def zagruzitCherezConfig(self, model_name, max_content):
         """Публичный слот для загрузки через конфиг (вызывается из потока)"""
-        self._zagruzitCherezConfig(model_name, n_ctx)
+        self._zagruzitCherezConfig(model_name, max_content)
 
     # ==================== ЗАПУСК/ОСТАНОВКА ПРИЛОЖЕНИЯ ====================
     @pyqtSlot(str)
@@ -707,25 +711,25 @@ class DCLMStudio(QObject):
             self.sigLog.emit(f"⚠ Ошибка выгрузки модели: {str(e)}")
             return True  # Не критично, продолжаем
 
-    def _zagruzitModelSParametrami(self, model_name, n_ctx, gpu_offload):
+    def _ustParametri(self, model_name, max_context, gpu_offload):
         """Внутренний метод загрузки модели"""
         lms_cli = self._naitiLMS_CLI()
         
         if not lms_cli:
             self.sigLog.emit("⚠ CLI lms не найден...")
-            return self._zagruzitCherezConfig(model_name, n_ctx)
+            return self._zagruzitCherezConfig(model_name, max_context)
         
         # Запускаем в потоке с новым параметром
         thread = threading.Thread(
             target=self._zagruzitModelVPotoke,
-            args=(lms_cli, model_name, n_ctx, gpu_offload),
+            args=(lms_cli, model_name, max_context, gpu_offload),
             daemon=True
         )
         thread.start()
         
         return True
 
-    def _zagruzitModelVPotoke(self, lms_cli, model_name, n_ctx, gpu_offload):
+    def _zagruzitModelVPotoke(self, lms_cli, model_name, max_content, gpu_offload):
         """Загружает модель в отдельном потоке (не блокирует UI)"""
         import time
         import re
@@ -751,7 +755,7 @@ class DCLMStudio(QObject):
             # Шаг 3: Загружаем модель
             self.sigLog.emit("🔄 Загрузка модели с новыми параметрами...")
             self.sigLog.emit(f"   Модель: {model_name}")
-            self.sigLog.emit(f"   Контекст: {n_ctx} токенов")
+            self.sigLog.emit(f"   Контекст: {max_content} токенов")
             self.sigLog.emit(f"   GPU: {gpu_description}")
             
             # Излучаем 0% в начале
@@ -760,7 +764,7 @@ class DCLMStudio(QObject):
             # Формируем команду загрузки
             load_command = [
                 lms_cli, "load", model_name, 
-                "--context-length", str(n_ctx), 
+                "--context-length", str(max_content), 
                 "--gpu", gpu_param,
                 "-y"
             ]
@@ -829,7 +833,7 @@ class DCLMStudio(QObject):
                         
                         fb_command = [
                             lms_cli, "load", model_name, 
-                            "--context-length", str(n_ctx), 
+                            "--context-length", str(max_content), 
                             "--gpu", fb_gpu, 
                             "-y"
                         ]
@@ -844,7 +848,7 @@ class DCLMStudio(QObject):
                         if fb_result.returncode == 0:
                             self.sigModelProgress.emit(100)
                             self.sigLog.emit(f"✓ Модель загружена: {model_name}")
-                            self.sigLog.emit(f"✓ Контекст: {n_ctx}")
+                            self.sigLog.emit(f"✓ Контекст: {max_content}")
                             self.sigLog.emit(f"✓ GPU: {fb_desc} (fallback)")
                             load_success = True
                             break
@@ -872,7 +876,7 @@ class DCLMStudio(QObject):
                             "zagruzitCherezConfig",
                             Qt.ConnectionType.QueuedConnection,
                             Q_ARG(str, model_name),
-                            Q_ARG(int, n_ctx)
+                            Q_ARG(int, max_content)
                         )
                         return
                 
@@ -892,7 +896,7 @@ class DCLMStudio(QObject):
                         "zagruzitCherezConfig",
                         Qt.ConnectionType.QueuedConnection,
                         Q_ARG(str, model_name),
-                        Q_ARG(int, n_ctx)
+                        Q_ARG(int, max_content)
                     )
                     return
             
@@ -900,7 +904,7 @@ class DCLMStudio(QObject):
             # Сервер продолжает работать с новой моделью
             
             # Шаг 5: Сигнал успеха
-            self.sigModelZagrujena.emit(model_name, n_ctx)
+            self.sigModelZagrujena.emit(model_name, max_content)
         
         except subprocess.TimeoutExpired:
             self.sigModelProgress.emit(0)
@@ -915,7 +919,7 @@ class DCLMStudio(QObject):
                 "zagruzitCherezConfig",
                 Qt.ConnectionType.QueuedConnection,
                 Q_ARG(str, model_name),
-                Q_ARG(int, n_ctx)
+                Q_ARG(int, max_content)
             )
         
         except Exception as e:
@@ -931,16 +935,16 @@ class DCLMStudio(QObject):
                 "zagruzitCherezConfig",
                 Qt.ConnectionType.QueuedConnection,
                 Q_ARG(str, model_name),
-                Q_ARG(int, n_ctx)
+                Q_ARG(int, max_content)
             )
 
-    def _zagruzitCherezConfig(self, model_name, n_ctx):
+    def _zagruzitCherezConfig(self, model_name, max_content):
         """Загрузка модели через обновление конфига + перезапуск сервера"""
         try:
             self.sigLog.emit(f"🔄 Настройка через конфигурацию...")
             
             # Обновляем конфиг
-            config_updated = self._ustServerConfig(n_ctx)
+            config_updated = self._ustServerConfig(max_content)
             
             if not config_updated:
                 self.sigError.emit(10, f"Не удалось обновить конфигурацию для модели {model_name}")
@@ -960,10 +964,10 @@ class DCLMStudio(QObject):
                 self.sigLog.emit("⏳ Ожидание остановки сервера...")
                 QTimer.singleShot(3000, lambda: self._zapustitServerPosledujushii())
                 
-                self.sigLog.emit(f"✓ Конфигурация обновлена: контекст {n_ctx}")
+                self.sigLog.emit(f"✓ Конфигурация обновлена: контекст {max_content}")
                 return True
             else:
-                self.sigLog.emit(f"✓ Конфигурация обновлена: контекст {n_ctx}")
+                self.sigLog.emit(f"✓ Конфигурация обновлена: контекст {max_content}")
                 self.sigLog.emit("⚠ Запустите сервер для применения изменений")
                 return True
         

@@ -47,6 +47,7 @@ Item {
 	property string serverURL: DCSettings.analizer_server_url//URL Сервера LM Studio
 	property string strModel: DCSettings.analizer_model_imya//Имя модели ИИ
 	property real rlTemperatura: DCSettings.analizer_temperatura//Температура ИИ
+	property int ntPerekritie: DCSettings.analizer_perekritie
 	property int maxContext: DCSettings.analizer_max_context//Максимальное количество токенов
 	property bool isStudioOn: false//true - LM Studio запущена.
 	property int gpuOffload: DCSettings.analizer_gpu_offload
@@ -79,9 +80,8 @@ Item {
 			ldrProgress.active = true//Запускаем полосу прогресса загрузки модели
 			let ltMaxContext = DCSettings.analizer_max_context
 			let ltTemperatura = DCSettings.analizer_temperatura
-			let ltPerekritie = DCSettings.analizer_perekritie
 			let ltGPU = DCSettings.analizer_gpu_offload
-			pyAnalyzer.ustModelSettings(root.strModel, ltMaxContext, ltTemperatura, ltPerekritie, ltGPU)
+			pyLMStudio.ustParametri(root.strModel, ltMaxContext, ltTemperatura, ltGPU)
 		}
 		isModelStart = true
 	}
@@ -91,11 +91,13 @@ Item {
 			ldrProgress.active = true//Запускаем полосу прогресса загрузки модели
 			let ltMaxContext = DCSettings.analizer_max_context
 			let ltTemperatura = DCSettings.analizer_temperatura
-			let ltPerekritie = DCSettings.analizer_perekritie
 			let ltGPU = DCSettings.analizer_gpu_offload
-			pyAnalyzer.ustModelSettings(root.strModel, ltMaxContext, ltTemperatura, ltPerekritie, ltGPU)
+			pyLMStudio.ustParametri(root.strModel, ltMaxContext, ltTemperatura, ltGPU)
 		}
 		isTemperaturaStart = true
+	}
+	onNtPerekritieChanged: {
+		pyAnalyzer.ustPerekritie(ntPerekritie)//Загрузка при иннициации приложения и при изменении значения
 	}
 	onMaxContextChanged: {
 		if (isContextStart){//Первую иннициализацию не обрабатываем, когда данные читаются из реестра
@@ -103,9 +105,8 @@ Item {
 			ldrProgress.active = true//Запускаем полосу прогресса загрузки модели
 			let ltMaxContext = DCSettings.analizer_max_context
 			let ltTemperatura = DCSettings.analizer_temperatura
-			let ltPerekritie = DCSettings.analizer_perekritie
 			let ltGPU = DCSettings.analizer_gpu_offload
-			pyAnalyzer.ustModelSettings(root.strModel, ltMaxContext, ltTemperatura, ltPerekritie, ltGPU)
+			pyLMStudio.ustParametri(root.strModel, ltMaxContext, ltTemperatura, ltGPU)
 		}
 		isContextStart = true
 	}
@@ -114,9 +115,8 @@ Item {
 			ldrProgress.active = true//Запускаем полосу прогресса загрузки модели
 			let ltMaxContext = DCSettings.analizer_max_context
 			let ltTemperatura = DCSettings.analizer_temperatura
-			let ltPerekritie = DCSettings.analizer_perekritie
 			let ltGPU = DCSettings.analizer_gpu_offload
-			pyAnalyzer.ustModelSettings(root.strModel, ltMaxContext, ltTemperatura, ltPerekritie, ltGPU)
+			pyLMStudio.ustParametri(root.strModel, ltMaxContext, ltTemperatura, ltGPU)
 		}
 		isGpuOffloadStart = true
 	}
