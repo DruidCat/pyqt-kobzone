@@ -62,9 +62,11 @@ Item {
 		target: pyAnalyzer
 		function onSigResultReady(result) {//Сигнал готовности результата анализа.
 			resultArea.text = dcMarkdown.toHtml(result)//Конвертируем Markdown в HTML
+    		flcResultArea.contentY = 0//Автоскролл вверх, чтоб видеть результат с начала.
 			knopkaSohranit.enabled = (result !== "" && 
 									result !== "Анализируется..." &&
-									!result.startsWith("Ошибка:"))
+									!result.startsWith("Ошибка:") &&
+                            		!result.startsWith("["))//Проверка для ошибок
 		}
 		function onSigAnalizSohranit(strPut) {//Сигнал о том, что файл сохранился.
 			if (strPut.startsWith("[Ошибка")) {
@@ -72,6 +74,25 @@ Item {
 			} else {
 				root.toolbar("Сохранено: " + strPut.split('/').pop())
 				DCSettings.analizer_put_sohranit = strPut;//Сохраняем путь папки, у котороую сохранили результат
+			}
+		}
+		function onSigChunkResult(ntCurrent, ntTotal, strResult) {//обновляем UI после каждого чанка
+			let ltMarkdown = dcMarkdown.toHtml(strResult)
+			if (ntCurrent === 1) {// Первый чанк — заменяем содержимое
+				resultArea.text = `<h3>Часть ${ntCurrent}/${ntTotal}</h3>\n${ltMarkdown}\n`
+			} else {//Последующие чанки — добавляем к существующему
+				resultArea.text += `\n<hr>\n<h3>Часть ${ntCurrent}/${ntTotal}</h3>\n${ltMarkdown}\n`
+			}
+			flcResultArea.contentY = flcResultArea.contentHeight - flcResultArea.height//Автоскролл вниз
+			root.log(`✓ Получен результат чанка ${ntCurrent}/${ntTotal}`)
+		}
+		function onSigAnalizFinalStart() {//Сигнал Начала финального анализа
+			root.log("✓ Начался финальный анализ")
+			//Добавляем разделитель перед финальным анализом
+			resultArea.text += "\n<hr style='border: 2px solid #2196F3;'>\n<h2>🔍 ФИНАЛЬНЫЙ АНАЛИЗ</h2>\n<p><i>Обработка...</i></p>\n"
+			flcResultArea.contentY = flcResultArea.contentHeight - flcResultArea.height//Автоскролл вниз
+			if (ldrProgress.item) {
+				ldrProgress.item.text = "Финальный анализ..."
 			}
 		}
 		function onSigChunkStarted(ntCurrent, ntTotal) {
@@ -101,16 +122,11 @@ Item {
 				}
 			}
 		}
-		function onSigAnalizFinalStart() {//Сигнал Начала финального анализа
-			root.log("✓ Начался финальный анализ")
-			if (ldrProgress.item) {//Всегда показываем "Финальный анализ..."
-				ldrProgress.item.text = "Финальный анализ..."
-			}
-		}
 		function onSigAnalizStart() {//Сигнал Начала анализа.
 			root.log("✓ Анализ начался")
 			root.rlProgress = 0
 			tmrLogo.running = true//Запускаем анимацию логотипа и включаем политики кнопок.
+        	resultArea.text = ""//ОЧИЩАЕМ resultArea перед началом
 			if (ldrProgress.item) {//Если существует объект, то...
 				ldrProgress.item.text = "Подготовка..."//Устанавливаем прогресс в режим ожидания
 				ldrProgress.item.progress = 0
@@ -343,6 +359,7 @@ Item {
 			ldrProgress.active = false
 			knopkaZagruzit.enabled = true
 			root.toolbar(`Анализ завершён: ${txfPromt.text}`)
+			dcTimer.blStart = false//Останавливаем таймер.
         }
 	}	
     
@@ -388,6 +405,7 @@ Item {
 		txfPromt.text = ""//Очищаем промт.
 	}
     function fnClickedAnaliz() {//Функция запускающая нейро анализ документов
+		dcTimer.blStart = true//Запуск таймера.
 		root.isServerZapustit = true
 		root.isModelZagruzit = true//Устанавливаем флаг ожидания, из StrAnalizer
 		pyLMStudio.zapustitServer()//Всегда запускаем сервер, даже если он запущен.
@@ -659,7 +677,7 @@ Item {
 				}
                 DCKnopkaOriginal {//Кнопка анализа
                     id: knopkaAnaliz
-                    text: "🚀 Анализировать"
+                    text: "🚀 Анализировать " + dcTimer.strTimer
                     ntHeight: root.ntWidth; ntCoff: root.ntCoff
                     clrKnopki: "#2196F3"; clrTexta: root.clrFona
                     enabled: txaContent.text.trim() !== "" 
@@ -673,6 +691,9 @@ Item {
                         }
                     }
                 }
+				DCTimer {//Таймер
+					id: dcTimer
+				}
                 Text {//Результат
                     text: "Результат:"
                     font.pixelSize: root.ntWidth/2 * root.ntCoff
@@ -683,7 +704,7 @@ Item {
                 Rectangle {
                     id: rctResultArea
                     width: parent.width - parent.leftPadding - parent.rightPadding
-                    height: 300
+                    height: 550
                     color: "transparent"
                     border.color: root.clrTexta
                     border.width: 1
@@ -819,12 +840,14 @@ Item {
                 	knopkaInfo.visible = false
 					knopkaNastroiki.visible = false
 					knopkaAnaliz.enabled = false
+					knopkaOchistit.enabled = false
 				}
 				else{
 					knopkaMenu.enabled = true
 					knopkaInfo.visible = true
 					knopkaNastroiki.visible = true
 					knopkaAnaliz.enabled = txaContent.text.trim() !== ""
+					knopkaOchistit.enabled = true
 				}
 			}
             onLoaded: {

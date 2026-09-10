@@ -12,6 +12,7 @@ class DCAnalyzerWorker(QThread):
     sigFinished = pyqtSignal(str)
     sigChunkStarted = pyqtSignal(int, int)
     sigChunkFinished = pyqtSignal(int, int)
+    sigChunkResult = pyqtSignal(int, int, str) #Сигнал (номер, всего, текст результата)
     sigAnalizFinalStart = pyqtSignal() #начало финального анализа
     
     def __init__(self, text_content, prompt, analyzer):
@@ -28,6 +29,7 @@ class DCAnalyzerWorker(QThread):
                 self.prompt,
                 chunk_start_callback=self.sigChunkStarted.emit,
                 chunk_finish_callback=self.sigChunkFinished.emit,
+                chunk_result_callback=self.sigChunkResult.emit, 
                 final_analysis_callback=self.sigAnalizFinalStart.emit
             )
             self.sigFinished.emit(result)
@@ -37,10 +39,11 @@ class DCAnalyzerWorker(QThread):
 
 class DCAnalyzer(QObject):
     #Сигналы
-    sigResultReady = pyqtSignal(str) #Сигнал готовности результата анализа.
+    sigResultReady = pyqtSignal(str) #Сигнал готовности Полного результата анализа в конце.
     sigAnalizSohranit = pyqtSignal(str) #Сигнал о том, что сохранился анализ в файл.
     sigChunkStarted = pyqtSignal(int, int) #Сигнал начала обработки Чанка.
     sigChunkFinished = pyqtSignal(int, int) #Сигнал окончания обработки Чанка.
+    sigChunkResult = pyqtSignal(int, int, str) #Сигнал (номер, всего, текст результата)
     sigAnalizFinalStart = pyqtSignal() #Сигнал начала финального анализа
     sigAnalizStart = pyqtSignal() #Сигнал Начала анализа.
     sigAnalizFinish = pyqtSignal() #Сигнал Анализ завершён. 
@@ -108,6 +111,7 @@ class DCAnalyzer(QObject):
         self.worker.sigFinished.connect(self._on_analysis_finished)
         self.worker.sigChunkStarted.connect(self.sigChunkStarted.emit)
         self.worker.sigChunkFinished.connect(self.sigChunkFinished.emit)
+        self.worker.sigChunkResult.connect(self.sigChunkResult.emit)
         self.worker.sigAnalizFinalStart.connect(self.sigAnalizFinalStart.emit)
         self.worker.start()
         
@@ -215,12 +219,13 @@ class DCAnalyzer(QObject):
             self.sigDocumentsLoaded.emit(f"[Ошибка: {str(e)}]", 0)
 
     def process_text(self, text_content, prompt, chunk_start_callback=None, 
-                    chunk_finish_callback=None, final_analysis_callback=None):
+                    chunk_finish_callback=None, chunk_result_callback=None,
+                    final_analysis_callback=None):
         """
         Разбиваем текст на части и отправляем каждую часть в модель.
         После обработки всех чанков делаем финальный анализ.
         """
-        # ПРОВЕРКА ОСТАНОВКИ В НАЧАЛЕ
+        # Проверка остановки в начале
         if self._stop_requested:
             return "[Анализ остановлен пользователем]"
         
@@ -235,7 +240,6 @@ class DCAnalyzer(QObject):
         
         # Если чанк один — сразу финальный анализ
         if total_chunks == 1:
-            # ПРОВЕРКА ОСТАНОВКИ
             if self._stop_requested:
                 return "[Анализ остановлен пользователем]"
             
@@ -263,7 +267,6 @@ class DCAnalyzer(QObject):
                     timeout=TIMEOUT_ANALYSIS
                 )
                 
-                # ПРОВЕРКА ОСТАНОВКИ ПОСЛЕ ЗАПРОСА
                 if self._stop_requested:
                     return "[Анализ остановлен пользователем]"
                 
@@ -271,6 +274,10 @@ class DCAnalyzer(QObject):
                     result = response.json().get("choices", [{}])[0].get("message", {}).get("content", "Ошибка")
                 else:
                     result = f"[Ошибка {response.status_code}: {response.text}]"
+                
+                # ОТПРАВЛЯЕМ РЕЗУЛЬТАТ ЕДИНСТВЕННОГО ЧАНКА
+                if chunk_result_callback:
+                    chunk_result_callback(1, 1, result)
                 
                 return result
             
@@ -285,7 +292,6 @@ class DCAnalyzer(QObject):
         # ШАГ 1: Анализ каждого чанка
         chunk_results = []
         for i, chunk in enumerate(chunks):
-            # ПРОВЕРКА ОСТАНОВКИ ПЕРЕД КАЖДЫМ ЧАНКОМ
             if self._stop_requested:
                 return "[Анализ остановлен пользователем]"
             
@@ -315,7 +321,6 @@ class DCAnalyzer(QObject):
                     timeout=TIMEOUT_ANALYSIS
                 )
                 
-                # ПРОВЕРКА ОСТАНОВКИ ПОСЛЕ ЗАПРОСА
                 if self._stop_requested:
                     return "[Анализ остановлен пользователем]"
                 
@@ -325,17 +330,32 @@ class DCAnalyzer(QObject):
                     result = f"[Ошибка {response.status_code}: {response.text}]"
                 
                 chunk_results.append(result)
+                
+                # ОТПРАВЛЯЕМ РЕЗУЛЬТАТ ЧАНКА СРАЗУ
+                if chunk_result_callback:
+                    chunk_result_callback(current_chunk, total_chunks, result)
+            
             except requests.exceptions.Timeout:
-                chunk_results.append(f"[Ошибка: таймаут при обработке части {current_chunk}]")
+                result = f"[Ошибка: таймаут при обработке части {current_chunk}]"
+                chunk_results.append(result)
+                if chunk_result_callback:
+                    chunk_result_callback(current_chunk, total_chunks, result)
+            
             except requests.exceptions.ConnectionError:
-                chunk_results.append(f"[Ошибка: не удалось подключиться к LM Studio. Проверьте, что сервер запущен на {self._server_url}]")
+                result = f"[Ошибка: не удалось подключиться к LM Studio]"
+                chunk_results.append(result)
+                if chunk_result_callback:
+                    chunk_result_callback(current_chunk, total_chunks, result)
+            
             except Exception as e:
-                chunk_results.append(f"[Ошибка при обработке части {current_chunk}: {str(e)}]")
+                result = f"[Ошибка при обработке части {current_chunk}: {str(e)}]"
+                chunk_results.append(result)
+                if chunk_result_callback:
+                    chunk_result_callback(current_chunk, total_chunks, result)
             
             if chunk_finish_callback:
                 chunk_finish_callback(current_chunk, total_chunks)
         
-        # ПРОВЕРКА ОСТАНОВКИ ПЕРЕД ФИНАЛЬНЫМ АНАЛИЗОМ
         if self._stop_requested:
             return "[Анализ остановлен пользователем]"
         
@@ -345,19 +365,22 @@ class DCAnalyzer(QObject):
         
         final_result = self._perform_final_analysis(chunk_results, prompt, total_chunks)
         
-        # ПРОВЕРКА ОСТАНОВКИ ПОСЛЕ ФИНАЛЬНОГО АНАЛИЗА
         if self._stop_requested:
             return "[Анализ остановлен пользователем]"
         
-        # ШАГ 3: Формируем итоговый текст
+        # ШАГ 3: Формируем итоговый текст (markdown для красивого HTML)
         output_parts = []
-        
+
         for i, result in enumerate(chunk_results):
-            output_parts.append(f"=== Часть {i+1}/{total_chunks} ===\n{result}\n")
-        
-        output_parts.append("\n**ИТОГОВЫЙ РЕЗУЛЬТАТ:**\n\n" + final_result)
-        
-        return "\n".join(output_parts)
+            if i > 0:
+                output_parts.append("\n---\n")  # Разделитель между чанками
+            output_parts.append(f"### Часть {i+1}/{total_chunks}\n\n{result}\n")
+
+        # Разделитель и заголовок перед финальным анализом
+        output_parts.append("\n---\n")
+        output_parts.append(f"### ИТОГОВЫЙ РЕЗУЛЬТАТ\n\n{final_result}")
+
+        return "\n".join(output_parts) 
 
     def _summarize_chunk_result(self, result, max_length=1000):#Сокращаем результаты чанков, оставляя только суть
         """Сокращает результат чанка до основных тезисов"""
