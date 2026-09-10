@@ -394,7 +394,7 @@ Item {
 			else DCSettings.analizer_max_context = ltResult//Сохраняем в реестре значение.
 		} else if(txnVvod.ntVvod === 1){//Путь к cli lms
 			var vrPutCLI = txnVvod.text
-			if(pyLMStudio.proverkaFaila(vrPutCLI)){//Если такой путь существует, то...
+			if(pyLMStudio.proverkaLMSFaila(vrPutCLI)){//Если такой путь существует, то...
 				DCSettings.analizer_cli_put  = vrPutCLI
 				pyLMStudio.ustPutCLI(vrPutCLI)
 			} else {

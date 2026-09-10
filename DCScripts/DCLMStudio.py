@@ -151,6 +151,87 @@ class DCLMStudio(QObject):
         return True
 
     @pyqtSlot(str, result=bool)
+    def proverkaLMSFaila(self, file_path: str) -> bool:
+        """
+        Проверяет, является ли файл корректным исполняемым файлом lms CLI
+        """
+        if not file_path:
+            return False
+        
+        try:
+            path = Path(file_path).expanduser().resolve()
+            
+            if not path.is_file():
+                self.sigLog.emit(f"⚠ Файл не найден: {file_path}")
+                return False
+            
+            file_name = path.name.lower()
+            file_stem = path.stem.lower()
+            file_suffix = path.suffix.lower()
+            
+            current_os = platform.system()
+            
+            if current_os == "Linux":
+                if file_name == "lms":
+                    # ✅ ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА: файл исполняемый?
+                    import os
+                    if os.access(path, os.X_OK):
+                        self.sigLog.emit(f"✓ Найден lms для Linux: {path}")
+                        return True
+                    else:
+                        self.sigLog.emit(f"⚠ Файл не исполняемый: {path}")
+                        self.sigLog.emit(f"   Выполните: chmod +x {path}")
+                        return False
+                else:
+                    self.sigLog.emit(f"⚠ Неверное имя файла для Linux: {file_name}")
+                    self.sigLog.emit(f"   Ожидается: lms")
+                    return False
+            
+            elif current_os == "Darwin":  # macOS
+                if file_name == "lms" or file_suffix == ".app":
+                    if file_stem == "lms" or file_name == "lms":
+                        # ✅ ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА для обычного файла
+                        if file_suffix != ".app":
+                            import os
+                            if not os.access(path, os.X_OK):
+                                self.sigLog.emit(f"⚠ Файл не исполняемый: {path}")
+                                self.sigLog.emit(f"   Выполните: chmod +x {path}")
+                                return False
+                        
+                        self.sigLog.emit(f"✓ Найден lms для macOS: {path}")
+                        return True
+                    else:
+                        self.sigLog.emit(f"⚠ Неверное имя файла для macOS: {file_name}")
+                        self.sigLog.emit(f"   Ожидается: lms или lms.app")
+                        return False
+                else:
+                    self.sigLog.emit(f"⚠ Неверное расширение для macOS: {file_suffix}")
+                    self.sigLog.emit(f"   Ожидается: (без расширения) или .app")
+                    return False
+            
+            elif current_os == "Windows":
+                if file_suffix == ".exe":
+                    if file_stem == "lms":
+                        self.sigLog.emit(f"✓ Найден lms для Windows: {path}")
+                        return True
+                    else:
+                        self.sigLog.emit(f"⚠ Неверное имя файла для Windows: {file_name}")
+                        self.sigLog.emit(f"   Ожидается: lms.exe")
+                        return False
+                else:
+                    self.sigLog.emit(f"⚠ Неверное расширение для Windows: {file_suffix}")
+                    self.sigLog.emit(f"   Ожидается: .exe")
+                    return False
+            
+            else:
+                self.sigLog.emit(f"⚠ Неподдерживаемая ОС: {current_os}")
+                return False
+        
+        except Exception as e:
+            self.sigLog.emit(f"✗ Ошибка проверки файла: {str(e)}")
+            return False
+
+    @pyqtSlot(str, result=bool)
     def proverkaFaila(self, file_path: str) -> bool:
         """
         Проверяет, существует ли файл по указанному пути.
