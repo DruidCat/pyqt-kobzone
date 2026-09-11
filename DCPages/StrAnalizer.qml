@@ -359,7 +359,6 @@ Item {
 			ldrProgress.active = false
 			knopkaZagruzit.enabled = true
 			root.toolbar(`Анализ завершён: ${txfPromt.text}`)
-			dcTimer.blStart = false//Останавливаем таймер.
         }
 	}	
     
@@ -405,7 +404,6 @@ Item {
 		txfPromt.text = ""//Очищаем промт.
 	}
     function fnClickedAnaliz() {//Функция запускающая нейро анализ документов
-		dcTimer.blStart = true//Запуск таймера.
 		root.isServerZapustit = true
 		root.isModelZagruzit = true//Устанавливаем флаг ожидания, из StrAnalizer
 		pyLMStudio.zapustitServer()//Всегда запускаем сервер, даже если он запущен.
@@ -677,7 +675,10 @@ Item {
 				}
                 DCKnopkaOriginal {//Кнопка анализа
                     id: knopkaAnaliz
-                    text: "🚀 Анализировать " + dcTimer.strTimer
+					text: {
+						if(dcTimer.blStart) return "📊 Анализ: " + dcTimer.strTimer
+						else return "🚀 Анализировать"
+					}
                     ntHeight: root.ntWidth; ntCoff: root.ntCoff
                     clrKnopki: "#2196F3"; clrTexta: root.clrFona
                     enabled: txaContent.text.trim() !== "" 
@@ -835,19 +836,25 @@ Item {
 			property int interval: 2200//Интервал между смещением полосы.
 			onActiveChanged: {
 				if (active){//Если активировался прогресбар, то...
+					dcTimer.blStart = true//Запуск таймера.
 					root.toolbar("")
 					knopkaMenu.enabled = false
                 	knopkaInfo.visible = false
 					knopkaNastroiki.visible = false
 					knopkaAnaliz.enabled = false
 					knopkaOchistit.enabled = false
+					txaContent.enabled = false
+					txfPromt.enabled = false
 				}
 				else{
+					dcTimer.blStart = false//Останавливаем таймер.
 					knopkaMenu.enabled = true
 					knopkaInfo.visible = true
 					knopkaNastroiki.visible = true
 					knopkaAnaliz.enabled = txaContent.text.trim() !== ""
 					knopkaOchistit.enabled = true
+					txaContent.enabled = true
+					txfPromt.enabled = true
 				}
 			}
             onLoaded: {
