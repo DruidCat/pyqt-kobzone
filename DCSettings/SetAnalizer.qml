@@ -972,9 +972,7 @@ Item {
 					id: knopkaGPU
 					text: {
 						let ltText = qsTr("gpu offload: ")
-						if (root.gpuOffload === 0) ltText += "CPU only"
-						else if (root.gpuOffload === 100) ltText += "Full GPU"
-						else ltText += root.gpuOffload + "%"
+						ltText += root.gpuOffload + "%"
 						return ltText
 					}
 					ntHeight: root.ntWidth; ntCoff: root.ntCoff
