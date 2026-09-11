@@ -596,8 +596,8 @@ class DCAnalyzer(QObject):
             
             # Добавляем промт, если он есть
             if self.current_prompt:
-                file_content += f"ПРОМТ: {self.current_prompt}\n\n"
-                file_content += "=" * 80 + "\n\n"
+                file_content += f"ПРОМТ: {self.current_prompt}\n"
+                file_content += f"\n---\n"
             
             # Добавляем результат анализа
             file_content += self.current_result
