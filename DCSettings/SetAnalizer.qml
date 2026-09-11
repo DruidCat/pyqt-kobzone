@@ -36,6 +36,7 @@ Item {
     
 	property int logoRazmer: 22//Размер Логотипа
     property string logoImya: "kobzone"//Имя логотипа в DCLogo
+	property string __strProgress: ""//строка, которая будет в строке загрузки
 	property real rlProgress: 0
 	property real rlLoader: 1
 	//Массив кнопок для навигации
@@ -77,6 +78,7 @@ Item {
 	onStrModelChanged: {//Если Модель изменится, то...
 		if (isModelStart){//Первую иннициализацию не обрабатываем, когда данные читаются из реестра
 			//Обновляем настройки анализатора
+			root.__strProgress = "Загрузка модели: " + root.strModel
 			ldrProgress.active = true//Запускаем полосу прогресса загрузки модели
 			let ltMaxContext = DCSettings.analizer_max_context
 			let ltTemperatura = DCSettings.analizer_temperatura
@@ -88,6 +90,7 @@ Item {
 	onRlTemperaturaChanged: {	
 		if (isTemperaturaStart){//Первую иннициализацию не обрабатываем, когда данные читаются из реестра
 			//Обновляем настройки анализатора
+			root.__strProgress = "Загрузка модели: " + root.strModel
 			ldrProgress.active = true//Запускаем полосу прогресса загрузки модели
 			let ltMaxContext = DCSettings.analizer_max_context
 			let ltTemperatura = DCSettings.analizer_temperatura
@@ -102,6 +105,7 @@ Item {
 	onMaxContextChanged: {
 		if (isContextStart){//Первую иннициализацию не обрабатываем, когда данные читаются из реестра
 			//Обновляем настройки анализатора
+			root.__strProgress = "Загрузка модели: " + root.strModel
 			ldrProgress.active = true//Запускаем полосу прогресса загрузки модели
 			let ltMaxContext = DCSettings.analizer_max_context
 			let ltTemperatura = DCSettings.analizer_temperatura
@@ -112,6 +116,7 @@ Item {
 	}
 	onGpuOffloadChanged: {
 		if (isGpuOffloadStart){//Первую иннициализацию не обрабатываем, когда данные читаются из реестра
+			root.__strProgress = "Загрузка модели: " + root.strModel
 			ldrProgress.active = true//Запускаем полосу прогресса загрузки модели
 			let ltMaxContext = DCSettings.analizer_max_context
 			let ltTemperatura = DCSettings.analizer_temperatura
@@ -148,8 +153,6 @@ Item {
 				vprVopros.ntVopros = 6
 				vprVopros.visible = true
 			}
-			knopkaLMStart.isPerehodniProces = false
-			knopkaLMStop.isPerehodniProces = false
 			pvModels.isServerZapustit = false
 			ldrProgress.active = false
         }
@@ -171,17 +174,21 @@ Item {
 			DCSettings.analizer_cli_put	= strCLIPut;//Запоминаем в реестре настроек.
 		}
 		function onSigStudioStarted() {//Обработка сигнала старта LM Studio
-			knopkaLMStart.isPerehodniProces = true;//Запуск LM Studio.
+			root.__strProgress = qsTr("Загрузка LM Studio.")
+			ldrProgress.active = true//Запускаем полосу прогресса
+		}
+		function onSigStudioStoped() {//Обработка сигнала остановки LM Studio
+			root.__strProgress = qsTr("Остановка LM Studio.")
+			ldrProgress.active = true//Запускаем полосу прогресса
 		}
 		function onSigStudioZapuschen() {
-			root.toolbar("LM Studio запущен!")
-			knopkaLMStart.isPerehodniProces = false
 			vprVopros.visible = false
+			ldrProgress.active = false//Закрываем полосу прогресса
+			root.toolbar("LM Studio запущен!")
 			pyLMStudio.proverkaServera()	
 		}
 		function onSigStudioOstanovlen() {
-			root.toolbar("LM Studio остановлен")
-			knopkaLMStop.isPerehodniProces = false
+			tmrStudioOstanovlen.running = true	
 		}		
 		function onSigStudioStatus(blStatus) {
 			root.isStudioOn = blStatus
@@ -326,19 +333,15 @@ Item {
 			if(knopkaLMStart.isStartBezPuti){//Если путь к LM Studio выбран и была попытка старта, то...
 				knopkaLMStart.isStartBezPuti = false;//Сбрасываем флаг.
 				pyLMStudio.zapustitStudio()//Запускаем LM Studio.
-				root.toolbar("⏳ Запуск LM Studio...")
 			}
 			if(knopkaLMStop.isStopBezPuti){//Если путь к LM Studio выбран и была попытка остановки, то...
 				knopkaLMStop.isStopBezPuti = false;//Сбрасываем флаг.
 				pyLMStudio.ostanovitStudio()//Останавливаем LM Studio.
-				root.toolbar("Остановка LM Studio...")
 			}
 		}
 		onRejected: {//Если нажата кнопка отмены, то...
 			knopkaLMStart.isStartBezPuti = false;//Сбрасываем флаг.
 			knopkaLMStop.isStopBezPuti = false;//Сбрасываем флаг.
-			knopkaLMStart.isPerehodniProces = false//Деактивируем переходный процесс.
-			knopkaLMStop.isPerehodniProces = false//Деактивируем переходный процесс.
 		}
 	}
 	function fnClickedEnter() {//Функция обработки нажатия клавиши Enter
@@ -496,15 +499,18 @@ Item {
 		}
 	}
 	function fnClickedLMSZapustit(){//Функция запуска LM Studio
-		knopkaLMStart.isPerehodniProces = true//Активируем переходный процесс.
 		if (root.putLMStudio === "") {//Если путь не задан
 			knopkaLMStart.isStartBezPuti = true;//Попутка запустить LM Studio.
 			dialogLMPut.open()//Функция выбора пути к LM Studio.
 		}
-		else{
-			pyLMStudio.zapustitStudio()
-			root.toolbar("⏳ Запуск LM Studio...")
+		else pyLMStudio.zapustitStudio()
+	}
+	function fnClickedLMSZaktit() {//Функция закрытия LM Studio
+		if (root.putLMStudio === "") {//Если путь не задан
+			knopkaLMStop.isStopBezPuti = true;//Попытка остановить LM Studio.
+			dialogLMPut.open()//Функция выбора пути к LM Studio.
 		}
+		else pyLMStudio.ostanovitStudio()
 	}
 	function fnClickedTemperatura(){//Функция выбора Температуры ИИ
 		if(pvTemperatura.visible){//Если видимый виджет, то...
@@ -567,6 +573,14 @@ Item {
         interval: 3300; running: false; repeat: true
         onTriggered: {
            pyLMStudio.proverkaStudio()
+        }
+    }
+	Timer {//ТАЙМЕР остановки LM Studio 
+        id: tmrStudioOstanovlen
+        interval: 1100; running: false; repeat: false
+        onTriggered: {
+			ldrProgress.active = false//Закрываем полосу прогресса
+			root.toolbar("LM Studio остановлен")
         }
     }
 	Item {//Заголовок
@@ -785,9 +799,7 @@ Item {
 					clrTexta: root.clrMenuText
                     clrKnopki: (root.currentIndex === 0) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
-					enabled: !isPerehodniProces//Делаем неактивной кнопку, если переходный процесс.
 					property bool isStartBezPuti: false//true - попытка запуска LM Studio без заданного пути.
-					property bool isPerehodniProces: false//true-когда запуск или становка LM Studio началась
 					function fnPress() {
 						root.currentIndex = 0
 						fnClickedLMSZapustit()//Функция запуска LM Studio
@@ -809,20 +821,10 @@ Item {
 					clrTexta: root.clrMenuText
                     clrKnopki: (root.currentIndex === 1) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
-					enabled: !isPerehodniProces//Делаем неактивной кнопку, если переходный процесс.
 					property bool isStopBezPuti: false//true - попытка запуска LM Studio без заданного пути.
-					property bool isPerehodniProces: false//true-когда запуск или становка LM Studio началась
 					function fnPress() {
 						root.currentIndex = 1
-						knopkaLMStop.isPerehodniProces = true//Активируем переходный процесс.
-						if (root.putLMStudio === "") {//Если путь не задан
-							knopkaLMStop.isStopBezPuti = true;//Попытка остановить LM Studio.
-							dialogLMPut.open()//Функция выбора пути к LM Studio.
-						}
-						else{
-							pyLMStudio.ostanovitStudio()
-							root.toolbar("Остановка LM Studio...")
-						}
+						fnClickedLMSZaktit()//Функция закрытия LM Studio
 					}
 					onClicked: {
 						if (pressed) {
@@ -900,7 +902,6 @@ Item {
                     ntHeight: root.ntWidth; ntCoff: root.ntCoff
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
-					enabled: !knopkaLMStart.isPerehodniProces
 					clrTexta: root.clrMenuText
                     clrKnopki: (root.currentIndex === 4) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
@@ -1144,6 +1145,7 @@ Item {
 					knopkaTemperatura.enabled = false
 					knopkaContext.enabled = false
 					knopkaGPU.enabled = false
+					knopkaServerURL.enabled = false
 				} else {
 					knopkaInfo.visible = true
 					knopkaNastroiki.visible = true
@@ -1156,6 +1158,7 @@ Item {
 					knopkaTemperatura.enabled = true 
 					knopkaContext.enabled = true
 					knopkaGPU.enabled = true
+					knopkaServerURL.enabled = true
 				}
 			}
             onLoaded: {
@@ -1164,7 +1167,7 @@ Item {
                 ldrProgress.item.clrProgress = root.clrTexta
                 ldrProgress.item.clrTexta = "grey"
                 ldrProgress.item.radius = root.ntCoff / 4
-				ldrProgress.item.text = "Загрузка модели: " + root.strModel
+				ldrProgress.item.text = root.__strProgress
             }
         }
 		DCKnopkaInfo {

@@ -31,8 +31,9 @@ class DCLMStudio(QObject):
     sigLog = pyqtSignal(str)                # Лог
     sigError = pyqtSignal(int, str)         # Ошибка
     sigCLIPut = pyqtSignal(str)             # Возвращает путь к cli lms
-    sigStudioStarted = pyqtSignal()         # Начата проверка запуска
+    sigStudioStarted = pyqtSignal()         # Начата проверка запуска LM Studio
     sigStudioZapuschen = pyqtSignal()       # LM Studio запущен
+    sigStudioStoped = pyqtSignal()          # Начата проверка остановки LM Studio
     sigStudioOstanovlen = pyqtSignal()      # LM Studio остановлен
     sigStudioStatus = pyqtSignal(bool)      # Статус LM Studio (True - запущен, False - остановлен)
     sigModelsLoaded = pyqtSignal(list)      # Список моделей загружен
@@ -574,16 +575,73 @@ class DCLMStudio(QObject):
             self._popitki = 0
             self._timer.start(self.STARTUP_CHECK_INTERVAL)
             self.sigStudioStarted.emit()
-            self.sigLog.emit("Ожидание запуска приложения...")
+            self.sigLog.emit("Ожидание запуска LM Studio...")
         
         except Exception as e:
             error_msg = f"Ошибка запуска: {str(e)}"
             self._emit_error(4, error_msg)
             self._zapusk_v_processe = False
-    
+
     @pyqtSlot()
     def ostanovitStudio(self):
-        """Останавливает LM Studio с graceful shutdown"""
+        """Останавливает LM Studio с graceful shutdown (неблокирующий)"""
+        # Запускаем остановку в отдельном потоке
+        thread = threading.Thread(
+            target=self._ostanovitVPotoke,
+            daemon=True
+        )
+        thread.start()
+       
+        self.sigStudioStoped.emit()
+        self.sigLog.emit("Ожидание остановки LM Studio...")
+    
+    @pyqtSlot()
+    def proverkaStudio(self):
+        """Проверяет доступность LM Studio (приложения)"""
+        if self._proverkaZapushen():
+            self.sigStudioStatus.emit(True)
+        else:
+            self.sigStudioStatus.emit(False)
+    
+    # ==================== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ====================
+    def _emit_error(self, code, message):
+        """Централизованная обработка ошибок"""
+        self.sigLog.emit(f"✗ Ошибка {code}: {message}")
+        self.sigError.emit(code, message)
+    
+    def _initTimer(self):
+        """Ленивая инициализация таймера"""
+        if self._timer is None:
+            self._timer = QTimer()
+            self._timer.timeout.connect(self._proverkaDostupnosti)
+    
+    def _zapustitVPotoke(self, lms_path):
+        """Запускает LM Studio в отдельном потоке"""
+        try:
+            if platform.system() == "Linux":
+                subprocess.Popen(
+                    [str(lms_path), "--no-sandbox"],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    start_new_session=True
+                )
+            elif platform.system() == "Darwin":
+                subprocess.Popen(["open", "-a", str(lms_path)])
+            elif platform.system() == "Windows":
+                subprocess.Popen(
+                    [str(lms_path)],
+                    creationflags=subprocess.CREATE_NO_WINDOW
+                )
+            
+            self._zapusk_v_processe = False
+        
+        except Exception as e:
+            error_msg = f"Ошибка запуска: {str(e)}"
+            self._emit_error(7, error_msg)
+            self._zapusk_v_processe = False
+
+    def _ostanovitVPotoke(self):
+        """Останавливает LM Studio в отдельном потоке (не блокирует UI)"""
         import time
         
         try:
@@ -614,7 +672,7 @@ class DCLMStudio(QObject):
                         except Exception as e:
                             self.sigLog.emit(f"⚠ Не удалось отправить SIGTERM: {e}")
                 
-                # Шаг 3: Ждём 3 секунды
+                # Шаг 3: Ждём 3 секунды (НЕ блокирует UI, т.к. в отдельном потоке)
                 time.sleep(self.DELAY_GRACEFUL_SHUTDOWN)
                 
                 # Шаг 4: Проверяем, завершились ли процессы
@@ -669,52 +727,9 @@ class DCLMStudio(QObject):
         except Exception as e:
             error_msg = f"Ошибка остановки: {str(e)}"
             self._emit_error(5, error_msg)
-    
-    @pyqtSlot()
-    def proverkaStudio(self):
-        """Проверяет доступность LM Studio (приложения)"""
-        if self._proverkaZapushen():
-            self.sigStudioStatus.emit(True)
-        else:
-            self.sigStudioStatus.emit(False)
-    
-    # ==================== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ====================
-    def _emit_error(self, code, message):
-        """Централизованная обработка ошибок"""
-        self.sigLog.emit(f"✗ Ошибка {code}: {message}")
-        self.sigError.emit(code, message)
-    
-    def _initTimer(self):
-        """Ленивая инициализация таймера"""
-        if self._timer is None:
-            self._timer = QTimer()
-            self._timer.timeout.connect(self._proverkaDostupnosti)
-    
-    def _zapustitVPotoke(self, lms_path):
-        """Запускает LM Studio в отдельном потоке"""
-        try:
-            if platform.system() == "Linux":
-                subprocess.Popen(
-                    [str(lms_path), "--no-sandbox"],
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                    start_new_session=True
-                )
-            elif platform.system() == "Darwin":
-                subprocess.Popen(["open", "-a", str(lms_path)])
-            elif platform.system() == "Windows":
-                subprocess.Popen(
-                    [str(lms_path)],
-                    creationflags=subprocess.CREATE_NO_WINDOW
-                )
-            
-            self._zapusk_v_processe = False
-        
-        except Exception as e:
-            error_msg = f"Ошибка запуска: {str(e)}"
-            self._emit_error(7, error_msg)
-            self._zapusk_v_processe = False
-    
+
+
+
     def _proverkaZapushen(self):
         """Проверяет, запущено ли приложение LM Studio (не сервер!)"""
         try:
