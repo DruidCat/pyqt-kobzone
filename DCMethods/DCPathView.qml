@@ -183,7 +183,8 @@ Item {
             dragThreshold: root.dragThresh//Чтобы жест быстрее «включался»
             //Разрешаем перехватывать захват у MouseArea
             grabPermissions: PointerHandler.CanTakeOverFromItems
-                             | PointerHandler.CanTakeOverFromHandlersOfDifferentType
+							| PointerHandler.CanTakeOverFromHandlersOfDifferentType
+							| PointerHandler.ApprovesTakeOverByAnything
             //Функции.
             onActiveChanged: { acc = 0; prevT = 0 }//важно сбрасывать и prevT
             onTranslationChanged: {
@@ -319,6 +320,7 @@ Item {
                 id: maStroka
                 anchors.fill: rctStroka
                 preventStealing: false
+				propagateComposedEvents: true //ЭТА СТРОКА для Linux Wayland, чтоб захват мышью работал
                 //Если DragHandler уже активировался — не перехватываем события MouseArea
                 onPressed: (mouse) => {
                     if(drhSvaip.active)
@@ -337,8 +339,9 @@ Item {
     }
     WheelHandler {//Для Qt6 прокрутки модели колесиком мыши
         target: pvwKarusel//Чтобы события ловились на PathView
-        acceptedDevices: PointerDevice.Mouse//колесо работало только при наведении мыши на PathView
+        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad//колесо работ только при наведении мыши
         onWheel: function(event) {
+			event.accepted = true;//Явно говорим Qt, что мы обработали событие, чтобы оно не ушло в ОС
             if (event.angleDelta.y > 0)
 				pvwKarusel.incrementCurrentIndex()//Прокрутка вниз
             else if (event.angleDelta.y < 0)
