@@ -1,4 +1,6 @@
 import os
+# Отключаем предупреждения от модуля qt.qpa.services
+os.environ["QT_LOGGING_RULES"] = "qt.qpa.services.warning=false"
 import sys
 os.environ['QT_QUICK_CONTROLS_STYLE'] = 'Fusion'# Альтернативы: 'Basic', 'Material', 'Universal', 'Imagine'
 os.environ['PYTHONSAFEPATH'] = '1' #Разрешить импорт из CWD
@@ -89,8 +91,8 @@ class MainApp:
     """Главный класс приложения"""
     
     MAIN_QML_FILE = "ru.KOBzone.qml"
-    APP_NAME = "KOBzone"
-    APP_ORGANIZATION = "DruidCat"
+    APP_NAME = "ru.druidcat.kobzone"
+    APP_ORGANIZATION = "druidcat"
     APP_VERSION = _get_git_version()
     
     def __init__(self):
@@ -98,6 +100,7 @@ class MainApp:
 
         # Устанавливаем метаданные приложения
         self.app.setApplicationName(self.APP_NAME)
+        self.app.setDesktopFileName(self.APP_NAME)
         self.app.setOrganizationName(self.APP_ORGANIZATION)
         self.app.setApplicationVersion(self.APP_VERSION)
         
