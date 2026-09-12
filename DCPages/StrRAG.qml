@@ -441,7 +441,7 @@ Item {
                 rightPadding: root.ntCoff * 2
                 DCKnopkaOriginal {//Кнопка "RAG"
                     id: knopkaRAG
-                    text: "📦 Создать RAG БД"
+                    text: "📦 создать RAG БД"
                     ntHeight: root.ntWidth
                     ntCoff: root.ntCoff
                     clrKnopki: root.clrTexta    

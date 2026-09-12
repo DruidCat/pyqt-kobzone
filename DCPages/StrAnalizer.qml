@@ -548,15 +548,11 @@ Item {
                 rightPadding: root.ntCoff * 2
                 DCKnopkaOriginal {//Кнопка загрузки файла
                     id: knopkaZagruzit
-                    text: "📁 Загрузить документы"
-                    ntHeight: root.ntWidth
-                    ntCoff: root.ntCoff
-                    clrKnopki: root.clrTexta    
-                    clrTexta: root.clrFona
-					anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.leftMargin: root.ntCoff * 2
-                    anchors.rightMargin: root.ntCoff * 2
+                    text: "📁 загрузить документы"
+                    ntHeight: root.ntWidth; ntCoff: root.ntCoff
+					clrKnopki: root.clrTexta; clrTexta: root.clrFona
+					anchors.left: parent.left; anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
                     onClicked: {
                         if (!fnCloseMenuIfOpen()) {
                             fnClickedZagruzka()//Функция открывающая Файловый диалог загрузки файлов
@@ -676,16 +672,14 @@ Item {
                 DCKnopkaOriginal {//Кнопка анализа
                     id: knopkaAnaliz
 					text: {
-						if(dcTimer.blStart) return "📊 Анализ: " + dcTimer.strTimer
-						else return "🚀 Анализировать"
+						if(dcTimer.blStart) return "📊 анализ: " + dcTimer.strTimer
+						else return "🚀 анализировать"
 					}
                     ntHeight: root.ntWidth; ntCoff: root.ntCoff
                     clrKnopki: "#2196F3"; clrTexta: root.clrFona
                     enabled: txaContent.text.trim() !== "" 
-					anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.leftMargin: root.ntCoff * 2
-                    anchors.rightMargin: root.ntCoff * 2
+					anchors.left: parent.left; anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
                     onClicked: {
                         if (!fnCloseMenuIfOpen()) {
                             fnClickedAnaliz()//Функция запускающая нейро анализ документов
@@ -753,7 +747,7 @@ Item {
                 }
                 DCKnopkaOriginal {//Кнопка сохранения результата
                     id: knopkaSohranit
-                    text: "💾 Сохранить результат"
+                    text: "💾 сохранить результат"
                     ntHeight: root.ntWidth
                     ntCoff: root.ntCoff
                     clrKnopki: "#4CAF50"

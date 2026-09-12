@@ -329,7 +329,7 @@ Item {
 		onAccepted: {
 			var vtPut = fnUrlToLocalPath(selectedFolder)//Используем кроссплатформенную функцию
 			DCSettings.transcribe_put_audio = vtPut
-			root.toolbar(`Танскрибация. Выбрана папка аудио: ${vtPut}`)//Сообщение в toolbar и журнал.
+			root.toolbar(`Транскрибация. Выбрана папка аудио: ${vtPut}`)//Сообщение в toolbar и журнал.
 		}
 	}	
 	FolderDialog {//Диалог выбора папки для текстовых файлов
@@ -344,7 +344,7 @@ Item {
 		onAccepted: {
 			var vtPut = fnUrlToLocalPath(selectedFolder)//Используем кроссплатформенную функцию
 			DCSettings.transcribe_put_text = vtPut
-			root.toolbar(`Танскрибация. Выбрана папка результатов: ${vtPut}`)//Сообщение в toolbar и журнал.
+			root.toolbar(`Транскрибация. Выбрана папка результатов: ${vtPut}`)//Сообщение в toolbar и журнал.
 		}
 	}	
 	FileDialog {//Диалог открытия текстового файла для просмотра
@@ -472,7 +472,7 @@ Item {
                 rightPadding: root.ntCoff * 2
                 DCKnopkaOriginal {//Кнопка "Транскрибация"
                     id: knopkaTranscribe
-                    text: "🎙️ Транскрибация"
+                    text: "🎙️ транскрибация"
                     ntHeight: root.ntWidth
                     ntCoff: root.ntCoff
                     clrKnopki: root.clrTexta    
@@ -574,7 +574,7 @@ Item {
                 }
 				DCKnopkaOriginal {//Кнопка "Открыть результат транскрибации."
                     id: knopkaOtkrit
-                    text: "Открыть результаты расшифровки"
+                    text: "открыть результаты транскрибации"
                     ntHeight: root.ntWidth
                     ntCoff: root.ntCoff
                     clrKnopki: root.clrTexta    
