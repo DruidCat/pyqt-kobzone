@@ -563,9 +563,9 @@ class DCAnalyzer(QObject):
             return
         
         if self.current_filename:
-            base_name = f"{self.current_filename} анализ"
+            base_name = f"Анализ {self.current_filename}"
         else:
-            base_name = "анализ"
+            base_name = "Анализ"
         
         save_dir = QFileDialog.getExistingDirectory(
             None,
@@ -578,7 +578,7 @@ class DCAnalyzer(QObject):
         
         counter = 1
         while True:
-            filename = f"{base_name}_{counter:02d}.txt"
+            filename = f"{base_name} {counter:02d}.txt"
             full_path = Path(save_dir) / filename
             
             if not full_path.exists():
