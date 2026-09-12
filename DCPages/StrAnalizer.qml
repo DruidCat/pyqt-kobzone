@@ -513,7 +513,7 @@ Item {
             anchors.centerIn: tmZona
 			ntCoff: root.logoRazmer
 			logoImya: root.logoImya
-			logoOpacity: 0.4
+			logoOpacity: 0.1
 			z: -1
 		}
         Flickable {
