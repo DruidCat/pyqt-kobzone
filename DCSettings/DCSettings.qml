@@ -17,10 +17,9 @@ QtObject {
 	property string analizer_model_imya: "(отсутствует)"//По умолчанию отсутствует
 	property string analizer_lms_put: ""//По умолчанию путь не задан
 	property string analizer_cli_put: ""//По умолчанию путь не задан
-	property int analizer_gpu_offload: 85//по умолчанию 50%	
+	property int analizer_gpu_offload: 50//по умолчанию 50%	
 	property string analizer_server_url: "http://localhost:1234"
-	//property string analizer_model_imya: "qwen3-coder-30b-a3b-instruct"//Имя модели ИИ добавляем
-	property int analizer_max_context: 22016//Количество токенов
+	property int analizer_max_context: 8000//Количество токенов
 	property real analizer_temperatura: 0.5//Температура ИИ модели, чем выше, тем точнее ответ. 0-1
 	property int analizer_perekritie: 20//Перекрытие чтения соседнего чанка в процентах: 20 это 20%
 	//Транскрибация
