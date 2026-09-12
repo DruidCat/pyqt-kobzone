@@ -602,11 +602,6 @@ Item {
             tapHeight: root.ntWidth * root.ntCoff + root.ntCoff; tapWidth: tapHeight * root.tapZagolovokPravi
 			enabled: false
 			isLMZapuschen: root.isStudioOn
-            onClicked: {
-                if (!fnCloseMenuIfOpen()) {
-
-                }
-            }
         }
 		DCKnopkaZakrit {
             id: knopkaZakrit
@@ -804,7 +799,7 @@ Item {
 						root.currentIndex = 0
 						fnClickedLMSZapustit()//Функция запуска LM Studio
 					}
-					onClicked: {
+					onPressedChanged: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()){
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
@@ -826,7 +821,7 @@ Item {
 						root.currentIndex = 1
 						fnClickedLMSZaktit()//Функция закрытия LM Studio
 					}
-					onClicked: {
+					onPressedChanged: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
@@ -852,7 +847,7 @@ Item {
 						root.currentIndex = 2
 						dialogLMPut.open()//Функция выбора пути к LM Studio.
 					}
-					onClicked: {
+					onPressedChanged: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
@@ -878,7 +873,7 @@ Item {
 						root.currentIndex = 3
 						fnClickedVvod(1)//Функция задающая путь к cli lms
 					}
-					onClicked: {
+					onPressedChanged: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
@@ -909,7 +904,7 @@ Item {
 						root.currentIndex = 4
 						fnClickedModel()//Функция выбора Модели.
 					}
-					onClicked: {
+					onPressedChanged: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed)fnPress()
@@ -935,7 +930,7 @@ Item {
 						root.currentIndex = 5
 						fnClickedTemperatura()//Функция выбора Температуры ИИ
 					}
-					onClicked: {
+					onPressedChanged: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
@@ -960,7 +955,7 @@ Item {
 						root.currentIndex = 6
 						fnClickedVvod(0)//Функция выбора максимального контекста
 					}
-					onClicked: {
+					onPressedChanged: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
@@ -985,7 +980,7 @@ Item {
 						root.currentIndex = 7
 						fnClickedVvod(2)//Функция ввода gpu offload
 					}
-					onClicked: {
+					onPressedChanged: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
@@ -1010,7 +1005,7 @@ Item {
 						root.currentIndex = 8
 						fnClickedVvod(3)//Функция ввода адреса сервера
 					}
-					onClicked: {
+					onPressedChanged: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()

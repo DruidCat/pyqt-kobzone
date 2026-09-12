@@ -442,15 +442,11 @@ Item {
                 DCKnopkaOriginal {//Кнопка "RAG"
                     id: knopkaRAG
                     text: "📦 создать RAG БД"
-                    ntHeight: root.ntWidth
-                    ntCoff: root.ntCoff
-                    clrKnopki: root.clrTexta    
-                    clrTexta: root.clrFona
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.leftMargin: root.ntCoff * 2
-                    anchors.rightMargin: root.ntCoff * 2
-                    onClicked: {
+                    ntHeight: root.ntWidth; ntCoff: root.ntCoff
+                    clrKnopki: root.clrTexta; clrTexta: root.clrFona
+                    anchors.left: parent.left; anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
+					onPressedChanged: {
                         if (!fnCloseMenuIfOpen() && !fnCloseRAGStopIfOpen()) {
                             fnClickedRAG()
                         }
@@ -466,16 +462,11 @@ Item {
 				DCKnopkaOriginal {
 					id: knopkaPutDoc
 					text: DCSettings.rag_put_doc
-					ntHeight: root.ntWidth
-					ntCoff: root.ntCoff
-					clrKnopki: root.clrTexta
-					clrTexta: root.clrFona
-					anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.leftMargin: root.ntCoff * 2
-                    anchors.rightMargin: root.ntCoff * 2
-					
-					onClicked: {
+					ntHeight: root.ntWidth; ntCoff: root.ntCoff
+					clrKnopki: root.clrTexta; clrTexta: root.clrFona
+					anchors.left: parent.left; anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
+					onPressedChanged: {
 						if (!fnCloseMenuIfOpen() && !fnCloseRAGStopIfOpen()) {
 							fnClickedPutDoc()
 						}
@@ -491,16 +482,11 @@ Item {
 				DCKnopkaOriginal {
 					id: knopkaPutDB
 					text: DCSettings.rag_put_db
-					ntHeight: root.ntWidth
-					ntCoff: root.ntCoff
-					clrKnopki: root.clrTexta
-					clrTexta: root.clrFona
-					anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.leftMargin: root.ntCoff * 2
-                    anchors.rightMargin: root.ntCoff * 2
-					
-					onClicked: {
+					ntHeight: root.ntWidth; ntCoff: root.ntCoff
+					clrKnopki: root.clrTexta; clrTexta: root.clrFona
+					anchors.left: parent.left; anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
+					onPressedChanged: {
 						if (!fnCloseMenuIfOpen() && !fnCloseRAGStopIfOpen()) {
 							fnClickedPutDB()
 						}

@@ -224,10 +224,8 @@ Item {
                         spacing: root.ntWidth
                         DCKnopkaOriginal {//Кнопка "Нейро анализ документа"
                             id: knopkaAnalizator
-                            ntHeight: root.ntWidth * 1.1
-                            ntCoff: root.ntCoff
-                            anchors.left: parent.left
-                            anchors.right: parent.right
+                            ntHeight: root.ntWidth * 1.1; ntCoff: root.ntCoff
+                            anchors.left: parent.left; anchors.right: parent.right
                             anchors.topMargin: root.ntWidth
                             clrTexta: root.clrMenuText
                             clrKnopki: (root.currentIndex === 0) ?
@@ -238,7 +236,7 @@ Item {
                                 root.currentIndex = 0
                                 root.clickedAnalizator()
                             }
-                            onClicked: {
+							onPressedChanged: {
                                 if (pressed) {
                                     if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
                                         fnPress()//Если меню было закрыто, выполняем действие
@@ -248,10 +246,8 @@ Item {
                         }
                         DCKnopkaOriginal {//Кнопка "Исправление текста"
                             id: knopkaRedaktor
-                            ntHeight: root.ntWidth * 1.1
-                            ntCoff: root.ntCoff
-                            anchors.left: parent.left
-                            anchors.right: parent.right
+                            ntHeight: root.ntWidth * 1.1; ntCoff: root.ntCoff
+                            anchors.left: parent.left; anchors.right: parent.right
                             clrTexta: root.clrMenuText
                             clrKnopki: (root.currentIndex === 1) ?
                                 Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
@@ -262,7 +258,7 @@ Item {
                                 root.currentIndex = 1
                                 root.clickedOrfograf()
                             }
-                            onClicked: {
+							onPressedChanged: {
                                 if (pressed) {
                                     if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
                                         fnPress()//Если меню было закрыто, выполняем действие
@@ -272,10 +268,8 @@ Item {
                         }
                         DCKnopkaOriginal {//Кнопка "Транскрибация"
                             id: knopkaTranskribaciya
-                            ntHeight: root.ntWidth * 1.1
-                            ntCoff: root.ntCoff
-                            anchors.left: parent.left
-                            anchors.right: parent.right
+                            ntHeight: root.ntWidth * 1.1; ntCoff: root.ntCoff
+                            anchors.left: parent.left; anchors.right: parent.right
                             clrTexta: root.clrMenuText
                             clrKnopki: (root.currentIndex === 2) ?
                                 Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
@@ -286,7 +280,7 @@ Item {
                                 root.currentIndex = 2
                                 root.clickedTranskribaciya()
                             }
-                            onClicked: {
+							onPressedChanged: {
                                 if (pressed) {
                                     if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
                                         fnPress()//Если меню было закрыто, выполняем действие
@@ -296,10 +290,8 @@ Item {
                         }
 						DCKnopkaOriginal {//Кнопка "RAG"
                             id: knopkaRAG
-                            ntHeight: root.ntWidth * 1.1
-                            ntCoff: root.ntCoff
-                            anchors.left: parent.left
-                            anchors.right: parent.right
+                            ntHeight: root.ntWidth * 1.1; ntCoff: root.ntCoff
+                            anchors.left: parent.left; anchors.right: parent.right
                             clrTexta: root.clrMenuText
                             clrKnopki: (root.currentIndex === 3) ?
 								Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
@@ -310,7 +302,7 @@ Item {
                                 root.currentIndex = 3
                                 root.clickedRAG()
                             }
-                            onClicked: {
+							onPressedChanged: {
                                 if (pressed) {
                                     if (!fnCloseMenuIfOpen()) {//Сначала закрываем меню если открыто
                                         fnPress()//Если меню было закрыто, выполняем действие

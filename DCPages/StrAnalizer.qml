@@ -553,7 +553,7 @@ Item {
 					clrKnopki: root.clrTexta; clrTexta: root.clrFona
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
-                    onClicked: {
+					onPressedChanged: {
                         if (!fnCloseMenuIfOpen()) {
                             fnClickedZagruzka()//Функция открывающая Файловый диалог загрузки файлов
                         }
@@ -680,7 +680,7 @@ Item {
                     enabled: txaContent.text.trim() !== "" 
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
-                    onClicked: {
+					onPressedChanged: {
                         if (!fnCloseMenuIfOpen()) {
                             fnClickedAnaliz()//Функция запускающая нейро анализ документов
                         }
@@ -748,16 +748,12 @@ Item {
                 DCKnopkaOriginal {//Кнопка сохранения результата
                     id: knopkaSohranit
                     text: "💾 сохранить результат"
-                    ntHeight: root.ntWidth
-                    ntCoff: root.ntCoff
-                    clrKnopki: "#4CAF50"
-                    clrTexta: root.clrFona
+                    ntHeight: root.ntWidth; ntCoff: root.ntCoff
+                    clrKnopki: "#4CAF50"; clrTexta: root.clrFona
                     enabled: false
-					anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.leftMargin: root.ntCoff * 2
-                    anchors.rightMargin: root.ntCoff * 2
-                    onClicked: {
+					anchors.left: parent.left; anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
+					onPressedChanged: {
                         if (!fnCloseMenuIfOpen()) {
                             fnClickedSohranit()//Функция сохранения результата анализа.
                         }

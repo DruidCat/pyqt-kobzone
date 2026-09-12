@@ -473,15 +473,11 @@ Item {
                 DCKnopkaOriginal {//Кнопка "Транскрибация"
                     id: knopkaTranscribe
                     text: "🎙️ транскрибация"
-                    ntHeight: root.ntWidth
-                    ntCoff: root.ntCoff
-                    clrKnopki: root.clrTexta    
-                    clrTexta: root.clrFona
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.leftMargin: root.ntCoff * 2
-                    anchors.rightMargin: root.ntCoff * 2
-                    onClicked: {
+                    ntHeight: root.ntWidth; ntCoff: root.ntCoff
+                    clrKnopki: root.clrTexta; clrTexta: root.clrFona
+                    anchors.left: parent.left; anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
+					onPressedChanged: {
                         if (!fnCloseMenuIfOpen() && !fnCloseTranscribeStopIfOpen()) {
                             fnClickedTranscribe()
                         }
@@ -497,16 +493,11 @@ Item {
 				DCKnopkaOriginal {
 					id: knopkaAudioPut
 					text: DCSettings.transcribe_put_audio
-					ntHeight: root.ntWidth
-					ntCoff: root.ntCoff
-					clrKnopki: root.clrTexta
-					clrTexta: root.clrFona
-					anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.leftMargin: root.ntCoff * 2
-                    anchors.rightMargin: root.ntCoff * 2
-					
-					onClicked: {
+					ntHeight: root.ntWidth; ntCoff: root.ntCoff
+					clrKnopki: root.clrTexta; clrTexta: root.clrFona
+					anchors.left: parent.left; anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
+					onPressedChanged: {
 						if (!fnCloseMenuIfOpen() && !fnCloseTranscribeStopIfOpen()) {
 							fnClickedPutAudio()
 						}
@@ -522,16 +513,11 @@ Item {
 				DCKnopkaOriginal {
 					id: knopkaTextPut
 					text: DCSettings.transcribe_put_text
-					ntHeight: root.ntWidth
-					ntCoff: root.ntCoff
-					clrKnopki: root.clrTexta
-					clrTexta: root.clrFona
-					anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.leftMargin: root.ntCoff * 2
-                    anchors.rightMargin: root.ntCoff * 2
-					
-					onClicked: {
+					ntHeight: root.ntWidth; ntCoff: root.ntCoff
+					clrKnopki: root.clrTexta; clrTexta: root.clrFona
+					anchors.left: parent.left; anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
+					onPressedChanged: {
 						if (!fnCloseMenuIfOpen() && !fnCloseTranscribeStopIfOpen()) {
 							fnClickedPutText()
 						}
@@ -575,15 +561,11 @@ Item {
 				DCKnopkaOriginal {//Кнопка "Открыть результат транскрибации."
                     id: knopkaOtkrit
                     text: "открыть результаты транскрибации"
-                    ntHeight: root.ntWidth
-                    ntCoff: root.ntCoff
-                    clrKnopki: root.clrTexta    
-                    clrTexta: root.clrFona
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.leftMargin: root.ntCoff * 2
-                    anchors.rightMargin: root.ntCoff * 2
-                    onClicked: {
+                    ntHeight: root.ntWidth; ntCoff: root.ntCoff
+                    clrKnopki: root.clrTexta; clrTexta: root.clrFona
+                    anchors.left: parent.left; anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
+					onPressedChanged: {
                         if (!fnCloseMenuIfOpen() && !fnCloseTranscribeStopIfOpen()) {
                             fnClickedOtkrit()
                         }
