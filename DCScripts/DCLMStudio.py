@@ -312,7 +312,7 @@ class DCLMStudio(QObject):
         """Публичный слот для загрузки модели с параметрами"""
         # если модель "(отсутствует)" или пустая
         if not model_name or model_name == self.NO_MODEL_NAME:
-            self._current_model = model_name#чтоб я мог понять по polModel что модель не задана.
+            self._current_model = ""#чтоб я мог понять по polModel что модель не задана.
             error_msg = "Модель не выбрана. Выберите модель из списка."
             self._emit_error(13, error_msg)  # КОД ОШИБКИ 13
             return False
@@ -941,7 +941,7 @@ class DCLMStudio(QObject):
             
             if unload_result.returncode == 0:
                 self.sigLog.emit("✓ Предыдущая модель выгружена")
-                self._current_model = self.NO_MODEL_NAME #Модель выгружена, делаем её пустой.
+                self._current_model = "" #Модель выгружена, делаем её пустой.
                 return True
             else:
                 # Если ошибка - возможно модель не была загружена, это нормально
@@ -951,7 +951,7 @@ class DCLMStudio(QObject):
                 else:
                     self.sigLog.emit(f"⚠ Предупреждение при выгрузке: {error_msg[:100]}")
                 
-                self._current_model = self.NO_MODEL_NAME #Модель выгружена, делаем её пустой.
+                self._current_model = ""#Модель выгружена, делаем её пустой.
                 return True  # Продолжаем в любом случае
         
         except Exception as e:
