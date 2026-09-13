@@ -498,7 +498,7 @@ Item {
 					clrKnopki: root.clrTexta; clrTexta: root.clrFona
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
-					onPressedChanged: {
+					onClicked: {
 						if (!fnCloseMenuIfOpen() && !fnCloseVoprosIfOpen()) {
 							fnClickedPutDoc()
 						}
@@ -518,7 +518,7 @@ Item {
 					clrKnopki: root.clrTexta; clrTexta: root.clrFona
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
-					onPressedChanged: {
+					onClicked: {
 						if (!fnCloseMenuIfOpen() && !fnCloseVoprosIfOpen()) {
 							fnClickedPutDB()
 						}

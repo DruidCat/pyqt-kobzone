@@ -799,7 +799,7 @@ Item {
 						root.currentIndex = 0
 						fnClickedLMSZapustit()//Функция запуска LM Studio
 					}
-					onPressedChanged: {
+					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()){
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
@@ -821,7 +821,7 @@ Item {
 						root.currentIndex = 1
 						fnClickedLMSZaktit()//Функция закрытия LM Studio
 					}
-					onPressedChanged: {
+					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
@@ -847,7 +847,7 @@ Item {
 						root.currentIndex = 2
 						dialogLMPut.open()//Функция выбора пути к LM Studio.
 					}
-					onPressedChanged: {
+					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
@@ -873,7 +873,7 @@ Item {
 						root.currentIndex = 3
 						fnClickedVvod(1)//Функция задающая путь к cli lms
 					}
-					onPressedChanged: {
+					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
@@ -904,7 +904,7 @@ Item {
 						root.currentIndex = 4
 						fnClickedModel()//Функция выбора Модели.
 					}
-					onPressedChanged: {
+					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed)fnPress()
@@ -930,7 +930,7 @@ Item {
 						root.currentIndex = 5
 						fnClickedTemperatura()//Функция выбора Температуры ИИ
 					}
-					onPressedChanged: {
+					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
@@ -955,7 +955,7 @@ Item {
 						root.currentIndex = 6
 						fnClickedVvod(0)//Функция выбора максимального контекста
 					}
-					onPressedChanged: {
+					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
@@ -980,7 +980,7 @@ Item {
 						root.currentIndex = 7
 						fnClickedVvod(2)//Функция ввода gpu offload
 					}
-					onPressedChanged: {
+					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
@@ -1005,7 +1005,7 @@ Item {
 						root.currentIndex = 8
 						fnClickedVvod(3)//Функция ввода адреса сервера
 					}
-					onPressedChanged: {
+					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
 								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()

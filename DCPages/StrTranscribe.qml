@@ -477,7 +477,7 @@ Item {
                     clrKnopki: root.clrTexta; clrTexta: root.clrFona
                     anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
-					onPressedChanged: {
+					onClicked: {
                         if (!fnCloseMenuIfOpen() && !fnCloseTranscribeStopIfOpen()) {
                             fnClickedTranscribe()
                         }
@@ -497,7 +497,7 @@ Item {
 					clrKnopki: root.clrTexta; clrTexta: root.clrFona
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
-					onPressedChanged: {
+					onClicked: {
 						if (!fnCloseMenuIfOpen() && !fnCloseTranscribeStopIfOpen()) {
 							fnClickedPutAudio()
 						}
@@ -517,7 +517,7 @@ Item {
 					clrKnopki: root.clrTexta; clrTexta: root.clrFona
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
-					onPressedChanged: {
+					onClicked: {
 						if (!fnCloseMenuIfOpen() && !fnCloseTranscribeStopIfOpen()) {
 							fnClickedPutText()
 						}
@@ -565,7 +565,7 @@ Item {
                     clrKnopki: root.clrTexta; clrTexta: root.clrFona
                     anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
-					onPressedChanged: {
+					onClicked: {
                         if (!fnCloseMenuIfOpen() && !fnCloseTranscribeStopIfOpen()) {
                             fnClickedOtkrit()
                         }
