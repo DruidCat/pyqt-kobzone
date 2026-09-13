@@ -25,6 +25,7 @@ Item {
     //Для Авроры комментируем TapHandler, расскомментируем MouseArea и наоборот.
     TapHandler {//Обработка нажатия, замена MouseArea с Qt5.10
         id: tphKnopkaSozdat
+		enabled: root.enabled
         onTapped: {
             if(root.enabled)//Если активирована кнопка, то...
                 root.clicked();//Обрабатываем клик.
@@ -34,6 +35,7 @@ Item {
     MouseArea {
         id: maKnopkaSozdat
         anchors.fill: root
+		enabled: root.enabled
         onClicked: {
             if(root.enabled)//Если активирована кнопка, то...
                 root.clicked();//Обрабатываем клик.

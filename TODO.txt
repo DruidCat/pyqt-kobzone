@@ -1,6 +1,5 @@
 TODO:
 - ru.KOBzone, сделать ярлычёк на панели, только когда упакую его в спец контейнер будет иконка.
-- DCKnopka, переделать enabled: root.enabled во всех кнопках.
 - DCKnopkaInfo, перерисовать кнопку информация, когда она становится активной, она инверсирует цвет.
 - StrKOBzone, придумать, как бы менялись логотипы по настройки из ru.KOBzone.qml
 - StrInstrukciya, set_analizer, прописать, как запускать без/c sandbox LM Studio
@@ -148,3 +147,4 @@ TODO:
 2026-09-12 DCKnopkaOriginal, onPressedChanged:{ if(pressed) } активирует код, когда она с флагом enabled. Fix.
 2026-09-12 DCPathView, в Linux не работало колёсико мыши. Исправил.
 2026-09-12 main, переменил название компании и название приложения в формате ru.druidcat.kobzone
+2026-09-13 DCButtons, переделал enabled: root.enabled во всех кнопках. onPressed не сработает на enable:false.
