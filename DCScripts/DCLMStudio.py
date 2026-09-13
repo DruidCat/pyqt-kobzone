@@ -294,14 +294,14 @@ class DCLMStudio(QObject):
             self._emit_error(2, error_msg)
             self.sigModelsLoaded.emit([self.AUTO_MODEL_NAME])
     
-    @pyqtSlot(str)
-    def ustModel(self, model_name):
-        """Устанавливает выбранную модель"""
-        if model_name == self.NO_MODEL_NAME or not model_name:
-            self._current_model = ""
+    @pyqtSlot()
+    def vigruzitModel(self):
+        """Выгружаем модель из LM Studio"""
+        if self._cli_path == "": #Если пустой путь, то...
+            return False #возвращаем ошибку
         else:
-            self._current_model = model_name 
-    
+            return _vigruzitModel(self._cli_path) #Возвращаем результат выгрузки модели.
+
     @pyqtSlot(result=str)
     def polModel(self):
         """Возвращает текущую модель"""
@@ -326,7 +326,7 @@ class DCLMStudio(QObject):
         success = self._ustParametri(model_name, max_context, gpu_offload)
 
         if success:
-            self.ustModel(model_name)  # Приравниваем к _current_model и убираем автовыбор
+            self._current_model = model_name #ИМЕННО тут присваеваем имя модели, когда она загрузилась.
             self.sigParametriIzmeneni.emit(self._current_model, max_context, temperature)
         else:
             # Ошибка при начале загрузки
@@ -600,8 +600,10 @@ class DCLMStudio(QObject):
         """Проверяет доступность LM Studio (приложения)"""
         if self._proverkaZapushen():
             self.sigStudioStatus.emit(True)
+            return True
         else:
             self.sigStudioStatus.emit(False)
+            return False
     
     # ==================== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ====================
     def _emit_error(self, code, message):
@@ -714,21 +716,19 @@ class DCLMStudio(QObject):
             elif platform.system() == "Windows":
                 # Windows: используем /T для дерева процессов
                 subprocess.run(
-                    ["taskkill", "/F", "/T", "/IM", "LM Studio.exe"],
+                    ["taskkill", "/F", "/T", "/IM", "Bionic.exe"],
                     shell=True,
                     timeout=5
                 )
                 
                 self._server_zapuschen = False
-                self.sigLog.emit("✓ LM Studio остановлен")
+                self.sigLog.emit("✓ Bionic остановлен")
                 self.sigStudioOstanovlen.emit()
                 self.sigServerStatus.emit(False)
         
         except Exception as e:
             error_msg = f"Ошибка остановки: {str(e)}"
             self._emit_error(5, error_msg)
-
-
 
     def _proverkaZapushen(self):
         """Проверяет, запущено ли приложение LM Studio (не сервер!)"""
@@ -754,12 +754,13 @@ class DCLMStudio(QObject):
             
             elif platform.system() == "Windows":
                 result = subprocess.run(
-                    ["tasklist", "/FI", "IMAGENAME eq LM Studio.exe"],
+                    #["tasklist", "/FI", "IMAGENAME eq LM Studio.exe"],
+                    ["tasklist", "/FI", "IMAGENAME eq Bionic.exe"],
                     capture_output=True,
                     text=True,
                     timeout=2
                 )
-                return "LM Studio.exe" in result.stdout
+                return "Bionic.exe" in result.stdout
             
             return False
         except:
@@ -943,6 +944,7 @@ class DCLMStudio(QObject):
             
             if unload_result.returncode == 0:
                 self.sigLog.emit("✓ Предыдущая модель выгружена")
+                self._current_model = self.NO_MODEL_NAME #Модель выгружена, делаем её пустой.
                 return True
             else:
                 # Если ошибка - возможно модель не была загружена, это нормально
@@ -951,6 +953,8 @@ class DCLMStudio(QObject):
                     self.sigLog.emit("ℹ Нет загруженной модели для выгрузки")
                 else:
                     self.sigLog.emit(f"⚠ Предупреждение при выгрузке: {error_msg[:100]}")
+                
+                self._current_model = self.NO_MODEL_NAME #Модель выгружена, делаем её пустой.
                 return True  # Продолжаем в любом случае
         
         except Exception as e:
@@ -983,15 +987,15 @@ class DCLMStudio(QObject):
         try:
             # Шаг 1: ВЫГРУЖАЕМ предыдущую модель
             self._vigruzitModel(lms_cli)
-            
+    
             # Шаг 2: Преобразуем процент GPU в формат для lms
             gpu_param, gpu_description = self._get_gpu_params(gpu_offload)
             
             # Шаг 3: Загружаем модель
             self.sigLog.emit("🔄 Загрузка модели с новыми параметрами...")
-            self.sigLog.emit(f"   Модель: {model_name}")
-            self.sigLog.emit(f"   Контекст: {max_content} токенов")
-            self.sigLog.emit(f"   GPU: {gpu_description}")
+            # self.sigLog.emit(f"   Модель: {model_name}")
+            # self.sigLog.emit(f"   Контекст: {max_content} токенов")
+            # self.sigLog.emit(f"   GPU: {gpu_description}")
             
             # Излучаем 0% в начале
             self.sigModelProgress.emit(0)
