@@ -600,10 +600,8 @@ class DCLMStudio(QObject):
         """Проверяет доступность LM Studio (приложения)"""
         if self._proverkaZapushen():
             self.sigStudioStatus.emit(True)
-            return True
         else:
             self.sigStudioStatus.emit(False)
-            return False
     
     # ==================== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ====================
     def _emit_error(self, code, message):
@@ -754,7 +752,6 @@ class DCLMStudio(QObject):
             
             elif platform.system() == "Windows":
                 result = subprocess.run(
-                    #["tasklist", "/FI", "IMAGENAME eq LM Studio.exe"],
                     ["tasklist", "/FI", "IMAGENAME eq Bionic.exe"],
                     capture_output=True,
                     text=True,

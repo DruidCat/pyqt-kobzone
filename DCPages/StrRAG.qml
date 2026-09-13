@@ -45,6 +45,7 @@ Item {
 	property bool isRAG: false//true - создание RAG началась.
 	property int tekushiFail: 0//Текущий файл в обработке.
 	property int kolichestvoFailov: 0//общее количество обрабатываемых файлов	
+	property bool isRAGClicked: false//true - Нажата кнопка создания RAG БД
     //Настройки
     anchors.fill: parent
     focus: true 
@@ -222,7 +223,8 @@ Item {
     }
 	function fnClickedNazad() {//Функция закрытия страницы.
 		if (isRAG) {//Если создание RAG идёт, то...
-			vprRAGStop.visible = true//Выдаём вопрос об остановке создания RAG.
+			vprVopros.ntVopros = 0//0 - остановить создание RAG БД?
+			vprVopros.visible = true//Выдаём вопрос об остановке создания RAG.
 		} else {
 			fnClickedEscape()//Функция нажатия на клавишу Escape
 			root.clickedNazad()
@@ -236,14 +238,32 @@ Item {
 		fnClickedEscape()//Функция нажатия на клавишу Escape
         root.clickedInfo()
     }
-	function fnClickedRAG() {//Функция нажатия кнопки начала создания RAG.
-		if (!isRAG) {//Если создание RAG не запущена, то...
-			txdZona.strCopy = ""//Очищаем переменную Прогресса созадания RAG.
-			txdZona.text = ""//Очищаем зону отображения прогресса RAG.
-			//Запускаем через бэкенд pyRAG.py	
-			pyRAG.start(DCSettings.rag_put_doc, DCSettings.rag_put_db,
-						DCSettings.rag_gpu, DCSettings.rag_model,
-						DCSettings.rag_batch_gpu, DCSettings.rag_batch_cpu)
+	function fnClickedRAG() {//Функция нажатия кнопки начала создания RAG.	
+		root.isRAGClicked = true//Нажата кнопка создания RAG БД
+		pyLMStudio.proverkaStudio()
+	}
+	Connections {
+		target: pyLMStudio
+		function onSigStudioStatus(blStatus){
+			if(root.isRAGClicked){//Если нажата кнопка СОздать RAG БД
+				root.isRAGClicked = false//Сбрасываем флаг
+				function fnStart() {//Функция запуска создания RAG базы данных.
+					if (!isRAG) {//Если создание RAG не запущена, то...
+						txdZona.strCopy = ""//Очищаем переменную Прогресса созадания RAG.
+						txdZona.text = ""//Очищаем зону отображения прогресса RAG.
+						//Запускаем через бэкенд pyRAG.py	
+						pyRAG.start(DCSettings.rag_put_doc, DCSettings.rag_put_db,
+									DCSettings.rag_gpu, DCSettings.rag_model,
+									DCSettings.rag_batch_gpu, DCSettings.rag_batch_cpu)
+					}
+				}
+				if(blStatus){//Если LM Studio запущена, то...
+					if(pyLMStudio.polModel()){//Если модель не пустая строка, значит она загружена.
+						vprVopros.ntVopros = 1//1 - выгружить модель?
+						vprVopros.visible = true
+					} else fnStart()//Запускаем работу созадния RAG БД
+				} else fnStart()//Если студия не запущена, то запускаем создание RAG БД.
+			}
 		}
 	}
 	function fnStopRAG() {//Функция Остановки создания RAG.
@@ -259,7 +279,7 @@ Item {
     function fnToggleMenu() {
         if (menuMenu.visible) menuMenu.visible = false
         else {
-			if (vprRAGStop.visible) vprRAGStop.visible = false
+			if (vprVopros.visible) vprVopros.visible = false
             menuMenu.visible = true
         }
     }
@@ -270,9 +290,9 @@ Item {
         }
         return false
     }
-	function fnCloseRAGStopIfOpen() {
-		if (vprRAGStop.visible) {
-			vprRAGStop.visible = false
+	function fnCloseVoprosIfOpen() {
+		if (vprVopros.visible) {
+			vprVopros.visible = false
 			return true
 		}
 		return false
@@ -370,7 +390,7 @@ Item {
             }
         }
 		DCVopros {
-			id: vprRAGStop
+			id: vprVopros
 			ntWidth: root.ntWidth; ntCoff: root.ntCoff
 			anchors.top: tmZagolovok.top; anchors.bottom: tmZagolovok.bottom
 			anchors.left: tmZagolovok.left; anchors.right: tmZagolovok.right
@@ -378,7 +398,20 @@ Item {
 			clrKnopki: root.clrFona; clrBorder: root.clrFona
 			tapKnopkaZakrit: root.tapZagolovokLevi; tapKnopkaOk: root.tapZagolovokPravi
 			visible: false
-			text: qsTr("ОСТАНОВИТЬ СОЗДАНИЕ RAG БАЗЫ ДАННЫХ?")
+			property int ntVopros: 0//0 - Остановить создание RAG, 1 - выгрузить Модель.
+			function fnVoprosOk(flag){//Функция открытия вопроса по флагу
+				if(flag === 0){//Остановить создание RAG БД?
+					pyRAG.stop()//Останавливаем принудительно транскрибацию.
+					fnStopRAG()//Останавливаем создание RAG
+				} else if (flag === 1){//Выгрызить модель?
+					pyLMStudio.vigruzitModel()//Выгружаем модель
+				} 
+			}
+			text: {
+				if(ntVopros === 0) return qsTr("ОСТАНОВИТЬ СОЗДАНИЕ RAG БАЗЫ ДАННЫХ?")
+				else if(ntVopros === 1) return qsTr("В LM Studio загружена языковая модель. Выгрузить её?")
+				else return qsTr("Любовь")
+			}
 			onVisibleChanged: {
 				if(visible) {
 					knopkaNazad.visible = false
@@ -390,12 +423,11 @@ Item {
 				}
 			}
 			onClickedOk: {
-				vprRAGStop.visible = false//Делаем невидимый диалог
-				pyRAG.stop()//Останавливаем принудительно транскрибацию.
-				fnStopRAG()//Останавливаем создание RAG.
+				fnVoprosOk(ntVopros)//Запускаем функцию с параметром
+				vprVopros.visible = false//Делаем невидимый диалог
 			}
 			onClickedOtmena: {
-				vprRAGStop.visible = false//Делаем невидимый диалог.
+				vprVopros.visible = false//Делаем невидимый диалог.
 			}
 		}
     }
@@ -427,7 +459,7 @@ Item {
             }
 			TapHandler {//Нажимаем на всю область виджета.
 				onTapped: {
-					fnCloseRAGStopIfOpen()
+					fnCloseVoprosIfOpen()
 					fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
 				}
 			}
@@ -446,8 +478,8 @@ Item {
                     clrKnopki: root.clrTexta; clrTexta: root.clrFona
                     anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
-					onPressedChanged: {
-                        if (!fnCloseMenuIfOpen() && !fnCloseRAGStopIfOpen()) {
+					onClicked: {
+                        if (!fnCloseMenuIfOpen() && !fnCloseVoprosIfOpen()) {
                             fnClickedRAG()
                         }
                     }
@@ -467,7 +499,7 @@ Item {
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					onPressedChanged: {
-						if (!fnCloseMenuIfOpen() && !fnCloseRAGStopIfOpen()) {
+						if (!fnCloseMenuIfOpen() && !fnCloseVoprosIfOpen()) {
 							fnClickedPutDoc()
 						}
 					}
@@ -487,7 +519,7 @@ Item {
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					onPressedChanged: {
-						if (!fnCloseMenuIfOpen() && !fnCloseRAGStopIfOpen()) {
+						if (!fnCloseMenuIfOpen() && !fnCloseVoprosIfOpen()) {
 							fnClickedPutDB()
 						}
 					}
@@ -522,7 +554,7 @@ Item {
                         clrFona: "transparent"
                         clrTexta: root.clrTexta   
 						onPressed: {
-							fnCloseRAGStopIfOpen()
+							fnCloseVoprosIfOpen()
 							fnCloseMenuIfOpen()
 						}
                     }
@@ -620,7 +652,7 @@ Item {
             tapWidth: tapHeight * root.tapToolbarLevi
             
             onClicked: {
-                if (!fnCloseMenuIfOpen() && !fnCloseRAGStopIfOpen()) {
+                if (!fnCloseMenuIfOpen() && !fnCloseVoprosIfOpen()) {
                     fnClickedInfo()
                 }
             }
