@@ -838,7 +838,8 @@ class DCLMStudio(QObject):
             import os
             paths = [
                 Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "LM Studio" / "LM Studio.exe",
-                Path(os.environ.get("PROGRAMFILES", "")) / "LM Studio" / "LM Studio.exe"
+                Path(os.environ.get("PROGRAMFILES", "")) / "LM Studio" / "LM Studio.exe",
+                Path(os.environ.get("PROGRAMFILES", "")) / "Bionic" / "Bionic.exe"
             ]
         else:
             return None

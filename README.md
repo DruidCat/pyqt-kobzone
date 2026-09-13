@@ -76,7 +76,7 @@ python3.13 main.py
 ### Windows 10, 11
 
 1. **Установите Python 3.13:**
-   - Скачайте Python 3.13 с официального сайта: https://www.python.org/downloads/release/python-31314/
+   - Скачайте Python 3.13 с официального сайта: https://www.python.org/downloads/release/python-31315/
    - При установке обязательно отметьте "Add Python 3.13 to PATH"
    - Выберите "Custom installation" и убедитесь, что установлены pip и IDLE
 
@@ -86,7 +86,7 @@ python3.13 main.py
 
 3. **Клонируйте репозиторий:**
 
-Через Git:
+Через консоль Git Bash:
 ```cmd
 git clone https://github.com/DruidCat/pyqt-kobzone.git
 cd pyqt-kobzone
@@ -95,10 +95,10 @@ cd pyqt-kobzone
 Или распакуйте скачанный ZIP-архив и откройте папку в командной строке.
 
 4. **Создайте виртуальное окружение:**
-
+Через консоль Git Bash:
 ```cmd
 python -m venv venv
-venv\Scripts\activate
+source venv\Scripts\activate
 ```
 
 ```bash
@@ -114,15 +114,15 @@ pip install -r requirements.txt
 ```
 
 6. **Установите LM Studio:**
-   - Скачайте LM Studio для Windows: https://lmstudio.ai/
+   - Скачайте Bionic для Windows: https://lmstudio.ai/
    - Запустите установщик и следуйте инструкциям
-   - После установки запустите LM Studio
+   - После установки запустите Bionic
 
-7. **Настройте LM Studio:**
-   - Запустите LM Studio
+7. **Настройте Bionic:**
+   - Запустите Bionic
    - Скачайте нужную языковую модель (рекомендуется начать с моделей до 7B параметров)
-   - Перейдите во вкладку "Local Server"
-   - Запустите сервер (по умолчанию на http://localhost:1234)
+   - Перейдите во вкладку "Local Model API" -> "Local API server"
+   - Запустите сервер "running" (по умолчанию Base URL http://localhost:1234)
 
 8. **Запустите приложение:**
 
@@ -149,7 +149,7 @@ pyqt-kobzone/
 
 ## Конфигурация
 
-### Настройка подключения к LM Studio
+### Настройка подключения к LM Studio (Bionic)
 
 По умолчанию приложение подключается к LM Studio по адресу `http://localhost:1234`. 
 
@@ -186,9 +186,9 @@ sudo apt install libxcb-xinerama0 libxcb-cursor0
 - Попробуйте обновить pip: `python -m pip install --upgrade pip`
 
 **LM Studio не подключается:**
-- Проверьте, что LM Studio запущен
-- Убедитесь, что в настройках LM Studio включен локальный сервер
-- Проверьте брандмауэр Windows - разрешите подключения для LM Studio
+- Проверьте, что Bionic запущен
+- Убедитесь, что в настройках Bionic включен локальный сервер
+- Проверьте брандмауэр Windows - разрешите подключения для Bionic
 - Попробуйте открыть http://localhost:1234 в браузере для проверки
 
 **Медленная работа с моделями:**

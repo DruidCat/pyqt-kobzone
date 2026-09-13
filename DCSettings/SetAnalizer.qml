@@ -666,7 +666,7 @@ Item {
 				}
 				blSqlProtect: {//Настройка по SQL инъекции.
 					if(ntVvod === 0) return false
-					else if (ntVvod === 1) return true
+					else if (ntVvod === 1) return false//Для Windows путь прописать нужно через :
 					else if (ntVvod === 2) return false
 					else if (ntVvod === 3) return true
 				}
