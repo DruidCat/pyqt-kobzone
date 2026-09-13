@@ -549,12 +549,13 @@ Item {
 			path = path.substring(7)//Убираем "file://"
 		}
 		path = decodeURIComponent(path)//Декодируем URL-кодирование (%20 → пробел, %3F → ?)
-		if (Qt.application.os === "windows") {//Windows: если путь начинается с /C:/, убираем первый /
+		root.log(`ПУТЬ ИЗ ДИАЛОГА ${path}`)
+		if (Qt.platform.os === "windows") {//Windows: если путь начинается с /C:/, убираем первый /
 			if (path.length > 2 && path[0] === '/' && path[2] === ':') {
 				path = path.substring(1)
 			}
 		}
-		if (Qt.application.os !== "windows" && path.startsWith("//")) {//Linux-убираем двойной слеш,если появился
+		if (Qt.platform.os !== "windows" && path.startsWith("//")) {//Linux-убираем двойной слеш,если появился
 			path = path.substring(1)
 		}
 		return path
