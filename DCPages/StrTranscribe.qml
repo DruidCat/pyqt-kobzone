@@ -45,6 +45,7 @@ Item {
 	property bool isTranscribing: false//true - транскрибация началась.
 	property int tekushiAudioFail: 0//Текущий аудио файл в обработке.
 	property int kolichestvoAudioFailov: 0//общее количество обрабатываемых файлов
+	property bool isTranscribeClicked: false//true - Нажата кнопка Транскрибации
     //Настройки
     anchors.fill: parent
     focus: true 
@@ -232,7 +233,8 @@ Item {
     }
 	function fnClickedNazad() {//Функция закрытия страницы.
 		if (isTranscribing) {//Если транскрибация идёт, то...
-			vprTranscribeStop.visible = true//Выдаём вопрос об остановке транскрибации.
+			vprVopros.ntVopros = 0//0 - остановить Транскрибацию?
+			vprVopros.visible = true//Выдаём вопрос об остановке транскрибации.
 		} else {
 			fnClickedEscape()//Функция нажатия на клавишу Escape
 			root.clickedNazad()
@@ -247,11 +249,29 @@ Item {
         root.clickedInfo()
     }
 	function fnClickedTranscribe() {//Функция нажатия кнопки начала транскрибации.
-		if (!isTranscribing) {//Если транскрибация не запущена, то...
-			txdZona.strCopy = ""//Очищаем переменную Прогресса транскрибации.
-			txdZona.text = ""//Очищаем зону отображения прогресса транскрибации.
-			//Запускаем через бэкенд PyTranscriber.py	
-			pyTranscriber.start(DCSettings.transcribe_put_audio, DCSettings.transcribe_put_text)
+		root.isTranscribeClicked = true//Нажата кнопка Транскрибации
+		pyLMStudio.proverkaStudio()
+	}
+	Connections {
+		target: pyLMStudio
+		function onSigStudioStatus(blStatus){
+			if(root.isTranscribeClicked){//Если нажата кнопка Начать Транскрибацию
+				root.isTranscribeClicked = false//Сбрасываем флаг
+				function fnStart() {//Функция запуска Транскрибации.
+					if (!isTranscribing) {//Если транскрибация не запущена, то...
+						txdZona.strCopy = ""//Очищаем переменную Прогресса транскрибации.
+						txdZona.text = ""//Очищаем зону отображения прогресса транскрибации.
+						//Запускаем через бэкенд PyTranscriber.
+						pyTranscriber.start(DCSettings.transcribe_put_audio, DCSettings.transcribe_put_text)
+					}				
+				}
+				if(blStatus){//Если LM Studio запущена, то...
+					if(pyLMStudio.polModel()){//Если модель не пустая строка, значит она загружена.
+						vprVopros.ntVopros = 1//1 - выгрузить модель?
+						vprVopros.visible = true
+					} else fnStart()//Запускаем транскрибацию
+				} else fnStart()//Если студия не запущена, запускаем транскрибацию
+			}
 		}
 	}
 	function fnStopTranscriber() {//Функция Остановки транскрибации.
@@ -270,7 +290,7 @@ Item {
     function fnToggleMenu() {
         if (menuMenu.visible) menuMenu.visible = false
         else {
-			if (vprTranscribeStop.visible) vprTranscribeStop.visible = false
+			if (vprVopros.visible) vprVopros.visible = false
             menuMenu.visible = true
         }
     }
@@ -281,9 +301,9 @@ Item {
         }
         return false
     }
-	function fnCloseTranscribeStopIfOpen() {
-		if (vprTranscribeStop.visible) {
-			vprTranscribeStop.visible = false
+	function fnCloseVoprosIfOpen() {
+		if (vprVopros.visible) {
+			vprVopros.visible = false
 			return true
 		}
 		return false
@@ -401,7 +421,7 @@ Item {
             }
         }
 		DCVopros {
-			id: vprTranscribeStop
+			id: vprVopros
 			ntWidth: root.ntWidth; ntCoff: root.ntCoff
 			anchors.top: tmZagolovok.top; anchors.bottom: tmZagolovok.bottom
 			anchors.left: tmZagolovok.left; anchors.right: tmZagolovok.right
@@ -409,7 +429,20 @@ Item {
 			clrKnopki: root.clrFona; clrBorder: root.clrFona
 			tapKnopkaZakrit: root.tapZagolovokLevi; tapKnopkaOk: root.tapZagolovokPravi
 			visible: false
-			text: qsTr("ОСТАНОВИТЬ ТРАНСКРИБАЦИЮ?")
+			property int ntVopros: 0//0 - Остановить Транскрибацию, 1 - выгрузить Модель.
+			function fnVoprosOk(flag){//Функция открытия вопроса по флагу
+				if(flag === 0){//Остановить Транскрибацию?
+					pyTranscriber.stop()//Останавливаем принудительно транскрибацию.
+					fnStopTranscriber()//Останавливаем транскрибацию.
+				} else if (flag === 1){//Выгрызить модель?
+					pyLMStudio.vigruzitModel()//Выгружаем модель
+				} 
+			}
+			text: {
+				if(ntVopros === 0) return qsTr("ОСТАНОВИТЬ ТРАНСКРИБАЦИЮ?")
+				else if(ntVopros === 1) return qsTr("В LM Studio загружена языковая модель. Выгрузить её?")
+				else return qsTr("Любовь")
+			}
 			onVisibleChanged: {
 				if(visible) {
 					knopkaNazad.visible = false
@@ -421,12 +454,11 @@ Item {
 				}
 			}
 			onClickedOk: {
-				vprTranscribeStop.visible = false//Делаем невидимый диалог
-				pyTranscriber.stop()//Останавливаем принудительно транскрибацию.
-				fnStopTranscriber()//Останавливаем транскрибацию.
+				vprVopros.visible = false//Делаем невидимый диалог
+				fnVoprosOk(ntVopros)//Запускаем функцию с параметром
 			}
 			onClickedOtmena: {
-				vprTranscribeStop.visible = false//Делаем невидимый диалог.
+				vprVopros.visible = false//Делаем невидимый диалог.
 			}
 		}
     }
@@ -458,7 +490,7 @@ Item {
             }
 			TapHandler {//Нажимаем на всю область виджета.
 				onTapped: {
-					fnCloseTranscribeStopIfOpen()
+					fnCloseVoprosIfOpen()
 					fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
 				}
 			}
@@ -478,7 +510,7 @@ Item {
                     anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					onClicked: {
-                        if (!fnCloseMenuIfOpen() && !fnCloseTranscribeStopIfOpen()) {
+                        if (!fnCloseMenuIfOpen() && !fnCloseVoprosIfOpen()) {
                             fnClickedTranscribe()
                         }
                     }
@@ -498,7 +530,7 @@ Item {
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					onClicked: {
-						if (!fnCloseMenuIfOpen() && !fnCloseTranscribeStopIfOpen()) {
+						if (!fnCloseMenuIfOpen() && !fnCloseVoprosIfOpen()) {
 							fnClickedPutAudio()
 						}
 					}
@@ -518,7 +550,7 @@ Item {
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					onClicked: {
-						if (!fnCloseMenuIfOpen() && !fnCloseTranscribeStopIfOpen()) {
+						if (!fnCloseMenuIfOpen() && !fnCloseVoprosIfOpen()) {
 							fnClickedPutText()
 						}
 					}
@@ -553,7 +585,7 @@ Item {
                         clrFona: "transparent"
                         clrTexta: root.clrTexta   
 						onPressed: {
-							fnCloseTranscribeStopIfOpen()
+							fnCloseVoprosIfOpen()
 							fnCloseMenuIfOpen()
 						}
                     }
@@ -566,7 +598,7 @@ Item {
                     anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					onClicked: {
-                        if (!fnCloseMenuIfOpen() && !fnCloseTranscribeStopIfOpen()) {
+                        if (!fnCloseMenuIfOpen() && !fnCloseVoprosIfOpen()) {
                             fnClickedOtkrit()
                         }
                     }
@@ -666,7 +698,7 @@ Item {
             tapWidth: tapHeight * root.tapToolbarLevi
             
             onClicked: {
-                if (!fnCloseMenuIfOpen() && !fnCloseTranscribeStopIfOpen()) {
+                if (!fnCloseMenuIfOpen() && !fnCloseVoprosIfOpen()) {
                     fnClickedInfo()
                 }
             }

@@ -525,16 +525,7 @@ Item {
 				pvTemperatura.karusel.forceActiveFocus()//фокус PathView, чтоб hotkey работали.
 			})
 		}
-	}
-	function fnVoprosOk(flag){//Функция открытия вопроса по флагу
-		if(flag === 3){
-			dialogLMPut.open()//Функция выбора пути к LM Studio.
-		} else if (flag === 6){
-			fnClickedLMSZapustit()//Функция запуска LM Studio
-		} else if (flag === 9){
-			fnClickedVvod(1)//Функция задания пути для cli lms
-		}
-	}
+	}	
 	function fnClickedVvod(vvod){//Функция выбора Ввода данных
 		txnVvod.ntVvod = vvod
 		txnVvod.visible = !txnVvod.visible
@@ -720,6 +711,15 @@ Item {
 				else if(ntVopros === 6) return qsTr("LM Studio не запущена. Запустить?")
 				else if (ntVopros === 9) return qsTr("Путь к серверу lms не действительный. Задать?")
 				else return qsTr("Любовь")
+			}
+			function fnVoprosOk(flag){//Функция открытия вопроса по флагу
+				if(flag === 3){
+					dialogLMPut.open()//Функция выбора пути к LM Studio.
+				} else if (flag === 6){
+					fnClickedLMSZapustit()//Функция запуска LM Studio
+				} else if (flag === 9){
+					fnClickedVvod(1)//Функция задания пути для cli lms
+				}
 			}
 			onVisibleChanged: {
 				if(visible) {

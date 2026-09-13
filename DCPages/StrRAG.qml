@@ -259,7 +259,7 @@ Item {
 				}
 				if(blStatus){//Если LM Studio запущена, то...
 					if(pyLMStudio.polModel()){//Если модель не пустая строка, значит она загружена.
-						vprVopros.ntVopros = 1//1 - выгружить модель?
+						vprVopros.ntVopros = 1//1 - выгрузить модель?
 						vprVopros.visible = true
 					} else fnStart()//Запускаем работу созадния RAG БД
 				} else fnStart()//Если студия не запущена, то запускаем создание RAG БД.
@@ -423,8 +423,8 @@ Item {
 				}
 			}
 			onClickedOk: {
-				fnVoprosOk(ntVopros)//Запускаем функцию с параметром
 				vprVopros.visible = false//Делаем невидимый диалог
+				fnVoprosOk(ntVopros)//Запускаем функцию с параметром
 			}
 			onClickedOtmena: {
 				vprVopros.visible = false//Делаем невидимый диалог.
