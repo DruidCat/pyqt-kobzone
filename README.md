@@ -114,7 +114,7 @@ pip install -r requirements.txt
 ```
 
 6. **Установите LM Studio:**
-   - Скачайте Bionic для Windows: https://lmstudio.ai/
+   - Скачайте Bionic для Windows: https://lmstudio.ai/download
    - Запустите установщик и следуйте инструкциям
    - После установки запустите Bionic
 
