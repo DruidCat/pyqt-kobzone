@@ -688,9 +688,14 @@ Item {
                 }
 				DCTimer {//Таймер
 					id: dcTimer
+					property string strVremyaAnaliza: ""
 				}
                 Text {//Результат
-                    text: "Результат:"
+					text: {
+						let ltRezultat = "Результат: "
+						if(!dcTimer.blStart) ltRezultat += dcTimer.strVremyaAnaliza 
+						return ltRezultat
+					}
                     font.pixelSize: root.ntWidth/2 * root.ntCoff
                     color: root.clrTexta
 					font.bold: true//Жирный текст.
@@ -837,6 +842,7 @@ Item {
 					txfPromt.enabled = false
 				}
 				else{
+					dcTimer.strVremyaAnaliza = dcTimer.strTimer
 					dcTimer.blStart = false//Останавливаем таймер.
 					knopkaMenu.enabled = true
 					knopkaInfo.visible = true
