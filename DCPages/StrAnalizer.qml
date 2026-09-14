@@ -219,6 +219,10 @@ Item {
                 fnClickedMenu()//Функция открытия настроек анализа документов.
                 event.accepted = true
                 return
+            } else if (event.key === Qt.Key_S || event.key === 1067) {
+                fnClickedSidebar()//Функция открытия боковой панели
+                event.accepted = true
+                return
             }
         }
         if (event.modifiers & Qt.ControlModifier) {
@@ -380,6 +384,13 @@ Item {
 			root.clickedNazad()
 		}
 	}
+	function fnClickedSidebar(){//Функция нажатия кнопки SideBar.
+		if(dcSidebar.position){//Если боковая панель открыта, то...
+    		dcSidebar.close()//Закрываем её
+        }
+        else//Если боковая панель закрыта, то...
+            dcSidebar.open()//Открываем её.
+	}
     function fnClickedMenu() {//Функция открытия настроек анализа документов.
 		fnClickedEscape()//Функция нажатия на клавишу Escape
 		root.clickedSettings()//Сигнал излучает открытие настроек.
@@ -452,13 +463,13 @@ Item {
         }
 		DCKnopkaSidebar {
         	id: knopkaSidebar
-            opened: false//По умолчанию закрыта боковая панель.
+            opened: dcSidebar.opened
             ntWidth: root.ntWidth; ntCoff: root.ntCoff
             anchors.verticalCenter: tmZagolovok.verticalCenter; anchors.right: knopkaMenu.left
             clrKnopki: root.clrTexta
             tapHeight: root.ntWidth*root.ntCoff+root.ntCoff; tapWidth: tapHeight*root.tapZagolovokLevi
 			isInvers: true
-            //onClicked: fnClickedSidebar();//Функция нажатия кнопки SideBar.
+            onClicked: fnClickedSidebar();//Функция нажатия кнопки SideBar.
         }	
         DCKnopkaMenu {
             id: knopkaMenu
@@ -535,6 +546,7 @@ Item {
             interactive: true
             boundsBehavior: Flickable.StopAtBounds
             opacity: 0.9//ГЛАВНАЯ ПРОЗРАЧНОСТЬ!!!
+        	anchors.rightMargin: dcSidebar.position * dcSidebar.width - dcSidebar.position * root.ntCoff
 
 			TapHandler {//Нажимаем на всю область
 				onTapped: {
@@ -776,10 +788,21 @@ Item {
                 }
             }
         }
+		DCSidebarAnalizer {
+			id: dcSidebar
+			ntWidth: root.ntWidth; ntCoff: root.ntCoff
+			clrTexta: root.clrTexta; clrFona: root.clrFona
+			height: tmZona.height
+			parentWidth: tmZona.width
+			clrMenuFon: root.clrMenuFon
+			onOpenedChanged: {//Если состояние боковой панели изменилось, она открыта или закрыта, то...
+				root.forceActiveFocus()
+			}
+		}
         DCScrollbar {//Скроллбар основной области
             id: dcScrollbar
             flick: flcZona
-            anchors.right: tmZona.right
+            anchors.right: flcZona.right
             anchors.top: tmZona.top
             anchors.bottom: tmZona.bottom
             clrPolzunokOff: Qt.lighter(root.clrMenuFon, 1.3)
@@ -827,7 +850,7 @@ Item {
                     root.forceActiveFocus()
                 }
             }
-        }
+        }	
     }
     Item {//Тулбар
         id: tmToolbar
@@ -907,7 +930,7 @@ Item {
                 fnToggleMenu()
             }
         }
-    }
+    }	
     MouseArea {//MouseArea для возврата фокуса
         anchors.fill: parent
         z: -1

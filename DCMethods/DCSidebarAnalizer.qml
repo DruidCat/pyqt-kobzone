@@ -1,0 +1,149 @@
+﻿//DCSidebarAnalizer.qml
+import QtQuick //2.15
+import QtQuick.Controls//Drawer
+import DCButtons 1.0//Импортируем кнопки написанные мной.
+import DCMethods 1.0//Импортируем методы написанные мной.
+import DCSettings 1.0//Импортируем настройки
+//Боковая панель в нейроанализе документов.
+Drawer {
+	id: root
+	//Свойства
+	property bool isMobile: false//true - мобильное устройство
+    property int ntWidth: 1
+    property int ntCoff: 8
+    property color clrTexta: "Orange"
+    property color clrFona: "Black"
+    property color clrMenuFon: "SlateGray"
+	property int parentWidth: 300
+	property int minSidebarWidth: 200//Минимум ширины боковой панели
+	property int maxSidebarWidth: root.parentWidth * 0.8//Максимум ширины боковой панели
+	property int sidebarWidth: root.isMobile//Если мобила,ширина на весь экран,если нет,то данные из Реест
+							   ? root.width : Math.max(minSidebarWidth, DCSettings.analizer_sidebar_shirina)
+	//Настройки
+	edge: Qt.RightEdge
+	modal: false
+	dim: false
+	closePolicy: Drawer.CloseOnEscape//Закрываем боковую панель только при нажати Escape, другие политики выкл
+	clip: true//Обрезать всё лишнее.
+	width: sidebarWidth//ВАЖНО! ширина боковой панели зависит только от sidebarWidth.
+	height: parent.height//Высота боковой панели по высоте родителя.
+	y: root.ntWidth * root.ntCoff + 3 * root.ntCoff//координату по Y брал из расчёта Stranica.qml
+	interactive: true//false -  панель не реагирует на свайпы.
+	//Функции
+	onPositionChanged: {//Если позиция изменяется у боковой панели, то...
+		
+	}
+	onOpened: {//Если боковая панель открылась, то...
+	}
+	Rectangle {//Прямоугольник узкой полоски интерфейса справа
+		id: rctBorder
+		anchors.top: root.top
+		x: root.width-root.ntCoff
+		width: root.ntCoff
+		height: root.height
+		color: root.clrMenuFon
+	}
+	Rectangle {//Прямоугольник заголовка, для надписи и кнопки закрыть.
+		id: rctZagolovok
+		anchors.top: root.top
+		anchors.right: rctBorder.left
+		width: root.width - rctBorder.width - rctRuchka.width
+		height: root.ntCoff*(root.ntWidth-1)+root.ntCoff
+		color: root.clrFona
+		border.color: root.clrTexta
+		border.width: root.ntCoff/4
+		DCKnopkaZakrit {
+			id: knopkaZakrit
+			ntWidth: (root.ntWidth-1)
+			ntCoff: root.ntCoff
+			visible: true
+			anchors.verticalCenter: rctZagolovok.verticalCenter
+			anchors.right: rctZagolovok.right
+			clrKnopki: root.clrTexta
+			clrFona: root.clrFona
+			tapHeight: (root.ntWidth-1)*root.ntCoff+root.ntCoff
+			tapWidth: tapHeight
+			onClicked: root.close();//Метод обрабатывающий кнопку Закрыть боковую панель.
+		}
+		Label {//Текст вписанный в границы, отображает имя заголовка.
+			id: lblZagolovok
+			anchors.top: rctZagolovok.top
+			anchors.right: knopkaZakrit.left
+			width: root.width - rctBorder.width - rctRuchka.width - knopkaZakrit.width
+			height: rctZagolovok.height
+			horizontalAlignment: Text.AlignHCenter
+			verticalAlignment: Text.AlignVCenter
+			color: root.clrTexta
+			//font.capitalization: Font.AllUppercase//СЛОВА ЗАГЛАВНЫМИ БУКВАМИ
+			font.bold: true//Жирный текст.
+			font.pixelSize: root.ntCoff*(root.ntWidth-1)
+			elide: Text.ElideRight//Обрезаем текст по правой стороне точками (...)
+			text: qsTr("Настройки")
+		}
+	}
+	Rectangle {//Прямоугольник всей оставшейся боковой панели.
+		id: rctSidebar
+		anchors.top: rctZagolovok.bottom
+		anchors.right: rctBorder.left
+		width: root.width - rctBorder.width - rctRuchka.width
+		height: root.height-rctZagolovok.height
+		color: root.clrFona
+		clip: true//Обязательно обрезать всё, что не помещается в этот прямоугольник.
+	}
+	Rectangle {//Прямоугольник ручки,за которую можно тянуть размер боковой панели,для изменения её размер
+		id: rctRuchka
+		anchors.top: root.top
+		anchors.right: rctSidebar.left
+		width: (root.ntWidth < 3) ? 3 : root.ntWidth//В зависимости от параметра, изменяется толщина ручки.
+		height: root.height
+		color: Qt.darker(root.clrTexta, 1.3)
+		border.color: root.clrTexta
+		border.width: (root.ntWidth < 5) ? 1 : root.ntCoff/4//Чтоб была видна оконтовка ручки.
+		MouseArea {
+			id: maRuchka
+			//Свойства
+			property bool isDrag: false//Свойство перетаскивания. true - началось перетаскивание.
+			property real lastX//Переменная хранящаа предыдущее положение мыши
+			//Настройки
+			anchors.fill: rctRuchka
+			hoverEnabled: true//При наведении изменение
+			cursorShape: Qt.SizeHorCursor//Курсор в виде изменения горизонтального размера.
+			//Функции
+			onPressed: (mouse) => {//Если нажали на ручку
+				if (root.isMobile) return//Если мобильное устройство, то выходим
+				root.interactive = false;//Отключаем свайп Drawer. ВАЖНО!
+				isDrag = true//Взводим флаг при нажатии на ручку, идёт изменение размеров.
+				lastX = mouse.x//Запоминаем первоначальное положение боковой панели по координатам мыши.
+				mouse.accepted = true//Завершаем обработку эвента.
+			}
+			onReleased: {//Если отпустили кнопку мышки
+				root.interactive = true;//Включаем свайп Drawer. ВАЖНО!
+				isDrag = false//При отпускании мыши Окончание перетаскивания
+				DCSettings.analizer_sidebar_shirina = root.sidebarWidth//Записываем в реестр ширину панели.
+			}
+			onCanceled: {
+				root.interactive = true;//Включаем свайп Drawer. ВАЖНО!
+				isDrag = false//Окончание перетаскивания
+				DCSettings.analizer_sidebar_shirina = root.sidebarWidth//Записываем в реестр ширину панели.
+			}
+			onPositionChanged: (mouse) => {//Если позиция меняется, то...
+				if (!isDrag || root.isMobile) return//Если не перетаск. ручку или мобильное устройство,вых
+				const dX = mouse.x - lastX//Дельта Х относительно предыдущей точки Х
+				lastX = mouse.x//Запоминаем положение мыши по Х.
+				if (dX === 0) return//Если дельта не изменилась, ничего не делаем
+				let ltWidth = root.sidebarWidth - dX//Новые размеры ширины боковой панели.
+				ltWidth=Math.max(root.minSidebarWidth,Math.min(root.maxSidebarWidth, ltWidth))
+				root.sidebarWidth = ltWidth//Изменяем ширину боковой панели на новую ширину
+			}
+		}
+	}
+	Rectangle {//Оконтовка поверх всех прямоугольников
+		anchors.top: root.top
+		anchors.right: rctSidebar.right
+		height: root.height
+		width: rctSidebar.width
+		color: "transparent"
+		border.color: root.clrTexta
+		border.width: root.ntCoff/4
+	}
+}

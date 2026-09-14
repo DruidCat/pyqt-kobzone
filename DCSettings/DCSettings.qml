@@ -12,6 +12,7 @@ QtObject {
 	property int kobzone_visota: 550
 	property int kobzone_set_shrift: 1//0-мал, 1-сред, 2-большой.
 	//Нейро Анализ
+	property int analizer_sidebar_shirina: 220
     property string analizer_put_text: ""
     property string analizer_put_sohranit: ""
 	property string analizer_model_imya: "(отсутствует)"//По умолчанию отсутствует
@@ -44,6 +45,7 @@ QtObject {
 		property alias kobzone_visota: root.kobzone_visota
 		property alias kobzone_set_shrift: root.kobzone_set_shrift
 		//Нейро Анализ
+        property alias analizer_sidebar_shirina: root.analizer_sidebar_shirina
         property alias analizer_put_text: root.analizer_put_text
         property alias analizer_put_sohranit: root.analizer_put_sohranit
 		property alias analizer_model_imya: root.analizer_model_imya
