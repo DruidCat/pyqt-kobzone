@@ -131,6 +131,36 @@ Item {
 	Component.onCompleted: {
         root.forceActiveFocus()
     }
+	Connections {
+		target: pyLMStudio
+		function onSigStudioStatus(blStatus){
+			if(root.isTranscribeClicked){//Если нажата кнопка Начать Транскрибацию
+				root.isTranscribeClicked = false//Сбрасываем флаг
+				function fnStart() {//Функция запуска Транскрибации.
+					if (!isTranscribing) {//Если транскрибация не запущена, то...
+						txdZona.strCopy = ""//Очищаем переменную Прогресса транскрибации.
+						txdZona.text = ""//Очищаем зону отображения прогресса транскрибации.
+						//Запускаем через бэкенд PyTranscriber.
+						pyTranscriber.start(DCSettings.transcribe_put_audio, DCSettings.transcribe_put_text)
+					}				
+				}
+				if(blStatus){//Если LM Studio запущена, то...
+					var vrModel = pyLMStudio.polModel()
+					if(vrModel){//Если модель не пустая строка, значит она загружена.
+						vprVopros.ntVopros = 1//1 - выгрузить модель?
+						vprVopros.visible = true
+					} else fnStart()//Запускаем транскрибацию
+				} else fnStart()//Если студия не запущена, запускаем транскрибацию
+			}
+		}
+		function onSigModelVigrujena(blStatus){//Сигнал о выгрузке модели.
+			if(vprVopros.isModelOstanovit){//Если на этой странице запущена выгрузка модели, то...
+				vprVopros.isModelOstanovit = false//сбрасываю флаг
+				if(blStatus) root.toolbar(qsTr("Модель успешно выгрузилась."))
+				else root.toolbar(qsTr("Ошибка выгрузки модели."))
+			}
+		}
+	}
 	Connections {//Connections для транскрибера
 		target: pyTranscriber
 		function onTranscriptionStarted() {//Функция начала работы скрипта DCTranscribe.py
@@ -251,29 +281,7 @@ Item {
 	function fnClickedTranscribe() {//Функция нажатия кнопки начала транскрибации.
 		root.isTranscribeClicked = true//Нажата кнопка Транскрибации
 		pyLMStudio.proverkaStudio()
-	}
-	Connections {
-		target: pyLMStudio
-		function onSigStudioStatus(blStatus){
-			if(root.isTranscribeClicked){//Если нажата кнопка Начать Транскрибацию
-				root.isTranscribeClicked = false//Сбрасываем флаг
-				function fnStart() {//Функция запуска Транскрибации.
-					if (!isTranscribing) {//Если транскрибация не запущена, то...
-						txdZona.strCopy = ""//Очищаем переменную Прогресса транскрибации.
-						txdZona.text = ""//Очищаем зону отображения прогресса транскрибации.
-						//Запускаем через бэкенд PyTranscriber.
-						pyTranscriber.start(DCSettings.transcribe_put_audio, DCSettings.transcribe_put_text)
-					}				
-				}
-				if(blStatus){//Если LM Studio запущена, то...
-					if(pyLMStudio.polModel()){//Если модель не пустая строка, значит она загружена.
-						vprVopros.ntVopros = 1//1 - выгрузить модель?
-						vprVopros.visible = true
-					} else fnStart()//Запускаем транскрибацию
-				} else fnStart()//Если студия не запущена, запускаем транскрибацию
-			}
-		}
-	}
+	}	
 	function fnStopTranscriber() {//Функция Остановки транскрибации.
 		root.isTranscribing = false//возвращаем флаг, что транскрибация окончилась.	
 		tmrLogo.running = false//Отключаем анимацию логотипа и активируем политику кнопок.
@@ -430,11 +438,13 @@ Item {
 			tapKnopkaZakrit: root.tapZagolovokLevi; tapKnopkaOk: root.tapZagolovokPravi
 			visible: false
 			property int ntVopros: 0//0 - Остановить Транскрибацию, 1 - выгрузить Модель.
+			property bool isModelOstanovit: false//true - останавливаем модель.
 			function fnVoprosOk(flag){//Функция открытия вопроса по флагу
 				if(flag === 0){//Остановить Транскрибацию?
 					pyTranscriber.stop()//Останавливаем принудительно транскрибацию.
 					fnStopTranscriber()//Останавливаем транскрибацию.
 				} else if (flag === 1){//Выгрызить модель?
+					isModelOstanovit = true//Запускаем остановку модели.
 					pyLMStudio.vigruzitModel()//Выгружаем модель
 				} 
 			}
@@ -490,7 +500,7 @@ Item {
             }
 			TapHandler {//Нажимаем на всю область виджета.
 				onTapped: {
-					fnCloseVoprosIfOpen()
+					if(!knopkaTranscribe.pressedTmr550)fnCloseVoprosIfOpen()
 					fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
 				}
 			}

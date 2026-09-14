@@ -131,6 +131,37 @@ Item {
 	Component.onCompleted: {
         root.forceActiveFocus()
     }
+	Connections {
+		target: pyLMStudio
+		function onSigStudioStatus(blStatus){
+			if(root.isRAGClicked){//Если нажата кнопка СОздать RAG БД
+				root.isRAGClicked = false//Сбрасываем флаг
+				function fnStart() {//Функция запуска создания RAG базы данных.
+					if (!isRAG) {//Если создание RAG не запущена, то...
+						txdZona.strCopy = ""//Очищаем переменную Прогресса созадания RAG.
+						txdZona.text = ""//Очищаем зону отображения прогресса RAG.
+						//Запускаем через бэкенд pyRAG.py	
+						pyRAG.start(DCSettings.rag_put_doc, DCSettings.rag_put_db,
+									DCSettings.rag_gpu, DCSettings.rag_model,
+									DCSettings.rag_batch_gpu, DCSettings.rag_batch_cpu)
+					}
+				}
+				if(blStatus){//Если LM Studio запущена, то...
+					if(pyLMStudio.polModel()){//Если модель не пустая строка, значит она загружена.
+						vprVopros.ntVopros = 1//1 - выгрузить модель?
+						vprVopros.visible = true
+					} else fnStart()//Запускаем работу созадния RAG БД
+				} else fnStart()//Если студия не запущена, то запускаем создание RAG БД.
+			}
+		}
+		function onSigModelVigrujena(blStatus){//Сигнал о выгрузке модели.
+			if(vprVopros.isModelOstanovit){//Если на этой странице запущена выгрузка модели, то...
+				vprVopros.isModelOstanovit = false//сбрасываю флаг
+				if(blStatus) root.toolbar(qsTr("Модель успешно выгрузилась."))
+				else root.toolbar(qsTr("Ошибка выгрузки модели."))
+			}
+		}
+	}
 	Connections {//Connections для транскрибера
 		target: pyRAG
 		function onSigRAGStarted() {//Функция начала работы скрипта DCRAGMake.py
@@ -241,31 +272,7 @@ Item {
 	function fnClickedRAG() {//Функция нажатия кнопки начала создания RAG.	
 		root.isRAGClicked = true//Нажата кнопка создания RAG БД
 		pyLMStudio.proverkaStudio()
-	}
-	Connections {
-		target: pyLMStudio
-		function onSigStudioStatus(blStatus){
-			if(root.isRAGClicked){//Если нажата кнопка СОздать RAG БД
-				root.isRAGClicked = false//Сбрасываем флаг
-				function fnStart() {//Функция запуска создания RAG базы данных.
-					if (!isRAG) {//Если создание RAG не запущена, то...
-						txdZona.strCopy = ""//Очищаем переменную Прогресса созадания RAG.
-						txdZona.text = ""//Очищаем зону отображения прогресса RAG.
-						//Запускаем через бэкенд pyRAG.py	
-						pyRAG.start(DCSettings.rag_put_doc, DCSettings.rag_put_db,
-									DCSettings.rag_gpu, DCSettings.rag_model,
-									DCSettings.rag_batch_gpu, DCSettings.rag_batch_cpu)
-					}
-				}
-				if(blStatus){//Если LM Studio запущена, то...
-					if(pyLMStudio.polModel()){//Если модель не пустая строка, значит она загружена.
-						vprVopros.ntVopros = 1//1 - выгрузить модель?
-						vprVopros.visible = true
-					} else fnStart()//Запускаем работу созадния RAG БД
-				} else fnStart()//Если студия не запущена, то запускаем создание RAG БД.
-			}
-		}
-	}
+	}	
 	function fnStopRAG() {//Функция Остановки создания RAG.
 		root.isRAG = false//возвращаем флаг, что создание RAG окончилась.	
 		tmrLogo.running = false//Отключаем анимацию логотипа и активируем политику кнопок.
@@ -399,11 +406,13 @@ Item {
 			tapKnopkaZakrit: root.tapZagolovokLevi; tapKnopkaOk: root.tapZagolovokPravi
 			visible: false
 			property int ntVopros: 0//0 - Остановить создание RAG, 1 - выгрузить Модель.
+			property bool isModelOstanovit: false//true - останавливаем модель.
 			function fnVoprosOk(flag){//Функция открытия вопроса по флагу
 				if(flag === 0){//Остановить создание RAG БД?
 					pyRAG.stop()//Останавливаем принудительно транскрибацию.
 					fnStopRAG()//Останавливаем создание RAG
 				} else if (flag === 1){//Выгрызить модель?
+					isModelOstanovit = true//Запускаем остановку модели.
 					pyLMStudio.vigruzitModel()//Выгружаем модель
 				} 
 			}
@@ -459,7 +468,7 @@ Item {
             }
 			TapHandler {//Нажимаем на всю область виджета.
 				onTapped: {
-					fnCloseVoprosIfOpen()
+					if(!knopkaRAG.pressedTmr550)fnCloseVoprosIfOpen()
 					fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
 				}
 			}
