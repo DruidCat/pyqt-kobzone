@@ -450,6 +450,16 @@ Item {
             tapWidth: tapHeight * root.tapZagolovokLevi
             onClicked: fnClickedNazad()//Функция закрытия страницы.
         }
+		DCKnopkaSidebar {
+        	id: knopkaSidebar
+            opened: false//По умолчанию закрыта боковая панель.
+            ntWidth: root.ntWidth; ntCoff: root.ntCoff
+            anchors.verticalCenter: tmZagolovok.verticalCenter; anchors.right: knopkaMenu.left
+            clrKnopki: root.clrTexta
+            tapHeight: root.ntWidth*root.ntCoff+root.ntCoff; tapWidth: tapHeight*root.tapZagolovokLevi
+			isInvers: true
+            //onClicked: fnClickedSidebar();//Функция нажатия кнопки SideBar.
+        }	
         DCKnopkaMenu {
             id: knopkaMenu
             ntWidth: root.ntWidth

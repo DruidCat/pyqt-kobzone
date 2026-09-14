@@ -13,6 +13,7 @@ Item{
     property bool enabled: true//true - активирована, false - деактивированна кнопка.
     property bool pressed: tphSidebar.pressed//true - нажали false - не нажали
     property bool opened: false//true - боковая панель открыта, false - боковая панель закрыта
+	property bool isInvers: false //true - отзеркалить, false - как обычно
     //property bool pressed: maKnopkaNazad.pressed//true - нажали false - не нажали
     property real tapHeight: ntWidth*ntCoff//Высота зоны нажатия пальцем или мышкой
     property real tapWidth: ntWidth*ntCoff//Ширина зоны нажатия пальцем или мышкой
@@ -47,7 +48,9 @@ Item{
         height: root.ntWidth*root.ntCoff
         width: height
         anchors.centerIn: root
-
+		//scale: -1 переворачивает объект по горизонтали вокруг его центра
+		//(transformOrigin по умолчанию Item.Center)
+        scale: root.isInvers ? -1 : 1
         color: {
             if(root.enabled)//Если активирована кнопка, то...
                 tphSidebar.pressed ? Qt.darker(clrFona, root.maxDarker) : clrFona
