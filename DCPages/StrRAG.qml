@@ -502,7 +502,16 @@ Item {
                 }
 				DCKnopkaOriginal {
 					id: knopkaPutDoc
-					text: DCSettings.rag_put_doc
+					text: {
+                        let ltText = ""
+						if (DCSettings.rag_put_doc === "") ltText += qsTr("не задан")
+						else {//Отображаем путь в зависимости от операционной системы
+							if (Qt.platform.os === "windows")
+								ltText += DCSettings.rag_put_doc.replace(/\//g, "\\");
+							else ltText += DCSettings.rag_put_doc
+						}
+						return ltText;
+                    }
 					ntHeight: root.ntWidth; ntCoff: root.ntCoff
 					clrKnopki: root.clrTexta; clrTexta: root.clrFona
 					anchors.left: parent.left; anchors.right: parent.right
@@ -522,7 +531,16 @@ Item {
                 } 
 				DCKnopkaOriginal {
 					id: knopkaPutDB
-					text: DCSettings.rag_put_db
+					text: {
+                        let ltText = ""
+						if (DCSettings.rag_put_db === "") ltText += qsTr("не задан")
+						else {//Отображаем путь в зависимости от операционной системы
+							if (Qt.platform.os === "windows")
+								ltText += DCSettings.rag_put_db.replace(/\//g, "\\");
+							else ltText += DCSettings.rag_put_db
+						}
+						return ltText;
+                    }
 					ntHeight: root.ntWidth; ntCoff: root.ntCoff
 					clrKnopki: root.clrTexta; clrTexta: root.clrFona
 					anchors.left: parent.left; anchors.right: parent.right

@@ -835,7 +835,10 @@ Item {
                     text: {
                         let ltText = qsTr("путь к LM Studio: ");//
 						if (root.putLMStudio === "") ltText += qsTr("не задан")
-						else ltText += root.putLMStudio
+						else {//Отображаем путь в зависимости от операционной системы
+							if (Qt.platform.os === "windows") ltText += root.putLMStudio.replace(/\//g, "\\");
+							else ltText += root.putLMStudio
+						}
 						return ltText;
                     }
                     ntHeight: root.ntWidth; ntCoff: root.ntCoff

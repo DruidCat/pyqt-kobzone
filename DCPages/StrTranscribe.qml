@@ -534,7 +534,16 @@ Item {
                 }
 				DCKnopkaOriginal {
 					id: knopkaAudioPut
-					text: DCSettings.transcribe_put_audio
+					text: {
+                        let ltText = ""
+						if (DCSettings.transcribe_put_audio === "") ltText += qsTr("не задан")
+						else {//Отображаем путь в зависимости от операционной системы
+							if (Qt.platform.os === "windows")
+								ltText += DCSettings.transcribe_put_audio.replace(/\//g, "\\");
+							else ltText += DCSettings.transcribe_put_audio
+						}
+						return ltText;
+                    }
 					ntHeight: root.ntWidth; ntCoff: root.ntCoff
 					clrKnopki: root.clrTexta; clrTexta: root.clrFona
 					anchors.left: parent.left; anchors.right: parent.right
@@ -554,7 +563,16 @@ Item {
                 } 
 				DCKnopkaOriginal {
 					id: knopkaTextPut
-					text: DCSettings.transcribe_put_text
+					text: {
+                        let ltText = ""
+						if (DCSettings.transcribe_put_text === "") ltText += qsTr("не задан")
+						else {//Отображаем путь в зависимости от операционной системы
+							if (Qt.platform.os === "windows")
+								ltText += DCSettings.transcribe_put_text.replace(/\//g, "\\");
+							else ltText += DCSettings.transcribe_put_text
+						}
+						return ltText;
+                    }
 					ntHeight: root.ntWidth; ntCoff: root.ntCoff
 					clrKnopki: root.clrTexta; clrTexta: root.clrFona
 					anchors.left: parent.left; anchors.right: parent.right
