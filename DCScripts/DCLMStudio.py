@@ -313,6 +313,7 @@ class DCLMStudio(QObject):
         # если модель "(отсутствует)" или пустая
         if not model_name or model_name == self.NO_MODEL_NAME:
             self._current_model = ""#чтоб я мог понять по polModel что модель не задана.
+            print (f"316 МОДЕЛЬ {self._current_model}")
             error_msg = "Модель не выбрана. Выберите модель из списка."
             self._emit_error(13, error_msg)  # КОД ОШИБКИ 13
             return False
@@ -327,6 +328,7 @@ class DCLMStudio(QObject):
 
         if success:
             self._current_model = model_name #ИМЕННО тут присваеваем имя модели, когда она загрузилась.
+            print (f"331 МОДЕЛЬ {self._current_model}")
             self.sigParametriIzmeneni.emit(self._current_model, max_context, temperature)
         else:
             # Ошибка при начале загрузки
@@ -942,6 +944,7 @@ class DCLMStudio(QObject):
             if unload_result.returncode == 0:
                 self.sigLog.emit("✓ Предыдущая модель выгружена")
                 self._current_model = "" #Модель выгружена, делаем её пустой.
+                print (f"947 МОДЕЛЬ {self._current_model}")
                 return True
             else:
                 # Если ошибка - возможно модель не была загружена, это нормально
@@ -952,6 +955,7 @@ class DCLMStudio(QObject):
                     self.sigLog.emit(f"⚠ Предупреждение при выгрузке: {error_msg[:100]}")
                 
                 self._current_model = ""#Модель выгружена, делаем её пустой.
+                print (f"958 МОДЕЛЬ {self._current_model}")
                 return True  # Продолжаем в любом случае
         
         except Exception as e:
@@ -1043,6 +1047,8 @@ class DCLMStudio(QObject):
                 self.sigLog.emit(f"✓ Модель загружена: {model_name}")
                 self.sigLog.emit(f"✓ Контекст: {max_content}")
                 self.sigLog.emit(f"✓ GPU: {gpu_description}")
+                self._current_model = model_name #присваеваем имя модели, когда она загрузилась.
+                print (f"1051 МОДЕЛЬ {self._current_model}")
                 self.sigModelZagrujena.emit(model_name, max_content)
             
             else:
@@ -1127,6 +1133,8 @@ class DCLMStudio(QObject):
                 self.sigLog.emit(f"✓ Модель загружена: {model_name}")
                 self.sigLog.emit(f"✓ Контекст: {max_content}")
                 self.sigLog.emit(f"✓ GPU: {fb_desc} (fallback)")
+                self._current_model = model_name #присваеваем имя модели, когда она загрузилась.
+                print (f"1137 МОДЕЛЬ {self._current_model}")
                 self.sigModelZagrujena.emit(model_name, max_content)
                 return True
             else:
