@@ -56,6 +56,7 @@ class DCAnalyzer(QObject):
         self.current_result = ""
         self.current_filename = ""
         self.current_prompt = "" #хранение промта
+        self.final_prompt = "" #финальный промпт, который задаётся в _perform_final_analysis
         self.model_name = "qwen3-coder-30b-a3b-instruct" #Имя модели ИИ добавляем
         self.max_context = 8000 #значение из LM Studio в настройках для языковой модели.
         self.temperature = 0.5 #Температура ИИ модели.
@@ -148,8 +149,12 @@ class DCAnalyzer(QObject):
         self.sigAnalizFinish.emit() #Излучаем сигнал о том, что анализ завершён
 
     @pyqtSlot(str)
-    def ustPromt(self, prompt): #Сохраняет текущий промт (вызывается из QML)
+    def ustPrompt(self, prompt): #Сохраняет текущий промпт (вызывается из QML)
         self.current_prompt = prompt
+
+    @pyqtSlot(str)
+    def ustFinalPrompt(self, _final_prompt):#Сохраняем финальный промт
+        self.final_prompt = _final_prompt
 
     @pyqtSlot(list)
     def ustMultipleDocuments(self, file_paths): #Загружает несколько текстовых файлов и объединяет их содержим
@@ -411,9 +416,11 @@ class DCAnalyzer(QObject):
             summarized_results.append(f"Часть {i+1}: {summarized}")
         
         combined_results = "\n\n".join(summarized_results)
-        
+
+        if not self.final_prompt.strip(): #Если промпт задан пользователем пустой, то...
+            self.final_prompt = f"""На основе всех этих частичных анализов составь единый, связный итоговый анализ документа. Объедини ключевые моменты, устрани дублирование, выдели главное. Ответ должен быть структурированным и понятным."""
         # Формируем промт для финального анализа
-        final_prompt = f"""Ты получил анализ документа, разбитого на {total_chunks} частей.
+        _final_prompt = f"""Ты получил анализ документа, разбитого на {total_chunks} частей.
 
     Исходный запрос был: "{original_prompt}"
 
@@ -421,11 +428,10 @@ class DCAnalyzer(QObject):
 
     {combined_results}
 
-    Задача: На основе всех этих частичных анализов составь единый, связный итоговый анализ документа. 
-    Объедини ключевые моменты, устрани дублирование, выдели главное. Ответ должен быть структурированным и понятным."""
+    Задача: {self.final_prompt}"""
 
         max_response_tokens = int(self.max_context * 0.7)
-        estimated_prompt_tokens = len(final_prompt) // 2.5
+        estimated_prompt_tokens = len(_final_prompt) // 2.5
         
         if estimated_prompt_tokens > (self.max_context * 0.3):
             print(f"⚠ Промт слишком длинный ({estimated_prompt_tokens} токенов), сокращаем резюме...")
@@ -435,7 +441,7 @@ class DCAnalyzer(QObject):
                 summarized_results.append(f"Часть {i+1}: {summarized}")
             
             combined_results = "\n\n".join(summarized_results)
-            final_prompt = f"""Ты получил анализ документа, разбитого на {total_chunks} частей.
+            _final_prompt = f"""Ты получил анализ документа, разбитого на {total_chunks} частей.
 
     Исходный запрос был: "{original_prompt}"
 
@@ -443,13 +449,13 @@ class DCAnalyzer(QObject):
 
     {combined_results}
 
-    Задача: На основе всех этих частичных анализов составь единый, связный итоговый анализ документа."""
+    Задача: {self.final_prompt}"""
         
         try:
             headers = {"Content-Type": "application/json"}
             data = {
                 "messages": [
-                    {"role": "user", "content": final_prompt}
+                    {"role": "user", "content": _final_prompt}
                 ],
                 "temperature": self.temperature,
                 "max_tokens": max_response_tokens,
@@ -459,7 +465,7 @@ class DCAnalyzer(QObject):
                 data["model"] = self.model_name
 
             print(f"✓ Финальный анализ:")
-            print(f"  - Промт: ~{int(len(final_prompt) / 2.5)} токенов")
+            print(f"  - Промт: ~{int(len(_final_prompt) / 2.5)} токенов")
             print(f"  - Максимум ответа: {max_response_tokens} токенов")
             print(f"  - Контекст: {self.max_context} токенов")
 

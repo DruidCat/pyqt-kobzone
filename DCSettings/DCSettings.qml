@@ -23,6 +23,7 @@ QtObject {
 	property int analizer_max_context: 8000//Количество токенов
 	property real analizer_temperatura: 0.5//Температура ИИ модели, чем выше, тем точнее ответ. 0-1
 	property int analizer_perekritie: 20//Перекрытие чтения соседнего чанка в процентах: 20 это 20%
+	property string analizer_prompt_final: "На основе всех этих частичных анализов составь единый, связный итоговый анализ документа. Объедини ключевые моменты, устрани дублирование, выдели главное. Ответ должен быть структурированным и понятным."
 	//Транскрибация
     property string transcribe_put_audio: ""
     property string transcribe_put_text: ""
@@ -52,6 +53,7 @@ QtObject {
 		property alias analizer_max_context: root.analizer_max_context
 		property alias analizer_temperatura: root.analizer_temperatura
 		property alias analizer_perekritie: root.analizer_perekritie
+		property alias analizer_prompt_final: root.analizer_prompt_final
 		property alias analizer_lms_put: root.analizer_lms_put
 		property alias analizer_cli_put: root.analizer_cli_put
 		property alias analizer_gpu_offload: root.analizer_gpu_offload

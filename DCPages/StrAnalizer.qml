@@ -186,7 +186,7 @@ Item {
 				if (ltModel){//Если это не пустая строка, то...
 					if (root.isModelZagruzit) {//Если модель загружена по просьбе StrAnalizer, то...
 						root.isModelZagruzit = false//Сбрасываю флаг
-						pyAnalyzer.startAnaliza(txaContent.text, txfPromt.text)//Начинаю Анализ документов.
+						pyAnalyzer.startAnaliza(txaContent.text, txfPrompt.text)//Начинаю Анализ документов.
 					}
 				} else {//Если пустая строка, то...
 					ldrProgress.active = true//Запускаем полосу прогресса загрузки модели
@@ -200,7 +200,7 @@ Item {
 			ldrProgress.active = false//Отключаем прогрессбар, после загрузки Модели.
 			if (root.isModelZagruzit) {//Если модель загружена по просьбе StrAnalizer, то...
 				root.isModelZagruzit = false//Сбрасываю флаг
-				pyAnalyzer.startAnaliza(txaContent.text, txfPromt.text)//Начинаю Анализ документов.
+				pyAnalyzer.startAnaliza(txaContent.text, txfPrompt.text)//Начинаю Анализ документов.
 			}
 		}
 		function onSigModelProgress(ntProgress) {
@@ -362,7 +362,7 @@ Item {
         onTriggered: {
 			ldrProgress.active = false
 			knopkaZagruzit.enabled = true
-			root.toolbar(`Анализ завершён: ${txfPromt.text}`)
+			root.toolbar(`Анализ завершён: ${txfPrompt.text}`)
         }
 	}	
     
@@ -412,7 +412,7 @@ Item {
 		pyAnalyzer.ustMultipleDocuments(filePaths)//Вызываем метод Python для загрузки файлов
 	}
 	function fnClickedOchistit() {//Функция очистки промта.
-		txfPromt.text = ""//Очищаем промт.
+		txfPrompt.text = ""//Очищаем промт.
 	}
     function fnClickedAnaliz() {//Функция запускающая нейро анализ документов
 		root.isServerZapustit = true
@@ -650,7 +650,7 @@ Item {
                     width: parent.width - parent.leftPadding - parent.rightPadding
                     spacing: root.ntCoff
 					TextField {
-						id: txfPromt
+						id: txfPrompt
 						width: parent.width - parent.leftPadding
 					   						- parent.rightPadding
 											- knopkaOchistit.width//минус ширина кнопки
@@ -671,7 +671,7 @@ Item {
 							}
 						}
 						onTextChanged: {
-							pyAnalyzer.ustPromt(text)//Сохраняем промт при изменении
+							pyAnalyzer.ustPrompt(text)//Сохраняем промпт при изменении
 						}
 						TapHandler {//Нажимаем на всю область
 							onTapped: {
@@ -872,7 +872,7 @@ Item {
 					knopkaAnaliz.enabled = false
 					knopkaOchistit.enabled = false
 					txaContent.enabled = false
-					txfPromt.enabled = false
+					txfPrompt.enabled = false
 				}
 				else{
 					dcTimer.strVremyaAnaliza = dcTimer.strTimer
@@ -883,7 +883,7 @@ Item {
 					knopkaAnaliz.enabled = txaContent.text.trim() !== ""
 					knopkaOchistit.enabled = true
 					txaContent.enabled = true
-					txfPromt.enabled = true
+					txfPrompt.enabled = true
 				}
 			}
             onLoaded: {

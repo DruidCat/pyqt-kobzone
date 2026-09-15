@@ -19,6 +19,7 @@ Drawer {
 	property int maxSidebarWidth: root.parentWidth * 0.8//Максимум ширины боковой панели
 	property int sidebarWidth: root.isMobile//Если мобила,ширина на весь экран,если нет,то данные из Реест
 							   ? root.width : Math.max(minSidebarWidth, DCSettings.analizer_sidebar_shirina)
+	property string strPromptFinal: DCSettings.analizer_prompt_final
 	//Настройки
 	edge: Qt.RightEdge
 	modal: false
@@ -30,10 +31,16 @@ Drawer {
 	y: root.ntWidth * root.ntCoff + 3 * root.ntCoff//координату по Y брал из расчёта Stranica.qml
 	interactive: true//false -  панель не реагирует на свайпы.
 	//Функции
+	Component.onCompleted: {
+		txaPromptFinal.text = DCSettings.analizer_prompt_final
+	}
 	onPositionChanged: {//Если позиция изменяется у боковой панели, то...
 		
 	}
 	onOpened: {//Если боковая панель открылась, то...
+	}
+	onStrPromptFinalChanged: {
+		pyAnalyzer.ustFinalPrompt(root.strPromptFinal)
 	}
 	Rectangle {//Прямоугольник узкой полоски интерфейса справа
 		id: rctBorder
@@ -89,6 +96,87 @@ Drawer {
 		height: root.height-rctZagolovok.height
 		color: root.clrFona
 		clip: true//Обязательно обрезать всё, что не помещается в этот прямоугольник.
+        opacity: 0.9//ГЛАВНАЯ ПРОЗРАЧНОСТЬ!!!
+
+		TapHandler {//Нажимаем на всю область
+			onTapped: {
+			}
+		}
+		Behavior on opacity {
+			NumberAnimation {
+				duration: 300
+				easing.type: Easing.InOutQuad
+			}
+		}
+		Column {
+			id: clmnContent
+			width: rctSidebar.width
+			spacing: root.ntCoff/2//Расстояние между элементами по вертикали.
+			topPadding: root.ntCoff * 2
+			bottomPadding: root.ntCoff * 2
+			leftPadding: root.ntCoff * 2
+			rightPadding: root.ntCoff * 2
+			Text {//Содержимое файла
+				id: txtPromptFinal
+				text: "Финальный промт:"
+				font.pixelSize: root.ntWidth/2 * root.ntCoff
+				color: root.clrTexta
+				font.bold: true//Жирный текст.
+				width: parent.width - parent.leftPadding - parent.rightPadding
+			}
+			Rectangle {
+				id: rctContent
+				width: parent.width - parent.leftPadding - parent.rightPadding
+				height: rctSidebar.height - txtPromptFinal.height - root.ntCoff * 4
+				color: "transparent"
+				border.color: root.clrTexta
+				border.width: 1
+				radius: root.ntCoff / 2
+				clip: true
+				
+				Flickable {
+					id: flcContent
+					anchors.fill: parent
+					anchors.margins: 5
+					anchors.rightMargin: scbContent.width + 5
+					contentWidth: width
+					contentHeight: txaPromptFinal.contentHeight
+					clip: true
+					interactive: true
+					boundsBehavior: Flickable.StopAtBounds
+								
+					TextArea.flickable: TextArea {
+						id: txaPromptFinal
+						objectName: "txaPromptFinal"
+						placeholderText: "Добавьте финальный промт..."
+						wrapMode: TextArea.Wrap
+						selectByMouse: true
+						color: root.clrTexta
+						background: null
+						onTextChanged: {
+							root.strPromptFinal = text
+							DCSettings.analizer_prompt_final = text
+						}
+						TapHandler {//Нажимаем на всю область
+							onTapped: {
+							}
+						}
+					}
+				}
+				DCScrollbar {
+					id: scbContent
+					flick: flcContent
+					anchors.right: rctContent.right
+					anchors.top: rctContent.top
+					anchors.bottom: rctContent.bottom
+					anchors.margins: 5
+					clrPolzunokOff: Qt.lighter(root.clrMenuFon, 1.3)
+					clrPolzunokOn: root.clrTexta
+					width: root.ntWidth * root.ntCoff
+					radius: 1
+				}
+			}
+		}
 	}
 	Rectangle {//Прямоугольник ручки,за которую можно тянуть размер боковой панели,для изменения её размер
 		id: rctRuchka
