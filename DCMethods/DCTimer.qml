@@ -28,6 +28,9 @@ Item {
             root.__elapsedSeconds++
             root.strTimer = root.__formatTime(root.__elapsedSeconds)
         }
+		onRunningChanged: {
+			if(!running) reset()
+		}
     }
     function reset() {//Дополнительная удобная функция для сброса таймера в ноль
         root.__elapsedSeconds = 0
