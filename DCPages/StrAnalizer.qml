@@ -77,6 +77,7 @@ Item {
 			}
 		}
 		function onSigChunkResult(ntCurrent, ntTotal, strResult) {//обновляем UI после каждого чанка
+			let ltCleanResult = strResult.trim()//очищаем результат от лишних пробелов/табуляций
 			let ltMarkdown = dcMarkdown.toHtml(strResult)
 			if (ntCurrent === 1) {// Первый чанк — заменяем содержимое
 				resultArea.text = `<h3>Часть ${ntCurrent}/${ntTotal}</h3>\n${ltMarkdown}\n`
