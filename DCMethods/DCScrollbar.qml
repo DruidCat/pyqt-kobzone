@@ -3,7 +3,7 @@ import QtQuick.Controls
 //DCScrollbar.qml
 Item {//Самодельный вертикальный скроллбар
     id: root
-    property var flick
+	required property var flick//Обязательное свойство
     //Свойства
     property color clrTrack: "#40000000"//Полупрозрачный трек
     property color clrPolzunokOff: "Grey"//Цвет ползунка, когда он не активен.
@@ -41,7 +41,7 @@ Item {//Самодельный вертикальный скроллбар
         height: {//Высота ползунка пропорциональна видимой части
             if(flick){//Если объект существует, то...
                 const kontentVisota = flick.contentHeight//Высота всего текста
-                const flickVisota = tmZona.height//Высота боласти пролистывания flickable
+                const flickVisota = flick.height//Высота боласти пролистывания flickable
                 if (kontentVisota <= 0)//Если высота всего текста меньше или равно нулю, то...
                     return root.minVisotaPolzunka//высота полунка минимально заданная.
                 const ratio = Math.min(1, flickVisota / kontentVisota)
