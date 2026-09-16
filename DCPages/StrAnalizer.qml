@@ -62,7 +62,7 @@ Item {
 		target: pyAnalyzer
 		function onSigResultReady(result) {//Сигнал готовности результата анализа.
 			resultArea.text = dcMarkdown.toHtml(result)//Конвертируем Markdown в HTML
-    		flcResultArea.contentY = 0//Автоскролл вверх, чтоб видеть результат с начала.
+			resultArea.scrollTop()//Очень важно, чтоб изображение не исчезло.
 			knopkaSohranit.enabled = (result !== "" && 
 									result !== "Анализируется..." &&
 									!result.startsWith("Ошибка:") &&
@@ -78,20 +78,20 @@ Item {
 		}
 		function onSigChunkResult(ntCurrent, ntTotal, strResult) {//обновляем UI после каждого чанка
 			let ltCleanResult = strResult.trim()//очищаем результат от лишних пробелов/табуляций
-			let ltMarkdown = dcMarkdown.toHtml(strResult)
+			let ltMarkdown = dcMarkdown.toHtml(ltCleanResult)
 			if (ntCurrent === 1) {// Первый чанк — заменяем содержимое
 				resultArea.text = `<h3>Часть ${ntCurrent}/${ntTotal}</h3>\n${ltMarkdown}\n`
 			} else {//Последующие чанки — добавляем к существующему
 				resultArea.text += `\n<hr>\n<h3>Часть ${ntCurrent}/${ntTotal}</h3>\n${ltMarkdown}\n`
 			}
-			flcResultArea.contentY = flcResultArea.contentHeight - flcResultArea.height//Автоскролл вниз
+			//resultArea.scrollBottom()//Листаем в конец анализа
 			root.log(`✓ Получен результат чанка ${ntCurrent}/${ntTotal}`)
 		}
 		function onSigAnalizFinalStart() {//Сигнал Начала финального анализа
 			root.log("✓ Начался финальный анализ")
 			//Добавляем разделитель перед финальным анализом
 			resultArea.text += "\n<hr style='border: 2px solid #2196F3;'>\n<h2>🔍 ФИНАЛЬНЫЙ АНАЛИЗ</h2>\n<p><i>Обработка...</i></p>\n"
-			flcResultArea.contentY = flcResultArea.contentHeight - flcResultArea.height//Автоскролл вниз
+			//resultArea.scrollBottom()//Листаем в конец анализа
 			if (ldrProgress.item) {
 				ldrProgress.item.text = "Финальный анализ..."
 			}
@@ -589,56 +589,23 @@ Item {
 					font.bold: true//Жирный текст.
                     width: parent.width - parent.leftPadding - parent.rightPadding
                 }
-                Rectangle {
-                    id: rctContent
-                    width: parent.width - parent.leftPadding - parent.rightPadding
-                    height: 180
-                    color: "transparent"
-                    border.color: root.clrTexta
-                    border.width: 1
-                    radius: root.ntCoff / 2
-                    clip: true
-                    
-                    Flickable {
-                        id: flcContent
-                        anchors.fill: parent
-                        anchors.margins: 5
-                        anchors.rightMargin: scbContent.width + 5
-                        contentWidth: width
-                        contentHeight: txaContent.contentHeight
-                        clip: true
-                        interactive: true
-                        boundsBehavior: Flickable.StopAtBounds
-            			            
-                        TextArea.flickable: TextArea {
-                            id: txaContent
-                            objectName: "txaContent"
-                            placeholderText: "Загрузите файл или вставьте текст..."
-                            wrapMode: TextArea.Wrap
-                            selectByMouse: true
-                            color: root.clrTexta
-                            background: null
-                            onTextChanged: pyAnalyzer.ustContentText(text)
-							TapHandler {//Нажимаем на всю область
-								onTapped: {
-									fnCloseVoprosIfOpen()
-									fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
-								}
-							}
-                        }
-                    }
-                    DCScrollbar {
-                        id: scbContent
-                        flick: flcContent
-                        anchors.right: rctContent.right
-                        anchors.top: rctContent.top
-                        anchors.bottom: rctContent.bottom
-                        anchors.margins: 5
-                        clrPolzunokOff: Qt.lighter(root.clrMenuFon, 1.3)
-                        clrPolzunokOn: root.clrTexta
-                        width: root.ntWidth * root.ntCoff
-                        radius: 1
-                    }
+				DCTextEdit {
+					id: txaContent
+					width: parent.width - parent.leftPadding - parent.rightPadding
+					height: 180
+					ntWidth: root.ntWidth/2//разделить на 2, чтоб уменьшить размер шрифта и скролбар
+					ntCoff: root.ntCoff
+					readOnly: false  // Разрешаем редактирование
+					clrFona: "transparent"; clrTexta: root.clrTexta
+					clrPolzunka: Qt.lighter(root.clrMenuFon, 1.3); clrBorder: root.clrTexta
+					radius: root.ntCoff / 2
+					isBorder: true//Показываем бордюр области текста.
+					placeholderText: "Загрузите файл или вставьте текст..."//Подсказка для пользователя
+					onTextChanged: pyAnalyzer.ustContentText(text)
+					onPressed: {
+						fnCloseVoprosIfOpen()
+						fnCloseMenuIfOpen()
+					}
                 }
                 Text {//Промт для модели
                     text: "Промт для модели:"
@@ -724,55 +691,25 @@ Item {
 					font.bold: true//Жирный текст.
                     width: parent.width - parent.leftPadding - parent.rightPadding
                 }
-                Rectangle {
-                    id: rctResultArea
-                    width: parent.width - parent.leftPadding - parent.rightPadding
-                    height: 550
-                    color: "transparent"
-                    border.color: root.clrTexta
-                    border.width: 1
-                    radius: root.ntCoff / 2
-                    clip: true
-                    Flickable {
-                        id: flcResultArea
-                        anchors.fill: parent
-                        anchors.margins: 5
-                        anchors.rightMargin: scbResultArea.width + 5
-                        contentWidth: width
-                        contentHeight: resultArea.contentHeight
-                        clip: true
-                        interactive: true
-                        boundsBehavior: Flickable.StopAtBounds
-                        TextArea.flickable: TextArea {//TextArea.flickable на Text с HTML
-                            id: resultArea
-                            readOnly: true
-                            wrapMode: TextArea.Wrap
-                            selectByMouse: true
-                            placeholderText: "Результат анализа появится здесь..."
-                            color: root.clrTexta
-							background: null
-							textFormat: TextEdit.RichText//ВКЛЮЧАЕМ HTML 
-							TapHandler {//Нажимаем на всю область
-								onTapped: {
-									fnCloseVoprosIfOpen()
-									fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
-								}
-							}
-                        }
-                    }
-                    DCScrollbar {
-                        id: scbResultArea
-                        flick: flcResultArea
-                        anchors.right: rctResultArea.right
-                        anchors.top: rctResultArea.top
-                        anchors.bottom: rctResultArea.bottom
-                        anchors.margins: 5
-                        clrPolzunokOff: Qt.lighter(root.clrMenuFon, 1.3)
-                        clrPolzunokOn: root.clrTexta
-                        width: root.ntWidth * root.ntCoff
-                        radius: 1
-                    }
-                }
+				DCTextEdit {
+					id: resultArea
+					width: parent.width - parent.leftPadding - parent.rightPadding
+					height: 550
+					ntWidth: root.ntWidth/2//Для уменьшения размера текста и ширины скролбара
+					ntCoff: root.ntCoff
+					readOnly: true//Только чтение
+					scrollAuto: false//Ручное управление скроллом
+					clrFona: "transparent"; clrTexta: root.clrTexta
+					clrPolzunka: Qt.lighter(root.clrMenuFon, 1.3); clrBorder: root.clrTexta
+					radius: root.ntCoff / 2
+					isBorder: true//Показываем бордюр области текста.
+					textEdit.textFormat: TextEdit.RichText//HTML поддержка
+					placeholderText: "Результат анализа появится здесь..."//Подсказка для пользователя
+					onPressed: {
+						fnCloseVoprosIfOpen()
+						fnCloseMenuIfOpen()
+					}
+				}
                 DCKnopkaOriginal {//Кнопка сохранения результата
                     id: knopkaSohranit
                     text: "💾 сохранить результат"
