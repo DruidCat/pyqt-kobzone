@@ -61,8 +61,8 @@ Item {
 	Connections {//CONNECTIONS для прогресса
 		target: pyAnalyzer
 		function onSigResultReady(result) {//Сигнал готовности результата анализа.
-			resultArea.text = dcMarkdown.toHtml(result)//Конвертируем Markdown в HTML
-			resultArea.scrollTop()//Очень важно, чтоб изображение не исчезло.
+			txdOtvet.text = dcMarkdown.toHtml(result)//Конвертируем Markdown в HTML
+			txdOtvet.scrollTop()//Очень важно, чтоб изображение не исчезло.
 			knopkaSohranit.enabled = (result !== "" && 
 									result !== "Анализируется..." &&
 									!result.startsWith("Ошибка:") &&
@@ -80,18 +80,18 @@ Item {
 			let ltCleanResult = strResult.trim()//очищаем результат от лишних пробелов/табуляций
 			let ltMarkdown = dcMarkdown.toHtml(ltCleanResult)
 			if (ntCurrent === 1) {// Первый чанк — заменяем содержимое
-				resultArea.text = `<h3>Часть ${ntCurrent}/${ntTotal}</h3>\n${ltMarkdown}\n`
+				txdOtvet.text = `<h3>Часть ${ntCurrent}/${ntTotal}</h3>\n${ltMarkdown}\n`
 			} else {//Последующие чанки — добавляем к существующему
-				resultArea.text += `\n<hr>\n<h3>Часть ${ntCurrent}/${ntTotal}</h3>\n${ltMarkdown}\n`
+				txdOtvet.text += `\n<hr>\n<h3>Часть ${ntCurrent}/${ntTotal}</h3>\n${ltMarkdown}\n`
 			}
-			//resultArea.scrollBottom()//Листаем в конец анализа
+			//txdOtvet.scrollBottom()//Листаем в конец анализа
 			root.log(`✓ Получен результат чанка ${ntCurrent}/${ntTotal}`)
 		}
 		function onSigAnalizFinalStart() {//Сигнал Начала финального анализа
 			root.log("✓ Начался финальный анализ")
 			//Добавляем разделитель перед финальным анализом
-			resultArea.text += "\n<hr style='border: 2px solid #2196F3;'>\n<h2>🔍 ФИНАЛЬНЫЙ АНАЛИЗ</h2>\n<p><i>Обработка...</i></p>\n"
-			//resultArea.scrollBottom()//Листаем в конец анализа
+			txdOtvet.text += "\n<hr style='border: 2px solid #2196F3;'>\n<h2>🔍 ФИНАЛЬНЫЙ АНАЛИЗ</h2>\n<p><i>Обработка...</i></p>\n"
+			//txdOtvet.scrollBottom()//Листаем в конец анализа
 			if (ldrProgress.item) {
 				ldrProgress.item.text = "Финальный анализ..."
 			}
@@ -127,7 +127,7 @@ Item {
 			root.log("✓ Анализ начался")
 			root.rlProgress = 0
 			tmrLogo.running = true//Запускаем анимацию логотипа и включаем политики кнопок.
-        	resultArea.text = ""//ОЧИЩАЕМ resultArea перед началом
+        	txdOtvet.text = ""//ОЧИЩАЕМ txdOtvet перед началом
 			if (ldrProgress.item) {//Если существует объект, то...
 				ldrProgress.item.text = "Подготовка..."//Устанавливаем прогресс в режим ожидания
 				ldrProgress.item.progress = 0
@@ -137,7 +137,7 @@ Item {
 			tmrLogo.running = false//Останавливаем анимацию анализа и политики кнопок
 		}	
 		function onSigDocumentsLoaded(combinedText, filesCount) {//Сигнал загрузки документов (текст, кол-во)
-			txaContent.text = combinedText//Обновление txaContent при загрузке файло
+			txdContent.text = combinedText//Обновление txdContent при загрузке файло
 			root.toolbar(`Загружено файлов: ${filesCount}`)
 		}
 	}
@@ -187,7 +187,7 @@ Item {
 				if (ltModel){//Если это не пустая строка, то...
 					if (root.isModelZagruzit) {//Если модель загружена по просьбе StrAnalizer, то...
 						root.isModelZagruzit = false//Сбрасываю флаг
-						pyAnalyzer.startAnaliza(txaContent.text, txfPrompt.text)//Начинаю Анализ документов.
+						pyAnalyzer.startAnaliza(txdContent.text, txfPrompt.text)//Начинаю Анализ документов.
 					}
 				} else {//Если пустая строка, то...
 					ldrProgress.active = true//Запускаем полосу прогресса загрузки модели
@@ -201,7 +201,7 @@ Item {
 			ldrProgress.active = false//Отключаем прогрессбар, после загрузки Модели.
 			if (root.isModelZagruzit) {//Если модель загружена по просьбе StrAnalizer, то...
 				root.isModelZagruzit = false//Сбрасываю флаг
-				pyAnalyzer.startAnaliza(txaContent.text, txfPrompt.text)//Начинаю Анализ документов.
+				pyAnalyzer.startAnaliza(txdContent.text, txfPrompt.text)//Начинаю Анализ документов.
 			}
 		}
 		function onSigModelProgress(ntProgress) {
@@ -460,14 +460,10 @@ Item {
         id: tmZagolovok
         DCKnopkaNazad {
             id: knopkaNazad
-            ntWidth: root.ntWidth
-            ntCoff: root.ntCoff
-            anchors.verticalCenter: tmZagolovok.verticalCenter
-            anchors.left: tmZagolovok.left
-            clrKnopki: root.clrTexta
-            clrFona: root.clrFona
-            tapHeight: root.ntWidth * root.ntCoff + root.ntCoff
-            tapWidth: tapHeight * root.tapZagolovokLevi
+            ntWidth: root.ntWidth; ntCoff: root.ntCoff
+            anchors.verticalCenter: tmZagolovok.verticalCenter; anchors.left: tmZagolovok.left
+            clrKnopki: root.clrTexta; clrFona: root.clrFona
+            tapHeight: root.ntWidth * root.ntCoff + root.ntCoff; tapWidth: tapHeight * root.tapZagolovokLevi
             onClicked: fnClickedNazad()//Функция закрытия страницы.
         }
 		DCKnopkaSidebar {
@@ -476,21 +472,16 @@ Item {
             ntWidth: root.ntWidth; ntCoff: root.ntCoff
             anchors.verticalCenter: tmZagolovok.verticalCenter; anchors.right: knopkaMenu.left
             clrKnopki: root.clrTexta
-            tapHeight: root.ntWidth*root.ntCoff+root.ntCoff; tapWidth: tapHeight*root.tapZagolovokLevi
+            tapHeight: root.ntWidth*root.ntCoff+root.ntCoff; tapWidth: tapHeight*root.tapZagolovokPravi
 			isInvers: true
-            onClicked: fnClickedSidebar();//Функция нажатия кнопки SideBar.
+            onClicked: if (!fnCloseMenuIfOpen()) fnClickedSidebar();//Функция нажатия кнопки SideBar.
         }	
         DCKnopkaMenu {
             id: knopkaMenu
-            ntWidth: root.ntWidth
-            ntCoff: root.ntCoff
-            visible: true
-            anchors.verticalCenter: tmZagolovok.verticalCenter
-            anchors.right: tmZagolovok.right
-            clrKnopki: root.clrTexta
-            clrFona: root.clrFona
-            tapHeight: root.ntWidth * root.ntCoff + root.ntCoff
-            tapWidth: tapHeight * root.tapZagolovokPravi
+            ntWidth: root.ntWidth; ntCoff: root.ntCoff
+            anchors.verticalCenter: tmZagolovok.verticalCenter; anchors.right: tmZagolovok.right
+            clrKnopki: root.clrTexta; clrFona: root.clrFona
+            tapHeight: root.ntWidth * root.ntCoff + root.ntCoff; tapWidth: tapHeight * root.tapZagolovokPravi
             onClicked: {
                 if (!fnCloseMenuIfOpen()) {
                     fnClickedMenu()//Функция открытия настроек анализа документов.
@@ -598,7 +589,7 @@ Item {
                     width: parent.width - parent.leftPadding - parent.rightPadding
                 }
 				DCTextEdit {
-					id: txaContent
+					id: txdContent
 					width: parent.width - parent.leftPadding - parent.rightPadding
 					height: 180
 					ntWidth: root.ntWidth/2//разделить на 2, чтоб уменьшить размер шрифта и скролбар
@@ -642,7 +633,7 @@ Item {
 							radius: root.ntCoff / 2
 						}
 						Keys.onReturnPressed: {
-							if (txaContent.text.trim() !== "") {
+							if (txdContent.text.trim() !== "") {
 								fnClickedAnaliz()//Функция запускающая нейро анализ документов
 							}
 						}
@@ -675,7 +666,7 @@ Item {
 					}
                     ntHeight: root.ntWidth; ntCoff: root.ntCoff
                     clrKnopki: "#2196F3"; clrTexta: root.clrFona
-                    enabled: txaContent.text.trim() !== "" 
+                    enabled: txdContent.text.trim() !== "" 
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					onClicked: {
@@ -700,7 +691,7 @@ Item {
                     width: parent.width - parent.leftPadding - parent.rightPadding
                 }
 				DCTextEdit {
-					id: resultArea
+					id: txdOtvet
 					width: parent.width - parent.leftPadding - parent.rightPadding
 					height: 550
 					ntWidth: root.ntWidth/2//Для уменьшения размера текста и ширины скролбара
@@ -819,7 +810,7 @@ Item {
 					knopkaNastroiki.visible = false
 					knopkaAnaliz.enabled = false
 					knopkaOchistit.enabled = false
-					txaContent.enabled = false
+					txdContent.enabled = false
 					txfPrompt.enabled = false
 				}
 				else{
@@ -829,9 +820,9 @@ Item {
 					knopkaMenu.enabled = true
 					knopkaInfo.visible = true
 					knopkaNastroiki.visible = true
-					knopkaAnaliz.enabled = txaContent.text.trim() !== ""
+					knopkaAnaliz.enabled = txdContent.text.trim() !== ""
 					knopkaOchistit.enabled = true
-					txaContent.enabled = true
+					txdContent.enabled = true
 					txfPrompt.enabled = true
 				}
 			}
@@ -849,15 +840,10 @@ Item {
         }
         DCKnopkaInfo {
             id: knopkaInfo
-            ntWidth: root.ntWidth
-            ntCoff: root.ntCoff
-            anchors.verticalCenter: tmToolbar.verticalCenter
-            anchors.left: tmToolbar.left
-            clrKnopki: root.clrTexta
-            clrFona: root.clrFona
-            visible: true
-            tapHeight: root.ntWidth * root.ntCoff + root.ntCoff
-            tapWidth: tapHeight * root.tapToolbarLevi
+            ntWidth: root.ntWidth; ntCoff: root.ntCoff
+            anchors.verticalCenter: tmToolbar.verticalCenter; anchors.left: tmToolbar.left
+            clrKnopki: root.clrTexta; clrFona: root.clrFona
+            tapHeight: root.ntWidth * root.ntCoff + root.ntCoff; tapWidth: tapHeight * root.tapToolbarLevi
             onClicked: {
                 if (!fnCloseMenuIfOpen() && !fnCloseVoprosIfOpen() && !fnCloseSidebarIfOpen()) {
                     fnClickedInfo()//Функция открытия помощи.
@@ -866,15 +852,11 @@ Item {
         }
         DCKnopkaNastroiki {
             id: knopkaNastroiki
-            ntWidth: root.ntWidth
-            ntCoff: root.ntCoff
-            anchors.verticalCenter: tmToolbar.verticalCenter
-            anchors.right: tmToolbar.right
-            clrKnopki: root.clrTexta
-            clrFona: root.clrFona
+            ntWidth: root.ntWidth; ntCoff: root.ntCoff
+            anchors.verticalCenter: tmToolbar.verticalCenter; anchors.right: tmToolbar.right
+            clrKnopki: root.clrTexta; clrFona: root.clrFona
             blVert: true
-            tapHeight: root.ntWidth * root.ntCoff + root.ntCoff
-            tapWidth: tapHeight * root.tapToolbarPravi
+            tapHeight: root.ntWidth * root.ntCoff + root.ntCoff; tapWidth: tapHeight * root.tapToolbarPravi
             onClicked: {
                 if(!fnCloseSidebarIfOpen()) fnToggleMenu()
             }

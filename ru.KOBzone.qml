@@ -173,8 +173,7 @@ ApplicationWindow {
 				toolbarX: pgStrKOBzone.rctStrToolbar.x; toolbarY: pgStrKOBzone.rctStrToolbar.y
 				toolbarWidth: pgStrKOBzone.rctStrToolbar.width
 				toolbarHeight: pgStrKOBzone.rctStrToolbar.height
-				tapZagolovokLevi: pgStrKOBzone.zagolovokLevi; tapZagolovokPravi: pgStrKOBzone.zagolovokPravi
-				tapToolbarLevi: pgStrKOBzone.toolbarLevi; tapToolbarPravi: pgStrKOBzone.toolbarPravi
+				tapZagolovokLevi: 1.3; tapZagolovokPravi: 1.3; tapToolbarLevi: 1.3; tapToolbarPravi: 1.3
 				logoRazmer: root.logoRazmer; logoImya: root.logoImya
 				onClickedAnalizator: {
 					stvStr.push(pgStrAnalizer)
@@ -228,8 +227,7 @@ ApplicationWindow {
 				toolbarX: pgStrSetKOBzone.rctStrToolbar.x; toolbarY: pgStrSetKOBzone.rctStrToolbar.y
 				toolbarWidth: pgStrSetKOBzone.rctStrToolbar.width
 				toolbarHeight: pgStrSetKOBzone.rctStrToolbar.height
-				tapZagolovokLevi: pgStrSetKOBzone.zagolovokLevi; tapZagolovokPravi: pgStrSetKOBzone.zagolovokPravi
-				tapToolbarLevi: pgStrSetKOBzone.toolbarLevi; tapToolbarPravi: pgStrSetKOBzone.toolbarPravi
+				tapZagolovokLevi: 1.3; tapZagolovokPravi: 1.3; tapToolbarLevi: 1.3; tapToolbarPravi: 1.3
 				logoRazmer: root.logoRazmer; logoImya: root.logoImya
 				onClickedNazad: {
 					stvStr.pop()//Назад страницу
@@ -271,7 +269,7 @@ ApplicationWindow {
 			ntWidth: root.ntWidth; ntCoff: root.ntCoff
 			clrFona: root.clrFona; clrTexta: root.clrKnopok; clrRabOblasti: root.clrStranic
 			textZagolovok: "НЕЙРО АНАЛИЗ ДОКУМЕНТОВ"
-			zagolovokLevi: 1.3; zagolovokPravi: 1.3; toolbarLevi: 1.3; toolbarPravi: 1.3
+			zagolovokLevi: 2.6; zagolovokPravi: 2.6; toolbarLevi: 1.3; toolbarPravi: 1.3
 			onVisibleChanged: if (visible) Qt.callLater(function() { tmAnalizer.forceActiveFocus() })
 			StrAnalizer {
 				id: tmAnalizer
@@ -287,8 +285,7 @@ ApplicationWindow {
 				toolbarX: pgStrAnalizer.rctStrToolbar.x; toolbarY: pgStrAnalizer.rctStrToolbar.y
 				toolbarWidth: pgStrAnalizer.rctStrToolbar.width
 				toolbarHeight: pgStrAnalizer.rctStrToolbar.height
-                tapZagolovokLevi: pgStrAnalizer.zagolovokLevi; tapZagolovokPravi: pgStrAnalizer.zagolovokPravi
-                tapToolbarLevi: pgStrAnalizer.toolbarLevi; tapToolbarPravi: pgStrAnalizer.toolbarPravi
+                tapZagolovokLevi: 1.3; tapZagolovokPravi: 1.3; tapToolbarLevi: 1.3; tapToolbarPravi: 1.3
 				logoRazmer: root.logoRazmer; logoImya: root.logoImya
 				onClickedNazad: {
 					stvStr.pop()
@@ -335,8 +332,7 @@ ApplicationWindow {
 				toolbarX: pgStrSetAnalizer.rctStrToolbar.x; toolbarY: pgStrSetAnalizer.rctStrToolbar.y
 				toolbarWidth: pgStrSetAnalizer.rctStrToolbar.width
 				toolbarHeight: pgStrSetAnalizer.rctStrToolbar.height
-				tapZagolovokLevi: pgStrSetAnalizer.zagolovokLevi; tapZagolovokPravi: pgStrSetAnalizer.zagolovokPravi
-				tapToolbarLevi: pgStrSetAnalizer.toolbarLevi; tapToolbarPravi: pgStrSetAnalizer.toolbarPravi
+				tapZagolovokLevi: 1.3; tapZagolovokPravi: 1.3; tapToolbarLevi: 1.3; tapToolbarPravi: 1.3
 				logoRazmer: root.logoRazmer; logoImya: root.logoImya
 				onClickedNazad: {
 					stvStr.pop()//Назад страницу
@@ -380,8 +376,7 @@ ApplicationWindow {
                 toolbarX: pgStrOrfograf.rctStrToolbar.x; toolbarY: pgStrOrfograf.rctStrToolbar.y
 				toolbarWidth: pgStrOrfograf.rctStrToolbar.width
 				toolbarHeight: pgStrOrfograf.rctStrToolbar.height
-                tapZagolovokLevi: pgStrOrfograf.zagolovokLevi; tapZagolovokPravi: pgStrOrfograf.zagolovokPravi
-                tapToolbarLevi: pgStrOrfograf.toolbarLevi; tapToolbarPravi: pgStrOrfograf.toolbarPravi
+                tapZagolovokLevi: 1.3; tapZagolovokPravi: 1.3; tapToolbarLevi: 1.3; tapToolbarPravi: 1.3
 				logoRazmer: root.logoRazmer; logoImya: root.logoImya
 				onClickedNazad: {
 					stvStr.pop()
@@ -427,8 +422,7 @@ ApplicationWindow {
 				toolbarX: pgStrSetOrfograf.rctStrToolbar.x; toolbarY: pgStrSetOrfograf.rctStrToolbar.y
 				toolbarWidth: pgStrSetOrfograf.rctStrToolbar.width
 				toolbarHeight: pgStrSetOrfograf.rctStrToolbar.height
-				tapZagolovokLevi: pgStrSetOrfograf.zagolovokLevi; tapZagolovokPravi: pgStrSetOrfograf.zagolovokPravi
-				tapToolbarLevi: pgStrSetOrfograf.toolbarLevi; tapToolbarPravi: pgStrSetOrfograf.toolbarPravi
+				tapZagolovokLevi: 1.3; tapZagolovokPravi: 1.3; tapToolbarLevi: 1.3; tapToolbarPravi: 1.3
 				logoRazmer: root.logoRazmer; logoImya: root.logoImya
 				onClickedNazad: {
 					stvStr.pop()//Назад страницу
@@ -473,9 +467,7 @@ ApplicationWindow {
 				toolbarX: pgStrTranscribe.rctStrToolbar.x; toolbarY: pgStrTranscribe.rctStrToolbar.y
 				toolbarWidth: pgStrTranscribe.rctStrToolbar.width
 				toolbarHeight: pgStrTranscribe.rctStrToolbar.height
-				tapZagolovokLevi: pgStrTranscribe.zagolovokLevi
-				tapZagolovokPravi: pgStrTranscribe.zagolovokPravi
-				tapToolbarLevi: pgStrTranscribe.toolbarLevi; tapToolbarPravi: pgStrTranscribe.toolbarPravi
+				tapZagolovokLevi: 1.3; tapZagolovokPravi: 1.3; tapToolbarLevi: 1.3; tapToolbarPravi: 1.3
 				logoRazmer: root.logoRazmer; logoImya: root.logoImya
 				onClickedNazad: {
 					stvStr.pop()
@@ -521,8 +513,7 @@ ApplicationWindow {
 				toolbarX: pgStrSetTranscribe.rctStrToolbar.x; toolbarY: pgStrSetTranscribe.rctStrToolbar.y
 				toolbarWidth: pgStrSetTranscribe.rctStrToolbar.width
 				toolbarHeight: pgStrSetTranscribe.rctStrToolbar.height
-				tapZagolovokLevi: pgStrSetTranscribe.zagolovokLevi; tapZagolovokPravi: pgStrSetTranscribe.zagolovokPravi
-				tapToolbarLevi: pgStrSetTranscribe.toolbarLevi; tapToolbarPravi: pgStrSetTranscribe.toolbarPravi
+				tapZagolovokLevi: 1.3; tapZagolovokPravi: 1.3; tapToolbarLevi: 1.3; tapToolbarPravi: 1.3
 				logoRazmer: root.logoRazmer; logoImya: root.logoImya
 				onClickedNazad: {
 					stvStr.pop()//Назад страницу
@@ -567,9 +558,7 @@ ApplicationWindow {
 				toolbarX: pgStrRAG.rctStrToolbar.x; toolbarY: pgStrRAG.rctStrToolbar.y
 				toolbarWidth: pgStrRAG.rctStrToolbar.width
 				toolbarHeight: pgStrRAG.rctStrToolbar.height
-				tapZagolovokLevi: pgStrRAG.zagolovokLevi
-				tapZagolovokPravi: pgStrRAG.zagolovokPravi
-				tapToolbarLevi: pgStrRAG.toolbarLevi; tapToolbarPravi: pgStrRAG.toolbarPravi
+				tapZagolovokLevi: 1.3; tapZagolovokPravi: 1.3; tapToolbarLevi: 1.3; tapToolbarPravi: 1.3
 				logoRazmer: root.logoRazmer; logoImya: root.logoImya
 				onClickedNazad: {
 					stvStr.pop()
@@ -615,8 +604,7 @@ ApplicationWindow {
 				toolbarX: pgStrSetRAG.rctStrToolbar.x; toolbarY: pgStrSetRAG.rctStrToolbar.y
 				toolbarWidth: pgStrSetRAG.rctStrToolbar.width
 				toolbarHeight: pgStrSetRAG.rctStrToolbar.height
-				tapZagolovokLevi: pgStrSetRAG.zagolovokLevi; tapZagolovokPravi: pgStrSetRAG.zagolovokPravi
-				tapToolbarLevi: pgStrSetRAG.toolbarLevi; tapToolbarPravi: pgStrSetRAG.toolbarPravi
+				tapZagolovokLevi: 1.3; tapZagolovokPravi: 1.3; tapToolbarLevi: 1.3; tapToolbarPravi: 1.3
 				logoRazmer: root.logoRazmer; logoImya: root.logoImya
 				onClickedNazad: {
 					stvStr.pop()//Назад страницу
@@ -657,8 +645,7 @@ ApplicationWindow {
 				toolbarWidth: pgStrInstrukciya.rctStrToolbar.width
 				toolbarHeight: pgStrInstrukciya.rctStrToolbar.height
 				radiusZona: pgStrInstrukciya.rctStrZona.radius//Радиус берём из настроек элемента qml
-				tapZagolovokLevi: pgStrInstrukciya.zagolovokLevi; tapZagolovokPravi: pgStrInstrukciya.zagolovokPravi
-				tapToolbarLevi: pgStrInstrukciya.toolbarLevi; tapToolbarPravi: pgStrInstrukciya.toolbarPravi
+				tapZagolovokLevi: 1.3; tapZagolovokPravi: 1.3; tapToolbarLevi: 1.3; tapToolbarPravi: 1.3
 				pythonVersion: root.pythonVersion
     			qtVersion: root.qtVersion
 				onClickedNazad: {
@@ -694,8 +681,7 @@ ApplicationWindow {
 				toolbarX: pgStrJurnal.rctStrToolbar.x; toolbarY: pgStrJurnal.rctStrToolbar.y
 				toolbarWidth: pgStrJurnal.rctStrToolbar.width
 				toolbarHeight: pgStrJurnal.rctStrToolbar.height
-				tapZagolovokLevi: pgStrJurnal.zagolovokLevi; tapZagolovokPravi: pgStrJurnal.zagolovokPravi
-				tapToolbarLevi: pgStrJurnal.toolbarLevi; tapToolbarPravi: pgStrJurnal.toolbarPravi
+				tapZagolovokLevi: 1.3; tapZagolovokPravi: 1.3; tapToolbarLevi: 1.3; tapToolbarPravi: 1.3
 				isMobile: root.isMobile
 				onClickedNazad: {
 					stvStr.pop()//Назад страницу

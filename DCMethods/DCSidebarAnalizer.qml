@@ -125,59 +125,25 @@ Drawer {
 				font.bold: true//Жирный текст.
 				width: parent.width - parent.leftPadding - parent.rightPadding
 			}
-			Rectangle {
-				id: rctContent
+			DCTextEdit {
+				id: txaPromptFinal
 				width: parent.width - parent.leftPadding - parent.rightPadding
 				height: rctSidebar.height - txtPromptFinal.height - root.ntCoff * 4
-				color: "transparent"
-				border.color: root.clrTexta
-				border.width: 1
+				ntWidth: root.ntWidth/2//Для уменьшения размера текста и ширины скролбара
+				ntCoff: root.ntCoff
+				readOnly: root.readOnly
+				scrollAuto: false//Ручное управление скроллом
+				clrFona: "transparent"; clrTexta: root.clrTexta
+				clrPolzunka: Qt.lighter(root.clrMenuFon, 1.3); clrBorder: root.clrTexta
 				radius: root.ntCoff / 2
-				clip: true
-				
-				Flickable {
-					id: flcContent
-					anchors.fill: parent
-					anchors.margins: 5
-					anchors.rightMargin: scbContent.width + 5
-					contentWidth: width
-					contentHeight: txaPromptFinal.contentHeight
-					clip: true
-					interactive: true
-					boundsBehavior: Flickable.StopAtBounds
-								
-					TextArea.flickable: TextArea {
-						id: txaPromptFinal
-						objectName: "txaPromptFinal"
-						placeholderText: "Добавьте финальный промт..."
-						wrapMode: TextArea.Wrap
-						selectByMouse: true
-						readOnly: root.readOnly
-						color: root.clrTexta
-						background: null
-						onTextChanged: {
-							root.strPromptFinal = text
-							DCSettings.analizer_prompt_final = text
-						}
-						TapHandler {//Нажимаем на всю область
-							onTapped: {
-							}
-						}
-					}
+				isBorder: true//Показываем бордюр области текста.
+				textEdit.textFormat: TextEdit.RichText//HTML поддержка
+				placeholderText:"Введите финальный промпт, чтоб языковая модель могла подвести итог анализа..."
+				onTextChanged: {
+					root.strPromptFinal = text
+					DCSettings.analizer_prompt_final = text
 				}
-				DCScrollbar {
-					id: scbContent
-					flick: flcContent
-					anchors.right: rctContent.right
-					anchors.top: rctContent.top
-					anchors.bottom: rctContent.bottom
-					anchors.margins: 5
-					clrPolzunokOff: Qt.lighter(root.clrMenuFon, 1.3)
-					clrPolzunokOn: root.clrTexta
-					width: root.ntWidth * root.ntCoff
-					radius: 1
-				}
-			}
+			}	
 		}
 	}
 	Rectangle {//Прямоугольник ручки,за которую можно тянуть размер боковой панели,для изменения её размер
