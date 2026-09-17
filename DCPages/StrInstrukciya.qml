@@ -103,6 +103,8 @@ Item {
             ntWidth: root.ntWidth
             ntCoff: root.ntCoff
             anchors.rightMargin: drwSidebar.position * drwSidebar.width - drwSidebar.position * root.ntCoff
+			width: parent.width
+			height: parent.height
             readOnly: true//Запрещено редактировать текст
             textEdit.selectByMouse: false//Запрещаем выделять текст, то нужно для свайпа Android
 			textEdit.textFormat: TextEdit.AutoText//Формат АВТОМАТИЧЕСКИ определяется. Предпочтителен HTML4
