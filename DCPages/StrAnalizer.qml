@@ -374,6 +374,7 @@ Item {
 		} else {
 			//Если меню закрыто, ничего не делаем (можно добавить другую логику)
 		}
+		fnCloseSidebarIfOpen()//Закрываем боковую панель, если она открыта
     }
     function fnClickedNazad() {//Функция закрытия страницы.
 		if(tmrLogo.running){//Если идёт анализ, то...
@@ -441,6 +442,13 @@ Item {
         }
         return false
     }
+	function fnCloseSidebarIfOpen() {//Закрываем боковую панель промта, если она открыта.
+		if(dcSidebar.position){//Если боковая панель открыта, то...
+    		dcSidebar.close()//Закрываем её
+			return true
+		}
+		return false
+	}
 	function fnCloseVoprosIfOpen() {
 		if (vprVopros.visible) {
 			vprVopros.visible = false
@@ -804,6 +812,8 @@ Item {
 				if (active){//Если активировался прогресбар, то...
 					dcTimer.blStart = true//Запуск таймера.
 					root.toolbar("")
+					dcSidebar.readOnly = true//Запрещено редактировать
+					fnCloseSidebarIfOpen()
 					knopkaMenu.enabled = false
                 	knopkaInfo.visible = false
 					knopkaNastroiki.visible = false
@@ -815,6 +825,7 @@ Item {
 				else{
 					dcTimer.strVremyaAnaliza = dcTimer.strTimer
 					dcTimer.blStart = false//Останавливаем таймер.
+					dcSidebar.readOnly = false//Разрешено редактировать
 					knopkaMenu.enabled = true
 					knopkaInfo.visible = true
 					knopkaNastroiki.visible = true
@@ -848,7 +859,7 @@ Item {
             tapHeight: root.ntWidth * root.ntCoff + root.ntCoff
             tapWidth: tapHeight * root.tapToolbarLevi
             onClicked: {
-                if (!fnCloseMenuIfOpen() && !fnCloseVoprosIfOpen()) {
+                if (!fnCloseMenuIfOpen() && !fnCloseVoprosIfOpen() && !fnCloseSidebarIfOpen()) {
                     fnClickedInfo()//Функция открытия помощи.
                 }
             }
@@ -865,7 +876,7 @@ Item {
             tapHeight: root.ntWidth * root.ntCoff + root.ntCoff
             tapWidth: tapHeight * root.tapToolbarPravi
             onClicked: {
-                fnToggleMenu()
+                if(!fnCloseSidebarIfOpen()) fnToggleMenu()
             }
         }
     }	

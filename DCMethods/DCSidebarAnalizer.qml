@@ -14,6 +14,7 @@ Drawer {
     property color clrTexta: "Orange"
     property color clrFona: "Black"
     property color clrMenuFon: "SlateGray"
+	property bool readOnly: false//true - запрещено редактировать текст
 	property int parentWidth: 300
 	property int minSidebarWidth: 200//Минимум ширины боковой панели
 	property int maxSidebarWidth: root.parentWidth * 0.8//Максимум ширины боковой панели
@@ -151,6 +152,7 @@ Drawer {
 						placeholderText: "Добавьте финальный промт..."
 						wrapMode: TextArea.Wrap
 						selectByMouse: true
+						readOnly: root.readOnly
 						color: root.clrTexta
 						background: null
 						onTextChanged: {
