@@ -12,7 +12,7 @@ QtObject {
 	property int kobzone_visota: 550
 	property int kobzone_set_shrift: 1//0-мал, 1-сред, 2-большой.
 	//Нейро Анализ
-	property int analizer_sidebar_shirina: 220
+	property real analizer_sidebar_shirina: 0.3//Коэффициент от общей ширины окна, показ.ширину боковой панели
     property string analizer_put_text: ""
     property string analizer_put_sohranit: ""
 	property string analizer_put_rag: ""

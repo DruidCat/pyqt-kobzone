@@ -35,6 +35,7 @@ Item {
     property real tapZagolovokPravi: 1.3
     property real tapToolbarLevi: 1.3
     property real tapToolbarPravi: 1.3
+	property bool isMobile: false//true - мобильное устройство.
     
     property int logoRazmer: 22//Размер Логотипа
     property string logoImya: "kobzone"//Имя логотипа в DCLogo
@@ -792,10 +793,11 @@ Item {
 		DCSidebarAnalizer {
 			id: dcSidebar
 			ntWidth: root.ntWidth; ntCoff: root.ntCoff
-			clrTexta: root.clrTexta; clrFona: root.clrFona
 			height: tmZona.height
 			parentWidth: tmZona.width
+			clrTexta: root.clrTexta; clrFona: root.clrFona
 			clrMenuFon: root.clrMenuFon
+			isMobile: root.isMobile
 			onOpenedChanged: {//Если состояние боковой панели изменилось, она открыта или закрыта, то...
 				root.forceActiveFocus()
 			}
