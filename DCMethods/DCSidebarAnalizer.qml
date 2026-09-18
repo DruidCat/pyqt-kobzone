@@ -8,42 +8,41 @@ import DCSettings 1.0//Импортируем настройки
 Drawer {
 	id: root
 	//Свойства
-	property bool isMobile: false//true - мобильное устройство
     property int ntWidth: 1
     property int ntCoff: 8
     property color clrTexta: "Orange"
     property color clrFona: "Black"
     property color clrMenuFon: "SlateGray"
 	property bool readOnly: false//true - запрещено редактировать текст
-	property int __parentWidth: parent.width//Ширина родителя, ширина основного окна приложения.
-	property int minSidebarWidth: __parentWidth * 0.2//Минимум ширины боковой панели
-	property int maxSidebarWidth: root.__parentWidth * 0.5//Максимум ширины боковой панели
-	property int sidebarWidth: root.isMobile ? root.__parentWidth//Если мобила, то ширина всего экрана
-						: Math.max(minSidebarWidth, root.__parentWidth * DCSettings.analizer_sidebar_shirina)
 	property string strPromptFinal: DCSettings.analizer_prompt_final
+	property bool isMobile: false//true - мобильное устройство
+	property int __parentWidth: parent.width//Ширина родителя, ширина основного окна приложения.
+	property int __minSidebarWidth: __parentWidth * 0.2//Минимум ширины боковой панели
+	property int __maxSidebarWidth: root.__parentWidth * 0.5//Максимум ширины боковой панели
+	property int __sidebarWidth: root.isMobile ? root.__parentWidth//Если мобила, то ширина всего экрана
+						: Math.max(__minSidebarWidth,root.__parentWidth * DCSettings.analizer_sidebar_shirina)
 	//Настройки
 	edge: Qt.RightEdge
 	modal: false
 	dim: false
 	closePolicy: Drawer.CloseOnEscape//Закрываем боковую панель только при нажати Escape, другие политики выкл
 	clip: true//Обрезать всё лишнее.
-	width: sidebarWidth//ВАЖНО! ширина боковой панели зависит только от sidebarWidth.
+	width: __sidebarWidth//ВАЖНО! ширина боковой панели зависит только от __sidebarWidth.
 	height: parent.height//Высота боковой панели по высоте родителя.
 	y: root.ntWidth * root.ntCoff + 3 * root.ntCoff//координату по Y брал из расчёта Stranica.qml
 	interactive: true//false -  панель не реагирует на свайпы.
-	//Функции
+	//Методы
 	Component.onCompleted: {
-		txaPromptFinal.text = DCSettings.analizer_prompt_final
+		txdPromptFinal.text = DCSettings.analizer_prompt_final
 	}
 	on__ParentWidthChanged: {//Если родительская ширина экрана меняется, то ...
-		root.sidebarWidth = root.__parentWidth * DCSettings.analizer_sidebar_shirina//Пересчит. ширину панели.
+		root.__sidebarWidth = root.__parentWidth * DCSettings.analizer_sidebar_shirina//Пересчит.ширину панели
 	}
 	onPositionChanged: {//Если позиция изменяется у боковой панели, то...
-		
+		if(position) root.readOnly = false//Если панель открыта, то режим резактирования
+		else root.readOnly = true//Если панель закрыта, то режим только чтения.
 	}
-	onOpened: {//Если боковая панель открылась, то...
-	}
-	onStrPromptFinalChanged: {
+	onStrPromptFinalChanged: {//Если финальный промт изменился, то...
 		pyAnalyzer.ustFinalPrompt(root.strPromptFinal)
 	}
 	Rectangle {//Прямоугольник узкой полоски интерфейса справа
@@ -129,7 +128,7 @@ Drawer {
 				width: parent.width - parent.leftPadding - parent.rightPadding
 			}
 			DCTextEdit {
-				id: txaPromptFinal
+				id: txdPromptFinal
 				width: parent.width - parent.leftPadding - parent.rightPadding
 				height: rctSidebar.height - txtPromptFinal.height - root.ntCoff * 4
 				ntWidth: root.ntWidth/2//Для уменьшения размера текста и ширины скролбара
@@ -178,21 +177,21 @@ Drawer {
 			onReleased: {//Если отпустили кнопку мышки
 				root.interactive = true;//Включаем свайп Drawer. ВАЖНО!
 				isDrag = false//При отпускании мыши Окончание перетаскивания
-				DCSettings.analizer_sidebar_shirina = root.sidebarWidth / root.__parentWidth//Запись в реестр
+				DCSettings.analizer_sidebar_shirina = root.__sidebarWidth / root.__parentWidth//Запись в реест
 			}
 			onCanceled: {
 				root.interactive = true;//Включаем свайп Drawer. ВАЖНО!
 				isDrag = false//Окончание перетаскивания
-				DCSettings.analizer_sidebar_shirina = root.sidebarWidth / root.__parentWidth//Запись в реестр
+				DCSettings.analizer_sidebar_shirina = root.__sidebarWidth / root.__parentWidth//Запись в реест
 			}
 			onPositionChanged: (mouse) => {//Если позиция меняется, то...
 				if (!isDrag || root.isMobile) return//Если не перетаск. ручку или мобильное устройство,вых
 				const dX = mouse.x - lastX//Дельта Х относительно предыдущей точки Х
 				lastX = mouse.x//Запоминаем положение мыши по Х.
 				if (dX === 0) return//Если дельта не изменилась, ничего не делаем
-				let ltWidth = root.sidebarWidth - dX//Новые размеры ширины боковой панели.
-				ltWidth=Math.max(root.minSidebarWidth,Math.min(root.maxSidebarWidth, ltWidth))
-				root.sidebarWidth = ltWidth//Изменяем ширину боковой панели на новую ширину
+				let ltWidth = root.__sidebarWidth - dX//Новые размеры ширины боковой панели.
+				ltWidth=Math.max(root.__minSidebarWidth,Math.min(root.__maxSidebarWidth, ltWidth))
+				root.__sidebarWidth = ltWidth//Изменяем ширину боковой панели на новую ширину
 			}
 		}
 	}
