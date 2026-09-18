@@ -569,6 +569,9 @@ Item {
 		}
         Flickable {
             id: flcZona
+			//Свойства
+			property int __rezultatHeight: 0//Высота области Результата с кнопкой Сохранить Результат.
+			//Настройки
             anchors.fill: parent
             contentWidth: tmZona.width
             contentHeight: clmnContent.height
@@ -577,7 +580,11 @@ Item {
             boundsBehavior: Flickable.StopAtBounds
             opacity: 0.9//ГЛАВНАЯ ПРОЗРАЧНОСТЬ!!!
         	anchors.rightMargin: dcSidebar.position * dcSidebar.width - dcSidebar.position * root.ntCoff
-
+			//Методы
+			onHeightChanged: {//Если изменяется высота Flickable, то...
+				flcZona.__rezultatHeight = flcZona.height - txtRezultat.height
+														- knopkaSohranit.height - root.ntCoff * 3
+			}
 			TapHandler {//Нажимаем на всю область
 				onTapped: {
 					if(!knopkaAnaliz.pressedTmr550)fnCloseVoprosIfOpen()
@@ -745,6 +752,7 @@ Item {
 					property string strVremyaAnaliza: ""
 				}
                 Text {//Результат
+					id: txtRezultat
 					text: {
 						let ltRezultat = "Результат: "
 						if(!dcTimer.blStart) ltRezultat += dcTimer.strVremyaAnaliza 
@@ -758,7 +766,7 @@ Item {
 				DCTextEdit {
 					id: txdOtvet
 					width: parent.width - parent.leftPadding - parent.rightPadding
-					height: 550
+					height: flcZona.__rezultatHeight
 					ntWidth: root.ntWidth/2//Для уменьшения размера текста и ширины скролбара
 					ntCoff: root.ntCoff
 					readOnly: true//Только чтение
