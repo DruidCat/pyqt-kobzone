@@ -16,7 +16,7 @@ QtObject {
     property string analizer_put_text: ""
     property string analizer_put_sohranit: ""
 	property string analizer_put_rag: ""
-	property string analizer_model_imya: "(отсутствует)"//По умолчанию отсутствует
+	property string analizer_model_imya: ""//По умолчанию отсутствует
 	property string analizer_lms_put: ""//По умолчанию путь не задан
 	property string analizer_cli_put: ""//По умолчанию путь не задан
 	property int analizer_gpu_offload: 50//по умолчанию 50%	
@@ -83,6 +83,7 @@ QtObject {
         docPut = docPut !== "" ? docPut : cnDomPut
 		docPut = docPut.toString()//В текст переводим, чтоб replace работал
 		docPut = docPut.replace(/^file:\/\//, "")//Удаляем file://
+		if (analizer_model_imya === "") analizer_model_imya = pyLMStudio.polModelNoName()//имя ОТСУТСТВУЕТ.
 		if (analizer_put_text === "") {//Если настройки ёще были записаны, то...
             analizer_put_text = docPut//Записываем в реестр
         }

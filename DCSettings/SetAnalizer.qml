@@ -47,6 +47,7 @@ Item {
 	property string putCLI: DCSettings.analizer_cli_put//Путь к cli lms LM Studio из реестра.
 	property string serverURL: DCSettings.analizer_server_url//URL Сервера LM Studio
 	property string strModel: DCSettings.analizer_model_imya//Имя модели ИИ
+	property string strModelNoName: ""//Получаем имя модели ОТСУТСТВУЕТ.
 	property real rlTemperatura: DCSettings.analizer_temperatura//Температура ИИ
 	property int ntPerekritie: DCSettings.analizer_perekritie
 	property int maxContext: DCSettings.analizer_max_context//Максимальное количество токенов
@@ -66,6 +67,8 @@ Item {
     signal log(var strLog)
 	//Методы
 	Component.onCompleted: {
+		root.strModelNoName = pyLMStudio.polModelNoName()//Получаем имя модели ОТСУТСТВУЕТ.
+		fnModelEnabled()//Функция управляет политикой кнопок Temperatura, Context, GPU
 		knopkiMassiv = [knopkaLMStart, knopkaLMStop, knopkaLMPut, knopkaCLIPut, knopkaModeli,
 						knopkaTemperatura, knopkaContext, knopkaGPU, knopkaServerURL]
 		if (DCSettings.analizer_lms_put !== "")//Передаём путь из настроек в Python
@@ -76,55 +79,29 @@ Item {
 		pyLMStudio.ustServerURL(serverURL)//Загрузка при иннициации приложения и при изменении значения.
 	}
 	onStrModelChanged: {//Если Модель изменится, то...
-		if (isModelStart){//Первую иннициализацию не обрабатываем, когда данные читаются из реестра
-			//Обновляем настройки анализатора
-			root.__strProgress = "Загрузка модели: " + root.strModel
-			ldrProgress.active = true//Запускаем полосу прогресса загрузки модели
-			let ltMaxContext = DCSettings.analizer_max_context
-			let ltTemperatura = DCSettings.analizer_temperatura
-			let ltGPU = DCSettings.analizer_gpu_offload
-			pyLMStudio.ustParametri(root.strModel, ltMaxContext, ltTemperatura, ltGPU)
-		}
+		if (isModelStart)//Первую иннициализацию не обрабатываем, когда данные читаются из реестра
+			fnUstParametri()//Устанавливаем параметры root.strModel, ltMaxContext, ltTemperatura, ltGPU
 		isModelStart = true
+		fnModelEnabled()//Функция управляет политикой кнопок Temperatura, Context, GPU
 	}
 	onRlTemperaturaChanged: {	
-		if (isTemperaturaStart){//Первую иннициализацию не обрабатываем, когда данные читаются из реестра
-			//Обновляем настройки анализатора
-			root.__strProgress = "Загрузка модели: " + root.strModel
-			ldrProgress.active = true//Запускаем полосу прогресса загрузки модели
-			let ltMaxContext = DCSettings.analizer_max_context
-			let ltTemperatura = DCSettings.analizer_temperatura
-			let ltGPU = DCSettings.analizer_gpu_offload
-			pyLMStudio.ustParametri(root.strModel, ltMaxContext, ltTemperatura, ltGPU)
-		}
+		if (isTemperaturaStart)//Первую иннициализацию не обрабатываем, когда данные читаются из реестра
+			fnUstParametri()//Устанавливаем параметры root.strModel, ltMaxContext, ltTemperatura, ltGPU
 		isTemperaturaStart = true
-	}
-	onNtPerekritieChanged: {
-		pyAnalyzer.ustPerekritie(ntPerekritie)//Загрузка при иннициации приложения и при изменении значения
-	}
+	}	
 	onMaxContextChanged: {
-		if (isContextStart){//Первую иннициализацию не обрабатываем, когда данные читаются из реестра
-			//Обновляем настройки анализатора
-			root.__strProgress = "Загрузка модели: " + root.strModel
-			ldrProgress.active = true//Запускаем полосу прогресса загрузки модели
-			let ltMaxContext = DCSettings.analizer_max_context
-			let ltTemperatura = DCSettings.analizer_temperatura
-			let ltGPU = DCSettings.analizer_gpu_offload
-			pyLMStudio.ustParametri(root.strModel, ltMaxContext, ltTemperatura, ltGPU)
-		}
+		if (isContextStart)//Первую иннициализацию не обрабатываем, когда данные читаются из реестра
+			fnUstParametri()//Устанавливаем параметры root.strModel, ltMaxContext, ltTemperatura, ltGPU
 		isContextStart = true
 	}
 	onGpuOffloadChanged: {
-		if (isGpuOffloadStart){//Первую иннициализацию не обрабатываем, когда данные читаются из реестра
-			root.__strProgress = "Загрузка модели: " + root.strModel
-			ldrProgress.active = true//Запускаем полосу прогресса загрузки модели
-			let ltMaxContext = DCSettings.analizer_max_context
-			let ltTemperatura = DCSettings.analizer_temperatura
-			let ltGPU = DCSettings.analizer_gpu_offload
-			pyLMStudio.ustParametri(root.strModel, ltMaxContext, ltTemperatura, ltGPU)
-		}
+		if (isGpuOffloadStart)//Первую иннициализацию не обрабатываем, когда данные читаются из реестра
+			fnUstParametri()//Устанавливаем параметры root.strModel, ltMaxContext, ltTemperatura, ltGPU
 		isGpuOffloadStart = true
 	}
+	onNtPerekritieChanged: {
+		pyAnalyzer.ustPerekritie(ntPerekritie)//Загрузка при иннициации приложения и при изменении значения
+	}	
 	onPutLMStudioChanged: {//Если путь к LM Studio изменился, то...
 		if (root.putLMStudio !== ""){//Если он не пустой, то...
 			pyLMStudio.ustPutStudio(root.putLMStudio)//Передаём его в логику Python
@@ -137,9 +114,6 @@ Item {
 			root.log(logMsg)
 		}
         function onSigError(ntError, errorMsg) {
-			if(ntError !== 13)//Если это не пуста модель, то...
-            	root.toolbar(`Ошибка ${ntError}: ${errorMsg}`)
-
 			if(ntError === 3){//3 - Не удалось найти исполняемый файл LM Studio
 				vprVopros.ntVopros = 3
 				vprVopros.visible = true
@@ -153,8 +127,11 @@ Item {
 				vprVopros.ntVopros = 6
 				vprVopros.visible = true
 			}
-			pvModels.isServerZapustit = false
-			ldrProgress.active = false
+			if(ntError !== 13){//Если это не пуста модель, то...
+            	root.toolbar(`Ошибка ${ntError}: ${errorMsg}`)
+				pvModels.isServerZapustit = false
+				ldrProgress.active = false
+			}
         }
 		//0 - Ошибка HTTP при запросе списка моделей (сервер ответил кодом, отличным от 200).
 		//1 - Ошибка сетевого подключения к LM Studio (сервер недоступен или не запущен).
@@ -222,7 +199,7 @@ Item {
             }
             let savedModel = DCSettings.analizer_model_imya//Устанавливаем текущий индекс
 
-            if (savedModel === "" || savedModel === "(отсутствует)") {
+            if (savedModel === "" || savedModel === root.strModelNoName) {
                 pvModels.currentIndex = 0//Первый элемент = отсутствует
             } else {
                 for (let i = 0; i < models.length; i++) {//Ищем сохранённую модель в списке
@@ -235,6 +212,9 @@ Item {
             root.log(`Загружено моделей: ${models.length}`)
         }
 		function onSigModelZagrujena(strModel, ntContext){//Модель загрузилась
+			ldrProgress.active = false
+		}
+		function onSigModelVigrujena(blStatus){
 			ldrProgress.active = false
 		}
 		function onSigModelProgress(ntProgress) {
@@ -482,6 +462,22 @@ Item {
 			return true
 		}
 		return false
+	}
+	function fnUstParametri() {//Устанавливаем параметры root.strModel, ltMaxContext, ltTemperatura, ltGPU
+		if(root.strModel === root.strModelNoName) root.__strProgress = "Выгрузка модели"
+		else root.__strProgress = "Загрузка модели: " + root.strModel
+		let ltMaxContext = DCSettings.analizer_max_context
+		let ltTemperatura = DCSettings.analizer_temperatura
+		let ltGPU = DCSettings.analizer_gpu_offload
+		ldrProgress.active = true//Запускаем полосу прогресса загрузки модели
+		pyLMStudio.ustParametri(root.strModel, ltMaxContext, ltTemperatura, ltGPU)
+	}
+	function fnModelEnabled(){//Функция управляет политикой кнопок Temperatura, Context, GPU
+		let ltFlag = true//Истина
+		if(root.strModel === root.strModelNoName) ltFlag = false
+		knopkaTemperatura.enabled = ltFlag
+		knopkaContext.enabled = ltFlag
+		knopkaGPU.enabled = ltFlag
 	}
 	function fnClickedModel(){//Функция выбора Модели
 		if(pvModels.visible){//Если видимый виджет, то...
@@ -889,8 +885,8 @@ Item {
                     id: knopkaModeli
                     text: {
                         let ltText = qsTr("модель ");//
-						if (root.strModel === "" || root.strModel === "(отсутствует)") {
-							ltText += qsTr("отсутствует")
+						if (root.strModel === "" || root.strModel === root.strModelNoName) {
+							ltText += root.strModelNoName
 						} else {
 							// Показываем только последнюю часть имени (без пути)
 							let parts = root.strModel.split("/")
@@ -1152,9 +1148,10 @@ Item {
 					knopkaLMPut.enabled = true
 					knopkaCLIPut.enabled = true
 					knopkaModeli.enabled = true
-					knopkaTemperatura.enabled = true 
-					knopkaContext.enabled = true
-					knopkaGPU.enabled = true
+					fnModelEnabled()//Функция управляет политикой кнопок Temperatura, Context, GPU
+					//knopkaTemperatura.enabled = true 
+					//knopkaContext.enabled = true
+					//knopkaGPU.enabled = true
 					knopkaServerURL.enabled = true
 				}
 			}

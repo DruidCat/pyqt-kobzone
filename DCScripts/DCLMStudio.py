@@ -305,6 +305,11 @@ class DCLMStudio(QObject):
             return flag_vigruzki#Возвращаем результат выгрузки модели.
 
     @pyqtSlot(result=str)
+    def polModelNoName(self):
+        """Возвращаем имя модели NO_MODEL_NAME"""
+        return self.NO_MODEL_NAME
+
+    @pyqtSlot(result=str)
     def polModel(self):
         """Возвращает текущую модель"""
         return self._current_model 
@@ -312,8 +317,8 @@ class DCLMStudio(QObject):
     @pyqtSlot(str, int, float, int)
     def ustParametri(self, model_name, max_context, temperature, gpu_offload):
         """Публичный слот для загрузки модели с параметрами"""
-        # если модель "(отсутствует)" или пустая
-        if not model_name or model_name == self.NO_MODEL_NAME:
+        if not model_name or model_name == self.NO_MODEL_NAME:# если модель "(отсутствует)" или пустая
+            self.vigruzitModel()#Выгружаем модель.
             self._current_model = ""#чтоб я мог понять по polModel что модель не задана.
             error_msg = "Модель не выбрана. Выберите модель из списка."
             self._emit_error(13, error_msg)  # КОД ОШИБКИ 13
