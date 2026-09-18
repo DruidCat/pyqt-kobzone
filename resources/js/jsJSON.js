@@ -19,22 +19,26 @@ var vrMenuAnalizer = [
 			},
 			{
 				"nomer": "2",
-                "menu": qsTr("Анализировать")
+                "menu": qsTr("Добавить RAG БД")
 			},
 			{
 				"nomer": "3",
-                "menu": qsTr("Сохранить результат")
+                "menu": qsTr("Анализировать")
 			},
 			{
 				"nomer": "4",
+                "menu": qsTr("Сохранить результат")
+			},
+			{
+				"nomer": "5",
                 "menu": qsTr("Настройки")
 			},
             {
-                "nomer": "5",
+                "nomer": "6",
                 "menu": qsTr("Помощь")
             },
 			{
-                "nomer": "6",
+                "nomer": "7",
                 "menu": qsTr("Выход")
 			}
 ]

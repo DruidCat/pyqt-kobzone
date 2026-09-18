@@ -5,6 +5,7 @@ import QtQuick.Dialogs
 import DCButtons 1.0
 import DCMethods 1.0
 import DCSettings 1.0
+import QtQuick.Layouts//RowLayout
 //StrAnalizer - страница по анализу документов или текстов через ИИ.
 Item {
     id: root
@@ -307,6 +308,31 @@ Item {
 
 		}
 	}
+	FolderDialog {//Диалог выбора папки RAG БД
+		id: dialogRAG
+		title: "Выберите папку с RAG базой данных"
+		currentFolder: {//Используем сохранённый путь из настроек, или стандартную домашнюю папку
+			if (DCSettings.analizer_put_rag !== "") {
+				return fnPathToUrl(DCSettings.analizer_put_rag)//Преобразуем сохранённый путь в URL
+			}
+			else return StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
+		}
+		onAccepted: {
+			var vtPut = fnUrlToLocalPath(selectedFolder)//Используем кроссплатформенную функцию
+			DCSettings.analizer_put_rag = vtPut
+			root.toolbar(`Нейроанализ. Выбрана папка RAG БД: ${vtPut}`)//Сообщение в toolbar и журнал.
+		}
+	}
+	function fnPathToUrl(localPath) {//Функция кроссплатформенного преобразования пути в URL
+		if (!localPath) return ""
+		if (localPath.startsWith("file://")) return localPath//Если это уже URL — возвращаем как есть
+		//Для локальных файлов нужен формат file:///
+		if (localPath.startsWith("/")) {//Linux: /home/user/ -> file:///home/user/ (добавляем file://)
+			return "file://" + localPath//file:// + /path = file:///path
+		} else {//Windows: C:/Users/ -> file:///C:/Users/ (добавляем file:///)
+			return "file:///" + localPath//file:/// + C:/path = file:///C:/path
+		}
+	}
 	function fnUrlToLocalPath(url) {//Функция кроссплатформенного преобразования URL в путь
 		if (!url) return ""
 		var path = url.toString()
@@ -415,6 +441,9 @@ Item {
 	}
 	function fnClickedOchistit() {//Функция очистки промта.
 		txfPrompt.text = ""//Очищаем промт.
+	}
+	function fnClickedRAG(){//Функция Добавляющая RAG базу данных
+		dialogRAG.open()
 	}
     function fnClickedAnaliz() {//Функция запускающая нейро анализ документов
 		root.isServerZapustit = true
@@ -606,6 +635,41 @@ Item {
 						fnCloseMenuIfOpen()
 					}
                 }
+				RowLayout {//import QtQuick.Layouts
+                    width: parent.width - parent.leftPadding - parent.rightPadding
+                    spacing: root.ntCoff
+					DCKnopkaZakrit {
+						id: knopkaRAGOchistit_1
+						ntWidth: root.ntWidth; ntCoff: root.ntCoff
+						clrKnopki: "grey"; clrFona: root.clrFona
+						onClicked: {
+                        	if (!fnCloseMenuIfOpen()) DCSettings.analizer_put_rag = "" 
+						}
+					}
+					DCKnopkaOriginal {//Кнопка добавления RAG базы данных
+						id: knopkaRAG
+						text: {
+							if (DCSettings.analizer_put_rag) return `RAG БД: ${DCSettings.analizer_put_rag}`
+							else return "📦 добавить RAG БД"
+						}
+						ntHeight: root.ntWidth; ntCoff: root.ntCoff
+						clrKnopki: "grey"; clrTexta: root.clrFona
+						Layout.fillWidth: true //Растягиваемся по всей длине
+						onClicked: {
+							if (!fnCloseMenuIfOpen()) {
+								fnClickedRAG()//Функция Добавляющая RAG базу данных
+							}
+						}
+					}
+					DCKnopkaZakrit {
+						id: knopkaRAGOchistit_2
+						ntWidth: root.ntWidth; ntCoff: root.ntCoff
+						clrKnopki: "grey"; clrFona: root.clrFona
+						onClicked: {
+                        	if (!fnCloseMenuIfOpen()) DCSettings.analizer_put_rag = "" 
+						}
+					}
+				}
                 Text {//Промт для модели
                     text: "Промт для модели:"
                     font.pixelSize: root.ntWidth/2 * root.ntCoff
@@ -771,14 +835,16 @@ Item {
                 if (ntNomer === 1) {
                     fnClickedZagruzka()//Функция открывающая Файловый диалог загрузки файлов
                 } else if (ntNomer === 2) {
+                    fnClickedRAG()//Функция задающая RAG БД
+				} else if (ntNomer === 3) {
                     fnClickedAnaliz()//Функция запускающая нейро анализ документов
-                } else if (ntNomer === 3) {
-                    fnClickedSohranit()//Функция сохранения результата анализа.
                 } else if (ntNomer === 4) {
-                    fnClickedMenu()//Функция открытия настроек анализа документов.
+                    fnClickedSohranit()//Функция сохранения результата анализа.
                 } else if (ntNomer === 5) {
-                    fnClickedInfo()//Функция открытия помощи.
+                    fnClickedMenu()//Функция открытия настроек анализа документов.
                 } else if (ntNomer === 6) {
+                    fnClickedInfo()//Функция открытия помощи.
+                } else if (ntNomer === 7) {
                     Qt.quit()
                 }
             }
@@ -808,6 +874,9 @@ Item {
 					knopkaMenu.enabled = false
                 	knopkaInfo.visible = false
 					knopkaNastroiki.visible = false
+					knopkaRAGOchistit_1.enabled = false
+					knopkaRAG.enabled = false
+					knopkaRAGOchistit_2.enabled = false
 					knopkaAnaliz.enabled = false
 					knopkaOchistit.enabled = false
 					txdContent.enabled = false
@@ -820,6 +889,9 @@ Item {
 					knopkaMenu.enabled = true
 					knopkaInfo.visible = true
 					knopkaNastroiki.visible = true
+					knopkaRAGOchistit_1.enabled = true
+					knopkaRAG.enabled = true
+					knopkaRAGOchistit_2.enabled = true
 					knopkaAnaliz.enabled = txdContent.text.trim() !== ""
 					knopkaOchistit.enabled = true
 					txdContent.enabled = true

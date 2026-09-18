@@ -15,6 +15,7 @@ QtObject {
 	property int analizer_sidebar_shirina: 220
     property string analizer_put_text: ""
     property string analizer_put_sohranit: ""
+	property string analizer_put_rag: ""
 	property string analizer_model_imya: "(отсутствует)"//По умолчанию отсутствует
 	property string analizer_lms_put: ""//По умолчанию путь не задан
 	property string analizer_cli_put: ""//По умолчанию путь не задан
@@ -49,6 +50,7 @@ QtObject {
         property alias analizer_sidebar_shirina: root.analizer_sidebar_shirina
         property alias analizer_put_text: root.analizer_put_text
         property alias analizer_put_sohranit: root.analizer_put_sohranit
+        property alias analizer_put_rag: root.analizer_put_rag
 		property alias analizer_model_imya: root.analizer_model_imya
 		property alias analizer_max_context: root.analizer_max_context
 		property alias analizer_temperatura: root.analizer_temperatura
