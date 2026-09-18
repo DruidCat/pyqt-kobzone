@@ -15,11 +15,11 @@ Drawer {
     property color clrFona: "Black"
     property color clrMenuFon: "SlateGray"
 	property bool readOnly: false//true - запрещено редактировать текст
-	property int parentWidth: 300
-	property int minSidebarWidth: parentWidth*0.2//Минимум ширины боковой панели
-	property int maxSidebarWidth: root.parentWidth * 0.4//Максимум ширины боковой панели
-	property int sidebarWidth: root.isMobile ? root.parentWidth//Если мобила, то ширина всего экрана
-						: Math.max(minSidebarWidth, root.parentWidth * DCSettings.analizer_sidebar_shirina)
+	property int __parentWidth: parent.width//Ширина родителя, ширина основного окна приложения.
+	property int minSidebarWidth: __parentWidth * 0.2//Минимум ширины боковой панели
+	property int maxSidebarWidth: root.__parentWidth * 0.5//Максимум ширины боковой панели
+	property int sidebarWidth: root.isMobile ? root.__parentWidth//Если мобила, то ширина всего экрана
+						: Math.max(minSidebarWidth, root.__parentWidth * DCSettings.analizer_sidebar_shirina)
 	property string strPromptFinal: DCSettings.analizer_prompt_final
 	//Настройки
 	edge: Qt.RightEdge
@@ -35,8 +35,8 @@ Drawer {
 	Component.onCompleted: {
 		txaPromptFinal.text = DCSettings.analizer_prompt_final
 	}
-	onParentWidthChanged: {//Если родительская ширина экрана меняется, то ...
-		root.sidebarWidth = root.parentWidth * DCSettings.analizer_sidebar_shirina//Пересчитываем ширину панел
+	on__ParentWidthChanged: {//Если родительская ширина экрана меняется, то ...
+		root.sidebarWidth = root.__parentWidth * DCSettings.analizer_sidebar_shirina//Пересчит. ширину панели.
 	}
 	onPositionChanged: {//Если позиция изменяется у боковой панели, то...
 		
@@ -178,12 +178,12 @@ Drawer {
 			onReleased: {//Если отпустили кнопку мышки
 				root.interactive = true;//Включаем свайп Drawer. ВАЖНО!
 				isDrag = false//При отпускании мыши Окончание перетаскивания
-				DCSettings.analizer_sidebar_shirina = root.sidebarWidth / root.parentWidth//Запис в реестр шир
+				DCSettings.analizer_sidebar_shirina = root.sidebarWidth / root.__parentWidth//Запись в реестр
 			}
 			onCanceled: {
 				root.interactive = true;//Включаем свайп Drawer. ВАЖНО!
 				isDrag = false//Окончание перетаскивания
-				DCSettings.analizer_sidebar_shirina = root.sidebarWidth / root.parentWidth//Запис в реестр шир
+				DCSettings.analizer_sidebar_shirina = root.sidebarWidth / root.__parentWidth//Запись в реестр
 			}
 			onPositionChanged: (mouse) => {//Если позиция меняется, то...
 				if (!isDrag || root.isMobile) return//Если не перетаск. ручку или мобильное устройство,вых

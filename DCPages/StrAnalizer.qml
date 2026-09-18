@@ -794,9 +794,7 @@ Item {
 			id: dcSidebar
 			ntWidth: root.ntWidth; ntCoff: root.ntCoff
 			height: tmZona.height
-			parentWidth: tmZona.width
-			clrTexta: root.clrTexta; clrFona: root.clrFona
-			clrMenuFon: root.clrMenuFon
+			clrTexta: root.clrTexta; clrFona: root.clrFona; clrMenuFon: root.clrMenuFon
 			isMobile: root.isMobile
 			onOpenedChanged: {//Если состояние боковой панели изменилось, она открыта или закрыта, то...
 				root.forceActiveFocus()
