@@ -1055,7 +1055,7 @@ Item {
 			}
         }
 		ListModel {//Модель с температурами для ИИ
-		id: modelTemperatura
+			id: modelTemperatura
             ListElement { spisok: 0 }
             ListElement { spisok: 0.1 }
             ListElement { spisok: 0.2 }
