@@ -77,10 +77,10 @@ Item {
 		pyLMStudio.ustServerURL(serverURL)//Загрузка при иннициации приложения и при изменении значения.
 	}
 	onStrModelChanged: {//Если Модель изменится, то...
+		fnModelEnabled()//Функция управляет политикой кнопок Temperatura, Context, GPU
 		if (isModelStart)//Первую иннициализацию не обрабатываем, когда данные читаются из реестра
 			fnUstParametri()//Устанавливаем параметры root.strModel, ltMaxContext, ltTemperatura, ltGPU
 		isModelStart = true
-		fnModelEnabled()//Функция управляет политикой кнопок Temperatura, Context, GPU
 	}
 	onMaxContextChanged: {
 		if (isContextStart)//Первую иннициализацию не обрабатываем, когда данные читаются из реестра
