@@ -48,6 +48,7 @@ Item {
 	property string serverURL: DCSettings.analizer_server_url//URL Сервера LM Studio
 	property string strModel: DCSettings.analizer_model_imya//Имя модели ИИ
 	property string strModelNoName: ""//Получаем имя модели ОТСУТСТВУЕТ.
+	property bool __isModeNoName: false//true - выбрана модель MODEL_NO_NAME, чтоб её выгрузить.
 	property real rlTemperatura: DCSettings.analizer_temperatura//Температура ИИ
 	property int ntPerekritie: DCSettings.analizer_perekritie
 	property int maxContext: DCSettings.analizer_max_context//Максимальное количество токенов
@@ -215,7 +216,8 @@ Item {
 			ldrProgress.active = false
 		}
 		function onSigModelVigrujena(blStatus){
-			ldrProgress.active = false
+			if(root.__isModeNoName) ldrProgress.active = false
+			root.__isModeNoName = false//Сбрасываем флаг.
 		}
 		function onSigModelProgress(ntProgress) {
 			if (ldrProgress.item) {
@@ -464,7 +466,7 @@ Item {
 		return false
 	}
 	function fnUstParametri() {//Устанавливаем параметры root.strModel, ltMaxContext, ltTemperatura, ltGPU
-		if(root.strModel === root.strModelNoName) root.__strProgress = "Выгрузка модели"
+		if(root.strModel === root.strModelNoName) root.__isModeNoName = true
 		else root.__strProgress = "Загрузка модели: " + root.strModel
 		let ltMaxContext = DCSettings.analizer_max_context
 		let ltTemperatura = DCSettings.analizer_temperatura
