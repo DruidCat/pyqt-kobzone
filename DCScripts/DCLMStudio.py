@@ -42,7 +42,7 @@ class DCLMStudio(QObject):
     sigModelProgress = pyqtSignal(int)      # Процент загрузки модели (0-100)
     # Сигналы для сервера
     sigServerURLIzmenen = pyqtSignal(str)   # URL сервера изменён
-    sigParametriIzmeneni = pyqtSignal(str, int, float)  # Сигнал (model_name, max_context, temperature)
+    sigParametriIzmeneni = pyqtSignal(str, int)  # Сигнал (model_name, max_context)
     sigServerZapuschen = pyqtSignal()       # Сервер запущен
     sigServerOstanovlen = pyqtSignal()      # Сервер остановлен
     sigServerStatus = pyqtSignal(bool)      # Статус сервера (True - запущен, False - остановлен)
@@ -314,8 +314,8 @@ class DCLMStudio(QObject):
         """Возвращает текущую модель"""
         return self._current_model 
     
-    @pyqtSlot(str, int, float, int)
-    def ustParametri(self, model_name, max_context, temperature, gpu_offload):
+    @pyqtSlot(str, int, int)
+    def ustParametri(self, model_name, max_context, gpu_offload):
         """Публичный слот для загрузки модели с параметрами"""
         if not model_name or model_name == self.NO_MODEL_NAME:# если модель "(отсутствует)" или пустая
             self.vigruzitModel()#Выгружаем модель.
@@ -334,7 +334,7 @@ class DCLMStudio(QObject):
 
         if success:
             self._current_model = model_name #присваеваем имя модели, когда она загрузилась.
-            self.sigParametriIzmeneni.emit(self._current_model, max_context, temperature)
+            self.sigParametriIzmeneni.emit(self._current_model, max_context)
         else:
             # Ошибка при начале загрузки
             self._emit_error(10, f"Не удалось начать загрузку модели {model_name}")

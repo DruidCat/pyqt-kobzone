@@ -75,19 +75,22 @@ class DCAnalyzer(QObject):
         self._server_url = server_url
         print(f"✓ PyAnalyzer: URL сервера → {server_url}")
 
-    @pyqtSlot(str, int, float)
-    def ustParametri(self, model_name, max_context, temperature):
-        if model_name == "" or model_name == "(автовыбор модели)":
+    @pyqtSlot(str, int)
+    def ustParametri(self, model_name, max_context):
+        if model_name == "" or model_name == "(отсутствует)":
             self.model_name = None
         else:
             self.model_name = model_name
 
         self.max_context = max_context
-        self.temperature = temperature
 
     @pyqtSlot(int)
     def ustPerekritie(self, overlap_percent):
         self.overlap_percent = overlap_percent
+    
+    @pyqtSlot(float)#Слот задающий температуру языковой модели.
+    def ustTemperature(self, temperature):
+        self.temperature = temperature
 
     @pyqtSlot(str, str)
     def startAnaliza(self, text_content, prompt):

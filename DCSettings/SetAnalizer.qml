@@ -53,6 +53,9 @@ Drawer {
 	onStrPromptFinalChanged: {//Если финальный промт изменился, то...
 		pyAnalyzer.ustFinalPrompt(root.strPromptFinal)
 	}
+	onRlTemperaturaChanged: {
+		pyAnalyzer.ustTemperature(root.rlTemperatura)//Загружаем температуру в скрипт
+	}
 	function fnCloseTemperaturaIfOpen(){
 		if (pvTemperatura.visible) {
 			pvTemperatura.visible = false

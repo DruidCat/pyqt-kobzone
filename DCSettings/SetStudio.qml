@@ -48,14 +48,12 @@ Item {
 	property string serverURL: DCSettings.analizer_server_url//URL Сервера LM Studio
 	property string strModel: DCSettings.analizer_model_imya//Имя модели ИИ
 	property string strModelNoName: ""//Получаем имя модели ОТСУТСТВУЕТ.
-	property bool __isModeNoName: false//true - выбрана модель MODEL_NO_NAME, чтоб её выгрузить.
-	property real rlTemperatura: DCSettings.analizer_temperatura//Температура ИИ
+	property bool __isModelNoName: false//true - выбрана модель MODEL_NO_NAME, чтоб её выгрузить.
 	property int ntPerekritie: DCSettings.analizer_perekritie
 	property int maxContext: DCSettings.analizer_max_context//Максимальное количество токенов
 	property bool isStudioOn: false//true - LM Studio запущена.
 	property int gpuOffload: DCSettings.analizer_gpu_offload
 	property bool isModelStart: false//true - первая иннициализация уже была
-	property bool isTemperaturaStart: false//true - первая иннициализация уже была
 	property bool isContextStart: false//true - первая иннициализация уже была
 	property bool isGpuOffloadStart: false//true - первая иннициализация уже была
 	//Настройки
@@ -71,7 +69,7 @@ Item {
 		root.strModelNoName = pyLMStudio.polModelNoName()//Получаем имя модели ОТСУТСТВУЕТ.
 		fnModelEnabled()//Функция управляет политикой кнопок Temperatura, Context, GPU
 		knopkiMassiv = [knopkaLMStart, knopkaLMStop, knopkaLMPut, knopkaCLIPut, knopkaModeli,
-						knopkaTemperatura, knopkaContext, knopkaGPU, knopkaServerURL]
+						knopkaContext, knopkaGPU, knopkaServerURL]
 		if (DCSettings.analizer_lms_put !== "")//Передаём путь из настроек в Python
 			pyLMStudio.ustPutStudio(DCSettings.analizer_lms_put)
 		root.forceActiveFocus()	
@@ -85,11 +83,6 @@ Item {
 		isModelStart = true
 		fnModelEnabled()//Функция управляет политикой кнопок Temperatura, Context, GPU
 	}
-	onRlTemperaturaChanged: {	
-		if (isTemperaturaStart)//Первую иннициализацию не обрабатываем, когда данные читаются из реестра
-			fnUstParametri()//Устанавливаем параметры root.strModel, ltMaxContext, ltTemperatura, ltGPU
-		isTemperaturaStart = true
-	}	
 	onMaxContextChanged: {
 		if (isContextStart)//Первую иннициализацию не обрабатываем, когда данные читаются из реестра
 			fnUstParametri()//Устанавливаем параметры root.strModel, ltMaxContext, ltTemperatura, ltGPU
@@ -131,6 +124,9 @@ Item {
 			if(ntError !== 13){//Если это не пуста модель, то...
             	root.toolbar(`Ошибка ${ntError}: ${errorMsg}`)
 				pvModels.isServerZapustit = false
+				ldrProgress.active = false
+			} else if(root.__isModelNoName){//Если выгрузка модели, то...
+				root.__isModelNoName = false//Сбрасываем флаг.
 				ldrProgress.active = false
 			}
         }
@@ -216,8 +212,8 @@ Item {
 			ldrProgress.active = false
 		}
 		function onSigModelVigrujena(blStatus){
-			if(root.__isModeNoName) ldrProgress.active = false
-			root.__isModeNoName = false//Сбрасываем флаг.
+			if(root.__isModelNoName) ldrProgress.active = false
+			root.__isModelNoName = false//Сбрасываем флаг.
 		}
 		function onSigModelProgress(ntProgress) {
 			if (ldrProgress.item) {
@@ -360,9 +356,6 @@ Item {
 		if (pvModels.visible) {
 			pvModels.visible = false
 		}
-		if (pvTemperatura.visible) {
-			pvTemperatura.visible = false
-		}
 		txnVvod.visible = false//Делаем невидимым ввот чисел
     }
 	function fnClickedNazad() {
@@ -413,7 +406,6 @@ Item {
 			menuMenu.visible = false
 		else {
 			if (pvModels.visible) pvModels.visible = false
-			if (pvTemperatura.visible) pvTemperatura.visible = false
 			if (txnVvod.visible) txnVvod.visible = false
 			if (vprVopros.visible) vprVopros.visible = false
 			menuMenu.visible = true
@@ -443,14 +435,6 @@ Item {
 		}
 		return false
 	}
-	function fnCloseTemperaturaIfOpen(){
-		if (pvTemperatura.visible) {
-			pvTemperatura.visible = false
-			root.forceActiveFocus()//фокус root, чтоб hotkey работали.
-			return true
-		}
-		return false
-	}
 	function fnCloseTXNtIfOpen() {
 		if (txnVvod.visible) {
 			txnVvod.visible = false
@@ -466,18 +450,16 @@ Item {
 		return false
 	}
 	function fnUstParametri() {//Устанавливаем параметры root.strModel, ltMaxContext, ltTemperatura, ltGPU
-		if(root.strModel === root.strModelNoName) root.__isModeNoName = true
+		if(root.strModel === root.strModelNoName) root.__isModelNoName = true
 		else root.__strProgress = "Загрузка модели: " + root.strModel
 		let ltMaxContext = DCSettings.analizer_max_context
-		let ltTemperatura = DCSettings.analizer_temperatura
 		let ltGPU = DCSettings.analizer_gpu_offload
 		ldrProgress.active = true//Запускаем полосу прогресса загрузки модели
-		pyLMStudio.ustParametri(root.strModel, ltMaxContext, ltTemperatura, ltGPU)
+		pyLMStudio.ustParametri(root.strModel, ltMaxContext, ltGPU)
 	}
 	function fnModelEnabled(){//Функция управляет политикой кнопок Temperatura, Context, GPU
 		let ltFlag = true//Истина
 		if(root.strModel === root.strModelNoName) ltFlag = false
-		knopkaTemperatura.enabled = ltFlag
 		knopkaContext.enabled = ltFlag
 		knopkaGPU.enabled = ltFlag
 	}
@@ -510,20 +492,6 @@ Item {
 		}
 		else pyLMStudio.ostanovitStudio()
 	}
-	function fnClickedTemperatura(){//Функция выбора Температуры ИИ
-		if(pvTemperatura.visible){//Если видимый виджет, то...
-			Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModels. ВАЖНО!!!
-				pvTemperatura.visible = false//Делаем невидимым виджет
-				root.forceActiveFocus()//фокус PathView, чтоб hotkey работали.
-			})
-		}
-		else{//Если невидимый виджет, то...
-			Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModels. ВАЖНО!!!
-				pvTemperatura.visible = true//Делаем видимым виджет
-				pvTemperatura.karusel.forceActiveFocus()//фокус PathView, чтоб hotkey работали.
-			})
-		}
-	}	
 	function fnClickedVvod(vvod){//Функция выбора Ввода данных
 		txnVvod.ntVvod = vvod
 		txnVvod.visible = !txnVvod.visible
@@ -770,7 +738,6 @@ Item {
 													&& !knopkaGPU.pressedTmr550 
 													&& !knopkaServerURL) fnCloseTXNtIfOpen()
 					if(!pvModels.jdi && !pvModels.pressed) fnCloseModelsIfOpen()//Закрываем карусель pv....
-					if(!pvTemperatura.jdi && !pvTemperatura.pressed) fnCloseTemperaturaIfOpen()//Закрываем
 					if(!knopkaModeli.pressedTmr550 	&& !knopkaLMStart.pressedTmr550
 													&& !knopkaLMStop.pressedTmr550)fnCloseVoprosIfOpen()
 				}
@@ -801,7 +768,7 @@ Item {
 					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()){
-								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
+								if (pressed && !pvModels.pressed) fnPress()
 							}
 						}
 					}
@@ -823,7 +790,7 @@ Item {
 					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
-								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
+								if (pressed && !pvModels.pressed) fnPress()
 							}
 						}
 					}
@@ -852,7 +819,7 @@ Item {
 					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
-								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
+								if (pressed && !pvModels.pressed) fnPress()
 							}
 						}
 					}	
@@ -878,7 +845,7 @@ Item {
 					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
-								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
+								if (pressed && !pvModels.pressed) fnPress()
 							}
 						}
 					}	
@@ -909,33 +876,7 @@ Item {
 					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
-								if (pressed && !pvModels.pressed && !pvTemperatura.pressed)fnPress()
-							}
-						}
-					}
-				}
-				DCKnopkaOriginal {//Кнопка выбора Температуры ИИ
-                    id: knopkaTemperatura
-                    text: {
-                        let ltText = qsTr("температура ");//
-						ltText += root.rlTemperatura//Добавляем в строчку температуру из параметра
-                        pvTemperatura.currentIndex = root.rlTemperatura*10//Выставляем в карусели нужную Темп.
-						return ltText;
-                    }
-                    ntHeight: root.ntWidth; ntCoff: root.ntCoff
-					anchors.left: parent.left; anchors.right: parent.right
-                    anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
-					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 5) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
-                    opacityKnopki: 0.9
-					function fnPress() {
-						root.currentIndex = 5
-						fnClickedTemperatura()//Функция выбора Температуры ИИ
-					}
-					onClicked: {
-						if (pressed) {
-							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
-								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
+								if (pressed && !pvModels.pressed)fnPress()
 							}
 						}
 					}
@@ -951,16 +892,16 @@ Item {
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 6) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 5) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					function fnPress() {
-						root.currentIndex = 6
+						root.currentIndex = 5
 						fnClickedVvod(0)//Функция выбора максимального контекста
 					}
 					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
-								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
+								if (pressed && !pvModels.pressed) fnPress()
 							}
 						}
 					}
@@ -976,16 +917,16 @@ Item {
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 7) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 6) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					function fnPress() {
-						root.currentIndex = 7
+						root.currentIndex = 6
 						fnClickedVvod(2)//Функция ввода gpu offload
 					}
 					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
-								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
+								if (pressed && !pvModels.pressed) fnPress()
 							}
 						}
 					}
@@ -1001,16 +942,16 @@ Item {
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 8) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 7) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					function fnPress() {
-						root.currentIndex = 8
+						root.currentIndex = 7
 						fnClickedVvod(3)//Функция ввода адреса сервера
 					}
 					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
-								if (pressed && !pvModels.pressed && !pvTemperatura.pressed) fnPress()
+								if (pressed && !pvModels.pressed) fnPress()
 							}
 						}
 					}
@@ -1050,39 +991,6 @@ Item {
 				Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModels. ВАЖНО!!!
 					pvModels.visible = false//Делаем невидимым виджет
 					DCSettings.analizer_model_imya = strModel//Сохраняем в Реестре
-				})
-            }
-			onVisibleChanged: {//Если видимость поменялась, то...
-				if(!visible) root.forceActiveFocus()//Если невидимый, то фокус на root, чтоб hotkey работали.
-			}
-        }
-		ListModel {//Модель с температурами для ИИ
-			id: modelTemperatura
-            ListElement { spisok: 0 }
-            ListElement { spisok: 0.1 }
-            ListElement { spisok: 0.2 }
-            ListElement { spisok: 0.3 }
-            ListElement { spisok: 0.4 }
-            ListElement { spisok: 0.5 }
-            ListElement { spisok: 0.6 }
-            ListElement { spisok: 0.7 }
-            ListElement { spisok: 0.8 }
-            ListElement { spisok: 0.9 }
-            ListElement { spisok: 1 }
-        }
-		DCPathView {
-            id: pvTemperatura
-            visible: false
-            ntWidth: root.ntWidth; ntCoff: root.ntCoff
-            anchors.left: tmZona.left; anchors.right: tmZona.right; anchors.bottom: tmZona.bottom
-            anchors.leftMargin: dcScrollbar.width; anchors.rightMargin: dcScrollbar.width
-            clrFona: root.clrFona; clrTexta: root.clrMenuText; clrMenuFon: root.clrMenuFon
-            modelData: modelTemperatura
-            onClicked: function(strTemperatura) {
-				Qt.callLater(function(){//пауза, иначе не сработает фокус и pvTemperatura. ВАЖНО!!!
-					pvTemperatura.visible = false//Делаем невидимым виджет
-					root.rlTemperatura = strTemperatura//Приравнываем значение полученное
-					DCSettings.analizer_temperatura = root.rlTemperatura//Сохраняем в реестре температуру ИИ.
 				})
             }
 			onVisibleChanged: {//Если видимость поменялась, то...
@@ -1137,7 +1045,6 @@ Item {
 					knopkaLMPut.enabled = false
 					knopkaCLIPut.enabled = false
 					knopkaModeli.enabled = false
-					knopkaTemperatura.enabled = false
 					knopkaContext.enabled = false
 					knopkaGPU.enabled = false
 					knopkaServerURL.enabled = false
@@ -1151,7 +1058,6 @@ Item {
 					knopkaCLIPut.enabled = true
 					knopkaModeli.enabled = true
 					fnModelEnabled()//Функция управляет политикой кнопок Temperatura, Context, GPU
-					//knopkaTemperatura.enabled = true 
 					//knopkaContext.enabled = true
 					//knopkaGPU.enabled = true
 					knopkaServerURL.enabled = true
@@ -1205,10 +1111,9 @@ Item {
 		propagateComposedEvents: true
 		onClicked: (mouse) => {
 			mouse.accepted = false
-			if (menuMenu.visible || pvModels.visible || pvTemperatura.visible || txnVvod.visible){
+			if (menuMenu.visible || pvModels.visible || txnVvod.visible){
 				menuMenu.visible = false
 				pvModels.visible = false
-				pvTemperatura.visible = false
 				txnVvod.visible = false
 			} else root.forceActiveFocus()
 			root.forceActiveFocus()
