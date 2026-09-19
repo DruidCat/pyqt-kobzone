@@ -48,6 +48,7 @@ Drawer {
 		if(position) root.readOnly = false//Если панель открыта, то режим резактирования
 		else {
 			fnCloseTemperaturaIfOpen()
+			fnClosePerekritieIfOpen()
 			root.readOnly = true//Если панель закрыта, то режим только чтения.
 		}
 	}
@@ -63,6 +64,14 @@ Drawer {
 	function fnCloseTemperaturaIfOpen(){
 		if (pvTemperatura.visible) {
 			pvTemperatura.visible = false
+			root.forceActiveFocus()//фокус root, чтоб hotkey работали.
+			return true
+		}
+		return false
+	}
+	function fnClosePerekritieIfOpen(){
+		if (pvPerekritie.visible) {
+			pvPerekritie.visible = false
 			root.forceActiveFocus()//фокус root, чтоб hotkey работали.
 			return true
 		}
@@ -133,6 +142,7 @@ Drawer {
 		TapHandler {//Нажимаем на всю область
 			onTapped: {
 				if(!pvTemperatura.jdi && !pvTemperatura.pressed) fnCloseTemperaturaIfOpen()//Закрываем
+				if(!pvPerekritie.jdi && !pvPerekritie.pressed) fnClosePerekritieIfOpen()//Закрываем
 			}
 		}
 		Behavior on opacity {
@@ -178,7 +188,45 @@ Drawer {
 					}
 				}
 				onClicked: {
-					if (pressed && !pvTemperatura.pressed) fnClicked()
+					if (pressed && !pvTemperatura.pressed && !pvPerekritie.pressed) fnClicked()
+				}
+			}
+			DCKnopkaOriginal {//Кнопка выбора Перекрытия ИИ
+				id: knopkaPerekritie
+				text: {
+					let ltText = qsTr("перекрытие ");//
+					ltText += root.ntPerekritie//Добавляем в строчку перекрытие из настроек
+					ltText += "%"
+					for (let i = 0; i < modelPerekritie.count; i++) {//Ищем сохранённую модель в списке
+						if (modelPerekritie.get(i).spisok === root.ntPerekritie) {
+							pvPerekritie.currentIndex = i//Выставляем в карусели нужный процент Перекрытия
+							break
+						}
+					}
+					return ltText;
+				}
+				ntHeight: root.ntWidth; ntCoff: root.ntCoff
+				anchors.left: parent.left; anchors.right: parent.right
+				anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
+				clrTexta: root.clrTexta; clrKnopki: root.clrMenuFon
+				enabled: root.enabled
+				opacityKnopki: 0.9
+				function fnClicked() {
+					if(pvPerekritie.visible){//Если видимый виджет, то...
+						Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModels. ВАЖНО!!!
+							pvPerekritie.visible = false//Делаем невидимым виджет
+							root.forceActiveFocus()//фокус PathView, чтоб hotkey работали.
+						})
+					}
+					else{//Если невидимый виджет, то...	
+						Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModels. ВАЖНО!!!
+							pvPerekritie.visible = true//Делаем видимым виджет
+							pvPerekritie.karusel.forceActiveFocus()//фокус PathView, чтоб hotkey работали.
+						})
+					}
+				}
+				onClicked: {
+					if (pressed && !pvTemperatura.pressed && !pvPerekritie.pressed) fnClicked()
 				}
 			}
 			Text {//Содержимое файла
@@ -207,7 +255,10 @@ Drawer {
 					root.strPromptFinal = text
 					DCSettings.analizer_prompt_final = text
 				}
-				onPressed: fnCloseTemperaturaIfOpen()//Закрываем карусель температуры
+				onPressed: {
+					fnCloseTemperaturaIfOpen()//Закрываем карусель температуры
+					fnClosePerekritieIfOpen()//Закрываем карусель перекрытия
+				}
 			}	
 		}
 	}
@@ -296,6 +347,38 @@ Drawer {
 				pvTemperatura.visible = false//Делаем невидимым виджет
 				root.rlTemperatura = strTemperatura//Приравнываем значение полученное
 				DCSettings.analizer_temperatura = root.rlTemperatura//Сохраняем в реестре температуру ИИ.
+			})
+		}
+		onVisibleChanged: {//Если видимость поменялась, то...
+			if(!visible) root.forceActiveFocus()//Если невидимый, то фокус на root, чтоб hotkey работали.
+		}
+	}
+	ListModel {//Модель с % перекрытия для анализа
+		id: modelPerekritie
+		ListElement { spisok: 0 }
+		ListElement { spisok: 5 }
+		ListElement { spisok: 10 }
+		ListElement { spisok: 15 }
+		ListElement { spisok: 20 }
+		ListElement { spisok: 25 }
+		ListElement { spisok: 30 }
+		ListElement { spisok: 35 }
+		ListElement { spisok: 40 }
+	}
+	DCPathView {
+		id: pvPerekritie
+		visible: false
+		ntWidth: root.ntWidth; ntCoff: root.ntCoff
+		anchors.left: rctSidebar.left; anchors.right: rctSidebar.right; anchors.bottom: rctSidebar.bottom
+		anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
+		anchors.bottomMargin: rctOkontovka.border.width
+		clrFona: root.clrFona; clrTexta: root.clrTexta; clrMenuFon: root.clrMenuFon
+		modelData: modelPerekritie
+		onClicked: function(strPerekritie) {
+			Qt.callLater(function(){//пауза, иначе не сработает фокус и pvPerekritie. ВАЖНО!!!
+				pvPerekritie.visible = false//Делаем невидимым виджет
+				root.ntPerekritie = strPerekritie//Приравнываем значение полученное
+				DCSettings.analizer_perekritie = root.ntPerekritie//Сохраняем в реестре перекрытие в %.
 			})
 		}
 		onVisibleChanged: {//Если видимость поменялась, то...
