@@ -798,7 +798,7 @@ Item {
                 }
             }
         }
-		DCSidebarAnalizer {
+		SetAnalizer {
 			id: dcSidebar
 			ntWidth: root.ntWidth; ntCoff: root.ntCoff
 			height: tmZona.height

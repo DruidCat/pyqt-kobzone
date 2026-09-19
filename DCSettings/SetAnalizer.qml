@@ -1,10 +1,9 @@
-﻿//DCSidebarAnalizer.qml
-import QtQuick //2.15
+﻿import QtQuick //2.15
 import QtQuick.Controls//Drawer
 import DCButtons 1.0//Импортируем кнопки написанные мной.
 import DCMethods 1.0//Импортируем методы написанные мной.
 import DCSettings 1.0//Импортируем настройки
-//Боковая панель в нейроанализе документов.
+//SetAnalizer - Боковая панель с настройками нейро анализа документов.
 Drawer {
 	id: root
 	//Свойства

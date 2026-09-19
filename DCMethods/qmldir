@@ -7,7 +7,6 @@ DCPathView 1.0 DCPathView.qml
 DCProgress 1.0 DCProgress.qml
 DCScale 1.0 DCScale.qml
 DCScrollbar 1.0 DCScrollbar.qml
-DCSidebarAnalizer 1.0 DCSidebarAnalizer.qml
 DCSpinBox 1.0 DCSpinBox.qml
 DCTextEdit 1.0 DCTextEdit.qml
 DCTextInput 1.0 DCTextInput.qml
