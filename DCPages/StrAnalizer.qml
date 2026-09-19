@@ -51,6 +51,7 @@ Item {
     signal clickedNazad()
 	signal clickedSettings()
     signal clickedInfo()
+	signal clickedInfoAnalizer()//Информация по настройкам нейроанализа.
     signal toolbar(var strToolbar)
     signal log(var strLog)
     //Методы
@@ -807,6 +808,7 @@ Item {
 			onOpenedChanged: {//Если состояние боковой панели изменилось, она открыта или закрыта, то...
 				root.forceActiveFocus()
 			}
+			onClickedInfo: root.clickedInfoAnalizer()//Информация по настройкам нейроанализа.
 		}
         DCScrollbar {//Скроллбар основной области
             id: dcScrollbar

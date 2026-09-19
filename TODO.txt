@@ -17,12 +17,12 @@ TODO:
 - StrAnalizer, DCTextEdit, баг Qt6.8, не рендерит большие тексты, не позволять опускаться в самый низ тексту.
 - StrAnalizer, если начать анализ, а потом остановить, и протом опять начать, то первый анализ с ошибкой.
 - StrAnalizer, Windows {Загрузить файлы}, в консоли ошибка QWindowsNativeFileDialogBase::shellItem: SHCreateItemFromParsingName(file://c/Users/HP/Documents/2025-12-12_08-09-21_Mentor/????????????? ?????? 239)) failed (═х эрщфхэ ёхЄхтющ яєЄ№.)
-- SetAnalizer, Добавить кнопку инструкция в заголовок.
 - SetAnalizer, добавить настройку Перекрытия в процентах от 0 до 50%
 - SetAnalizer, DCTextEdit, не работает пейсхолдер подсказка.
 - SetAnalizer, не работает фокус горячей клавиши Alt+S.
 - SetStudio, убрать параметр Температура из настроек LM Studio.
 - SetStudio, сделать настройку запуска LM Studio с sandbox и без sandbox.
+- SetAnalizer, сделать горячие клавиши, Alt+S и F1
 - DCLMStudio, вырезать параметр температура, и добавить возможность задавать её через PyAnalizer.
 - DCLMStudio, автоматически включен режим мультимодальности, который обрабатывает картинки и занимает 2Gb VRAM
 - DCLMStudio, От имени исполняемого файла KOBzone перестраивается автоматически, с каким приложением работать.
@@ -186,3 +186,4 @@ TODO:
 2026-09-19 DCSidebarAnalizer, добавил настройку Температура.
 2026-09-19 SetAnalizer, переименовал в SetStudio, так же переименовал инструкцию.
 2026-09-19 DCSidebarAnalizer, переименовал в SetAnalizer. В папку DCSettings. 
+2026-09-19 SetAnalizer, Добавил кнопку инструкция в заголовок. Наделил её функционалом.

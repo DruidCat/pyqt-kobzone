@@ -13,6 +13,8 @@ Drawer {
     property color clrFona: "Black"
     property color clrMenuFon: "SlateGray"
 	property bool readOnly: false//true - запрещено редактировать текст
+	property real tapZagolovokLevi: 1.3
+	property real tapZagolovokPravi: 1.3
 	property string strPromptFinal: DCSettings.analizer_prompt_final
 	property real rlTemperatura: DCSettings.analizer_temperatura//Температура ИИ
 	property bool isMobile: false//true - мобильное устройство
@@ -32,6 +34,8 @@ Drawer {
 	height: parent.height//Высота боковой панели по высоте родителя.
 	y: root.ntWidth * root.ntCoff + 3 * root.ntCoff//координату по Y брал из расчёта Stranica.qml
 	interactive: true//false -  панель не реагирует на свайпы.
+	//Сигналы
+	signal clickedInfo()//Сигнал открытия информации
 	//Методы
 	Component.onCompleted: {
 		txdPromptFinal.text = DCSettings.analizer_prompt_final
@@ -74,17 +78,24 @@ Drawer {
 		color: root.clrFona
 		border.color: root.clrTexta
 		border.width: root.ntCoff/4
+		DCKnopkaInfo {
+			id: knopkaInfo
+			ntWidth: (root.ntWidth-1); ntCoff: root.ntCoff
+			anchors.verticalCenter: rctZagolovok.verticalCenter; anchors.left: rctZagolovok.left
+			clrKnopki: root.clrTexta; clrFona: root.clrFona
+			tapHeight: (root.ntWidth-1)*root.ntCoff+root.ntCoff; tapWidth: tapHeight * root.tapZagolovokLevi
+			function fnClicked(){
+				root.close()//Закрываем панель, сворачиваем температуру
+				root.clickedInfo()//Сигнал нажатия на кнопку информации.
+			}
+			onClicked: fnClicked()//Функция нажатия информации.
+		}
 		DCKnopkaZakrit {
 			id: knopkaZakrit
-			ntWidth: (root.ntWidth-1)
-			ntCoff: root.ntCoff
-			visible: true
-			anchors.verticalCenter: rctZagolovok.verticalCenter
-			anchors.right: rctZagolovok.right
-			clrKnopki: root.clrTexta
-			clrFona: root.clrFona
-			tapHeight: (root.ntWidth-1)*root.ntCoff+root.ntCoff
-			tapWidth: tapHeight
+			ntWidth: (root.ntWidth-1); ntCoff: root.ntCoff
+			anchors.verticalCenter: rctZagolovok.verticalCenter; anchors.right: rctZagolovok.right
+			clrKnopki: root.clrTexta; clrFona: root.clrFona
+			tapHeight: (root.ntWidth-1)*root.ntCoff+root.ntCoff; tapWidth: tapHeight * root.tapZagolovokPravi
 			onClicked: root.close();//Метод обрабатывающий кнопку Закрыть боковую панель.
 		}
 		Label {//Текст вписанный в границы, отображает имя заголовка.

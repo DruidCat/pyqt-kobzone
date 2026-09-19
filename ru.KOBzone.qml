@@ -300,6 +300,10 @@ ApplicationWindow {
 					tmStrInstrukciya.strInstrukciya = "analizer"
 					stvStr.push(pgStrInstrukciya)//Переходим на страницу инструкций Анализа Документа
 				}
+				onClickedInfoAnalizer: {
+					tmStrInstrukciya.strInstrukciya = "set_analizer"
+					stvStr.push(pgStrInstrukciya)//Переходим на страницу инструкций Анализа Документа
+				}
 				onToolbar: function(strToolbar) {//Если сигнал пришёл с текстом в toolbar, то...
 					toolbar.fnText(strToolbar)//Передаём на отображение в toolbar сообщение.
 				}
