@@ -293,8 +293,8 @@ ApplicationWindow {
 					Qt.callLater(function() { stvStr.currentItem.forceActiveFocus() })
 				}
 				onClickedSettings: {
-					tmSetAnalizer.fnStudioStatus(true)//Функция, которая запускает работу статуса работы LMS
-					stvStr.push(pgStrSetAnalizer)
+					tmSetStudio.fnStudioStatus(true)//Функция, которая запускает работу статуса работы LMS
+					stvStr.push(pgStrSetStudio)
 				}
 				onClickedInfo: {
 					tmStrInstrukciya.strInstrukciya = "analizer"
@@ -312,27 +312,27 @@ ApplicationWindow {
 		///////////////////////////////////////
 		///Н А С Т Р О Й К А   А Н А Л И З А///
 		///////////////////////////////////////
-			id: pgStrSetAnalizer
+			id: pgStrSetStudio
 			visible: false; focus: true
 			ntWidth: root.ntWidth; ntCoff: root.ntCoff
 			clrFona: root.clrFona; clrTexta: root.clrKnopok; clrRabOblasti: root.clrStranic
-			textZagolovok: "НАСТРОЙКА НЕЙРО АНАЛИЗА"
+			textZagolovok: "НАСТРОЙКА LM STUDIO"
 			zagolovokLevi: 1.3; zagolovokPravi: 1.3; toolbarLevi: 1.3; toolbarPravi: 1.3
-			onVisibleChanged: if (visible) Qt.callLater(function() { tmSetAnalizer.forceActiveFocus() })
-			SetAnalizer{
-				id: tmSetAnalizer
-				ntWidth: pgStrSetAnalizer.ntWidth; ntCoff: pgStrSetAnalizer.ntCoff
-				clrTexta: pgStrSetAnalizer.clrTexta; clrFona: pgStrSetAnalizer.clrRabOblasti
+			onVisibleChanged: if (visible) Qt.callLater(function() { tmSetStudio.forceActiveFocus() })
+			SetStudio{
+				id: tmSetStudio
+				ntWidth: pgStrSetStudio.ntWidth; ntCoff: pgStrSetStudio.ntCoff
+				clrTexta: pgStrSetStudio.clrTexta; clrFona: pgStrSetStudio.clrRabOblasti
 				clrMenuText: root.clrMenuText; clrMenuFon: pgStrTranscribe.clrFona
 				clrVnimanie: root.clrVnimanie
-				zagolovokX: pgStrSetAnalizer.rctStrZagolovok.x; zagolovokY: pgStrSetAnalizer.rctStrZagolovok.y
-				zagolovokWidth: pgStrSetAnalizer.rctStrZagolovok.width
-				zagolovokHeight: pgStrSetAnalizer.rctStrZagolovok.height
-				zonaX: pgStrSetAnalizer.rctStrZona.x; zonaY: pgStrSetAnalizer.rctStrZona.y
-				zonaWidth: pgStrSetAnalizer.rctStrZona.width; zonaHeight: pgStrSetAnalizer.rctStrZona.height
-				toolbarX: pgStrSetAnalizer.rctStrToolbar.x; toolbarY: pgStrSetAnalizer.rctStrToolbar.y
-				toolbarWidth: pgStrSetAnalizer.rctStrToolbar.width
-				toolbarHeight: pgStrSetAnalizer.rctStrToolbar.height
+				zagolovokX: pgStrSetStudio.rctStrZagolovok.x; zagolovokY: pgStrSetStudio.rctStrZagolovok.y
+				zagolovokWidth: pgStrSetStudio.rctStrZagolovok.width
+				zagolovokHeight: pgStrSetStudio.rctStrZagolovok.height
+				zonaX: pgStrSetStudio.rctStrZona.x; zonaY: pgStrSetStudio.rctStrZona.y
+				zonaWidth: pgStrSetStudio.rctStrZona.width; zonaHeight: pgStrSetStudio.rctStrZona.height
+				toolbarX: pgStrSetStudio.rctStrToolbar.x; toolbarY: pgStrSetStudio.rctStrToolbar.y
+				toolbarWidth: pgStrSetStudio.rctStrToolbar.width
+				toolbarHeight: pgStrSetStudio.rctStrToolbar.height
 				tapZagolovokLevi: 1.3; tapZagolovokPravi: 1.3; tapToolbarLevi: 1.3; tapToolbarPravi: 1.3
 				logoRazmer: root.logoRazmer; logoImya: root.logoImya
 				onClickedNazad: {
@@ -340,7 +340,7 @@ ApplicationWindow {
 					Qt.callLater(function() { stvStr.currentItem.forceActiveFocus() })
 				}
 				onClickedInfo: {
-					tmStrInstrukciya.strInstrukciya = "set_analizer"
+					tmStrInstrukciya.strInstrukciya = "set_studio"
 					stvStr.push(pgStrInstrukciya)
 				}
 				onToolbar: function(strToolbar) {//Если сигнал пришёл с текстом в toolbar, то...

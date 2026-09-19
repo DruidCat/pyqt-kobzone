@@ -274,8 +274,8 @@ Item {
 																zagolovok: "НАСТРОЙКА ПРИЛОЖЕНИЯ" }
 				ListElement { key: "analizer"; title: "Анализ документов";
 																zagolovok:"ИНСТРУКЦИЯ ПО АНАЛИЗУ ДОКУМЕНТОВ" }
-				ListElement { key: "set_analizer"; title: "Настройка нейро анализа";
-																zagolovok: "НАСТРОЙКА НЕЙРО АНАЛИЗА" }
+				ListElement { key: "set_studio"; title: "Настройка LM Studio";
+																zagolovok: "НАСТРОЙКА LM STUDIO" }
                 ListElement { key: "orfograf"; title: "Орфография"; zagolovok: "ИНСТРУКЦИЯ ПО ОРФОГРАФИИ" }
 				ListElement { key: "set_orfograf"; title: "Настройка орфографии";
 																zagolovok: "НАСТРОЙКА ОРФОГРАФИИ" }
@@ -458,7 +458,7 @@ github.com/DruidCat/pyqt-kobzone</a></center></p>
                     </body>
                 </html>"
             );
-        } else if(strKluch === "set_analizer"){
+        } else if(strKluch === "set_studio"){
             txdZona.text = qsTr("
                 <html>
                     <body>
