@@ -17,6 +17,7 @@ Drawer {
 	property real tapZagolovokPravi: 1.3
 	property string strPromptFinal: DCSettings.analizer_prompt_final
 	property real rlTemperatura: DCSettings.analizer_temperatura//Температура ИИ
+	property int ntPerekritie: DCSettings.analizer_perekritie
 	property bool isMobile: false//true - мобильное устройство
 	property int __parentWidth: parent.width//Ширина родителя, ширина основного окна приложения.
 	property int __minSidebarWidth: __parentWidth * 0.2//Минимум ширины боковой панели
@@ -55,6 +56,9 @@ Drawer {
 	}
 	onRlTemperaturaChanged: {
 		pyAnalyzer.ustTemperature(root.rlTemperatura)//Загружаем температуру в скрипт
+	}
+	onNtPerekritieChanged: {
+		pyAnalyzer.ustPerekritie(root.ntPerekritie)//Загрузка параметр перекрытия в скрипт
 	}
 	function fnCloseTemperaturaIfOpen(){
 		if (pvTemperatura.visible) {
@@ -105,16 +109,15 @@ Drawer {
 			id: lblZagolovok
 			anchors.top: rctZagolovok.top
 			anchors.right: knopkaZakrit.left
-			width: root.width - rctBorder.width - rctRuchka.width - knopkaZakrit.width
+			width: root.width - rctBorder.width - rctRuchka.width - knopkaZakrit.width - knopkaInfo.width
 			height: rctZagolovok.height
 			horizontalAlignment: Text.AlignHCenter
 			verticalAlignment: Text.AlignVCenter
 			color: root.clrTexta
-			//font.capitalization: Font.AllUppercase//СЛОВА ЗАГЛАВНЫМИ БУКВАМИ
 			font.bold: true//Жирный текст.
 			font.pixelSize: root.ntCoff*(root.ntWidth-1)
 			elide: Text.ElideRight//Обрезаем текст по правой стороне точками (...)
-			text: qsTr("Настройки")
+			text: qsTr("НАСТРОЙКИ НЕЙРО АНАЛИЗА")
 		}
 	}
 	Rectangle {//Прямоугольник всей оставшейся боковой панели.
@@ -160,7 +163,7 @@ Drawer {
 				clrTexta: root.clrTexta; clrKnopki: root.clrMenuFon
 				enabled: root.enabled
 				opacityKnopki: 0.9
-				function fnPress() {
+				function fnClicked() {
 					if(pvTemperatura.visible){//Если видимый виджет, то...
 						Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModels. ВАЖНО!!!
 							pvTemperatura.visible = false//Делаем невидимым виджет
@@ -175,7 +178,7 @@ Drawer {
 					}
 				}
 				onClicked: {
-					if (pressed && !pvTemperatura.pressed) fnPress()
+					if (pressed && !pvTemperatura.pressed) fnClicked()
 				}
 			}
 			Text {//Содержимое файла

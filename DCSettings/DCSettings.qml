@@ -13,18 +13,19 @@ QtObject {
 	property int kobzone_set_shrift: 1//0-мал, 1-сред, 2-большой.
 	//Нейро Анализ
 	property real analizer_sidebar_shirina: 0.3//Коэффициент от общей ширины окна, показ.ширину боковой панели
-    property string analizer_put_text: ""
-    property string analizer_put_sohranit: ""
-	property string analizer_put_rag: ""
-	property string analizer_model_imya: ""//По умолчанию отсутствует
-	property string analizer_lms_put: ""//По умолчанию путь не задан
-	property string analizer_cli_put: ""//По умолчанию путь не задан
-	property int analizer_gpu_offload: 50//по умолчанию 50%	
-	property string analizer_server_url: "http://localhost:1234"
-	property int analizer_max_context: 8000//Количество токенов
 	property real analizer_temperatura: 0.5//Температура ИИ модели, чем выше, тем точнее ответ. 0-1
 	property int analizer_perekritie: 20//Перекрытие чтения соседнего чанка в процентах: 20 это 20%
 	property string analizer_prompt_final: "На основе всех этих частичных анализов составь единый, связный итоговый анализ документа. Объедини ключевые моменты, устрани дублирование, выдели главное. Ответ должен быть структурированным и понятным."
+	property string analizer_put_text: ""
+    property string analizer_put_sohranit: ""
+	property string analizer_put_rag: ""
+	//LM Studio 
+	property string studio_model_imya: ""//По умолчанию отсутствует
+	property int studio_max_context: 8000//Количество токенов
+	property int studio_gpu_offload: 50//по умолчанию 50%	
+	property string studio_lms_put: ""//По умолчанию путь не задан
+	property string studio_cli_put: ""//По умолчанию путь не задан
+	property string studio_server_url: "http://localhost:1234"
 	//Транскрибация
     property string transcribe_put_audio: ""
     property string transcribe_put_text: ""
@@ -48,18 +49,19 @@ QtObject {
 		property alias kobzone_set_shrift: root.kobzone_set_shrift
 		//Нейро Анализ
         property alias analizer_sidebar_shirina: root.analizer_sidebar_shirina
-        property alias analizer_put_text: root.analizer_put_text
-        property alias analizer_put_sohranit: root.analizer_put_sohranit
-        property alias analizer_put_rag: root.analizer_put_rag
-		property alias analizer_model_imya: root.analizer_model_imya
-		property alias analizer_max_context: root.analizer_max_context
 		property alias analizer_temperatura: root.analizer_temperatura
 		property alias analizer_perekritie: root.analizer_perekritie
 		property alias analizer_prompt_final: root.analizer_prompt_final
-		property alias analizer_lms_put: root.analizer_lms_put
-		property alias analizer_cli_put: root.analizer_cli_put
-		property alias analizer_gpu_offload: root.analizer_gpu_offload
-		property alias analizer_server_url: root.analizer_server_url
+        property alias analizer_put_text: root.analizer_put_text
+        property alias analizer_put_sohranit: root.analizer_put_sohranit
+        property alias analizer_put_rag: root.analizer_put_rag
+		//LM Studio
+		property alias studio_model_imya: root.studio_model_imya
+		property alias studio_max_context: root.studio_max_context
+		property alias studio_gpu_offload: root.studio_gpu_offload
+		property alias studio_lms_put: root.studio_lms_put
+		property alias studio_cli_put: root.studio_cli_put
+		property alias studio_server_url: root.studio_server_url
 		//Транскрибация
         property alias transcribe_put_audio: root.transcribe_put_audio
         property alias transcribe_put_text: root.transcribe_put_text
@@ -83,7 +85,7 @@ QtObject {
         docPut = docPut !== "" ? docPut : cnDomPut
 		docPut = docPut.toString()//В текст переводим, чтоб replace работал
 		docPut = docPut.replace(/^file:\/\//, "")//Удаляем file://
-		if (analizer_model_imya === "") analizer_model_imya = pyLMStudio.polModelNoName()//имя ОТСУТСТВУЕТ.
+		if (studio_model_imya === "") studio_model_imya = pyLMStudio.polModelNoName()//имя ОТСУТСТВУЕТ.
 		if (analizer_put_text === "") {//Если настройки ёще были записаны, то...
             analizer_put_text = docPut//Записываем в реестр
         }

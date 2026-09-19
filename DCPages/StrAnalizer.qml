@@ -194,9 +194,9 @@ Item {
 					}
 				} else {//Если пустая строка, то...
 					ldrProgress.active = true//Запускаем полосу прогресса загрузки модели
-					ldrProgress.item.text = "Загрузка модели: " + DCSettings.analizer_model_imya
-					pyLMStudio.ustParametri(DCSettings.analizer_model_imya, DCSettings.analizer_max_context,
-											DCSettings.analizer_temperatura, DCSettings.analizer_gpu_offload)
+					ldrProgress.item.text = "Загрузка модели: " + DCSettings.studio_model_imya
+					pyLMStudio.ustParametri(DCSettings.studio_model_imya, DCSettings.studio_max_context,
+											DCSettings.studio_gpu_offload)
 				}
 			}
 		}

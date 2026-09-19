@@ -43,16 +43,15 @@ Item {
     property var knopkiMassiv: []//Массив кнопок, между которыми нужно листать.
     property int currentIndex: 0//Выбранная кнопка.
 	//Модель
-	property string putLMStudio: DCSettings.analizer_lms_put//Путь к приложению LM Studio из реестра.
-	property string putCLI: DCSettings.analizer_cli_put//Путь к cli lms LM Studio из реестра.
-	property string serverURL: DCSettings.analizer_server_url//URL Сервера LM Studio
-	property string strModel: DCSettings.analizer_model_imya//Имя модели ИИ
+	property string putLMStudio: DCSettings.studio_lms_put//Путь к приложению LM Studio из реестра.
+	property string putCLI: DCSettings.studio_cli_put//Путь к cli lms LM Studio из реестра.
+	property string serverURL: DCSettings.studio_server_url//URL Сервера LM Studio
+	property string strModel: DCSettings.studio_model_imya//Имя модели ИИ
 	property string strModelNoName: ""//Получаем имя модели ОТСУТСТВУЕТ.
 	property bool __isModelNoName: false//true - выбрана модель MODEL_NO_NAME, чтоб её выгрузить.
-	property int ntPerekritie: DCSettings.analizer_perekritie
-	property int maxContext: DCSettings.analizer_max_context//Максимальное количество токенов
+	property int maxContext: DCSettings.studio_max_context//Максимальное количество токенов
 	property bool isStudioOn: false//true - LM Studio запущена.
-	property int gpuOffload: DCSettings.analizer_gpu_offload
+	property int gpuOffload: DCSettings.studio_gpu_offload
 	property bool isModelStart: false//true - первая иннициализация уже была
 	property bool isContextStart: false//true - первая иннициализация уже была
 	property bool isGpuOffloadStart: false//true - первая иннициализация уже была
@@ -70,8 +69,8 @@ Item {
 		fnModelEnabled()//Функция управляет политикой кнопок Temperatura, Context, GPU
 		knopkiMassiv = [knopkaLMStart, knopkaLMStop, knopkaLMPut, knopkaCLIPut, knopkaModeli,
 						knopkaContext, knopkaGPU, knopkaServerURL]
-		if (DCSettings.analizer_lms_put !== "")//Передаём путь из настроек в Python
-			pyLMStudio.ustPutStudio(DCSettings.analizer_lms_put)
+		if (DCSettings.studio_lms_put !== "")//Передаём путь из настроек в Python
+			pyLMStudio.ustPutStudio(DCSettings.studio_lms_put)
 		root.forceActiveFocus()	
 	}
 	onServerURLChanged: {
@@ -92,9 +91,6 @@ Item {
 		if (isGpuOffloadStart)//Первую иннициализацию не обрабатываем, когда данные читаются из реестра
 			fnUstParametri()//Устанавливаем параметры root.strModel, ltMaxContext, ltTemperatura, ltGPU
 		isGpuOffloadStart = true
-	}
-	onNtPerekritieChanged: {
-		pyAnalyzer.ustPerekritie(ntPerekritie)//Загрузка при иннициации приложения и при изменении значения
 	}	
 	onPutLMStudioChanged: {//Если путь к LM Studio изменился, то...
 		if (root.putLMStudio !== ""){//Если он не пустой, то...
@@ -145,7 +141,7 @@ Item {
 		//12 - Ошибка остановки сервера
 		//13 - Модель не выбрана
 		function onSigCLIPut(strCLIPut){//Если путь автоматически обнаружен, то он придёт из pyLMStudio
-			DCSettings.analizer_cli_put	= strCLIPut;//Запоминаем в реестре настроек.
+			DCSettings.studio_cli_put	= strCLIPut;//Запоминаем в реестре настроек.
 		}
 		function onSigStudioStarted() {//Обработка сигнала старта LM Studio
 			root.__strProgress = qsTr("Загрузка LM Studio.")
@@ -194,7 +190,7 @@ Item {
             for (let i = 0; i < models.length; i++) {//Заполняем новыми данными
                 modelModels.append({ spisok: models[i] })
             }
-            let savedModel = DCSettings.analizer_model_imya//Устанавливаем текущий индекс
+            let savedModel = DCSettings.studio_model_imya//Устанавливаем текущий индекс
 
             if (savedModel === "" || savedModel === root.strModelNoName) {
                 pvModels.currentIndex = 0//Первый элемент = отсутствует
@@ -298,8 +294,8 @@ Item {
 			return ["Все файлы (*)"];//Безопасный фоллбэк
 		}
 		currentFolder: {//Используем сохранённый путь из реестра, или стандартную домашнюю папку
-			if (DCSettings.analizer_lms_put !== "") {
-				var vrPut = DCSettings.analizer_lms_put
+			if (DCSettings.studio_lms_put !== "") {
+				var vrPut = DCSettings.studio_lms_put
 				vrPut = fnPathToUrl(vrPut)//Преобразуем сохранённый путь в URL
 				return vrPut.substring(0, vrPut.lastIndexOf("/"));//Обрезаем имя файла.
 			}
@@ -307,7 +303,7 @@ Item {
 		}
 		onAccepted: {
 			var vrPut = fnUrlToLocalPath(selectedFile)//Используем кроссплатформенную функцию
-			DCSettings.analizer_lms_put = vrPut
+			DCSettings.studio_lms_put = vrPut
 			if(knopkaLMStart.isStartBezPuti){//Если путь к LM Studio выбран и была попытка старта, то...
 				knopkaLMStart.isStartBezPuti = false;//Сбрасываем флаг.
 				pyLMStudio.zapustitStudio()//Запускаем LM Studio.
@@ -371,11 +367,11 @@ Item {
 			let ltContext = Number(txnVvod.text)//Явно приобразовываем в число.
 			let ltResult = Math.round(ltContext / 64) * 64;//Получаем число кратное 64.
 			if(ltResult < 8000 || ltResult > 131072) root.toolbar("Неверное значение, необходимо от 8000 до 131072.")
-			else DCSettings.analizer_max_context = ltResult//Сохраняем в реестре значение.
+			else DCSettings.studio_max_context = ltResult//Сохраняем в реестре значение.
 		} else if(txnVvod.ntVvod === 1){//Путь к cli lms
 			var vrPutCLI = txnVvod.text
 			if(pyLMStudio.proverkaLMSFaila(vrPutCLI)){//Если такой путь существует, то...
-				DCSettings.analizer_cli_put  = vrPutCLI
+				DCSettings.studio_cli_put  = vrPutCLI
 				pyLMStudio.ustPutCLI(vrPutCLI)
 			} else {
 				root.toolbar("Указан неверный путь до lms.")
@@ -383,14 +379,14 @@ Item {
 		} else if (txnVvod.ntVvod === 2){//ввод gpu offload
 			let ltGPU = Number(txnVvod.text)//Явно преобразуем в число.
 			if(ltGPU >= 0 && ltGPU <= 100){
-				DCSettings.analizer_gpu_offload = ltGPU
+				DCSettings.studio_gpu_offload = ltGPU
 			} else {
 				root.toolbar("Неверно задан параметр gpu offload (0-100%).")
 			}
 		} else if(txnVvod.ntVvod === 3){//Server URL
 			var vrServerURL = txnVvod.text
 			if(pyLMStudio.proverkaServerURL(vrServerURL)){//Если такой url существует, то...
-				DCSettings.analizer_server_url = vrServerURL
+				DCSettings.studio_server_url = vrServerURL
 			} else {
 				root.toolbar("Указан неверный адрес сервера.")
 			}
@@ -452,8 +448,8 @@ Item {
 	function fnUstParametri() {//Устанавливаем параметры root.strModel, ltMaxContext, ltTemperatura, ltGPU
 		if(root.strModel === root.strModelNoName) root.__isModelNoName = true
 		else root.__strProgress = "Загрузка модели: " + root.strModel
-		let ltMaxContext = DCSettings.analizer_max_context
-		let ltGPU = DCSettings.analizer_gpu_offload
+		let ltMaxContext = DCSettings.studio_max_context
+		let ltGPU = DCSettings.studio_gpu_offload
 		ldrProgress.active = true//Запускаем полосу прогресса загрузки модели
 		pyLMStudio.ustParametri(root.strModel, ltMaxContext, ltGPU)
 	}
@@ -637,13 +633,13 @@ Item {
 						knopkaZakrit.visible = true;//Кнопка закрыть Видимая
 						knopkaOk.visible = true;//Кнопка Ок Видимая.
 						if(ntVvod === 0){//Максимальный контекст
-							text = DCSettings.analizer_max_context//Показываем значение макс контекста
+							text = DCSettings.studio_max_context//Показываем значение макс контекста
 						} else if(ntVvod === 1){//Путь к cli lms
-							text = DCSettings.analizer_cli_put//Путь к cli lms
+							text = DCSettings.studio_cli_put//Путь к cli lms
 						} else if (ntVvod === 2){//gpu offload
-							text = DCSettings.analizer_gpu_offload
+							text = DCSettings.studio_gpu_offload
 						} else if (ntVvod === 3){//server_url
-							text = DCSettings.analizer_server_url
+							text = DCSettings.studio_server_url
 						}
 					}
 					else{//Если DCTextInput не видим, то...
@@ -990,7 +986,7 @@ Item {
             onClicked: function(strModel) {
 				Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModels. ВАЖНО!!!
 					pvModels.visible = false//Делаем невидимым виджет
-					DCSettings.analizer_model_imya = strModel//Сохраняем в Реестре
+					DCSettings.studio_model_imya = strModel//Сохраняем в Реестре
 				})
             }
 			onVisibleChanged: {//Если видимость поменялась, то...
