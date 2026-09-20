@@ -240,7 +240,22 @@ Drawer {
 			DCTextEdit {
 				id: txdPromptFinal
 				width: parent.width - parent.leftPadding - parent.rightPadding
-				height: rctSidebar.height - txtPromptFinal.height - root.ntCoff * 4
+				height: {
+					let ltHeight = 0//Высота рабочей области редактирования.
+					if (pvTemperatura.visible || pvPerekritie.visible){
+						ltHeight = rctSidebar.height - txtPromptFinal.height
+												- knopkaTemperatura.height
+												- knopkaPerekritie.height
+												- root.ntCoff * 5
+												- pvTemperatura.height
+					}else {
+						ltHeight = rctSidebar.height - txtPromptFinal.height
+												- knopkaTemperatura.height
+												- knopkaPerekritie.height
+												- root.ntCoff * 5
+					}
+					return ltHeight
+				}
 				ntWidth: root.ntWidth/2//Для уменьшения размера текста и ширины скролбара
 				ntCoff: root.ntCoff
 				readOnly: root.readOnly
@@ -336,6 +351,7 @@ Drawer {
 	DCPathView {
 		id: pvTemperatura
 		visible: false
+		z: 100
 		ntWidth: root.ntWidth; ntCoff: root.ntCoff
 		anchors.left: rctSidebar.left; anchors.right: rctSidebar.right; anchors.bottom: rctSidebar.bottom
 		anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
@@ -367,6 +383,7 @@ Drawer {
 	}
 	DCPathView {
 		id: pvPerekritie
+		z: 100
 		visible: false
 		ntWidth: root.ntWidth; ntCoff: root.ntCoff
 		anchors.left: rctSidebar.left; anchors.right: rctSidebar.right; anchors.bottom: rctSidebar.bottom
