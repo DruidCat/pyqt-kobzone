@@ -1,4 +1,4 @@
-﻿import QtQuick //2.15
+﻿import QtQuick //2.1width: Math.min(rctKarusel.width, rctKarusel.width - rctKnopki.width - root.ntCoff)
 
 import DCButtons 1.0//Импортируем кнопки
 //DCPathView - каруселька выбора трёх элементов.
@@ -117,6 +117,7 @@ Item {
 		id: pthKarusel
 		property real itemHeight: root.ntWidth * root.ntCoff + root.ntCoff
 		property real centerY: root.height / 2
+		property real centerX: (root.width - rctKnopki.width) / 2
 		//Начало — центр (текущий элемент)
 		startX: root.width / 2
 		startY: centerY
@@ -159,6 +160,7 @@ Item {
         property bool internalChange: false//Синхронизация currentIndex, против самозацикливания.
         //Настройки
         anchors.fill: rctKarusel
+		clip: true
         model: root.modelData//Добавляем модель из свойства.
         currentIndex: root.currentIndex
         delegate: cmpKarusel
@@ -176,6 +178,7 @@ Item {
             readonly property real step: stepBase * root.stepRatio//срабатывание на (0.6)~60% высоты строки
             //Настройки
             target: null
+			parent: pvwKarusel//привязываем к родителю PathView
             acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchScreen
             acceptedButtons: Qt.LeftButton
             xAxis.enabled: false//Тащить по x запрещено
@@ -231,7 +234,8 @@ Item {
         id: cmpKarusel
         Rectangle {//Прямоугольник каждой отдельной строчки в модели.
             id: rctStroka
-            width: rctKarusel.width
+			//width: rctKarusel.width - root.ntCoff * 2
+			width: Math.min(rctKarusel.width, rctKarusel.width - rctKnopki.width - root.ntCoff)
             height: root.ntWidth*root.ntCoff+root.ntCoff
 			/*
             opacity: PathView.prozrachnost//Прозрачность
@@ -338,7 +342,8 @@ Item {
         }
     }
     WheelHandler {//Для Qt6 прокрутки модели колесиком мыши
-        target: pvwKarusel//Чтобы события ловились на PathView
+		target: rctKarusel
+		parent: rctKarusel
         acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad//колесо работ только при наведении мыши
         onWheel: function(event) {
 			event.accepted = true;//Явно говорим Qt, что мы обработали событие, чтобы оно не ушло в ОС
