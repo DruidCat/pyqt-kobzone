@@ -37,7 +37,7 @@ QtObject {
 	property int rag_batch_gpu: 8//Количество параллельных проходов на GPU, но не больше 256
 	property int rag_batch_cpu: 4//Количество параллельных проходов на GPU, но не больше 64
 	//Инструкции
-	property int instrukcii_shirina: 220
+	property real instrukcii_shirina: 0.3//Коэффициент от общей ширины окна, показ.ширину боковой панели
 	//Объект настроек (автоматическое сохранение)
     property Settings settings: Settings {
         category: "KOBzone"

@@ -34,7 +34,7 @@ Item {
     property real tapToolbarPravi: 1
     property string strInstrukciya: "oprilojenii"
     property bool isFileDialogFailVibor: true;//true - выбор файлов, false - выбор папки
-	property string pythonVersion: "3.11";//Это версия Python, которая придёт из вне
+	property string pythonVersion: "3.14";//Это версия Python, которая придёт из вне
 	property string qtVersion: "6.8";//Это версия Qt которая приходит из вне.
     property bool isMobile: false//true - мобильная платформа.
     //Настройки.
@@ -44,6 +44,16 @@ Item {
 	signal clickedNazad();//Сигнал нажатия кнопки Назад
     signal signalZagolovok(var strZagolovok);//Сигнал, когда передаём новую надпись в Заголовок.
 	//Методы
+	Component.onCompleted: {//Когда страница отрисовалась, то...
+        fnInstrukciya(root.strInstrukciya)//Функция загружающая заголовок и инструкцию по ключу.
+		txdZona.fnFocus()//Фокусируем, для листания инструкции по горячим клавишам.
+	}
+	onStrInstrukciyaChanged: {//Если переменная поменялась, то...
+        fnInstrukciya(root.strInstrukciya)//Функция загружающая заголовок и инструкцию по ключу.
+    }
+	onWidthChanged : {//Если родительская ширина экрана меняется, то ...
+		drwSidebar.sidebarWidth = root.width * DCSettings.instrukcii_shirina//Пересчит.ширину панели
+	}
     Keys.onPressed: (event) => {//Это запись для Qt6, для Qt5 нужно удалить event =>
         if(event.modifiers & Qt.ControlModifier){//Если нажат "Ctrl"
             if (event.key === Qt.Key_B){//Если нажата клавиша В, то...
@@ -124,10 +134,10 @@ Item {
     Drawer {
         id: drwSidebar
         //Свойства
-        property int minSidebarWidth: 200//Минимум ширины боковой панели
-        property int maxSidebarWidth: root.width * 0.8//Максимум ширины боковой панели
+        property int minSidebarWidth: root.width * 0.2//Минимум ширины боковой панели
+        property int maxSidebarWidth: root.width * 0.5//Максимум ширины боковой панели
         property int sidebarWidth: root.isMobile//Если мобила,ширина на весь экран,если нет,то данные из Реест
-                                   ? root.width : Math.max(minSidebarWidth, DCSettings.instrukcii_shirina)
+						? root.width : Math.max(minSidebarWidth, root.width * DCSettings.instrukcii_shirina)
         //Настройки
         edge: Qt.RightEdge
         modal: false
@@ -323,12 +333,12 @@ Item {
                 onReleased: {//Если отпустили кнопку мышки
                     drwSidebar.interactive = true;//Включаем свайп Drawer. ВАЖНО!
                     isDrag = false//При отпускании мыши Окончание перетаскивания
-                    DCSettings.instrukcii_shirina = drwSidebar.sidebarWidth//Записываем в реестр ширину панели.
+                    DCSettings.instrukcii_shirina = drwSidebar.sidebarWidth / root.width//Записываем в реестр
                 }
                 onCanceled: {
                     drwSidebar.interactive = true;//Включаем свайп Drawer. ВАЖНО!
                     isDrag = false//Окончание перетаскивания
-                    DCSettings.instrukcii_shirina = drwSidebar.sidebarWidth//Записываем в реестр ширину панели.
+                    DCSettings.instrukcii_shirina = drwSidebar.sidebarWidth / root.width//Записываем в реестр
                 }
                 onPositionChanged: (mouse) => {//Если позиция меняется, то...
                     if (!isDrag || root.isMobile) return//Если не перетаск. ручку или мобильное устройство,вых
@@ -350,14 +360,7 @@ Item {
             border.color: root.clrTexta
             border.width: root.ntCoff/4
         }
-    }
-    onStrInstrukciyaChanged: {//Если переменная поменялась, то...
-        fnInstrukciya(root.strInstrukciya)//Функция загружающая заголовок и инструкцию по ключу.
-    }
-    Component.onCompleted: {//Когда страница отрисовалась, то...
-        fnInstrukciya(root.strInstrukciya)//Функция загружающая заголовок и инструкцию по ключу.
-		txdZona.fnFocus()//Фокусируем, для листания инструкции по горячим клавишам.
-    }
+    } 
     function fnInstrukciya(strKluch){//Функция загружающая заголовок и инструкцию по ключу.
         root.strInstrukciya = strKluch
         for (var vrShag = 0; vrShag < mdlInstrukcii.count; ++vrShag){//Цикл перебора модели.
