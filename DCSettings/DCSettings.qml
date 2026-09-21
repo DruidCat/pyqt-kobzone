@@ -78,33 +78,50 @@ QtObject {
     Component.onCompleted: {//Инициализация значений по умолчанию
         //Получаем стандартные пути через QtCore.StandardPaths
         const cnDomPut = StandardPaths.writableLocation(StandardPaths.HomeLocation)
-        var musicPut = StandardPaths.writableLocation(StandardPaths.MusicLocation)
-        var docPut = StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
+        var urlMusic = StandardPaths.writableLocation(StandardPaths.MusicLocation)
+        var urlDocuments = StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
         //Возвращаемся на домашнюю директорию, если стандартные пути не найдены
-        musicPut = musicPut !== "" ? musicPut : cnDomPut
-        docPut = docPut !== "" ? docPut : cnDomPut
-		docPut = docPut.toString()//В текст переводим, чтоб replace работал
-		docPut = docPut.replace(/^file:\/\//, "")//Удаляем file://
+        urlMusic = urlMusic !== "" ? urlMusic : cnDomPut
+        urlDocuments = urlDocuments !== "" ? urlDocuments : cnDomPut
+		urlDocuments = fnUrlToLocalPath(urlDocuments)//Удаляем file:// с помощью кроссплатформенной функции
 		if (studio_model_imya === "") studio_model_imya = pyLMStudio.polModelNoName()//имя ОТСУТСТВУЕТ.
 		if (analizer_put_text === "") {//Если настройки ёще были записаны, то...
-            analizer_put_text = docPut//Записываем в реестр
+            analizer_put_text = urlDocuments//Записываем в реестр
         }
 		if (analizer_put_sohranit === "") {//Если настройки ёще были записаны, то...
-            analizer_put_sohranit = docPut//Записываем в реестр
+            analizer_put_sohranit = urlDocuments//Записываем в реестр
         }
         if (transcribe_put_audio === "") {//Если настройки ёще были записаны, то...
-			musicPut = musicPut.toString()//В текст переводим, чтоб replace работал
-			musicPut = musicPut.replace(/^file:\/\//, "")//Удаляем file://
-            transcribe_put_audio = musicPut//Записываем в реестр
+			urlMusic = fnUrlToLocalPath(urlMusic)//Удаляем file:// с помощью кроссплатформенной функции
+            transcribe_put_audio = urlMusic//Записываем в реестр
         }
         if (transcribe_put_text === "") {//Если настройки ёще были записаны, то...
-            transcribe_put_text = docPut//Записываем в реестр
+            transcribe_put_text = urlDocuments//Записываем в реестр
         }
 		if (rag_put_doc === "") {//Если настройки ёще были записаны, то...
-            rag_put_doc = docPut//Записываем в реестр
+            rag_put_doc = urlDocuments//Записываем в реестр
         }
 		if (rag_put_db === "") {//Если настройки ёще были записаны, то...
-            rag_put_db = docPut//Записываем в реестр
+            rag_put_db = urlDocuments//Записываем в реестр
         }
     }
+	function fnUrlToLocalPath(url) {//Функция кроссплатформенного преобразования URL в путь
+		if (!url) return ""
+		var path = url.toString()
+		if (path.startsWith("file:///")) {//Если путь начинается с file:///
+			path = path.substring(7)//Убираем "file://" чтоб осталось "/" /home, /mnt и тд
+		} else if (path.startsWith("file://")) {//Если путь начинается с file://
+			path = path.substring(7)//Убираем "file://"
+		}
+		path = decodeURIComponent(path)//Декодируем URL-кодирование (%20 → пробел, %3F → ?)
+		if (Qt.platform.os === "windows") {//Windows: если путь начинается с /C:/, убираем первый /
+			if (path.length > 2 && path[0] === '/' && path[2] === ':') {
+				path = path.substring(1)
+			}
+		}
+		if (Qt.platform.os !== "windows" && path.startsWith("//")) {//Linux-убираем двойной слеш,если появился
+			path = path.substring(1)
+		}
+		return path
+	}
 }
