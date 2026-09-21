@@ -483,7 +483,10 @@ Item {
 			logoOpacity: 0.4
 			z: -1
 		}
-        Flickable {
+		Flickable {
+			//Свойства
+			property int __height: 0//Высота области
+			//Настройки
             id: flcZona
             anchors.fill: parent
             contentWidth: tmZona.width
@@ -498,6 +501,10 @@ Item {
                     easing.type: Easing.InOutQuad
                 }
             }
+			//Методы
+			onHeightChanged: {//Если изменяется высота Flickable, то...
+				flcZona.__height = flcZona.height - txtProgress.height - knopkaOtkrit.height - root.ntCoff * 3
+			}
 			TapHandler {//Нажимаем на всю область виджета.
 				onTapped: {
 					if(!knopkaTranscribe.pressedTmr550)fnCloseVoprosIfOpen()
@@ -584,6 +591,7 @@ Item {
 					}
 				}
                 Text {//Прогресс транскрибации
+					id: txtProgress
                     text: "Прогресс транскрибации:"
                     font.pixelSize: root.ntWidth/2 * root.ntCoff
                     color: root.clrTexta
@@ -594,7 +602,7 @@ Item {
 					id: txdZona
 					property string strCopy: ""
                     width: parent.width - parent.leftPadding - parent.rightPadding
-                    height: 400
+					height: flcZona.__height
 					ntWidth: root.ntWidth; ntCoff: root.ntCoff
 					clrFona: "transparent"; clrTexta: root.clrTexta; clrBorder: root.clrTexta
 					isBorder: true
