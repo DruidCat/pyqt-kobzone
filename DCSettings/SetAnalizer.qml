@@ -24,7 +24,6 @@ Drawer {
 	property int __maxSidebarWidth: root.__parentWidth * 0.5//Максимум ширины боковой панели
 	property int __sidebarWidth: root.isMobile ? root.__parentWidth//Если мобила, то ширина всего экрана
 						: Math.max(__minSidebarWidth,root.__parentWidth * DCSettings.analizer_sidebar_shirina)
-	
 	//Настройки
 	edge: Qt.RightEdge
 	modal: false
@@ -259,6 +258,7 @@ Drawer {
 				ntWidth: root.ntWidth/2//Для уменьшения размера текста и ширины скролбара
 				ntCoff: root.ntCoff
 				readOnly: root.readOnly
+				enabled: root.enabled
 				scrollAuto: false//Ручное управление скроллом
 				clrFona: "transparent"; clrTexta: root.clrTexta
 				clrPolzunka: Qt.lighter(root.clrMenuFon, 1.3); clrBorder: root.clrTexta

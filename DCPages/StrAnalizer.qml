@@ -880,6 +880,7 @@ Item {
 					dcTimer.blStart = true//Запуск таймера.
 					root.toolbar("")
 					dcSidebar.readOnly = true//Запрещено редактировать
+					dcSidebar.enabled = false
 					fnCloseSidebarIfOpen()
 					knopkaMenu.enabled = false
                 	knopkaInfo.visible = false
@@ -896,6 +897,7 @@ Item {
 					dcTimer.strVremyaAnaliza = dcTimer.strTimer
 					dcTimer.blStart = false//Останавливаем таймер.
 					dcSidebar.readOnly = false//Разрешено редактировать
+					dcSidebar.enabled = true
 					knopkaMenu.enabled = true
 					knopkaInfo.visible = true
 					knopkaNastroiki.visible = true
