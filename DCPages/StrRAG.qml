@@ -453,6 +453,9 @@ Item {
 		}
         Flickable {
             id: flcZona
+			//Свойства
+			property int __height: 0//Высота области
+			//Настройки
             anchors.fill: parent
             contentWidth: tmZona.width
             contentHeight: clmnContent.height
@@ -466,6 +469,10 @@ Item {
                     easing.type: Easing.InOutQuad
                 }
             }
+			//Методы
+			onHeightChanged: {//Если изменяется высота Flickable, то...
+				flcZona.__height = flcZona.height - txtProgress.height - root.ntCoff * 2
+			}
 			TapHandler {//Нажимаем на всю область виджета.
 				onTapped: {
 					if(!knopkaRAG.pressedTmr550)fnCloseVoprosIfOpen()
@@ -551,7 +558,8 @@ Item {
 						}
 					}
 				}
-                Text {//Прогресс транскрибации
+                Text {//Прогресс создания RAG базы данных
+					id: txtProgress
                     text: "Прогресс создания RAG базы данных:"
                     font.pixelSize: root.ntWidth/2 * root.ntCoff
                     color: root.clrTexta
@@ -562,7 +570,7 @@ Item {
 					id: txdZona
 					property string strCopy: ""
 					width: parent.width - parent.leftPadding - parent.rightPadding
-					height: 400
+					height: flcZona.__height
 					ntWidth: root.ntWidth; ntCoff: root.ntCoff
 					clrFona: "transparent"; clrTexta: root.clrTexta; clrBorder: root.clrTexta
 					isBorder: true
