@@ -558,34 +558,24 @@ Item {
 					font.bold: true//Жирный текст.
                     width: parent.width - parent.leftPadding - parent.rightPadding
                 }
-                Rectangle {
-                    id: rctTextEdit
-                    width: parent.width - parent.leftPadding - parent.rightPadding
-                    height: 400
-                    border.color: root.clrTexta
-                    border.width: 3
-                    color: "transparent"
-                    radius: root.ntCoff / 2
-                    clip: true
-                    DCTextEdit {
-                        id: txdZona
-                        property string strCopy: ""
-                        
-                        ntWidth: root.ntWidth
-                        ntCoff: root.ntCoff
-                        readOnly: true
-                        scrollAuto: true
-                        textEdit.selectByMouse: false
-                        pixelSize: root.ntWidth / 3 * root.ntCoff
-                        radius: root.ntCoff / 4
-                        clrFona: "transparent"
-                        clrTexta: root.clrTexta   
-						onPressed: {
-							fnCloseVoprosIfOpen()
-							fnCloseMenuIfOpen()
-						}
-                    }
-                }
+				DCTextEdit {
+					id: txdZona
+					property string strCopy: ""
+					width: parent.width - parent.leftPadding - parent.rightPadding
+					height: 400
+					ntWidth: root.ntWidth; ntCoff: root.ntCoff
+					clrFona: "transparent"; clrTexta: root.clrTexta; clrBorder: root.clrTexta
+					isBorder: true
+					readOnly: true
+					scrollAuto: true
+					textEdit.selectByMouse: false
+					pixelSize: root.ntWidth / 3 * root.ntCoff
+					radius: root.ntCoff / 4
+					onPressed: {
+						fnCloseVoprosIfOpen()
+						fnCloseMenuIfOpen()
+					}
+				}
             }
         }
         DCScrollbar {//Скроллбар
