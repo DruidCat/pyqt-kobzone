@@ -475,7 +475,7 @@ Item {
     Item {//Рабочая зона
         id: tmZona
         clip: true
-		DCLogo {//Логотип
+		DCLogo {//:
             id: lgLogo
             anchors.centerIn: tmZona
 			ntCoff: root.logoRazmer
@@ -484,10 +484,10 @@ Item {
 			z: -1
 		}
 		Flickable {
+            id: flcZona
 			//Свойства
 			property int __height: 0//Высота области
 			//Настройки
-            id: flcZona
             anchors.fill: parent
             contentWidth: tmZona.width
             contentHeight: clmnContent.height
