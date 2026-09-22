@@ -31,14 +31,18 @@ var vrMenuAnalizer = [
 			},
 			{
 				"nomer": "5",
-                "menu": qsTr("Настройки")
+                "menu": qsTr("Настройка LM Studio")
+			},
+			{
+				"nomer": "6",
+                "menu": qsTr("Настройка нейро анализа")
 			},
             {
-                "nomer": "6",
+                "nomer": "7",
                 "menu": qsTr("Помощь")
             },
 			{
-                "nomer": "7",
+                "nomer": "8",
                 "menu": qsTr("Выход")
 			}
 ]

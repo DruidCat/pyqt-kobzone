@@ -852,10 +852,12 @@ Item {
                 } else if (ntNomer === 4) {
                     fnClickedSohranit()//Функция сохранения результата анализа.
                 } else if (ntNomer === 5) {
-                    fnClickedMenu()//Функция открытия настроек анализа документов.
-                } else if (ntNomer === 6) {
+                    fnClickedMenu()//Функция открытия настроек LM Studio
+                }  else if (ntNomer === 6) {
+                    fnClickedSidebar()//Функция нажатия кнопки SideBar.
+                }else if (ntNomer === 7) {
                     fnClickedInfo()//Функция открытия помощи.
-                } else if (ntNomer === 7) {
+                } else if (ntNomer === 8) {
                     Qt.quit()
                 }
             }
