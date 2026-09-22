@@ -598,12 +598,9 @@ Item {
 		DCKnopkaInfo {
 			id: knopkaInfo
 			ntWidth: root.ntWidth; ntCoff: root.ntCoff
-			anchors.verticalCenter: tmToolbar.verticalCenter
-			anchors.left: tmToolbar.left
-			clrKnopki: root.clrTexta; clrFona: root.clrFona
-			visible: true
-			tapHeight: root.ntWidth * root.ntCoff + root.ntCoff
-			tapWidth: tapHeight * root.tapToolbarLevi
+			anchors.verticalCenter: tmToolbar.verticalCenter; anchors.left: tmToolbar.left
+			clrKnopki: root.clrTexta;//clrFona: root.clrFona
+			tapHeight: root.ntWidth * root.ntCoff + root.ntCoff; tapWidth: tapHeight * root.tapToolbarLevi
 			onClicked: {
 				if (!fnCloseMenuIfOpen() && !fnCloseGPUStartIfOpen() && !fnCloseBatchIfOpen()) {
 					fnClickedInfo()

@@ -97,7 +97,7 @@ Drawer {
 			id: knopkaInfo
 			ntWidth: (root.ntWidth-1); ntCoff: root.ntCoff
 			anchors.verticalCenter: rctZagolovok.verticalCenter; anchors.left: rctZagolovok.left
-			clrKnopki: root.clrTexta//; clrFona: root.clrFona
+			clrKnopki: root.clrTexta;//clrFona: root.clrFona
 			tapHeight: (root.ntWidth-1)*root.ntCoff+root.ntCoff; tapWidth: tapHeight * root.tapZagolovokLevi
 			function fnClicked(){
 				root.close()//Закрываем панель, сворачиваем температуру
