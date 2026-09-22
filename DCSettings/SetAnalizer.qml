@@ -97,7 +97,7 @@ Drawer {
 			id: knopkaInfo
 			ntWidth: (root.ntWidth-1); ntCoff: root.ntCoff
 			anchors.verticalCenter: rctZagolovok.verticalCenter; anchors.left: rctZagolovok.left
-			clrKnopki: root.clrTexta; clrFona: root.clrFona
+			clrKnopki: root.clrTexta//; clrFona: root.clrFona
 			tapHeight: (root.ntWidth-1)*root.ntCoff+root.ntCoff; tapWidth: tapHeight * root.tapZagolovokLevi
 			function fnClicked(){
 				root.close()//Закрываем панель, сворачиваем температуру
@@ -125,7 +125,7 @@ Drawer {
 			font.bold: true//Жирный текст.
 			font.pixelSize: root.ntCoff*(root.ntWidth-1)
 			elide: Text.ElideRight//Обрезаем текст по правой стороне точками (...)
-			text: qsTr("НАСТРОЙКИ НЕЙРО АНАЛИЗА")
+			text: qsTr("НАСТРОЙКА НЕЙРО АНАЛИЗА")
 		}
 	}
 	Rectangle {//Прямоугольник всей оставшейся боковой панели.

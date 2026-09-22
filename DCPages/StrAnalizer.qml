@@ -619,8 +619,8 @@ Item {
                         }
                     }
                 }
-                Text {//Содержимое файла
-                    text: "Содержимое файла:"
+                Text {//Содержимое документов
+                    text: "Содержимое документов:"
                     font.pixelSize: root.ntWidth/2 * root.ntCoff
                     color: root.clrTexta
 					font.bold: true//Жирный текст.
