@@ -806,7 +806,8 @@ Item {
 			clrTexta: root.clrTexta; clrFona: root.clrFona; clrMenuFon: root.clrMenuFon
 			isMobile: root.isMobile
 			onOpenedChanged: {//Если состояние боковой панели изменилось, она открыта или закрыта, то...
-				root.forceActiveFocus()
+				if(opened) fnFocus()//Фокус на странице настроек нейро анализа
+				else root.forceActiveFocus()//Фокус на странице нейро анализа документов.
 			}
 			onClickedInfo: root.clickedInfoAnalizer()//Информация по настройкам нейроанализа.
 		}
