@@ -84,7 +84,7 @@ Drawer {
 		anchors.fill: parent
 		Keys.onPressed: (event) => {//Это запись для Qt6, для Qt5 нужно удалить event =>
 			if(event.modifiers & Qt.AltModifier){//Если нажат "Alt"
-				if (event.key === Qt.Key_S){//Если нажата клавиша стрелка влево, то...
+				if (event.key === Qt.Key_S || event.key === 1067){//Если нажата клавиша стрелка влево, то...
 					root.close();//Метод обрабатывающий кнопку Закрыть боковую панель.
 					event.accepted = true;//Завершаем обработку эвента.
 				}
