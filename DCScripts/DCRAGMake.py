@@ -745,6 +745,11 @@ with open(f"{index_dir}/metadatas.pkl", "wb") as f:
 
 print("✓ База данных сохранена", flush=True)
 
+# Сохраняем имя модели эмбеддингов, чтобы скрипт анализа использовал ту же самую
+with open(f"{index_dir}/model_config.txt", "w", encoding="utf-8") as f:
+    f.write(MODEL_NAME)
+print("✓ Конфигурация модели RAG сохранена", flush=True)
+
 # Подсчёт времени работы
 end_time = time.time()
 elapsed_time = end_time - start_time
