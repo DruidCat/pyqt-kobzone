@@ -448,6 +448,16 @@ Item {
 		dialogRAG.open()
 	}
     function fnClickedAnaliz() {//Функция запускающая нейро анализ документов
+        //1. Настраиваем RAG модуль на основе настроек
+        if (DCSettings.analizer_put_rag !== "") {
+            pyAnalizerRAG.ustRagPath(DCSettings.analizer_put_rag)
+            pyAnalyzer.ustRagEnabled(true)
+            root.log("✓ RAG база будет использована при анализе")
+        } else {
+            pyAnalyzer.ustRagEnabled(false)
+            root.log("✓ Анализ будет выполнен без RAG базы")
+        }
+        //2. Запускаем цепочку LM Studio -> Анализ
 		root.isServerZapustit = true
 		root.isModelZagruzit = true//Устанавливаем флаг ожидания, из StrAnalizer
 		pyLMStudio.zapustitServer()//Всегда запускаем сервер, даже если он запущен.

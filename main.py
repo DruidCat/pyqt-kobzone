@@ -13,6 +13,7 @@ from PyQt6.QtGui import QFontDatabase, QFont
 from DCPages.PyAnalizer import DCAnalyzer #Из PyAnalizer.py импортируем класс DCAnalyzer
 from DCPages.PyTranscribe import DCTranscribe #Из PyTranscribe.py импортируем класс DCTranscribe
 from DCPages.PyRAG import DCRAG#Из PyRAG.py импортируем класс DCRAG
+from DCPages.PyAnalizerRAG import DCAnalizerRAG # Импорт нового класса для RAG-поиска
 from DCPages.PyJurnal import DCJurnal #Из PyJurnal.py импортируем класс DCJurnal
 from DCScripts.DCFileOpener import DCFileOpener #Из DCFileOpener.py импортируем класс DCFileOpener
 from DCScripts.DCConsoleLog import DCConsoleLog #Из DCConsoleLog.py импортируем класс DCConsoleLog
@@ -109,6 +110,8 @@ class MainApp:
         self.analyzer = DCAnalyzer()#Иннициализация class DCAnalyzer из PyAnalyzer.py
         self.transcriber = DCTranscribe()#Инициализация class DCTranscribe из PyTranscribe.py
         self.rag = DCRAG()#Иннициализируем clacc DCRAG из PyRAG.py
+        self.analizer_rag = DCAnalizerRAG() # Инициализация RAG поиска для анализатора
+        self.analyzer.rag_module = self.analizer_rag #Передаем ссылку на RAG модуль внутрь анализатора
         self.jurnal = DCJurnal()# Инициализация class DCJurnal из PyJurnal.py
         self.file_opener = DCFileOpener()#Иннициализация class DCFileOpener из DCFileOpener.py
         self.console_log = DCConsoleLog()#Иннициализация class DCConsoleLog из DCConsoleLog.py
@@ -167,6 +170,7 @@ class MainApp:
         self.engine.rootContext().setContextProperty("pyAnalyzer", self.analyzer)
         self.engine.rootContext().setContextProperty("pyTranscriber", self.transcriber)
         self.engine.rootContext().setContextProperty("pyRAG", self.rag)
+        self.engine.rootContext().setContextProperty("pyAnalizerRAG", self.analizer_rag)
         self.engine.rootContext().setContextProperty("pyJurnal", self.jurnal)#доступен в QML как "jurnal"
         self.engine.rootContext().setContextProperty("pyFileOpener", self.file_opener)#в QML pyFileOpener
         self.engine.rootContext().setContextProperty("pyConsole", self.console_log)#в QML pyConsole

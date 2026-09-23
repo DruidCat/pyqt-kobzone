@@ -64,6 +64,8 @@ class DCAnalyzer(QObject):
         self.worker = None
         self._server_url = "http://localhost:1234/v1"
         self._stop_requested = False #Запрос на остановку Анализа
+        self.rag_module = None#Ссылка на DCAnalizerRAG (устанавливается в main.py)
+        self.rag_enabled = False#Флаг включения RAG
 
     @pyqtSlot(str)
     def ustServerURL(self, server_url):
@@ -91,6 +93,15 @@ class DCAnalyzer(QObject):
     @pyqtSlot(float)#Слот задающий температуру языковой модели.
     def ustTemperature(self, temperature):
         self.temperature = temperature
+
+    @pyqtSlot(bool)
+    def ustRagEnabled(self, enabled: bool):
+        """Включает или выключает использование RAG контекста"""
+        self.rag_enabled = enabled
+        if enabled:
+            print("✓ RAG контекст включен для анализа")
+        else:
+            print("✓ RAG контекст выключен")
 
     @pyqtSlot(str, str)
     def startAnaliza(self, text_content, prompt):
@@ -245,7 +256,39 @@ class DCAnalyzer(QObject):
         
         chunks = self.split_text_into_chunks(text_content, max_tokens, overlap_percent=self.overlap_percent)
         total_chunks = len(chunks)
+
+        # === ЛОГИКА RAG: ПОЛУЧЕНИЕ КОНТЕКСТА ===
+        rag_context = ""
+        if self.rag_enabled and self.rag_module is not None:
+            try:
+                # Используем первые 300 символов промпта как поисковый запрос для RAG
+                search_query = prompt[:300] 
+                self.sigResultReady.emit("🔄 Поиск релевантного контекста в RAG базе...")
+                
+                # top_k=3 означает, что мы берем 3 самых подходящих фрагмента
+                rag_context = self.rag_module.poluchitKontekst(search_query, top_k=3)
+                
+                if rag_context:
+                    print("✓ RAG контекст успешно получен")
+                else:
+                    print("⚠ RAG не вернул результатов по запросу")
+            except Exception as e:
+                print(f"⚠ Ошибка получения RAG контекста: {e}")
         
+        # Модифицируем промпт, добавляя найденный контекст
+        if rag_context:
+            enhanced_prompt = f"""ВНИМАНИЕ: Ниже приведена дополнительная информация из базы знаний (RAG), которая может быть полезна для выполнения задачи. Используй её как приоритетный источник фактов.
+
+ДАННЫЕ ИЗ RAG:
+{rag_context}
+
+---
+ОСНОВНАЯ ЗАДАЧА:
+{prompt}"""
+        else:
+            enhanced_prompt = prompt
+        # === КОНЕЦ ЛОГИКИ RAG ===
+
         # Если чанк один — сразу финальный анализ
         if total_chunks == 1:
             if self._stop_requested:
@@ -254,8 +297,8 @@ class DCAnalyzer(QObject):
             if final_analysis_callback:
                 final_analysis_callback()
             
-            full_prompt = f"{prompt}\n\nТекст:\n{chunks[0]}"
-            
+            full_prompt = f"{enhanced_prompt}\n\nТекст для анализа:\n{chunks[0]}"
+
             try:
                 headers = {"Content-Type": "application/json"}
                 data = {
@@ -308,8 +351,8 @@ class DCAnalyzer(QObject):
             if chunk_start_callback:
                 chunk_start_callback(current_chunk, total_chunks)
             
-            full_prompt = f"{prompt}\n\nТекст (часть {current_chunk} из {total_chunks}):\n{chunk}"
-            
+            full_prompt = f"{enhanced_prompt}\n\nТекст (часть {current_chunk} из {total_chunks}):\n{chunk}"           
+
             try:
                 headers = {"Content-Type": "application/json"}
                 data = {
