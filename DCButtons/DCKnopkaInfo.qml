@@ -56,11 +56,9 @@ Item {
         }
         border.color: {
             if(root.enabled){//Если активирована кнопка, то...
-				tphKnopkaInfo.pressed 	? Qt.darker(isInvers ? clrFona : clrKnopki, root.maxDarker)
-										: isInvers ? clrFona : clrKnopki
-                //maKnopkaInfo.containsMouse ? Qt.darker(isInvers ? clrFona : clrKnopki, root.maxDarker)
-				//							: isInvers ? clrFona : clrKnopki
-			} else Qt.darker(isInvers ? clrFona : clrKnopki, root.minDarker)
+                tphKnopkaInfo.pressed 	? Qt.darker(clrKnopki, root.maxDarker) : clrKnopki
+                //maKnopkaInfo.containsMouse ? Qt.darker(clrKnopki, root.maxDarker) : clrKnopki
+            } else Qt.darker(clrKnopki, root.minDarker)
         }
         border.width: root.width/8/4
         radius: root.width/4
