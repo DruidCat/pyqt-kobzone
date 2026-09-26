@@ -110,11 +110,9 @@ Item {
         clip: true//Обрезаем всё что выходит за пределы этой области. Это для листания нужно.
         DCTextEdit {//Модуль просмотра текста, прокрутки и редактирования.
             id: txdZona
-            ntWidth: root.ntWidth
-            ntCoff: root.ntCoff
-            anchors.rightMargin: drwSidebar.position * drwSidebar.width - drwSidebar.position * root.ntCoff
-			width: parent.width
-			height: parent.height
+            ntWidth: root.ntWidth; ntCoff: root.ntCoff
+			anchors.fill: parent//чтоб anchor.rightMargin работал, нельзя явно задавать height и width.
+			anchors.rightMargin: drwSidebar.position * drwSidebar.width - drwSidebar.position * root.ntCoff
             readOnly: true//Запрещено редактировать текст
             textEdit.selectByMouse: false//Запрещаем выделять текст, то нужно для свайпа Android
 			textEdit.textFormat: TextEdit.AutoText//Формат АВТОМАТИЧЕСКИ определяется. Предпочтителен HTML4
