@@ -100,7 +100,7 @@ Item {
             isInvers: false//По умолчанию, бордюр с радиусом
             ntWidth: root.ntWidth; ntCoff: root.ntCoff
             anchors.verticalCenter: tmZagolovok.verticalCenter; anchors.right: tmZagolovok.right
-            clrKnopki: root.clrTexta
+            clrKnopki: root.clrTexta; clrFona: root.clrFona
             tapHeight: root.ntWidth*root.ntCoff+root.ntCoff; tapWidth: tapHeight*root.tapZagolovokPravi
             onClicked: fnClickedSidebar();//Функция нажатия кнопки SideBar.
         }

@@ -207,7 +207,7 @@ Item {
             id: knopkaInfo
             ntWidth: root.ntWidth; ntCoff: root.ntCoff
             anchors.verticalCenter: tmToolbar.verticalCenter; anchors.left: tmToolbar.left
-            clrKnopki: root.clrTexta;//clrFona: root.clrFona
+            clrKnopki: root.clrTexta; clrFona: root.clrFona
             tapHeight: root.ntWidth*root.ntCoff+root.ntCoff; tapWidth: tapHeight*root.tapZagolovokLevi
             onClicked: fnClickedInfo();//Функция нажатия на кнопку Информации.
         } 
