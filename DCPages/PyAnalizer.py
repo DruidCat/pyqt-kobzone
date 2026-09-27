@@ -113,6 +113,7 @@ class DCAnalyzer(QObject):
         if not prompt.strip():
             prompt = "Проанализируй этот текст"
         
+        # Теперь RAG загружается ДО вызова startAnaliza из QML
         # Останавливаем предыдущий поток если он есть
         if self.worker and self.worker.isRunning():
             self.worker.quit()
@@ -130,7 +131,7 @@ class DCAnalyzer(QObject):
         self.worker.sigAnalizFinalStart.connect(self.sigAnalizFinalStart.emit)
         self.worker.start()
         
-        self.sigResultReady.emit("Анализируется...")
+        self.sigResultReady.emit("Анализируется...") 
 
     @pyqtSlot()
     def stopAnaliz(self):
@@ -261,32 +262,68 @@ class DCAnalyzer(QObject):
         rag_context = ""
         if self.rag_enabled and self.rag_module is not None:
             try:
-                # Используем первые 300 символов промпта как поисковый запрос для RAG
-                search_query = prompt[:300] 
+                # Умное извлечение ключевых слов
+                search_query = self._extract_search_query(prompt, text_content)
+                
                 self.sigResultReady.emit("🔄 Поиск релевантного контекста в RAG базе...")
+
+                #Адаптивный top_k по размеру БАЗЫ (а не текста)
+                db_size = self.rag_module.polRazmerBazi()  # Получаем размер базы
                 
-                # top_k=3 означает, что мы берем 3 самых подходящих фрагмента
-                rag_context = self.rag_module.poluchitKontekst(search_query, top_k=3)
+                if db_size > 14000:
+                    top_k = 10
+                elif db_size > 5000:
+                    top_k = 7
+                elif db_size > 1000:
+                    top_k = 5
+                else:
+                    top_k = 3
                 
+                print(f"✓ RAG база: {db_size} фрагментов, запрашиваем top_k={top_k}")
+                rag_context = self.rag_module.poluchitKontekst(search_query, top_k=top_k)                
+
                 if rag_context:
                     print("✓ RAG контекст успешно получен")
                 else:
                     print("⚠ RAG не вернул результатов по запросу")
+                    
             except Exception as e:
+                import traceback
                 print(f"⚠ Ошибка получения RAG контекста: {e}")
-        
+                print(traceback.format_exc())
+
         # Модифицируем промпт, добавляя найденный контекст
         if rag_context:
             enhanced_prompt = f"""ВНИМАНИЕ: Ниже приведена дополнительная информация из базы знаний (RAG), которая может быть полезна для выполнения задачи. Используй её как приоритетный источник фактов.
 
-ДАННЫЕ ИЗ RAG:
-{rag_context}
+        ДАННЫЕ ИЗ RAG:
+        {rag_context}
 
----
-ОСНОВНАЯ ЗАДАЧА:
-{prompt}"""
+        ---
+        ОСНОВНАЯ ЗАДАЧА:
+        {prompt}"""
+
+            # ✅ ИСПРАВЛЕНО: Подсчёт фрагментов из возвращённой строки
+            num_fragments = rag_context.count("[Источник")
+            
+            # Превью (первые 500 символов, убираем переносы строк для компактности)
+            preview = rag_context[:500].replace("\n", " ").strip()
+            
+            # Показываем пользователю что нашли
+            self.sigResultReady.emit(
+                f"✅ RAG: Найдено {num_fragments} фрагментов\n\n"
+                f"Превью:\n{preview}...\n\n"
+                f"🔄 Начинается анализ..."
+            )
         else:
             enhanced_prompt = prompt
+            
+            # Если RAG включен, но ничего не нашёл
+            if self.rag_enabled:
+                self.sigResultReady.emit(
+                    "⚠️ RAG база не вернула результатов\n"
+                    "Анализ продолжается без дополнительного контекста"
+                )
         # === КОНЕЦ ЛОГИКИ RAG ===
 
         # Если чанк один — сразу финальный анализ
@@ -432,6 +469,42 @@ class DCAnalyzer(QObject):
         output_parts.append(f"### ИТОГОВЫЙ РЕЗУЛЬТАТ\n\n{final_result}")
 
         return "\n".join(output_parts) 
+
+
+    def _extract_search_query(self, prompt, text_content):
+        """
+        Извлекает ключевые слова из промпта и текста для поиска в RAG
+        """
+        # Стоп-слова (игнорируем)
+        stopwords = {
+            'проанализируй', 'этот', 'текст', 'выдели', 'основные', 'темы',
+            'сделай', 'анализ', 'дай', 'расскажи', 'объясни', 'опиши',
+            'документ', 'файл', 'содержимое', 'следующий', 'приведённый'
+        }
+        
+        # 1. Берём слова из промпта
+        prompt_words = [
+            w.lower().strip('.,!?:;') 
+            for w in prompt.split() 
+            if len(w) > 3 and w.lower() not in stopwords
+        ]
+        
+        # 2. Если промпт короткий - берём первые 200 символов текста
+        if len(prompt_words) < 3:
+            text_words = [
+                w.lower().strip('.,!?:;') 
+                for w in text_content[:500].split() 
+                if len(w) > 3 and w.lower() not in stopwords
+            ]
+            prompt_words.extend(text_words[:10])
+        
+        # 3. Формируем поисковый запрос (макс 500 символов)
+        search_query = ' '.join(prompt_words[:50])  # 50 ключевых слов
+        
+        print(f"✓ Поисковый запрос для RAG: {search_query[:200]}...")
+        return search_query
+
+
 
     def _summarize_chunk_result(self, result, max_length=1000):#Сокращаем результаты чанков, оставляя только суть
         """Сокращает результат чанка до основных тезисов"""

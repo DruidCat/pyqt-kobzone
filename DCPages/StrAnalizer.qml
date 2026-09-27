@@ -62,6 +62,26 @@ Item {
         root.forceActiveFocus()
     }
 	Connections {//CONNECTIONS для прогресса
+		target: pyAnalizerRAG
+		function onSigProgress(message) {//Прогресс загрузки показываем в resultArea
+			txdOtvet.text += message + "\n"
+			txdOtvet.scrollBottom()
+		}
+		function onSigLog(log) {
+			root.log(`pyAnalizerRAG ${log}`)
+		}
+		function onSigBazaLoaded(success) {
+			if (success) {
+				pyLMStudio.zapustitServer()//Всегда запускаем сервер, даже если он запущен.
+			} else {
+				root.toolbar("❌ Ошибка загрузки RAG базы")
+				tmrLogo.running = false//Останавливаем анимации и прогресс анализа.
+				root.isServerZapustit = false
+				root.isModelZagruzit = false
+			}
+		}
+	}
+	Connections {//CONNECTIONS для прогресса
 		target: pyAnalyzer
 		function onSigResultReady(result) {//Сигнал готовности результата анализа.
 			txdOtvet.text = dcMarkdown.toHtml(result)//Конвертируем Markdown в HTML
@@ -448,19 +468,18 @@ Item {
 		dialogRAG.open()
 	}
     function fnClickedAnaliz() {//Функция запускающая нейро анализ документов
-        //1. Настраиваем RAG модуль на основе настроек
+		root.isServerZapustit = true
+		root.isModelZagruzit = true//Устанавливаем флаг ожидания, из StrAnalizer
         if (DCSettings.analizer_put_rag !== "") {
-            pyAnalizerRAG.ustRagPath(DCSettings.analizer_put_rag)
+            pyAnalizerRAG.ustRagPath(DCSettings.analizer_put_rag)//Настраиваем RAG модуль на основе настроек
             pyAnalyzer.ustRagEnabled(true)
             root.log("✓ RAG база будет использована при анализе")
+        	pyAnalizerRAG.zapustitLoadingRAG()//Запускаем в потоке,сработает onSigBazaLoaded,запустится анализ
         } else {
             pyAnalyzer.ustRagEnabled(false)
             root.log("✓ Анализ будет выполнен без RAG базы")
+			pyLMStudio.zapustitServer()//Всегда запускаем сервер, даже если он запущен.
         }
-        //2. Запускаем цепочку LM Studio -> Анализ
-		root.isServerZapustit = true
-		root.isModelZagruzit = true//Устанавливаем флаг ожидания, из StrAnalizer
-		pyLMStudio.zapustitServer()//Всегда запускаем сервер, даже если он запущен.
     }
 	function fnClickedStop() {//Функция останавливающая Анализ документов
 		pyAnalyzer.stopAnaliz()

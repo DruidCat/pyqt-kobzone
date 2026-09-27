@@ -3,6 +3,7 @@
 #
 # pip install -r requirements.txt
 # Зависимости для работы с Любимая КОБзона
+sentence-transformers #Для загрузки RAG баз данных
 torch
 torchaudio
 torchvision
