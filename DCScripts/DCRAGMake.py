@@ -3,7 +3,21 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 
 import os
 import sys
+import tempfile #Работа с temp файлами и папками
+import platform #Работа с Операционными Системами
+# ============================================================
+# ОПРЕДЕЛЕНИЕ ОПЕРАЦИОННОЙ СИСТЕМЫ
+# ============================================================
+IS_WINDOWS = platform.system() == "Windows"
+IS_LINUX = platform.system() == "Linux"
+IS_MACOS = platform.system() == "Darwin"
 
+if IS_WINDOWS:
+    print("🪟 Windows: используется временная папка для FAISS.", flush=True)
+elif IS_LINUX:
+    print("🐧 Linux: прямая запись FAISS в финальную папку.", flush=True)
+elif IS_MACOS:
+    print("🍎 macOS: прямая запись FAISS в финальную папку.", flush=True)
 # ============================================================
 # ОПТИМИЗАЦИЯ ПАМЯТИ PYTORCH
 # ============================================================
@@ -729,26 +743,111 @@ else:
     
     print("✓ Индекс создан на CPU", flush=True)
 
-# Сохранение
+# ============================================================
+# СОХРАНЕНИЕ БАЗЫ ДАННЫХ (КРОССПЛАТФОРМЕННОЕ)
+# ============================================================
 print("\n💾 Сохранение базы данных...", flush=True)
-os.makedirs(index_dir, exist_ok=True)
-faiss.write_index(index, f"{index_dir}/index.faiss")
 
-with open(f"{index_dir}/index.faiss", "rb") as f_check:
-    pass
+if IS_WINDOWS:
+    # ============================================================
+    # WINDOWS: Сохранение через временную папку (обход проблемы с кириллицей)
+    # ============================================================
+    
+    # Создаем временную папку (без кириллицы, в системном temp)
+    TEMP_BASE_DIR = tempfile.mkdtemp(prefix="rag_temp_")
+    TEMP_INDEX_DIR = os.path.join(TEMP_BASE_DIR, "faiss_index")
+    os.makedirs(TEMP_INDEX_DIR, exist_ok=True)
+    
+    print(f"   📁 Временная папка: {TEMP_BASE_DIR}", flush=True)
+    print(f"   📁 Финальная папка: {index_dir}", flush=True)
+    
+    # Пути к временным файлам
+    temp_faiss_path = os.path.join(TEMP_INDEX_DIR, "index.faiss")
+    temp_docs_path = os.path.join(TEMP_INDEX_DIR, "documents.pkl")
+    temp_meta_path = os.path.join(TEMP_INDEX_DIR, "metadatas.pkl")
+    temp_config_path = os.path.join(TEMP_INDEX_DIR, "model_config.txt")
+    
+    # Сохраняем ВСЕ файлы во ВРЕМЕННУЮ папку
+    print("   🔨 Создание FAISS индекса...", flush=True)
+    faiss.write_index(index, temp_faiss_path)
+    
+    print("   📝 Сохранение документов...", flush=True)
+    with open(temp_docs_path, "wb") as f:
+        pickle.dump(documents, f)
+    
+    print("   📝 Сохранение метаданных...", flush=True)
+    with open(temp_meta_path, "wb") as f:
+        pickle.dump(metadatas, f)
+    
+    print("   ⚙️  Сохранение конфигурации модели...", flush=True)
+    with open(temp_config_path, "w", encoding="utf-8") as f:
+        f.write(MODEL_NAME)
+    
+    print("✓ База создана во временной папке", flush=True)
+    
+    # Копирование в финальную папку
+    print("\n📦 Копирование в финальную папку...", flush=True)
+    
+    try:
+        # Удаляем старую базу, если она есть
+        if os.path.exists(index_dir):
+            print(f"   🗑️  Удаление старой базы...", flush=True)
+            shutil.rmtree(index_dir)
+        
+        # Копируем новую базу
+        print(f"   📋 Копирование файлов...", flush=True)
+        shutil.copytree(TEMP_INDEX_DIR, index_dir)
+        
+        # Проверка целостности
+        print("   🔍 Проверка целостности...", flush=True)
+        required_files = ["index.faiss", "documents.pkl", "metadatas.pkl", "model_config.txt"]
+        for file in required_files:
+            file_path = os.path.join(index_dir, file)
+            if not os.path.exists(file_path):
+                raise FileNotFoundError(f"Файл {file} не скопировался!")
+            if os.path.getsize(file_path) == 0:
+                raise ValueError(f"Файл {file} пустой после копирования!")
+        
+        print("✓ База успешно скопирована и проверена", flush=True)
+        
+        # Очистка временной папки
+        print(f"   🧹 Очистка временной папки...", flush=True)
+        shutil.rmtree(TEMP_BASE_DIR)
+        print("✓ Временная папка удалена", flush=True)
+        
+    except Exception as e:
+        print(f"\n❌ Ошибка при копировании: {e}", flush=True)
+        print(f"⚠️  Временная папка сохранена: {TEMP_BASE_DIR}", flush=True)
+        print(f"💡 Вы можете вручную скопировать файлы из неё в {index_dir}", flush=True)
+        sys.exit(1)
 
-with open(f"{index_dir}/documents.pkl", "wb") as f:
-    pickle.dump(documents, f)
+else:
+    # ============================================================
+    # LINUX / MACOS: Прямая запись в финальную папку (кириллица работает нормально)
+    # ============================================================
+    
+    # Создаем папку, если её нет
+    os.makedirs(index_dir, exist_ok=True)
+    
+    # Сохраняем напрямую
+    print("   🔨 Создание FAISS индекса...", flush=True)
+    faiss.write_index(index, os.path.join(index_dir, "index.faiss"))
+    
+    print("   📝 Сохранение документов...", flush=True)
+    with open(os.path.join(index_dir, "documents.pkl"), "wb") as f:
+        pickle.dump(documents, f)
+    
+    print("   📝 Сохранение метаданных...", flush=True)
+    with open(os.path.join(index_dir, "metadatas.pkl"), "wb") as f:
+        pickle.dump(metadatas, f)
+    
+    print("   ⚙️  Сохранение конфигурации модели...", flush=True)
+    with open(os.path.join(index_dir, "model_config.txt"), "w", encoding="utf-8") as f:
+        f.write(MODEL_NAME)
+    
+    print("✓ База данных сохранена напрямую", flush=True)
 
-with open(f"{index_dir}/metadatas.pkl", "wb") as f:
-    pickle.dump(metadatas, f)
-
-print("✓ База данных сохранена", flush=True)
-
-# Сохраняем имя модели эмбеддингов, чтобы скрипт анализа использовал ту же самую
-with open(f"{index_dir}/model_config.txt", "w", encoding="utf-8") as f:
-    f.write(MODEL_NAME)
-print("✓ Конфигурация модели RAG сохранена", flush=True)
+print("\n✅ Все файлы базы данных успешно сохранены!", flush=True)
 
 # Подсчёт времени работы
 end_time = time.time()
