@@ -19,8 +19,8 @@ class RAGWorker(QThread):
         self.db_path = db_path
         self.use_gpu = use_gpu
         self.model_index = model_index
-        self.batch_gpu = batch_gpu      # ← Новый параметр
-        self.batch_cpu = batch_cpu      # ← Новый параметр
+        self.batch_gpu = batch_gpu
+        self.batch_cpu = batch_cpu
         self.process = None
         self._should_stop = False
     
@@ -37,6 +37,7 @@ class RAGWorker(QThread):
             # Формируем команду запуска
             cmd = [
                 sys.executable,
+                "-X", "utf8", #Меняет поведение интерпретатора на самом низком уровне под utf8
                 str(script_path)
             ]
             
@@ -47,18 +48,22 @@ class RAGWorker(QThread):
             env['RAG_GUI_MODE'] = '1'
             env['RAG_USE_GPU'] = '1' if self.use_gpu else '0'
             env['RAG_MODEL_INDEX'] = str(self.model_index)
-            env['RAG_BATCH_GPU'] = str(self.batch_gpu)  # ← Передаём batch_gpu
-            env['RAG_BATCH_CPU'] = str(self.batch_cpu)  # ← Передаём batch_cpu
-            
+            env['RAG_BATCH_GPU'] = str(self.batch_gpu) #Передаём batch_gpu
+            env['RAG_BATCH_CPU'] = str(self.batch_cpu) #Передаём batch_cpu
+            # Устанавливаем кодировку UTF-8
+            env['PYTHONIOENCODING'] = 'utf-8'
+            env['PYTHONUTF8'] = '1'        
             # Запускаем процесс
             self.process = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
+                encoding='utf-8', #ЯВНО указываем, в какой кодировке ЧИТАТЬ вывод
+                errors='replace', #СТРАХОВКА: если попадется битый байт, он станет '?', а не вызовет краш
                 bufsize=1,
                 env=env,
-                universal_newlines=True
+                # universal_newlines=True
             )
             
             # Читаем вывод построчно

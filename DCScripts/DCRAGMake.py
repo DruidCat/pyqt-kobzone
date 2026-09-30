@@ -3,7 +3,6 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 
 import os
 import sys
-
 # ============================================================
 # ОПТИМИЗАЦИЯ ПАМЯТИ PYTORCH
 # ============================================================
