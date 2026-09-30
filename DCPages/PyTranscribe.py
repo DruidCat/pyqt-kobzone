@@ -32,6 +32,7 @@ class TranscriberWorker(QThread):
             #Формируем команду запуска
             cmd = [
                 sys.executable,
+                "-X", "utf8", #Меняет поведение интерпретатора на самом низком уровне под utf8
                 str(script_path)
             ]
             #Устанавливаем переменные окружения для путей
@@ -39,15 +40,20 @@ class TranscriberWorker(QThread):
             env['TRANSCRIBE_INPUT_DIR'] = self.audio_path
             env['TRANSCRIBE_OUTPUT_DIR'] = self.text_path
             env['TRANSCRIBE_GUI_MODE'] = '1' #Включаем GUI режим
+            # Устанавливаем кодировку UTF-8
+            env['PYTHONIOENCODING'] = 'utf-8'
+            env['PYTHONUTF8'] = '1'
             #Запускаем процесс
             self.process = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
+                encoding='utf-8', #ЯВНО указываем, в какой кодировке ЧИТАТЬ вывод
+                errors='replace', #СТРАХОВКА: если попадется битый байт, он станет '?', а не вызовет краш
                 bufsize=1,
                 env=env,
-                universal_newlines=True
+                #universal_newlines=True
             )
             #Читаем вывод построчно
             for line in iter(self.process.stdout.readline, ''):
