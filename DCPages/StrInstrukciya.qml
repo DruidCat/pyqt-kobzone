@@ -55,12 +55,7 @@ Item {
 		drwSidebar.sidebarWidth = root.width * DCSettings.instrukcii_shirina//Пересчит.ширину панели
 	}
     Keys.onPressed: (event) => {//Это запись для Qt6, для Qt5 нужно удалить event =>
-        if(event.modifiers & Qt.ControlModifier){//Если нажат "Ctrl"
-            if (event.key === Qt.Key_B){//Если нажата клавиша В, то...
-                fnClickedSidebar();//Функция открытия/закрытия боковой панели.
-                event.accepted = true;//Завершаем обработку эвента.
-            }
-        } else if(event.modifiers & Qt.AltModifier){//Если нажат "Alt"
+        if(event.modifiers & Qt.AltModifier){//Если нажат "Alt"
             if (event.key === Qt.Key_Left){//Если нажата клавиша стрелка влево, то...
                 if(knopkaNazad.visible)//Если кнопка Назад видимая, то...
                     fnClickedNazad();//Функция нажатия кнопки Назад

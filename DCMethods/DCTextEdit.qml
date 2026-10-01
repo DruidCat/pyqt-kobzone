@@ -78,14 +78,17 @@ Item {
                 const keyActions = {
                     [Qt.Key_Up]: () => scrollBy(-root.pixelSize * 1.2),
                     [Qt.Key_K]: () => scrollBy(-root.pixelSize * 1.2),
-                    [1042]: () => scrollBy(-root.pixelSize * 1.2),  // В
+                    [1042]: () => scrollBy(-root.pixelSize * 1.2),  // Л
                     
                     [Qt.Key_Down]: () => scrollBy(root.pixelSize * 1.2),
                     [Qt.Key_J]: () => scrollBy(root.pixelSize * 1.2),
-                    [1053]: () => scrollBy(root.pixelSize * 1.2),  // Н
+                    [1053]: () => scrollBy(root.pixelSize * 1.2),  // О
                     
                     [Qt.Key_PageUp]: () => scrollBy(-flcListat.height),
-                    [Qt.Key_PageDown]: () => scrollBy(flcListat.height)
+                    [Qt.Key_PageDown]: () => scrollBy(flcListat.height),
+
+                    [Qt.Key_Home]: () => scrollTop(),
+					[Qt.Key_End]: () => scrollBottom()
                 }
                 if (event.key in keyActions) {
                     keyActions[event.key]()
