@@ -70,9 +70,10 @@ Item {
         }
 		if (event.modifiers & Qt.ControlModifier) {
             if (event.key === Qt.Key_T || event.key === 1045) {
-                if (!menuMenu.visible && knopkaTranscribe.enabled) {
-                    fnClickedTranscribe()
-                }
+                if (!menuMenu.visible && knopkaTranscribe.enabled) fnClickedTranscribe()
+                event.accepted = true
+            } else if (event.key === Qt.Key_O || event.key === 1065) {
+                if (!menuMenu.visible && knopkaOtkrit.enabled) fnClickedOtkrit()//открытия результатов
                 event.accepted = true
             }
         }
@@ -127,6 +128,7 @@ Item {
             }
             event.accepted = true
         } 
+		//root.log(event.key)
     }
 	Component.onCompleted: {
         root.forceActiveFocus()
