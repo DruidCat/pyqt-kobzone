@@ -5,6 +5,10 @@ import os
 import sys
 import tempfile #Работа с temp файлами и папками
 import platform #Работа с Операционными Системами
+from pathlib import Path #Для Path
+
+# Чтобы импорты работали даже если python запущен в safe-path режиме
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 # ============================================================
 # ОПРЕДЕЛЕНИЕ ОПЕРАЦИОННОЙ СИСТЕМЫ
 # ============================================================
@@ -39,6 +43,7 @@ import time
 import threading
 from datetime import datetime
 import zipfile
+from DCPDF import izvlech_text_iz_pdf_po_stranicam
 
 # ============================================================
 # ОПРЕДЕЛЕНИЕ РЕЖИМА ЗАПУСКА
@@ -313,7 +318,7 @@ def check_and_move_new_files():
     new_files = []
     for root, _, files in os.walk(add_dir):
         for file in files:
-            if file.endswith(".txt"):
+            if file.lower().endswith(".txt") or file.lower().endswith(".pdf"):
                 new_files.append(os.path.join(root, file))
     
     if not new_files:
@@ -662,15 +667,16 @@ def encode_texts(texts, batch_size=None):
     
     return torch.vstack(all_embeddings)
 
-# Список всех текстовых файлов
-print("\n📂 Поиск текстовых файлов...", flush=True)
-txt_files = []
+# Список всех документов .txt + .pdf
+print("\n📂 Поиск документов...", flush=True)
+doc_files = []
 for root, _, files in os.walk(data_dir):
     for file in files:
-        if file.endswith(".txt"):
-            txt_files.append(os.path.join(root, file))
+        file_lower = file.lower()
+        if file_lower.endswith(".txt") or file_lower.endswith(".pdf"):
+            doc_files.append(os.path.join(root, file))
 
-print(f"✓ Найдено {len(txt_files)} текстовых файлов\n", flush=True)
+print(f"✓ Найдено {len(doc_files)} файлов (.txt/.pdf)\n", flush=True)
 print("="*70, flush=True)
 print("📖 ОБРАБОТКА ФАЙЛОВ", flush=True)
 print("="*70, flush=True)
@@ -679,28 +685,59 @@ print("="*70, flush=True)
 documents = []
 metadatas = []
 
-for idx, file_path in enumerate(txt_files, 1):
+for idx, file_path in enumerate(doc_files, 1):
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            text = f.read()
-            # Разбиение по абзацам
+        chunk_count = 0
+        file_lower = file_path.lower()
+
+        if file_lower.endswith(".txt"):
+            with open(file_path, "r", encoding="utf-8") as f:
+                text = f.read()
+
             chunks = [chunk.strip() for chunk in text.split('\n\n') if chunk.strip()]
-            
-            chunk_count = 0
             for chunk in chunks:
                 if len(chunk) > 50:
                     documents.append(chunk)
                     metadatas.append({
                         "source": file_path,
-                        "filename": os.path.basename(file_path)
+                        "filename": os.path.basename(file_path),
+                        "page": 0  # 0 = не применимо (txt)
                     })
                     chunk_count += 1
-        
-        # Показываем относительный путь от data_dir
+
+        elif file_lower.endswith(".pdf"):
+            spisok_stranic = izvlech_text_iz_pdf_po_stranicam(file_path)
+
+            # ---- ОТЛАДКА (по запросу) ----
+            # print(f"\nPDF распознан: {os.path.basename(file_path)}", flush=True)
+            # print(f"Страниц: {len(spisok_stranic)}", flush=True)
+
+            for nomer_stranicy, text_stranicy in enumerate(spisok_stranic, 1):
+                if not text_stranicy:
+                    continue
+
+                chunks = [chunk.strip() for chunk in text_stranicy.split('\n\n') if chunk.strip()]
+                if not chunks:
+                    continue
+
+                for chunk in chunks:
+                    if len(chunk) > 50:
+                        documents.append(chunk)
+                        metadatas.append({
+                            "source": file_path,
+                            "filename": os.path.basename(file_path),
+                            "page": nomer_stranicy  # <-- ключевое: номер страницы
+                        })
+                        chunk_count += 1
+
+            if chunk_count == 0:
+                print(f"⚠️  PDF без текста (возможно скан без текстового слоя): {os.path.basename(file_path)}", flush=True)
+
         relative_path = os.path.relpath(file_path, data_dir)
-        print(f"[{idx}/{len(txt_files)}] ✓ {relative_path:50s} ({chunk_count:4d} фрагментов)", flush=True)
+        print(f"[{idx}/{len(doc_files)}] ✓ {relative_path:50s} ({chunk_count:4d} фрагментов)", flush=True)
+
     except Exception as e:
-        print(f"[{idx:2d}/{len(txt_files)}] ✗ Ошибка {os.path.basename(file_path)}: {e}", flush=True)
+        print(f"[{idx:2d}/{len(doc_files)}] ✗ Ошибка {os.path.basename(file_path)}: {e}", flush=True)
 
 print("="*70, flush=True)
 print(f"📊 Всего фрагментов: {len(documents)}", flush=True)
@@ -857,7 +894,7 @@ print("\n" + "="*70, flush=True)
 print("🎉 УСПЕШНО!", flush=True)
 print("="*70, flush=True)
 print(f"  📁 Местоположение: {index_dir}", flush=True)
-print(f"  📚 Файлов обработано: {len(txt_files)}", flush=True)
+print(f"  📚 Файлов обработано: {len(doc_files)}", flush=True)
 print(f"  📄 Фрагментов создано: {len(documents)}", flush=True)
 print(f"  📦 Модель: {MODEL_NAME}", flush=True)
 print(f"  🔢 Размерность векторов: {dimension}", flush=True)

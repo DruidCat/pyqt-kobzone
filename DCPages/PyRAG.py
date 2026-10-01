@@ -43,6 +43,7 @@ class RAGWorker(QThread):
             
             # Устанавливаем переменные окружения для путей
             env = os.environ.copy()
+            env.pop("PYTHONSAFEPATH", None)#иначе дочерний python запускается в safe-path и не видит локальные модули рядом со скриптом
             env['RAG_DOC_DIR'] = self.doc_path
             env['RAG_DB_DIR'] = self.db_path
             env['RAG_GUI_MODE'] = '1'
@@ -63,6 +64,7 @@ class RAGWorker(QThread):
                 errors='replace', #СТРАХОВКА: если попадется битый байт, он станет '?', а не вызовет краш
                 bufsize=1,
                 env=env,
+                cwd=str(script_path.parent)#чтоб локальные импорты были стабильнее
                 # universal_newlines=True
             )
             

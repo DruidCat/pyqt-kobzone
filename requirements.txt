@@ -18,6 +18,9 @@ requests
 faiss-cpu
 faiss-gpu
 openai
+
+# Для PDF
+pypdf
 # Зайдите на https://huggingface.co — зарегистрируйтесь
 # Создайте токен: Settings → Access Tokens → New Token (Read)
 # Залогиньтесь:
