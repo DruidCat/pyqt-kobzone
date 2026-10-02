@@ -6,7 +6,7 @@ from PyQt6.QtCore import QObject, pyqtSlot, pyqtSignal, QThread
 
 class RAGLoaderWorker(QThread):
     """Рабочий поток для загрузки RAG базы"""
-    sigProgress = pyqtSignal(str)  # Прогресс загрузки
+    sigProgress = pyqtSignal(int, str)  # Прогресс загрузки: номер прогресса, наименование прогресса.
     sigFinished = pyqtSignal(bool, str)  # (success, error_message)
     
     def __init__(self, rag_path, model_name, parent_rag):
@@ -19,7 +19,7 @@ class RAGLoaderWorker(QThread):
         """Выполняется в отдельном потоке"""
         try:
             # 1. Проверка библиотек
-            self.sigProgress.emit("🔄 Проверка зависимостей...")
+            self.sigProgress.emit(1, "Проверка зависимостей...")
             try:
                 import faiss
             except ImportError:
@@ -33,7 +33,7 @@ class RAGLoaderWorker(QThread):
                 return
             
             # 2. Проверка файлов
-            self.sigProgress.emit("🔄 Проверка файлов базы...")
+            self.sigProgress.emit(2, "Проверка файлов базы...")
             index_file = os.path.join(self.rag_path, "index.faiss")
             docs_file = os.path.join(self.rag_path, "documents.pkl")
             meta_file = os.path.join(self.rag_path, "metadatas.pkl")
@@ -51,33 +51,33 @@ class RAGLoaderWorker(QThread):
                 with open(meta_file, "rb") as f:
                     metadatas = pickle.load(f)
             else:
-                self.sigProgress.emit("⚠ Файл metadatas.pkl не найден (страницы/источники могут не отображаться)")
+                self.sigProgress.emit(3, "Файл metadatas.pkl не найден (страницы/источники могут не отображаться)")
 
             # 3. Загрузка модели эмбеддингов
-            self.sigProgress.emit(f"🔄 Загрузка модели эмбеддингов: {self.model_name}...")
+            self.sigProgress.emit(4, f"Загрузка модели эмбеддингов: {self.model_name}...")
             
             device = "cpu"  # Принудительно CPU
             embedder = SentenceTransformer(self.model_name, device=device)
             embedder.rag_model_name = self.model_name
             
-            self.sigProgress.emit(f"✓ Модель загружена на CPU")
+            self.sigProgress.emit(5, f"Модель загружена на CPU")
             
             # 4. Загрузка FAISS индекса
-            self.sigProgress.emit("🔄 Загрузка FAISS индекса...")
+            self.sigProgress.emit(6, "Загрузка FAISS индекса...")
             index = faiss.read_index(index_file)
-            self.sigProgress.emit(f"✓ FAISS индекс загружен ({index.ntotal} векторов)")
+            self.sigProgress.emit(7, f"FAISS индекс загружен ({index.ntotal} векторов)")
             
             # 5. Загрузка документов
-            self.sigProgress.emit("🔄 Загрузка документов...")
+            self.sigProgress.emit(8, "Загрузка документов...")
             with open(docs_file, "rb") as f:
                 documents = pickle.load(f)
             
             # 6. Валидация
             if metadatas and len(metadatas) != len(documents):
-                self.sigProgress.emit(f"⚠ Несоответствие: metadatas={len(metadatas)} != documents={len(documents)}")
+                self.sigProgress.emit(9, f"Несоответствие: metadatas={len(metadatas)} != documents={len(documents)}")
 
             if len(documents) != index.ntotal:
-                self.sigProgress.emit(f"⚠ Несоответствие: {len(documents)} документов != {index.ntotal} векторов")
+                self.sigProgress.emit(10, f"Несоответствие: {len(documents)} документов != {index.ntotal} векторов")
             
             # 7. Сохраняем в родительский объект
             self.parent_rag._embedder = embedder
@@ -87,7 +87,7 @@ class RAGLoaderWorker(QThread):
             self.parent_rag._is_loaded = True
             self.parent_rag._metadatas = metadatas
             
-            self.sigProgress.emit(f"✓ RAG база успешно загружена: {len(documents)} фрагментов")
+            self.sigProgress.emit(11, f"RAG база успешно загружена: {len(documents)} фрагментов")
             self.sigFinished.emit(True, "")
             
         except Exception as e:
@@ -98,9 +98,9 @@ class RAGLoaderWorker(QThread):
 
 class DCAnalizerRAG(QObject):
     """Управление загрузкой и поиском по RAG базе данных"""
-    sigLog = pyqtSignal(str)  # Логи для toolbar/resultArea
+    sigLog = pyqtSignal(str)  # Логи для toolbar/txdOtvet
     sigBazaLoaded = pyqtSignal(bool)  # True - загружена, False - ошибка
-    sigProgress = pyqtSignal(str)  # Прогресс загрузки (для resultArea)
+    sigProgress = pyqtSignal(int, str)  #Прогресс загрузки (для txdOtvet)
     
     def __init__(self):
         super().__init__()
@@ -182,17 +182,17 @@ class DCAnalizerRAG(QObject):
             self._loader_thread.wait()
         
         # Создаем новый поток загрузки
-        self.sigProgress.emit("🔄 Начинается загрузка RAG базы...")
+        self.sigProgress.emit(0, "Начинается загрузка RAG базы...")
         
         self._loader_thread = RAGLoaderWorker(self._current_rag_path, model_name, self)
         self._loader_thread.sigProgress.connect(self._on_progress)
         self._loader_thread.sigFinished.connect(self._on_loading_finished)
         self._loader_thread.start()
 
-    def _on_progress(self, message):
+    def _on_progress(self, ntProgress, message): #Получает сообщения от sigProgress sigFinished из потока
         """Обработчик прогресса загрузки"""
         self.sigLog.emit(message)
-        self.sigProgress.emit(message)  # Для resultArea
+        self.sigProgress.emit(ntProgress, message) #Для txdOtvet
 
     def _on_loading_finished(self, success, error_message):
         """Обработчик завершения загрузки"""
@@ -200,7 +200,7 @@ class DCAnalizerRAG(QObject):
             self.sigBazaLoaded.emit(True)
         else:
             self.sigLog.emit(f"✗ {error_message}")
-            self.sigProgress.emit(f"✗ Ошибка загрузки RAG базы:\n{error_message}")
+            self.sigProgress.emit(11, f"✗ Ошибка загрузки RAG базы:\n{error_message}")
             self.sigBazaLoaded.emit(False)
 
     def _obnovitCacheNizRegistr(self):
@@ -482,15 +482,3 @@ class DCAnalizerRAG(QObject):
             self.sigLog.emit(f"✗ Ошибка поиска в RAG: {str(e)}")
             self.sigLog.emit(f"Детали:\n{traceback.format_exc()}")
             return ""
-"""
-Как это работает:
-1. Пользователь выбирает папку через knopkaRAG -> путь сохраняется в DCSettings.analizer_put_rag.
-2. Пользователь нажимает "Анализировать".
-3. StrAnalizer.qml вызывает pyAnalizerRAG.ustRagPath, передавая путь.
-4. PyAnalizer.py начинает работу, видит, что rag_enabled == True, и берет первые 300 символов промпта пользователя.
-5. Он передает эти 300 символов в PyAnalizerRAG.py.
-6. PyAnalizerRAG.py (если еще не загружена) загружает легкую модель SentenceTransformer и FAISS-индекс из указанной папки.
-7. Она находит 3 самых похожих фрагмента текста в базе.
-8. PyAnalizer.py берет эти 3 фрагмента, красиво оформляет их в блок ДАННЫЕ ИЗ RAG: и добавляет в начало промпта, который уходит в LM Studio.
-.9 LM Studio генерирует ответ, опираясь как на загруженный пользователем текст, так и на найденные факты из RAG-базы.
-"""

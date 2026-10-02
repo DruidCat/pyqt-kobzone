@@ -63,14 +63,21 @@ Item {
     }
 	Connections {//CONNECTIONS для прогресса
 		target: pyAnalizerRAG
-		function onSigProgress(ntProgress, message) {//Прогресс загрузки показываем в resultArea
-			txdOtvet.text += ntProgress + " " + message + "\n"
+		function onSigProgress(ntProgress, strText) {//Прогресс загрузки показываем в resultArea
+			const cnTotal = 11//В Python скрипте на данный момент 11 сообщение финальное
+			const cnConst = 100 / cnTotal
+			if (ldrProgress.item){
+				ldrProgress.item.text = `${ntProgress}/${cnTotal} ${strText}`//Отображаем в полосе загрузки.
+				ldrProgress.item.progress = ntProgress * cnConst
+			}
+			txdOtvet.text += strText + "\n"
 			txdOtvet.scrollBottom()
 		}
 		function onSigLog(log) {
 			root.log(`pyAnalizerRAG ${log}`)
 		}
 		function onSigBazaLoaded(success) {
+			ldrProgress.active = false//В любом случае отключаем DCProgress
 			if (success) {
 				pyLMStudio.zapustitServer()//Всегда запускаем сервер, даже если он запущен.
 			} else {
@@ -472,6 +479,7 @@ Item {
 		root.isServerZapustit = true
 		root.isModelZagruzit = true//Устанавливаем флаг ожидания, из StrAnalizer
         if (DCSettings.analizer_put_rag !== "") {
+			ldrProgress.active = true//Включаем DCProgress
             pyAnalizerRAG.ustRagPath(DCSettings.analizer_put_rag)//Настраиваем RAG модуль на основе настроек
             pyAnalyzer.ustRagEnabled(true)
             root.log("✓ RAG база будет использована при анализе")
