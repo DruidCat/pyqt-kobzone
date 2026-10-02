@@ -128,7 +128,9 @@ Item {
 			root.log(`Чанк ${ntCurrent}/${ntTotal} начал обрабатываться`)
 			if (ldrProgress.item) {
 				if (ntCurrent === 1) {//Настраиваем прогресс при первом чанке
-					ldrProgress.total = ntTotal
+					ldrProgress.total = ntTotal//Задаём скорость движения полосы прогресса.
+					//Чем больше файлов, тем медленней движется полоса прогресса.
+					ldrProgress.item.msInterval = ldrProgress.interval * ldrProgress.total
 					if (ntTotal === 1) {
 						ldrProgress.item.text = "Финальный анализ..."
 					} else {
@@ -216,7 +218,8 @@ Item {
 					}
 				} else {//Если пустая строка, то...
 					ldrProgress.active = true//Запускаем полосу прогресса загрузки модели
-					ldrProgress.item.text = "Загрузка модели: " + DCSettings.studio_model_imya
+					ldrProgress.total = 1//Задаём скорость движения полосы прогресса.
+					if(ldrProgress.item)ldrProgress.item.text="Загрузка модели: "+DCSettings.studio_model_imya
 					pyLMStudio.ustParametri(DCSettings.studio_model_imya, DCSettings.studio_max_context,
 											DCSettings.studio_gpu_offload)
 				}
@@ -475,6 +478,7 @@ Item {
 		root.isModelZagruzit = true//Устанавливаем флаг ожидания, из StrAnalizer
         if (DCSettings.analizer_put_rag !== "") {
 			ldrProgress.active = true//Включаем DCProgress
+			ldrProgress.total = 1//Задаём скорость движения полосы прогресса.
             pyAnalizerRAG.ustRagPath(DCSettings.analizer_put_rag)//Настраиваем RAG модуль на основе настроек
             pyAnalyzer.ustRagEnabled(true)
             root.log("✓ RAG база будет использована при анализе")
@@ -955,7 +959,8 @@ Item {
 				ldrProgress.item.msInterval = ldrProgress.interval//Пауза между смещением.
             }
 			onTotalChanged: {//Если переменная изменилась, то происходит пересчёт скорости смещения.
-				ldrProgress.item.msInterval = interval * total//Чем больше файлов, тем медленней движется.
+				if(ldrProgress.item)//Если существует
+					ldrProgress.item.msInterval = interval * total//Чем больше файлов, тем медленней движется.
 			}
         }
         DCKnopkaInfo {
