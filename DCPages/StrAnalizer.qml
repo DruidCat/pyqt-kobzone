@@ -39,8 +39,6 @@ Item {
     
     property int logoRazmer: 22//Размер Логотипа
     property string logoImya: "kobzone"//Имя логотипа в DCLogo
-    property real rlProgress: 0
-    property real rlLoader: 1
 
 	property bool isServerZapustit: false//true - запускаем сервер для начала анализа
 	property bool isModelZagruzit: false//true - жду загрузки модели из StrAnalizer
@@ -144,18 +142,15 @@ Item {
 		function onSigChunkFinished(ntCurrent, ntTotal) {//Сигнал окончания обработки Чанка.
 			root.log(`Чанк ${ntCurrent}/${ntTotal} завершён`)
 			if (ntTotal > 1) {//Только для множественных чанков
-				//Прогресс обновляется после завершения чанка
-				root.rlLoader = 100 / (ntTotal + 1)//+1 резервируем для финального анализа
-				root.rlProgress = ntCurrent * root.rlLoader
 				if (ldrProgress.item) {
-					ldrProgress.item.progress = root.rlProgress
+					const cnLoader = 100 / (ntTotal + 1)//+1 резервируем для финального анализа
+					ldrProgress.item.progress = ntCurrent * cnLoader//Прогресс обнов. после завершения чанка
 					ldrProgress.item.text = `${ntCurrent}/${ntTotal + 1}`//+1 резервируем для финального анали
 				}
 			}
 		}
 		function onSigAnalizStart() {//Сигнал Начала анализа.
 			root.log("✓ Анализ начался")
-			root.rlProgress = 0
 			tmrLogo.running = true//Запускаем анимацию логотипа и включаем политики кнопок.
         	txdOtvet.text = ""//ОЧИЩАЕМ txdOtvet перед началом
 			if (ldrProgress.item) {//Если существует объект, то...

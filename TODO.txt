@@ -9,7 +9,7 @@ TODO:
 - StrAnalizer, проверить на наличие RAG базы данных после выбора кнопкой Добавить RAG БД.
 - StrAnalizer, DCTextEdit, баг Qt6.8, не рендерит большие тексты, не позволять опускаться в самый низ тексту.
 - StrAnalizer, если начать анализ, а потом остановить, и протом опять начать, то первый анализ с ошибкой.
-- StrAnalizer, полоса прогресса не сбрасывается, если начать анализ, остановить, перегрузить модель и начать.
+- StrAnalizer, полоса прогресса двигается быстрее если начать анализ, остановить и начать повторно.
 - StrAnalizer, Windows {Загрузить файлы}, в консоли ошибка QWindowsNativeFileDialogBase::shellItem: SHCreateItemFromParsingName(file://c/Users/HP/Documents/2025-12-12_08-09-21_Mentor/????????????? ?????? 239)) failed (═х эрщфхэ ёхЄхтющ яєЄ№.)
 - SetAnalizer, DCTextEdit, не работает пейсхолдер подсказка.
 - SetStudio, сделать настройку запуска LM Studio с sandbox и без sandbox.
