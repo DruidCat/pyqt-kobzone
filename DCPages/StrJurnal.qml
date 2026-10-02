@@ -137,6 +137,7 @@ Item {
 			id: txdZona
             ntWidth: root.ntWidth
             ntCoff: root.ntCoff
+			anchors.fill: tmZona
 			readOnly: true//Запрещено редактировать текст
             textEdit.selectByMouse: root.isMobile ? false : true//Запрещаем выделять текст для свайпа Android
             pixelSize: root.ntWidth/2*root.ntCoff//размер шрифта текста в два раза меньше.
