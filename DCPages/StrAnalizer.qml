@@ -63,8 +63,8 @@ Item {
     }
 	Connections {//CONNECTIONS для прогресса
 		target: pyAnalizerRAG
-		function onSigProgress(message) {//Прогресс загрузки показываем в resultArea
-			txdOtvet.text += message + "\n"
+		function onSigProgress(ntProgress, message) {//Прогресс загрузки показываем в resultArea
+			txdOtvet.text += ntProgress + " " + message + "\n"
 			txdOtvet.scrollBottom()
 		}
 		function onSigLog(log) {
@@ -468,6 +468,7 @@ Item {
 		dialogRAG.open()
 	}
     function fnClickedAnaliz() {//Функция запускающая нейро анализ документов
+		txdOtvet.text = ""//Очищаем полее ввода от предыдущих выводов.
 		root.isServerZapustit = true
 		root.isModelZagruzit = true//Устанавливаем флаг ожидания, из StrAnalizer
         if (DCSettings.analizer_put_rag !== "") {
