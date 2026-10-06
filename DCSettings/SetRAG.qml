@@ -44,6 +44,7 @@ Item {
 	property int ntModel: DCSettings.rag_model//модель от 0 простой до сложной 6	
 	property int ntBatchGPU: DCSettings.rag_batch_gpu//Максимум 256
 	property int ntBatchCPU: DCSettings.rag_batch_cpu//Максимум 64
+	property int ntRejim: DCSettings.rag_rejim//0 - all, 1 - абзац, 2 - окна по токенам
 	//Настройки
 	anchors.fill: parent
 	focus: true
@@ -54,7 +55,7 @@ Item {
     signal log(var strLog)
 	//Методы
 	Component.onCompleted: {
-        knopkiMassiv = [knopkaGPU, knopkaModeli, knopkaBatchGPU, knopkaBatchCPU]//Сюда добавляем id кнопок
+        knopkiMassiv = [knopkaGPU, knopkaModeli, knopkaBatchGPU, knopkaBatchCPU, knopkaRejim]//Добавляем id
 		root.forceActiveFocus()
 	}
 	Keys.onPressed: (event) => {
@@ -159,6 +160,9 @@ Item {
 		if (pvModeli.visible) {
 			pvModeli.visible = false
 		}
+		if (pvRejimi.visible) {
+			pvRejimi.visible = false
+		}
 		txnZagolovok.visible = false//Делаем невидимым ввот чисел
     }
 	function fnClickedNazad() {
@@ -176,6 +180,7 @@ Item {
 			if (pvModeli.visible) pvModeli.visible = false
 			if (vprGPUStart.visible) vprGPUStart.visible = false
 			if (txnZagolovok.visible) txnZagolovok.visible = false
+			if (pvRejimi.visible) pvRejimi.visible = false
 			menuMenu.visible = true
 		}
 	}
@@ -203,6 +208,13 @@ Item {
 	function fnCloseGPUStartIfOpen() {
 		if (vprGPUStart.visible) {
 			vprGPUStart.visible = false
+			return true
+		}
+		return false
+	}
+	function fnCloseRejimiIfOpen() {
+		if (pvRejimi.visible) {
+			pvRejimi.visible = false
 			return true
 		}
 		return false
@@ -336,6 +348,7 @@ Item {
 			onVisibleChanged: {
 				if(visible) {
 					pvModeli.visible = false//Делаем невидимым виджет
+					pvRejimi.visible = false//Делаем невидимым виджет
 					knopkaNazad.visible = false
 					knopkaModeli.enabled = false
 				} else {
@@ -387,6 +400,7 @@ Item {
 					if(!knopkaBatchGPU.pressedTmr550 && !knopkaBatchCPU.pressedTmr550) fnCloseBatchIfOpen()
 					fnCloseGPUStartIfOpen()//Закрываем попрос по GPU
 					if(!pvModeli.jdi && !pvModeli.pressed) fnCloseModeliIfOpen()//Закрываем меню выбора модели
+					if(!pvRejimi.jdi && !pvRejimi.pressed)fnCloseRejimiIfOpen()//Закрываем меню выбора режимов
 				}
 			}
 			Column {
@@ -420,7 +434,7 @@ Item {
 					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseGPUStartIfOpen() && !fnCloseBatchIfOpen()){
-								if (pressed && !pvModeli.pressed) fnPress()
+								if (pressed && !pvModeli.pressed && !pvRejimi.pressed) fnPress()
 							}
 						}
 					}
@@ -449,7 +463,7 @@ Item {
 					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseGPUStartIfOpen() && !fnCloseBatchIfOpen()) {
-								if (pressed && !pvModeli.pressed) fnPress()
+								if (pressed && !pvModeli.pressed && !pvRejimi.pressed) fnPress()
 							}
 						}
 					}
@@ -471,13 +485,14 @@ Item {
                     clrKnopki: (root.currentIndex === 2) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					function fnPress() {
+						root.currentIndex = 2
 						fnClickedBatch(true)//Запускаем настройку batch_size_gpu
 						root.toolbar("Выберите количество фрагментов документа за один проход GPU.")
 					}
 					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseGPUStartIfOpen() && !fnCloseBatchIfOpen()){
-								if (pressed && !pvModeli.pressed) fnPress()
+								if (pressed && !pvModeli.pressed && !pvRejimi.pressed) fnPress()
 							}
 						}
 					}
@@ -499,13 +514,53 @@ Item {
                     clrKnopki: (root.currentIndex === 3) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					function fnPress() {
+						root.currentIndex = 3
 						fnClickedBatch(false)//Запускаем настройку batch_size_cpu
 						root.toolbar("Выберите количество фрагментов документа за один проход для CPU.")
 					}
 					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseGPUStartIfOpen() && !fnCloseBatchIfOpen()){
-								if (pressed && !pvModeli.pressed) fnPress()
+								if (pressed && !pvModeli.pressed && !pvRejimi.pressed) fnPress()
+							}
+						}
+					}
+				}
+				DCKnopkaOriginal {//Кнопка выбора режима создания RAG БД
+					id: knopkaRejim
+					text: {
+                        let ltRejim = qsTr("режим ");//
+						ltRejim += modelRejimi.get(root.ntRejim).spisok
+                        pvRejimi.currentIndex = root.ntRejim
+                        return ltRejim;
+                    }
+					ntHeight: root.ntWidth
+					ntCoff: root.ntCoff
+					anchors.left: parent.left
+					anchors.right: parent.right
+					anchors.leftMargin: root.ntCoff * 2
+					anchors.rightMargin: root.ntCoff * 2
+					clrTexta: root.clrMenuText
+                    clrKnopki: (root.currentIndex === 4) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    opacityKnopki: 0.9
+					function fnPress() {
+						root.currentIndex = 4
+						if(pvRejimi.visible){//Если видимый виджет, то...
+							Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModeli. ВАЖНО!!!
+								pvRejimi.visible = false//Делаем невидимым виджет
+							})
+						}
+						else{//Если невидимый виджет, то...
+							pvRejimi.currentIndex = root.ntRejim//Выставляем центральной Режим из настроек
+							Qt.callLater(function(){//пауза, иначе не сработает фокус и pvRejimi. ВАЖНО!!!
+								pvRejimi.visible = true//Делаем видимым виджет
+							})
+						}
+					}
+					onClicked: {
+						if (pressed) {
+							if (!fnCloseMenuIfOpen() && !fnCloseGPUStartIfOpen() && !fnCloseBatchIfOpen()){
+								if (pressed && !pvModeli.pressed && !pvRejimi.pressed) fnPress()
 							}
 						}
 					}
@@ -544,6 +599,31 @@ Item {
             }
 			onVisibleChanged: {//Если видимость поменялась, то...
 				if(visible) Qt.callLater(function(){ pvModeli.karusel.forceActiveFocus() })//фокус PathView
+				else root.forceActiveFocus()//Если невидимый, то фокус на root, чтоб hotkey работали.
+			}
+        }
+		ListModel {//Модель с Режимами создания RAG
+            id: modelRejimi
+            ListElement { spisok: "All" }
+            ListElement { spisok: "Parent Document Retriever" }
+            ListElement { spisok: "Sliding Window Chunking" }
+        }
+        DCPathView {
+            id: pvRejimi
+            visible: false
+            ntWidth: root.ntWidth; ntCoff: root.ntCoff
+            anchors.left: tmZona.left; anchors.right: tmZona.right; anchors.bottom: tmZona.bottom
+            anchors.leftMargin: dcScrollbar.width; anchors.rightMargin: dcScrollbar.width
+            clrFona: root.clrFona; clrTexta: root.clrMenuText; clrMenuFon: root.clrMenuFon
+            modelData: modelRejimi
+            onClicked: function(strModel) {
+				Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModeli. ВАЖНО!!!
+					pvRejimi.visible = false//Делаем невидимым виджет
+					DCSettings.rag_rejim = pvRejimi.currentIndex;//Сохраняем в реестре.
+				})
+            }
+			onVisibleChanged: {//Если видимость поменялась, то...
+				if(visible) Qt.callLater(function(){ pvRejimi.karusel.forceActiveFocus() })//фокус PathView
 				else root.forceActiveFocus()//Если невидимый, то фокус на root, чтоб hotkey работали.
 			}
         }
@@ -627,9 +707,13 @@ Item {
 		propagateComposedEvents: true
 		onClicked: (mouse) => {
 			mouse.accepted = false
-			if (menuMenu.visible || pvModeli.visible || txnZagolovok.visible || vprGPUStart.visible){
+			if (menuMenu.visible || pvModeli.visible
+								|| txnZagolovok.visible
+								|| vprGPUStart.visible
+								|| pvRejimi.visible){
 				menuMenu.visible = false
 				pvModeli.visible = false
+				pvRejimi.visible = false
 				txnZagolovok.visible = false
 				//vprGPUStart.visible = false
 			}

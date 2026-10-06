@@ -56,10 +56,11 @@ MODEL_INDEX = int(os.environ.get('RAG_MODEL_INDEX', '0'))
 
 # ============================================================
 # РЕЖИМ ЧАНКИНГА
+# 0 = All (Абзац + мусор)
 # 1 = Parent Document Retriever (абзацы)
 # 2 = Sliding Window Chunking (окна по токенам + overlap 20%)
 # ============================================================
-REJIM_CHANKING = int(os.environ.get("RAG_REJIM_CHANKING", "2"))
+REJIM_CHANKING = int(os.environ.get("RAG_REJIM_CHANKING", "1"))
 if REJIM_CHANKING not in (1, 2):
     REJIM_CHANKING = 1
 
@@ -222,9 +223,9 @@ elif USE_GPU and not FAISS_GPU_AVAILABLE:
     USE_GPU = False
 else:
     print("💻 Режим: CPU", flush=True)
-    print(f"   Batch size: {SELECTED_MODEL['batch_size_cpu']}", flush=True)  # ← Новая строка
+    print(f"   Batch size: {SELECTED_MODEL['batch_size_cpu']}", flush=True)
 
-print(f"🧩 Режим чанкинга: {REJIM_CHANKING} ({'Parent Document' if REJIM_CHANKING==1 else 'Sliding Window 20%'})", flush=True)
+print(f"🧩 Режим чанкинга: {REJIM_CHANKING} ({'Parent Document' if REJIM_CHANKING==1 else 'Перекрытие 20%'})", flush=True)
 
 print("="*70, flush=True)
 
