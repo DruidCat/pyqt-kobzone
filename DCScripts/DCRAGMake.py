@@ -57,7 +57,7 @@ MODEL_INDEX = int(os.environ.get('RAG_MODEL_INDEX', '0'))
 # ============================================================
 # РЕЖИМ ЧАНКИНГА
 # 0 = All (Абзац + мусор)
-# 1 = Parent Document Retriever (абзацы)
+# 1 = Paragraph-based Chunking (абзацы)
 # 2 = Sliding Window Chunking (окна по токенам + overlap 20%)
 # ============================================================
 REJIM_CHANKING = int(os.environ.get("RAG_REJIM_CHANKING", "1"))
