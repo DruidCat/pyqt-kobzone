@@ -47,6 +47,7 @@ import zipfile
 from DCPDF import izvlech_text_iz_pdf_po_stranicam
 from DCRAGParagraph import poluchit_chanki as poluchit_chanki_paragraf
 from DCRAGToken import poluchit_chanki as poluchit_chanki_token
+from DCRAGRecursive import poluchit_chanki as poluchit_chanki_recursive
 
 # ============================================================
 # ОПРЕДЕЛЕНИЕ РЕЖИМА ЗАПУСКА
@@ -62,11 +63,21 @@ MODEL_INDEX = int(os.environ.get('RAG_MODEL_INDEX', '0'))
 # 1 = Paragraph-based Chunking (абзацы)
 # 2 = Token-aware Chunking (окна по токенам + overlap 20%)
 # ============================================================
-REJIM_CHANKING = int(os.environ.get("RAG_REJIM_CHANKING", "1"))
-if REJIM_CHANKING not in (1, 2):
-    REJIM_CHANKING = 1
+REJIM_CHANKING = int(os.environ.get("RAG_REJIM_CHANKING", "0"))
+if REJIM_CHANKING not in (0, 1, 2):
+    REJIM_CHANKING = 0
 
-PEREKRITIE_PROC = 0.20  # 20%
+# ============================================================
+# НАСТРОЙКИ ЧАНКОВ (для режима 0 - по СИМВОЛАМ)
+# ============================================================
+RAG_CHUNK_RAZMER_SIMVOLI = int(os.environ.get("RAG_CHUNK_RAZMER_SIMVOLI", "0"))  # 0 = авто
+RAG_CHUNK_OVERLAP_SIMVOLI = int(os.environ.get("RAG_CHUNK_OVERLAP_SIMVOLI", "0"))  # 0 = авто
+# Эвристика: сколько символов на 1 токен (нужно только для авто-режима 0)
+RAG_KOEF_SIMVOL_NA_TOKEN = float(os.environ.get("RAG_KOEF_SIMVOL_NA_TOKEN", "3.5"))
+# ============================================================
+# НАСТРОЙКИ ПЕРЕКРЫТИЯ (для режима 2 - по ТОКЕНАМ)
+# ============================================================
+RAG_TOKEN_OVERLAP_PROC = float(os.environ.get("RAG_TOKEN_OVERLAP_PROC", "0.20"))  # 20%
 
 # Получаем batch_size из окружения
 BATCH_GPU_OVERRIDE = os.environ.get('RAG_BATCH_GPU')
@@ -497,7 +508,7 @@ sys.stdout.flush()
 device = torch.device('cuda' if USE_GPU and GPU_AVAILABLE else 'cpu')
 
 # ============================================================
-# АГРЕССИВНАЯ ОЧИСТКА VRAM ДЛЯ bge-m3
+# АГРЕССИВНАЯ ОЧИСТКА VRAM
 # ============================================================
 if USE_GPU and GPU_AVAILABLE:
     
@@ -516,12 +527,12 @@ if USE_GPU and GPU_AVAILABLE:
     
     if free_memory < 6.0:
         print(f"\n⚠️  КРИТИЧНО: Недостаточно VRAM!", flush=True)
-        print(f"   Требуется: 6+ GB для bge-m3", flush=True)
+        print(f"   Требуется: 6+ GB для {MODEL_NAME}", flush=True)
         print(f"   Доступно:  {free_memory:.2f} GB", flush=True)
         print(f"\n💡 Рекомендации:", flush=True)
         print(f"   1. Закройте браузеры и другие программы", flush=True)
-        print(f"   2. Перезапустите приложение", flush=True)
-        print(f"   3. Используйте модель с меньшими требованиями", flush=True)
+        print(f"   2. Выгрузите языковую модель из агента", flush=True)
+        print(f"   3. Используйте модель для создания RAG с меньшими требованиями", flush=True)
         
         if IS_GUI_MODE:
             # В GUI режиме автоматически переключаемся на CPU
@@ -560,6 +571,32 @@ def mean_pooling(model_output, attention_mask):
     token_embeddings = model_output[0]
     input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
     return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
+
+def poluchit_chanki_po_rejimu(text: str, tokenizer, max_length: int) -> list[str]:
+    """
+    Возвращает чанки для любого текста (txt или текст одной страницы pdf)
+    в зависимости от REJIM_CHANKING.
+    """
+    if REJIM_CHANKING == 0:
+        # Режим 0: Recursive Character Chunking (по символам)
+        if RAG_CHUNK_RAZMER_SIMVOLI > 0:
+            chunk_razmer = RAG_CHUNK_RAZMER_SIMVOLI
+        else:
+            chunk_razmer = int(max_length * RAG_KOEF_SIMVOL_NA_TOKEN)
+
+        if RAG_CHUNK_OVERLAP_SIMVOLI > 0:
+            chunk_overlap = RAG_CHUNK_OVERLAP_SIMVOLI
+        else:
+            chunk_overlap = int(chunk_razmer * 0.20)  # авто 20%
+
+        return poluchit_chanki_recursive(text, chunk_razmer, chunk_overlap)
+
+    if REJIM_CHANKING == 1:
+        # Режим 1: Paragraph-based Chunking
+        return poluchit_chanki_paragraf(text)
+
+    # Режим 2: Token-aware Chunking
+    return poluchit_chanki_token(text, tokenizer, max_length, perekritie_proc=RAG_TOKEN_OVERLAP_PROC)
 
 class SpinnerThread(threading.Thread):
     """Поток для плавной анимации спиннера"""
@@ -718,10 +755,7 @@ for idx, file_path in enumerate(doc_files, 1):
             with open(file_path, "r", encoding="utf-8") as f:
                 text = f.read()
 
-            if REJIM_CHANKING == 1:
-                chunks = poluchit_chanki_paragraf(text)
-            else:
-                chunks = poluchit_chanki_token(text, tokenizer, max_length, perekritie_proc=PEREKRITIE_PROC)
+            chunks = poluchit_chanki_po_rejimu(text, tokenizer, max_length)
 
             for nomer_chanka, chunk in enumerate(chunks, 1):
                 if len(chunk) > 50:
@@ -746,10 +780,7 @@ for idx, file_path in enumerate(doc_files, 1):
                 if not text_stranicy:
                     continue
 
-                if REJIM_CHANKING == 1:
-                    chunks = poluchit_chanki_paragraf(text_stranicy)
-                else:
-                    chunks = poluchit_chanki_token(text_stranicy, tokenizer, max_length, perekritie_proc=PEREKRITIE_PROC)
+                chunks = poluchit_chanki_po_rejimu(text_stranicy, tokenizer, max_length)
 
                 for nomer_chanka, chunk in enumerate(chunks, 1):
                     if len(chunk) > 50:
