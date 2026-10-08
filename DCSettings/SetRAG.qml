@@ -604,7 +604,7 @@ Item {
         }
 		ListModel {//Модель с Режимами создания RAG
             id: modelRejimi
-            ListElement { spisok: "All" }
+            ListElement { spisok: "Recursive Character Chunking" }
             ListElement { spisok: "Paragraph-based Chunking" }
             ListElement { spisok: "Sliding Window Chunking" }
         }

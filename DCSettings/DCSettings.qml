@@ -36,7 +36,7 @@ QtObject {
 	property int rag_model: 0//модели от 0 до 6
 	property int rag_batch_gpu: 8//Количество параллельных проходов на GPU, но не больше 256
 	property int rag_batch_cpu: 4//Количество параллельных проходов на GPU, но не больше 64
-	property int rag_rejim: 1//0 - all, 1 - Paragraph-based Chunking (параграф), 2 - окна по токенам
+	property int rag_rejim: 1//0 - Recursive Character Chunking, 1 - Paragraph-based Chunking (параграф), 2 - окна по токенам
 	//Инструкции
 	property real instrukcii_shirina: 0.3//Коэффициент от общей ширины окна, показ.ширину боковой панели
 	//Объект настроек (автоматическое сохранение)

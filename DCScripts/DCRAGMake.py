@@ -56,7 +56,7 @@ MODEL_INDEX = int(os.environ.get('RAG_MODEL_INDEX', '0'))
 
 # ============================================================
 # РЕЖИМ ЧАНКИНГА
-# 0 = All (Абзац + мусор)
+# 0 = Recursive Character Chunking (Абзац, предложение)
 # 1 = Paragraph-based Chunking (абзацы)
 # 2 = Sliding Window Chunking (окна по токенам + overlap 20%)
 # ============================================================
