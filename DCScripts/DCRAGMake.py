@@ -45,6 +45,8 @@ import threading
 from datetime import datetime
 import zipfile
 from DCPDF import izvlech_text_iz_pdf_po_stranicam
+from DCRAGParagraph import poluchit_chanki as poluchit_chanki_paragraf
+from DCRAGToken import poluchit_chanki as poluchit_chanki_token
 
 # ============================================================
 # ОПРЕДЕЛЕНИЕ РЕЖИМА ЗАПУСКА
@@ -58,7 +60,7 @@ MODEL_INDEX = int(os.environ.get('RAG_MODEL_INDEX', '0'))
 # РЕЖИМ ЧАНКИНГА
 # 0 = Recursive Character Chunking (Абзац, предложение)
 # 1 = Paragraph-based Chunking (абзацы)
-# 2 = Sliding Window Chunking (окна по токенам + overlap 20%)
+# 2 = Token-aware Chunking (окна по токенам + overlap 20%)
 # ============================================================
 REJIM_CHANKING = int(os.environ.get("RAG_REJIM_CHANKING", "1"))
 if REJIM_CHANKING not in (1, 2):
@@ -225,7 +227,12 @@ else:
     print("💻 Режим: CPU", flush=True)
     print(f"   Batch size: {SELECTED_MODEL['batch_size_cpu']}", flush=True)
 
-print(f"🧩 Режим чанкинга: {REJIM_CHANKING} ({'Parent Document' if REJIM_CHANKING==1 else 'Перекрытие 20%'})", flush=True)
+if REJIM_CHANKING == 0:
+    print(f"🧩 Режим чанкинга: Recursive Character Chunking (абзац, предложение)", flush=True)
+if REJIM_CHANKING == 1:
+    print(f"🧩 Режим чанкинга: Paragraph-based Chunking (абзацы)", flush=True)
+if REJIM_CHANKING == 2:
+    print(f"🧩 Режим чанкинга: Token-aware Chunking (окна по токенам + перекрытие 20%)", flush=True)
 
 print("="*70, flush=True)
 
@@ -682,134 +689,6 @@ def encode_texts(texts, batch_size=None):
     
     return torch.vstack(all_embeddings)
 
-def razbit_na_abzaci(text: str) -> list[str]:
-    # Устойчивее, чем split("\n\n")
-    abzaci = [x.strip() for x in re.split(r"\n\s*\n", text) if x.strip()]
-    return abzaci
-
-def _tokenov_v_tekste(tokenizer, text: str) -> int:
-    ids = tokenizer(
-        text,
-        add_special_tokens=False,
-        truncation=False,
-        return_attention_mask=False
-    )["input_ids"]
-    return len(ids)
-
-def _razbit_tokeni_oknami(tokenizer, tokeni: list[int], max_tokenov: int, overlap_tokenov: int) -> list[str]:
-    if max_tokenov <= 0:
-        return []
-    if overlap_tokenov < 0:
-        overlap_tokenov = 0
-    if overlap_tokenov >= max_tokenov:
-        overlap_tokenov = max(0, max_tokenov // 5)
-
-    step = max(1, max_tokenov - overlap_tokenov)
-
-    chanki = []
-    for start in range(0, len(tokeni), step):
-        okno = tokeni[start:start + max_tokenov]
-        if not okno:
-            break
-        text_okna = tokenizer.decode(okno, skip_special_tokens=True).strip()
-        if text_okna:
-            chanki.append(text_okna)
-        if start + max_tokenov >= len(tokeni):
-            break
-    return chanki
-
-def razbit_text_sliding(text: str, tokenizer, max_tokenov: int, perekritie_proc: float = 0.20) -> list[str]:
-    """
-    Sliding Window Chunking c перекрытием.
-    Стараемся сохранять границы абзацев. Если абзац > max_tokenov — режем его окнами токенов.
-    """
-    abzaci = razbit_na_abzaci(text)
-    if not abzaci:
-        return []
-
-    overlap_tokenov = int(max_tokenov * perekritie_proc)
-    chanki: list[str] = []
-
-    tek_abzaci: list[str] = []
-    tek_tokenov = 0
-    overlap_abzaci: list[str] = []
-
-    def sobrat_overlap(spisok_abzacev: list[str]) -> list[str]:
-        if overlap_tokenov <= 0:
-            return []
-        result = []
-        s = 0
-        for a in reversed(spisok_abzacev):
-            t = _tokenov_v_tekste(tokenizer, a)
-            result.append(a)
-            s += t
-            if s >= overlap_tokenov:
-                break
-        result.reverse()
-        return result
-
-    def sbrosit_chank():
-        nonlocal tek_abzaci, tek_tokenov, overlap_abzaci
-        if tek_abzaci:
-            chanki.append("\n\n".join(tek_abzaci).strip())
-            overlap_abzaci = sobrat_overlap(tek_abzaci)
-        tek_abzaci = []
-        tek_tokenov = 0
-
-    for abzac in abzaci:
-        if not abzac:
-            continue
-
-        t = _tokenov_v_tekste(tokenizer, abzac)
-
-        # Абзац-гигант режем окнами
-        if t > max_tokenov:
-            sbrosit_chank()
-            tokeni = tokenizer(
-                abzac,
-                add_special_tokens=False,
-                truncation=False,
-                return_attention_mask=False
-            )["input_ids"]
-            okna = _razbit_tokeni_oknami(tokenizer, tokeni, max_tokenov, overlap_tokenov)
-            chanki.extend(okna)
-            overlap_abzaci = []  # overlap уже есть окнами
-            continue
-
-        # При старте нового чанка добавляем overlap-абзацы
-        if not tek_abzaci and overlap_abzaci:
-            for oa in overlap_abzaci:
-                ot = _tokenov_v_tekste(tokenizer, oa)
-                if tek_tokenov + ot <= max_tokenov:
-                    tek_abzaci.append(oa)
-                    tek_tokenov += ot
-                else:
-                    break
-
-        # Влезает — добавляем
-        if tek_tokenov + t <= max_tokenov:
-            tek_abzaci.append(abzac)
-            tek_tokenov += t
-        else:
-            # Закрываем чанк и начинаем новый
-            sbrosit_chank()
-
-            # Новый чанк снова: overlap + текущий абзац
-            if overlap_abzaci:
-                for oa in overlap_abzaci:
-                    ot = _tokenov_v_tekste(tokenizer, oa)
-                    if tek_tokenov + ot <= max_tokenov:
-                        tek_abzaci.append(oa)
-                        tek_tokenov += ot
-                    else:
-                        break
-
-            tek_abzaci.append(abzac)
-            tek_tokenov += t
-
-    sbrosit_chank()
-    return chanki
-
 # Список всех документов .txt + .pdf
 print("\n📂 Поиск документов...", flush=True)
 doc_files = []
@@ -828,6 +707,8 @@ print("="*70, flush=True)
 documents = []
 metadatas = []
 
+max_length = SELECTED_MODEL.get('max_length', 512)
+
 for idx, file_path in enumerate(doc_files, 1):
     try:
         chunk_count = 0
@@ -837,12 +718,10 @@ for idx, file_path in enumerate(doc_files, 1):
             with open(file_path, "r", encoding="utf-8") as f:
                 text = f.read()
 
-            max_length = SELECTED_MODEL.get('max_length', 512)
-
             if REJIM_CHANKING == 1:
-                chunks = razbit_na_abzaci(text)
+                chunks = poluchit_chanki_paragraf(text)
             else:
-                chunks = razbit_text_sliding(text, tokenizer, max_length, perekritie_proc=PEREKRITIE_PROC)
+                chunks = poluchit_chanki_token(text, tokenizer, max_length, perekritie_proc=PEREKRITIE_PROC)
 
             for nomer_chanka, chunk in enumerate(chunks, 1):
                 if len(chunk) > 50:
@@ -867,12 +746,10 @@ for idx, file_path in enumerate(doc_files, 1):
                 if not text_stranicy:
                     continue
 
-                max_length = SELECTED_MODEL.get('max_length', 512)
-
                 if REJIM_CHANKING == 1:
-                    chunks = razbit_na_abzaci(text_stranicy)
+                    chunks = poluchit_chanki_paragraf(text_stranicy)
                 else:
-                    chunks = razbit_text_sliding(text_stranicy, tokenizer, max_length, perekritie_proc=PEREKRITIE_PROC)
+                    chunks = poluchit_chanki_token(text_stranicy, tokenizer, max_length, perekritie_proc=PEREKRITIE_PROC)
 
                 for nomer_chanka, chunk in enumerate(chunks, 1):
                     if len(chunk) > 50:

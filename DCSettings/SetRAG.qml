@@ -606,7 +606,7 @@ Item {
             id: modelRejimi
             ListElement { spisok: "Recursive Character Chunking" }
             ListElement { spisok: "Paragraph-based Chunking" }
-            ListElement { spisok: "Sliding Window Chunking" }
+            ListElement { spisok: "Token-aware Chunking" }
         }
         DCPathView {
             id: pvRejimi
