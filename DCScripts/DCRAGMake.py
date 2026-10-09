@@ -38,7 +38,8 @@ os.environ['HF_HUB_DISABLE_SYMLINKS_WARNING'] = '1'
 
 import shutil
 import pickle
-from transformers import AutoTokenizer, AutoModel
+from transformers import AutoTokenizer#нужен как fallback в режиме 2, если embe dder.tokenizer недоступен
+from sentence_transformers import SentenceTransformer
 import torch
 import time
 import threading
@@ -67,17 +68,8 @@ REJIM_CHANKING = int(os.environ.get("RAG_REJIM_CHANKING", "0"))
 if REJIM_CHANKING not in (0, 1, 2):
     REJIM_CHANKING = 0
 
-# ============================================================
-# НАСТРОЙКИ ЧАНКОВ (для режима 0 - по СИМВОЛАМ)
-# ============================================================
-RAG_CHUNK_RAZMER_SIMVOLI = int(os.environ.get("RAG_CHUNK_RAZMER_SIMVOLI", "0"))  # 0 = авто
-RAG_CHUNK_OVERLAP_SIMVOLI = int(os.environ.get("RAG_CHUNK_OVERLAP_SIMVOLI", "0"))  # 0 = авто
-# Эвристика: сколько символов на 1 токен (нужно только для авто-режима 0)
-RAG_KOEF_SIMVOL_NA_TOKEN = float(os.environ.get("RAG_KOEF_SIMVOL_NA_TOKEN", "3.5"))
-# ============================================================
-# НАСТРОЙКИ ПЕРЕКРЫТИЯ (для режима 2 - по ТОКЕНАМ)
-# ============================================================
-RAG_TOKEN_OVERLAP_PROC = float(os.environ.get("RAG_TOKEN_OVERLAP_PROC", "0.20"))  # 20%
+RAG_CHUNK_OVERLAP = float(os.environ.get("RAG_CHUNK_OVERLAP", "0.2")) #настрока перекрытия по умолчанию 20%
+RAG_KOEF_SIMVOL_NA_TOKEN = float(os.environ.get("RAG_KOEF_SIMVOL_NA_TOKEN", "3.5"))#символов на 1 токен ~3.5
 
 # Получаем batch_size из окружения
 BATCH_GPU_OVERRIDE = os.environ.get('RAG_BATCH_GPU')
@@ -243,7 +235,7 @@ if REJIM_CHANKING == 0:
 if REJIM_CHANKING == 1:
     print(f"🧩 Режим чанкинга: Paragraph-based Chunking (абзацы)", flush=True)
 if REJIM_CHANKING == 2:
-    print(f"🧩 Режим чанкинга: Token-aware Chunking (окна по токенам + перекрытие 20%)", flush=True)
+    print(f"🧩 Режим чанкинга: Token-aware Chunking (окна по токенам + перекрытие {RAG_CHUNK_OVERLAP*100})", flush=True)
 
 print("="*70, flush=True)
 
@@ -502,65 +494,41 @@ check_and_move_new_files()
 # ЗАГРУЗКА МОДЕЛИ
 # ============================================================
 
-print("\n📥 Загрузка модели...", flush=True)
+print("\n📥 Загрузка модели эмбеддингов (SentenceTransformer)...", flush=True)
 sys.stdout.flush()
 
 device = torch.device('cuda' if USE_GPU and GPU_AVAILABLE else 'cpu')
-
-# ============================================================
-# АГРЕССИВНАЯ ОЧИСТКА VRAM
-# ============================================================
-if USE_GPU and GPU_AVAILABLE:
-    
-    # Агрессивная очистка
-    import gc
-    gc.collect()  # Python garbage collector
-    torch.cuda.empty_cache()  # PyTorch cache
-    torch.cuda.synchronize()  # Синхронизация
-    torch.cuda.reset_peak_memory_stats()  # Сброс статистики
-    
-    # Проверка доступной памяти
-    mem_info = torch.cuda.mem_get_info(0)
-    free_memory = mem_info[0] / (1024**3)  # В ГБ
-    total_memory = mem_info[1] / (1024**3)
-    used_memory = total_memory - free_memory
-    
-    if free_memory < 6.0:
-        print(f"\n⚠️  КРИТИЧНО: Недостаточно VRAM!", flush=True)
-        print(f"   Требуется: 6+ GB для {MODEL_NAME}", flush=True)
-        print(f"   Доступно:  {free_memory:.2f} GB", flush=True)
-        print(f"\n💡 Рекомендации:", flush=True)
-        print(f"   1. Закройте браузеры и другие программы", flush=True)
-        print(f"   2. Выгрузите языковую модель из агента", flush=True)
-        print(f"   3. Используйте модель для создания RAG с меньшими требованиями", flush=True)
-        
-        if IS_GUI_MODE:
-            # В GUI режиме автоматически переключаемся на CPU
-            print(f"\n💻 Автоматическое переключение на CPU режим...", flush=True)
-            USE_GPU = False
-            device = torch.device('cpu')
-        else:
-            # В терминале спрашиваем пользователя
-            response = input("\nПродолжить на CPU? (Д/Н): ")
-            if response in ['Д', 'д', 'Y', 'y']:
-                USE_GPU = False
-                device = torch.device('cpu')
-            else:
-                print("\n❌ Операция отменена.", flush=True)
-                sys.exit(0)
+device_str = "cuda" if (USE_GPU and GPU_AVAILABLE) else "cpu"
 
 try:
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-    model = AutoModel.from_pretrained(MODEL_NAME)
-    
-    # Перемещаем модель на GPU если нужно
-    if USE_GPU and GPU_AVAILABLE:
-        model = model.to(device)
+    # 1) Грузим SentenceTransformer (это будет ЕДИНЫЙ способ эмбеддингов для базы)
+    embedder = SentenceTransformer(MODEL_NAME, device=device_str)
+
+    # 2) Устанавливаем max_length (если модель поддерживает)
+    max_length = SELECTED_MODEL.get('max_length', 512)
+    try:
+        embedder.max_seq_length = max_length
+    except:
+        pass
+
+    # 3) Токенизатор нужен для режима 2 (Token-aware Chunking)
+    # Пытаемся взять из embedder, иначе fallback на AutoTokenizer
+    try:
+        tokenizer = embedder.tokenizer
+    except:
+        tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+
+    if device_str == "cuda":
         print(f"✓ Модель загружена на GPU: {torch.cuda.get_device_name(0)}", flush=True)
     else:
         print("✓ Модель загружена на CPU", flush=True)
-    
+
     print(f"   Ожидаемая размерность: {EXPECTED_DIMENSION}D", flush=True)
+    print(f"   max_length: {max_length}", flush=True)
+
+except ImportError:
+    print("❌ Ошибка: sentence-transformers не установлен. Выполните: pip install sentence-transformers", flush=True)
+    sys.exit(1)
 
 except Exception as e:
     print(f"❌ Ошибка загрузки модели: {e}", flush=True)
@@ -579,16 +547,8 @@ def poluchit_chanki_po_rejimu(text: str, tokenizer, max_length: int) -> list[str
     """
     if REJIM_CHANKING == 0:
         # Режим 0: Recursive Character Chunking (по символам)
-        if RAG_CHUNK_RAZMER_SIMVOLI > 0:
-            chunk_razmer = RAG_CHUNK_RAZMER_SIMVOLI
-        else:
-            chunk_razmer = int(max_length * RAG_KOEF_SIMVOL_NA_TOKEN)
-
-        if RAG_CHUNK_OVERLAP_SIMVOLI > 0:
-            chunk_overlap = RAG_CHUNK_OVERLAP_SIMVOLI
-        else:
-            chunk_overlap = int(chunk_razmer * 0.20)  # авто 20%
-
+        chunk_razmer = int(max_length * RAG_KOEF_SIMVOL_NA_TOKEN)
+        chunk_overlap = int(chunk_razmer * RAG_CHUNK_OVERLAP)  # авто 20%
         return poluchit_chanki_recursive(text, chunk_razmer, chunk_overlap)
 
     if REJIM_CHANKING == 1:
@@ -596,7 +556,7 @@ def poluchit_chanki_po_rejimu(text: str, tokenizer, max_length: int) -> list[str
         return poluchit_chanki_paragraf(text)
 
     # Режим 2: Token-aware Chunking
-    return poluchit_chanki_token(text, tokenizer, max_length, perekritie_proc=RAG_TOKEN_OVERLAP_PROC)
+    return poluchit_chanki_token(text, tokenizer, max_length, perekritie_proc=RAG_CHUNK_OVERLAP)
 
 class SpinnerThread(threading.Thread):
     """Поток для плавной анимации спиннера"""
@@ -628,17 +588,23 @@ class SpinnerThread(threading.Thread):
             sys.stdout.write('\r')
             sys.stdout.flush()
 
+def _eto_e5_model(model_name: str) -> bool:
+    return "e5" in (model_name or "").lower()
+
 def encode_texts(texts, batch_size=None):
-    """Кодирование текстов в эмбеддинги"""
+    """Кодирование текстов в эмбеддинги (SentenceTransformer)"""
+    import numpy as np
+
     all_embeddings = []
     total = len(texts)
-    
-    # Автоматический выбор batch_size
+
+    if total == 0:
+        return np.zeros((0, EXPECTED_DIMENSION), dtype="float32")
+
+    # Автовыбор batch_size
     if batch_size is None:
         if USE_GPU and GPU_AVAILABLE:
             batch_size = SELECTED_MODEL['batch_size_gpu']
-            
-            # Динамическая корректировка для bge-m3
             if MODEL_NAME == 'BAAI/bge-m3':
                 free_memory = torch.cuda.mem_get_info(0)[0] / (1024**3)
                 if free_memory < 8.0:
@@ -648,83 +614,64 @@ def encode_texts(texts, batch_size=None):
                     batch_size = 8
         else:
             batch_size = SELECTED_MODEL['batch_size_cpu']
-    
-    # Получаем max_length из модели
-    max_length = SELECTED_MODEL.get('max_length', 512)
-    
-    # Вычисляем шаг для обновления (1% от общего количества)
+
+    is_e5 = _eto_e5_model(MODEL_NAME)
+
     one_percent = max(1, total // 100)
     next_report = one_percent
-    last_reported_percent = 0
-    
-    # Запуск спиннера
-    spinner = SpinnerThread()
-    spinner.start()
-    
-    for i in range(0, len(texts), batch_size):
-        batch = texts[i:i+batch_size]
-        
-        # Для e5 моделей нужен префикс
-        if MODEL_NAME.startswith('intfloat/e5'):
-            batch = [f"passage: {text}" for text in batch]
-        
-        encoded = tokenizer(
-            batch, 
-            padding=True, 
-            truncation=True, 
-            max_length=max_length,
-            return_tensors='pt'
-        )
-        
-        # Перемещаем данные на GPU если нужно
-        if USE_GPU and GPU_AVAILABLE:
-            encoded = {key: val.to(device) for key, val in encoded.items()}
-        
+    last_reported_percent = -1
+
+    i = 0
+    while i < total:
+        batch = texts[i:i + batch_size]
+
+        # E5: документы должны быть с префиксом passage:
+        if is_e5:
+            batch_for_embed = [f"passage: {t}" for t in batch]
+        else:
+            batch_for_embed = batch
+
         try:
-            with torch.no_grad():
-                model_output = model(**encoded)
-                batch_embeddings = mean_pooling(model_output, encoded['attention_mask'])
-                batch_embeddings = torch.nn.functional.normalize(batch_embeddings, p=2, dim=1)
-                all_embeddings.append(batch_embeddings.cpu())
-            
-            # Очистка памяти после батча (для bge-m3)
-            if USE_GPU and GPU_AVAILABLE and MODEL_NAME == 'BAAI/bge-m3':
-                del encoded, model_output, batch_embeddings
-                torch.cuda.empty_cache()
-        
+            emb = embedder.encode(
+                batch_for_embed,
+                batch_size=batch_size,
+                convert_to_numpy=True,
+                normalize_embeddings=True,
+                show_progress_bar=False
+            )
+
+            emb = np.asarray(emb, dtype="float32")
+            all_embeddings.append(emb)
+            i += len(batch)
+
         except RuntimeError as e:
-            if "out of memory" in str(e):
-                print(f"\n❌ CUDA out of memory на батче {i//batch_size + 1}", flush=True)
-                print(f"   Попытка уменьшить batch_size и продолжить...", flush=True)
-                
-                # Очистка памяти
-                torch.cuda.empty_cache()
-                
-                # Уменьшаем batch_size вдвое
-                batch_size = max(1, batch_size // 2)
+            # OOM: уменьшаем batch_size и пробуем тот же i снова
+            if "out of memory" in str(e).lower():
+                print(f"\n❌ CUDA out of memory на батче {i//max(1,batch_size) + 1}", flush=True)
+                if USE_GPU and GPU_AVAILABLE:
+                    torch.cuda.empty_cache()
+
+                new_bs = max(1, batch_size // 2)
+                if new_bs == batch_size and batch_size == 1:
+                    raise
+                batch_size = new_bs
                 print(f"   Новый batch_size: {batch_size}", flush=True)
-                
-                # Возвращаемся назад и пробуем снова
                 continue
             else:
                 raise
-        
-        # Обновление прогресса
-        processed = i + len(batch)
-        
+
+        # Прогресс
+        processed = i
         if processed >= next_report or processed == total:
             percent = int((processed / total) * 100)
-            
-            if percent > last_reported_percent or processed == total:
-                spinner.update_message(f'Обработано {processed}/{total} фрагментов ({percent}%)')
+            if percent != last_reported_percent:
+                print(f"  Обработано {processed}/{total} фрагментов ({percent}%)", flush=True)
                 last_reported_percent = percent
-                next_report += one_percent
-    
-    spinner.stop()
-    spinner.join()
-    print(f'  ✓ Обработано {total}/{total} фрагментов (100%)', flush=True)
-    
-    return torch.vstack(all_embeddings)
+            next_report += one_percent
+
+    embeddings = np.vstack(all_embeddings)
+    print(f"  ✓ Обработано {total}/{total} фрагментов (100%)", flush=True)
+    return embeddings
 
 # Список всех документов .txt + .pdf
 print("\n📂 Поиск документов...", flush=True)
@@ -809,13 +756,15 @@ print("="*70, flush=True)
 
 # Генерация эмбеддингов
 print("\n⚙️  Генерация эмбеддингов...", flush=True)
-embeddings_tensor = encode_texts(documents)
+embeddings = encode_texts(documents)
 
-print(f"\n✓ Размерность эмбеддингов: {embeddings_tensor.shape}", flush=True)
+print(f"\n✓ Размерность эмбеддингов: {embeddings.shape}", flush=True)
 
 # Создание FAISS индекса
 print("\n🔨 Создание FAISS индекса...", flush=True)
-dimension = embeddings_tensor.shape[1]
+dimension = embeddings.shape[1]
+if dimension != EXPECTED_DIMENSION:
+    print(f"⚠️  ВНИМАНИЕ: размерность эмбеддингов {dimension} != ожидаемой {EXPECTED_DIMENSION}", flush=True)
 
 if USE_GPU and FAISS_GPU_AVAILABLE:
     # GPU версия
@@ -829,7 +778,7 @@ if USE_GPU and FAISS_GPU_AVAILABLE:
     gpu_index = faiss.index_cpu_to_gpu(res, 0, cpu_index)
     
     # Добавляем векторы
-    gpu_index.add(embeddings_tensor.detach().numpy().astype('float32'))
+    gpu_index.add(embeddings)
     
     # Копируем обратно на CPU для сохранения
     index = faiss.index_gpu_to_cpu(gpu_index)
@@ -840,8 +789,8 @@ else:
     import faiss
     
     index = faiss.IndexFlatL2(dimension)
-    index.add(embeddings_tensor.detach().numpy().astype('float32'))
-    
+    index.add(embeddings)
+
     print("✓ Индекс создан на CPU", flush=True)
 
 # ============================================================

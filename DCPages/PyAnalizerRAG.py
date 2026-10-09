@@ -377,12 +377,19 @@ class DCAnalizerRAG(QObject):
                 return result
 
             # Если точный поиск ничего не нашёл — продолжаем семантическим
-            self.sigLog.emit("ℹ Точный поиск совпадений не дал, пробуем семантический поиск")
+            self.sigLog.emit("Точный поиск совпадений не дал, пробуем семантический поиск")
 
             # Кодируем запрос в вектор
+            import numpy as np
+
+            query_for_embed = query
+            if self._model_name and "e5" in self._model_name.lower():
+                query_for_embed = f"query: {query}"
+
             query_embedding = self._embedder.encode(
-                [query], 
-                convert_to_tensor=False,
+                [query_for_embed],
+                convert_to_numpy=True,
+                normalize_embeddings=True,
                 show_progress_bar=False
             )
 
