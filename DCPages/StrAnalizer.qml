@@ -400,9 +400,7 @@ Item {
         onRunningChanged: {
             if (running) {
 				root.toolbar("")//Очищаем перед запуском тулбар
-                ldrProgress.active = true
-                knopkaZagruzit.enabled = false
-                knopkaSohranit.enabled = false
+                ldrProgress.active = true 
             } else {
 				lgLogo.ntCoff = root.logoRazmer//Задаём размер логотипа.
                 if (ldrProgress.item) ldrProgress.item.progress = 100
@@ -415,7 +413,6 @@ Item {
         interval: 1100; running: false; repeat: false
         onTriggered: {
 			ldrProgress.active = false
-			knopkaZagruzit.enabled = true
 			root.toolbar(`Анализ завершён: ${txfPrompt.text}`)
         }
 	}	
@@ -932,6 +929,8 @@ Item {
 					knopkaOchistit.enabled = false
 					txdContent.enabled = false
 					txfPrompt.enabled = false
+					knopkaZagruzit.enabled = false
+                	knopkaSohranit.enabled = false
 				}
 				else{
 					dcTimer.strVremyaAnaliza = dcTimer.strTimer
@@ -948,6 +947,8 @@ Item {
 					knopkaOchistit.enabled = true
 					txdContent.enabled = true
 					txfPrompt.enabled = true
+					knopkaZagruzit.enabled = true
+                	//knopkaSohranit.enabled = true
 				}
 			}
             onLoaded: {

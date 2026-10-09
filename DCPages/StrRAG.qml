@@ -208,13 +208,7 @@ Item {
         }
         onRunningChanged: {
             if (running) {
-				knopkaMenu.enabled = false
-				knopkaRAG.enabled = false
-				knopkaPutDoc.enabled = false
-				knopkaPutDB.enabled = false
-				knopkaInfo.visible = false
-				knopkaNastroiki.visible = false
-
+				root.toolbar("")//Очищаем перед запуском тулбар
 				ldrProgress.active = true
             } else {
 				lgLogo.ntCoff = root.logoRazmer//Задаём размер логотипа.
@@ -227,17 +221,7 @@ Item {
         id: tmrProgress
         interval: 1100; running: false; repeat: false
         onTriggered: {
-			ldrProgress.active = false
-
-			knopkaMenu.visible = true
-			knopkaMenu.enabled = true//Включаем кнопку, чтоб она нажималась
-			knopkaNazad.visible = true
-			knopkaNazad.enabled = true//Включаем кнопку, чтоб она нажималась
-			knopkaRAG.enabled = true
-			knopkaPutDoc.enabled = true//Включаем кнопку, чтоб она нажималась
-			knopkaPutDB.enabled = true//Включаем кнопку, чтоб она нажималась
-            knopkaInfo.visible = true
-			knopkaNastroiki.visible = true
+			ldrProgress.active = false	
         }
 	}
 	function fnClickedEscape() {//Функция нажатия на клавишу Escape
@@ -484,7 +468,10 @@ Item {
                 rightPadding: root.ntCoff * 2
                 DCKnopkaOriginal {//Кнопка "RAG"
                     id: knopkaRAG
-                    text: "📦 создать RAG БД"
+					text: {
+						if(dcTimer.blStart) return "📦 создать: " + dcTimer.strTimer
+						else return "📦 создать RAG БД"
+					}
                     ntHeight: root.ntWidth; ntCoff: root.ntCoff
                     clrKnopki: root.clrTexta; clrTexta: root.clrFona
                     anchors.left: parent.left; anchors.right: parent.right
@@ -495,6 +482,10 @@ Item {
                         }
                     }
                 }
+				DCTimer {//Таймер
+					id: dcTimer
+					property string strVremyaRAG: ""
+				}
                 Text {//Путь к документам
                     text: "Путь к документам:"
                     font.pixelSize: root.ntWidth/2 * root.ntCoff
@@ -555,7 +546,11 @@ Item {
 				}
                 Text {//Прогресс создания RAG базы данных
 					id: txtProgress
-                    text: "Прогресс создания RAG базы данных:"
+					text: {
+						let ltRezultat = "Прогресс создания RAG базы данных: "
+						if(!dcTimer.blStart) ltRezultat += dcTimer.strVremyaRAG
+						return ltRezultat
+					}
                     font.pixelSize: root.ntWidth/2 * root.ntCoff
                     color: root.clrTexta
 					font.bold: true//Жирный текст.
@@ -647,6 +642,27 @@ Item {
             active: false
 			property int total: 1//Переменная, хранящая количество файлов на обработку
 			property int interval: 2200//Интервал между смещением полосы.
+			onActiveChanged: {
+				if (active){//Если активировался прогресбар, то...
+					dcTimer.blStart = true//Запуск таймера.
+					root.toolbar("")
+					knopkaMenu.enabled = false
+					knopkaRAG.enabled = false
+					knopkaPutDoc.enabled = false
+					knopkaPutDB.enabled = false
+					knopkaInfo.visible = false
+					knopkaNastroiki.visible = false
+				} else {
+					dcTimer.strVremyaRAG = dcTimer.strTimer
+					dcTimer.blStart = false//Останавливаем таймер.
+					knopkaMenu.enabled = true//Включаем кнопку, чтоб она нажималась
+					knopkaRAG.enabled = true
+					knopkaPutDoc.enabled = true//Включаем кнопку, чтоб она нажималась
+					knopkaPutDB.enabled = true//Включаем кнопку, чтоб она нажималась
+					knopkaInfo.visible = true
+					knopkaNastroiki.visible = true	
+				}
+			}
             onLoaded: {
                 ldrProgress.item.ntWidth = root.ntWidth
                 ldrProgress.item.ntCoff = root.ntCoff
