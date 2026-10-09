@@ -44,7 +44,7 @@ import time
 import threading
 from datetime import datetime
 import zipfile
-from DCPDF import izvlech_text_iz_pdf_po_stranicam
+from DCRAGPdf import izvlech_text_iz_pdf_po_stranicam
 from DCRAGParagraph import poluchit_chanki as poluchit_chanki_paragraf
 from DCRAGToken import poluchit_chanki as poluchit_chanki_token
 from DCRAGRecursive import poluchit_chanki as poluchit_chanki_recursive
