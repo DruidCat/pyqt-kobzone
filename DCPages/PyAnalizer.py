@@ -4,8 +4,8 @@ from pathlib import Path
 from PyQt6.QtCore import QObject, pyqtSignal, pyqtSlot, QThread
 from PyQt6.QtWidgets import QFileDialog
 
-TIMEOUT_ANALYSIS = 300 #Увеличим с 120 до 300 секунд для чанков
-TIMEOUT_FINAL = 600 #Увеличим с 180 до 600 секунд для финального анализа
+TIMEOUT_ANALYSIS = 550 #Увеличим с 120 до 300 секунд для чанков
+TIMEOUT_FINAL = 1100 #Увеличим с 180 до 600 секунд для финального анализа
 
 class DCAnalyzerWorker(QThread):
     # Сигналы. Рабочий поток для анализа текста
