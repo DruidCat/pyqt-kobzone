@@ -39,12 +39,8 @@ Item {
     
 	property int logoRazmer: 22//Размер Логотипа
     property string logoImya: "kobzone"//Имя логотипа в DCLogo
-    property real rlProgress: 0
-    property real rlLoader: 1
 	//Свойства для управления состоянием создания RAG
-	property bool isRAG: false//true - создание RAG началась.
-	property int tekushiFail: 0//Текущий файл в обработке.
-	property int kolichestvoFailov: 0//общее количество обрабатываемых файлов	
+	property bool isRAG: false//true - создание RAG началось.
 	property bool isRAGClicked: false//true - Нажата кнопка создания RAG БД
     //Настройки
     anchors.fill: parent
@@ -134,7 +130,7 @@ Item {
 	Connections {
 		target: pyLMStudio
 		function onSigStudioStatus(blStatus){
-			if(root.isRAGClicked){//Если нажата кнопка СОздать RAG БД
+			if(root.isRAGClicked){//Если нажата кнопка Создать RAG БД
 				root.isRAGClicked = false//Сбрасываем флаг
 				function fnStart() {//Функция запуска создания RAG базы данных.
 					if (!isRAG) {//Если создание RAG не запущена, то...
@@ -184,13 +180,11 @@ Item {
 		}
 		function onProgressUpdate(current, total) {//Функция обновления прогресса из python
 			current = current - 1//Обязательно, чтоб с 0 прогресс начинался.
-			root.tekushiFail = current
-			root.kolichestvoFailov = total
 			if (ldrProgress.item) {
 				var progress = (current / (total)) * 100
-				ldrProgress.total = root.kolichestvoFailov//Пересчёт скорости смещения полосы.
+				ldrProgress.total = total//Пересчёт скорости смещения полосы.
 				ldrProgress.item.progress = progress//Перемещение на позицию пропорции.
-				ldrProgress.item.text = `${current}/${total}`//Отображаем прогресс по середине полосы.
+				ldrProgress.item.text = `${current}/${total}`//Отображаем прогресс в полосе.
 			}
 		}
 	}
