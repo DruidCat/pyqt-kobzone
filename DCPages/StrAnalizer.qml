@@ -948,7 +948,7 @@ Item {
 					txdContent.enabled = true
 					txfPrompt.enabled = true
 					knopkaZagruzit.enabled = true
-                	//knopkaSohranit.enabled = true
+                	knopkaSohranit.enabled = true
 				}
 			}
             onLoaded: {
