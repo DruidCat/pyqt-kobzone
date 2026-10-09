@@ -235,7 +235,7 @@ if REJIM_CHANKING == 0:
 if REJIM_CHANKING == 1:
     print(f"🧩 Режим чанкинга: Paragraph-based Chunking (абзацы)", flush=True)
 if REJIM_CHANKING == 2:
-    print(f"🧩 Режим чанкинга: Token-aware Chunking (окна по токенам + перекрытие {RAG_CHUNK_OVERLAP*100})", flush=True)
+    print(f"🧩 Режим чанкинга: Token-aware Chunking (окна по токенам + перекрытие {RAG_CHUNK_OVERLAP*100}%)", flush=True)
 
 print("="*70, flush=True)
 
