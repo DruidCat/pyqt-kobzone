@@ -70,6 +70,7 @@ if REJIM_CHANKING not in (0, 1, 2):
 
 RAG_CHUNK_OVERLAP = float(os.environ.get("RAG_CHUNK_OVERLAP", "0.2")) #настрока перекрытия по умолчанию 20%
 RAG_KOEF_SIMVOL_NA_TOKEN = float(os.environ.get("RAG_KOEF_SIMVOL_NA_TOKEN", "3.5"))#символов на 1 токен ~3.5
+RAG_MIN_SIMVOLOV = int(os.environ.get("RAG_MIN_SIMVOLOV", "22"))  # минимум символов для фрагмента
 
 # Получаем batch_size из окружения
 BATCH_GPU_OVERRIDE = os.environ.get('RAG_BATCH_GPU')
@@ -705,7 +706,7 @@ for idx, file_path in enumerate(doc_files, 1):
             chunks = poluchit_chanki_po_rejimu(text, tokenizer, max_length)
 
             for nomer_chanka, chunk in enumerate(chunks, 1):
-                if len(chunk) > 50:
+                if len(chunk) > RAG_MIN_SIMVOLOV:
                     documents.append(chunk)
                     metadatas.append({
                         "source": file_path,
@@ -730,7 +731,7 @@ for idx, file_path in enumerate(doc_files, 1):
                 chunks = poluchit_chanki_po_rejimu(text_stranicy, tokenizer, max_length)
 
                 for nomer_chanka, chunk in enumerate(chunks, 1):
-                    if len(chunk) > 50:
+                    if len(chunk) > RAG_MIN_SIMVOLOV:
                         documents.append(chunk)
                         metadatas.append({
                             "source": file_path,
