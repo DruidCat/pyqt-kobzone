@@ -547,8 +547,8 @@ def poluchit_chanki_po_rejimu(text: str, tokenizer, max_length: int) -> list[str
     """
     if REJIM_CHANKING == 0:
         # Режим 0: Recursive Character Chunking (по символам)
-        chunk_razmer = int(max_length * RAG_KOEF_SIMVOL_NA_TOKEN)
-        chunk_overlap = int(chunk_razmer * RAG_CHUNK_OVERLAP)  # авто 20%
+        chunk_razmer = int(max_length * RAG_KOEF_SIMVOL_NA_TOKEN) #Растчёт размера чанка.
+        chunk_overlap = int(chunk_razmer * RAG_CHUNK_OVERLAP)  #Перекрытие чанков
         return poluchit_chanki_recursive(text, chunk_razmer, chunk_overlap)
 
     if REJIM_CHANKING == 1:
