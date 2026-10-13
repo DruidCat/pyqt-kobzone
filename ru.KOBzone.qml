@@ -286,8 +286,8 @@ ApplicationWindow {
 				toolbarWidth: pgStrAnalizer.rctStrToolbar.width
 				toolbarHeight: pgStrAnalizer.rctStrToolbar.height
                 tapZagolovokLevi: 1.3; tapZagolovokPravi: 1.3; tapToolbarLevi: 1.3; tapToolbarPravi: 1.3
-				isMobile: root.isMobile
 				logoRazmer: root.logoRazmer; logoImya: root.logoImya
+				isMobile: root.isMobile
 				onClickedNazad: {
 					stvStr.pop()
 					Qt.callLater(function() { stvStr.currentItem.forceActiveFocus() })
@@ -474,6 +474,7 @@ ApplicationWindow {
 				toolbarHeight: pgStrTranscribe.rctStrToolbar.height
 				tapZagolovokLevi: 1.3; tapZagolovokPravi: 1.3; tapToolbarLevi: 1.3; tapToolbarPravi: 1.3
 				logoRazmer: root.logoRazmer; logoImya: root.logoImya
+				isMobile: root.isMobile
 				onClickedNazad: {
 					stvStr.pop()
 					Qt.callLater(function() { stvStr.currentItem.forceActiveFocus() })
@@ -565,6 +566,7 @@ ApplicationWindow {
 				toolbarHeight: pgStrRAG.rctStrToolbar.height
 				tapZagolovokLevi: 1.3; tapZagolovokPravi: 1.3; tapToolbarLevi: 1.3; tapToolbarPravi: 1.3
 				logoRazmer: root.logoRazmer; logoImya: root.logoImya
+				isMobile: root.isMobile
 				onClickedNazad: {
 					stvStr.pop()
 					Qt.callLater(function() { stvStr.currentItem.forceActiveFocus() })

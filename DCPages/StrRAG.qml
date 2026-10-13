@@ -39,6 +39,7 @@ Item {
     
 	property int logoRazmer: 22//Размер Логотипа
     property string logoImya: "kobzone"//Имя логотипа в DCLogo
+	property bool isMobile: false//true - мобильное устройство
 	//Свойства для управления состоянием создания RAG
 	property bool isRAG: false//true - создание RAG началось.
 	property bool isRAGClicked: false//true - Нажата кнопка создания RAG БД
@@ -566,7 +567,7 @@ Item {
 					isBorder: true
 					readOnly: true
 					scrollAuto: true
-					textEdit.selectByMouse: false
+					textEdit.selectByMouse: root.isMobile ? false : true//На мобилке запрещено выделять текст
 					pixelSize: root.ntWidth / 3 * root.ntCoff
 					radius: root.ntCoff / 4
 					onPressed: {
