@@ -45,6 +45,7 @@ Item {
 	property int ntBatchGPU: DCSettings.rag_batch_gpu//Максимум 256
 	property int ntBatchCPU: DCSettings.rag_batch_cpu//Максимум 64
 	property int ntRejim: DCSettings.rag_rejim//0 - all, 1 - абзац, 2 - окна по токенам
+	property real rlPerekritie: DCSettings.rag_perekritie//0-0%, 0.25-25% Перекрытие данных при создании RAG
 	//Настройки
 	anchors.fill: parent
 	focus: true
@@ -55,7 +56,7 @@ Item {
     signal log(var strLog)
 	//Методы
 	Component.onCompleted: {
-        knopkiMassiv = [knopkaGPU, knopkaModeli, knopkaBatchGPU, knopkaBatchCPU, knopkaRejim]//Добавляем id
+        knopkiMassiv=[knopkaGPU, knopkaModeli, knopkaBatchGPU, knopkaBatchCPU, knopkaRejim, knopkaPerekritie]
 		root.forceActiveFocus()
 	}
 	Keys.onPressed: (event) => {
@@ -163,6 +164,9 @@ Item {
 		if (pvRejimi.visible) {
 			pvRejimi.visible = false
 		}
+		if (pvPerekritie.visible) {
+			pvPerekritie.visible = false
+		}
 		txnZagolovok.visible = false//Делаем невидимым ввот чисел
     }
 	function fnClickedNazad() {
@@ -181,6 +185,7 @@ Item {
 			if (vprGPUStart.visible) vprGPUStart.visible = false
 			if (txnZagolovok.visible) txnZagolovok.visible = false
 			if (pvRejimi.visible) pvRejimi.visible = false
+			if (pvPerekritie.visible) pvPerekritie.visible = false
 			menuMenu.visible = true
 		}
 	}
@@ -215,6 +220,13 @@ Item {
 	function fnCloseRejimiIfOpen() {
 		if (pvRejimi.visible) {
 			pvRejimi.visible = false
+			return true
+		}
+		return false
+	}
+	function fnClosePerekritieIfOpen() {
+		if (pvPerekritie.visible) {
+			pvPerekritie.visible = false
 			return true
 		}
 		return false
@@ -349,6 +361,7 @@ Item {
 				if(visible) {
 					pvModeli.visible = false//Делаем невидимым виджет
 					pvRejimi.visible = false//Делаем невидимым виджет
+					pvPerekritie.visible = false//Делаем невидимым виджет
 					knopkaNazad.visible = false
 					knopkaModeli.enabled = false
 				} else {
@@ -401,6 +414,7 @@ Item {
 					fnCloseGPUStartIfOpen()//Закрываем попрос по GPU
 					if(!pvModeli.jdi && !pvModeli.pressed) fnCloseModeliIfOpen()//Закрываем меню выбора модели
 					if(!pvRejimi.jdi && !pvRejimi.pressed)fnCloseRejimiIfOpen()//Закрываем меню выбора режимов
+					if(!pvPerekritie.jdi && !pvPerekritie.pressed)fnClosePerekritieIfOpen()//Закрываем перекры
 				}
 			}
 			Column {
@@ -434,7 +448,8 @@ Item {
 					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseGPUStartIfOpen() && !fnCloseBatchIfOpen()){
-								if (pressed && !pvModeli.pressed && !pvRejimi.pressed) fnPress()
+								if(pressed && !pvModeli.pressed && !pvRejimi.pressed && !pvPerekritie.pressed)
+									fnPress()
 							}
 						}
 					}
@@ -463,7 +478,8 @@ Item {
 					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseGPUStartIfOpen() && !fnCloseBatchIfOpen()) {
-								if (pressed && !pvModeli.pressed && !pvRejimi.pressed) fnPress()
+								if(pressed && !pvModeli.pressed && !pvRejimi.pressed && !pvPerekritie.pressed)
+									fnPress()
 							}
 						}
 					}
@@ -492,7 +508,8 @@ Item {
 					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseGPUStartIfOpen() && !fnCloseBatchIfOpen()){
-								if (pressed && !pvModeli.pressed && !pvRejimi.pressed) fnPress()
+								if(pressed && !pvModeli.pressed && !pvRejimi.pressed && !pvPerekritie.pressed)
+									fnPress()
 							}
 						}
 					}
@@ -521,7 +538,8 @@ Item {
 					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseGPUStartIfOpen() && !fnCloseBatchIfOpen()){
-								if (pressed && !pvModeli.pressed && !pvRejimi.pressed) fnPress()
+								if(pressed && !pvModeli.pressed && !pvRejimi.pressed && !pvPerekritie.pressed)
+									fnPress()
 							}
 						}
 					}
@@ -549,8 +567,7 @@ Item {
 							Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModeli. ВАЖНО!!!
 								pvRejimi.visible = false//Делаем невидимым виджет
 							})
-						}
-						else{//Если невидимый виджет, то...
+						} else{//Если невидимый виджет, то...
 							pvRejimi.currentIndex = root.ntRejim//Выставляем центральной Режим из настроек
 							Qt.callLater(function(){//пауза, иначе не сработает фокус и pvRejimi. ВАЖНО!!!
 								pvRejimi.visible = true//Делаем видимым виджет
@@ -560,7 +577,49 @@ Item {
 					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseGPUStartIfOpen() && !fnCloseBatchIfOpen()){
-								if (pressed && !pvModeli.pressed && !pvRejimi.pressed) fnPress()
+								if(pressed && !pvModeli.pressed && !pvRejimi.pressed && !pvPerekritie.pressed)
+									fnPress()
+							}
+						}
+					}
+				}
+				DCKnopkaOriginal {//Кнопка выбора Перекрытия Создания RAG БД
+					id: knopkaPerekritie
+					text: {
+						let ltText = qsTr("перекрытие ");//
+						ltText += root.rlPerekritie*100//Добавляем в строчку перекрытие из настроек
+						ltText += "%"
+						for (let i = 0; i < modelPerekritie.count; i++) {//Ищем сохранённую модель в списке
+							if (modelPerekritie.get(i).spisok === root.rlPerekritie*100) {
+								pvPerekritie.currentIndex = i//Выставляем в карусели нужный процент Перекрытия
+								break
+							}
+						}
+						return ltText;
+					}
+					ntHeight: root.ntWidth; ntCoff: root.ntCoff
+					anchors.left: parent.left; anchors.right: parent.right
+					anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
+					clrTexta: root.clrMenuText
+                    clrKnopki: (root.currentIndex === 5) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+					opacityKnopki: 0.9
+					function fnPress() {
+						root.currentIndex = 5
+						if(pvPerekritie.visible){//Если видимый виджет, то...
+							Qt.callLater(function(){//пауза, иначе не сработает фокус и pvPerekritie. ВАЖНО!!!
+								pvPerekritie.visible = false//Делаем невидимым виджет
+							})
+						} else{//Если невидимый виджет, то...	
+							Qt.callLater(function(){//пауза, иначе не сработает фокус и pvPerekritie. ВАЖНО!!!
+								pvPerekritie.visible = true//Делаем видимым виджет
+							})
+						}
+					}
+					onClicked: {
+						if (pressed) {
+							if (!fnCloseMenuIfOpen() && !fnCloseGPUStartIfOpen() && !fnCloseBatchIfOpen()){
+								if(pressed && !pvModeli.pressed && !pvRejimi.pressed && !pvPerekritie.pressed)
+									fnPress()
 							}
 						}
 					}
@@ -627,6 +686,35 @@ Item {
 				else root.forceActiveFocus()//Если невидимый, то фокус на root, чтоб hotkey работали.
 			}
         }
+		ListModel {//Модель с % перекрытия для RAG БД
+			id: modelPerekritie
+			ListElement { spisok: 0 }
+			ListElement { spisok: 5 }
+			ListElement { spisok: 10 }
+			ListElement { spisok: 15 }
+			ListElement { spisok: 20 }
+			ListElement { spisok: 25 }
+		}
+		DCPathView {
+			id: pvPerekritie
+			visible: false
+			ntWidth: root.ntWidth; ntCoff: root.ntCoff
+            anchors.left: tmZona.left; anchors.right: tmZona.right; anchors.bottom: tmZona.bottom
+            anchors.leftMargin: dcScrollbar.width; anchors.rightMargin: dcScrollbar.width
+            clrFona: root.clrFona; clrTexta: root.clrMenuText; clrMenuFon: root.clrMenuFon
+			modelData: modelPerekritie
+			onClicked: function(strPerekritie) {
+				Qt.callLater(function(){//пауза, иначе не сработает фокус и pvPerekritie. ВАЖНО!!!
+					pvPerekritie.visible = false//Делаем невидимым виджет
+					root.rlPerekritie = Number(strPerekritie)/100
+					DCSettings.rag_perekritie = root.rlPerekritie//Сохраняем в реестре перекрытие % в десятич.
+				})
+			}
+			onVisibleChanged: {//Если видимость поменялась, то...
+				if(visible) Qt.callLater(function(){ pvPerekritie.karusel.forceActiveFocus() })//фокусPathView
+				else root.forceActiveFocus()//Если невидимый, то фокус на root, чтоб hotkey работали.
+			}
+		}
 		DCScrollbar {//Скроллбар
 			id: dcScrollbar
 			flick: flcZona
@@ -710,10 +798,12 @@ Item {
 			if (menuMenu.visible || pvModeli.visible
 								|| txnZagolovok.visible
 								|| vprGPUStart.visible
-								|| pvRejimi.visible){
+								|| pvRejimi.visible
+								|| pvPerekritie.visible){
 				menuMenu.visible = false
 				pvModeli.visible = false
 				pvRejimi.visible = false
+				pvPerekritie.visible = false
 				txnZagolovok.visible = false
 				//vprGPUStart.visible = false
 			}

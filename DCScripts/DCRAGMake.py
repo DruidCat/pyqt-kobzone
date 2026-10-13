@@ -68,7 +68,7 @@ REJIM_CHANKING = int(os.environ.get("RAG_REJIM_CHANKING", "0"))
 if REJIM_CHANKING not in (0, 1, 2):
     REJIM_CHANKING = 0
 
-RAG_CHUNK_OVERLAP = float(os.environ.get("RAG_CHUNK_OVERLAP", "0.2")) #настрока перекрытия по умолчанию 20%
+RAG_CHUNK_OVERLAP = float(os.environ.get("RAG_CHUNK_OVERLAP", "0.1")) #настрока перекрытия по умолчанию 10%
 RAG_KOEF_SIMVOL_NA_TOKEN = float(os.environ.get("RAG_KOEF_SIMVOL_NA_TOKEN", "3.5"))#символов на 1 токен ~3.5
 RAG_MIN_SIMVOLOV = int(os.environ.get("RAG_MIN_SIMVOLOV", "22"))  # минимум символов для фрагмента
 

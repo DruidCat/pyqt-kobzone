@@ -12,8 +12,8 @@ class RAGWorker(QThread):
     progressUpdate = pyqtSignal(int, int)
     finished = pyqtSignal(bool, str)
     
-    def __init__(self, doc_path: str, db_path: str, use_gpu: bool = False, 
-                 model_index: int = 0, batch_gpu: int = 8, batch_cpu: int = 4, rejim: int = 1):
+    def __init__(self, doc_path: str, db_path: str, use_gpu: bool = False, model_index: int = 0,
+                 batch_gpu: int = 8, batch_cpu: int = 4, rejim: int = 1, perekritie: float = 0.1):
         super().__init__()
         self.doc_path = doc_path
         self.db_path = db_path
@@ -22,6 +22,7 @@ class RAGWorker(QThread):
         self.batch_gpu = batch_gpu
         self.batch_cpu = batch_cpu
         self.rejim = rejim
+        self.perekritie = perekritie
         self.process = None
         self._should_stop = False
     
@@ -53,6 +54,7 @@ class RAGWorker(QThread):
             env['RAG_BATCH_GPU'] = str(self.batch_gpu) #Передаём batch_gpu
             env['RAG_BATCH_CPU'] = str(self.batch_cpu) #Передаём batch_cpu
             env['RAG_REJIM_CHANKING'] = str(self.rejim) #Передаём rejim
+            env['RAG_CHUNK_OVERLAP'] = str(self.perekritie) #Передаём perekritie
             # Устанавливаем кодировку UTF-8
             env['PYTHONIOENCODING'] = 'utf-8'
             env['PYTHONUTF8'] = '1'        
@@ -136,9 +138,9 @@ class DCRAG(QObject):
         super().__init__()
         self.worker = None
     
-    @pyqtSlot(str, str, bool, int, int, int, int)
-    def start(self, doc_path: str, db_path: str, use_gpu: bool = False, 
-              model_index: int = 0, batch_gpu: int = 8, batch_cpu: int = 4, rejim: int = 1):
+    @pyqtSlot(str, str, bool, int, int, int, int, float)
+    def start(self, doc_path: str, db_path: str, use_gpu: bool = False, model_index: int = 0,
+              batch_gpu: int = 8, batch_cpu: int = 4, rejim: int = 1, perekritie: float = 0.1):
         """Запуск создания RAG"""
         # Проверка путей
         if not doc_path or not Path(doc_path).exists():
@@ -166,6 +168,10 @@ class DCRAG(QObject):
         if not 0 <= rejim <= 2:
             self.logMessage.emit(f"❌ Ошибка: неверный rejim {rejim} (0-2)")
             return
+        
+        if not 0 <= perekritie <= 0.25:
+            self.logMessage.emit(f"❌ Ошибка: неверный perekritie {perekritie} (0-0.25)")
+            return
 
         # Создаём выходную папку если её нет
         try:
@@ -180,8 +186,7 @@ class DCRAG(QObject):
             return
         
         # Создаём рабочий поток с batch_size
-        self.worker = RAGWorker(doc_path, db_path, use_gpu, model_index, 
-                                batch_gpu, batch_cpu, rejim)
+        self.worker = RAGWorker(doc_path, db_path, use_gpu, model_index, batch_gpu, batch_cpu, rejim, perekritie)
         self.worker.logMessage.connect(self.logMessage.emit)
         self.worker.progressUpdate.connect(self.progressUpdate.emit)
         self.worker.finished.connect(self._on_finished)

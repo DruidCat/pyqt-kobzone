@@ -39,6 +39,7 @@ QtObject {
 	property int rag_rejim: 1	//0 - Recursive Character Chunking (переграф, предложение, слово)
 								//1 - Paragraph-based Chunking (параграф)
 								//2 - Token-aware Chunking окна по размеру токенов
+	property real rag_perekritie: 0.1//0 - 0%, 0.25 - 25% Перекрытие данных при создании RAG БД.
 	//Инструкции
 	property real instrukcii_shirina: 0.3//Коэффициент от общей ширины окна, показ.ширину боковой панели
 	//Объект настроек (автоматическое сохранение)
@@ -76,6 +77,7 @@ QtObject {
 		property alias rag_batch_gpu: root.rag_batch_gpu
 		property alias rag_batch_cpu: root.rag_batch_cpu
 		property alias rag_rejim: root.rag_rejim
+		property alias rag_perekritie: root.rag_perekritie
 		//Инструкции
 		property alias instrukcii_shirina: root.instrukcii_shirina
     }

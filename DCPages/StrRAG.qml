@@ -140,7 +140,7 @@ Item {
 						pyRAG.start(DCSettings.rag_put_doc, DCSettings.rag_put_db,
 									DCSettings.rag_gpu, DCSettings.rag_model,
 									DCSettings.rag_batch_gpu, DCSettings.rag_batch_cpu,
-									DCSettings.rag_rejim)
+									DCSettings.rag_rejim, DCSettings.rag_perekritie)
 					}
 				}
 				if(blStatus){//Если LM Studio запущена, то...
