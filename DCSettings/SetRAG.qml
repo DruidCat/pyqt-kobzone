@@ -59,6 +59,10 @@ Item {
         knopkiMassiv=[knopkaGPU, knopkaModeli, knopkaBatchGPU, knopkaBatchCPU, knopkaRejim, knopkaPerekritie]
 		root.forceActiveFocus()
 	}
+	onNtRejimChanged: {//Если переменная режима меняется, то...
+		if (ntRejim === 1) knopkaPerekritie.enabled = false//В режиме Paragraph-based Chunking нет перекрытия
+		else knopkaPerekritie.enabled = true//В остальных режимах есть перекрытие.
+	}
 	Keys.onPressed: (event) => {
 		if (event.modifiers & Qt.AltModifier) {
 			if (event.key === Qt.Key_Left) {
@@ -678,7 +682,8 @@ Item {
             onClicked: function(strModel) {
 				Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModeli. ВАЖНО!!!
 					pvRejimi.visible = false//Делаем невидимым виджет
-					DCSettings.rag_rejim = pvRejimi.currentIndex;//Сохраняем в реестре.
+					root.ntRejim = pvRejimi.currentIndex;//Сохраняем в переменной.
+					DCSettings.rag_rejim = root.ntRejim;//Сохраняем в реестре.
 				})
             }
 			onVisibleChanged: {//Если видимость поменялась, то...
