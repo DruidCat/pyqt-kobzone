@@ -62,7 +62,7 @@ MODEL_INDEX = int(os.environ.get('RAG_MODEL_INDEX', '0'))
 # РЕЖИМ ЧАНКИНГА
 # 0 = Recursive Character Chunking (Абзац, предложение)
 # 1 = Paragraph-based Chunking (абзацы)
-# 2 = Token-aware Chunking (окна по токенам + overlap 20%)
+# 2 = Token-aware Chunking (окна по токенам + overlap)
 # ============================================================
 REJIM_CHANKING = int(os.environ.get("RAG_REJIM_CHANKING", "0"))
 if REJIM_CHANKING not in (0, 1, 2):
