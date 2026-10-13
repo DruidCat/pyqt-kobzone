@@ -262,31 +262,37 @@ class DCAnalyzer(QObject):
         rag_context = ""
         if self.rag_enabled and self.rag_module is not None:
             try:
-                # Умное извлечение ключевых слов
                 search_query = self._extract_search_query(prompt, text_content)
-                
+
                 self.sigResultReady.emit("🔄 Поиск релевантного контекста в RAG базе...")
 
-                #Адаптивный top_k по размеру БАЗЫ (а не текста)
-                db_size = self.rag_module.polRazmerBazi()  # Получаем размер базы
-                
-                if db_size > 14000:
-                    top_k = 10
-                elif db_size > 5000:
-                    top_k = 7
-                elif db_size > 1000:
-                    top_k = 5
-                else:
-                    top_k = 3
-                
+                # Вычисляем оптимальное количество фрагментов
+                top_k = self.vichislitTopK(prompt)
+                db_size = self.rag_module.polRazmerBazi()
+
                 print(f"✓ RAG база: {db_size} фрагментов, запрашиваем top_k={top_k}")
-                rag_context = self.rag_module.poluchitKontekst(search_query, top_k=top_k)                
+                rag_context = self.rag_module.poluchitKontekst(search_query, top_k=top_k)
 
                 if rag_context:
-                    print("✓ RAG контекст успешно получен")
+                    # Проверяем, влезает ли RAG контекст в контекст LLM
+                    rag_tokeni = self._tokeniOcenka(rag_context)
+                    prompt_tokeni = self._tokeniOcenka(prompt)
+                    zapas_na_otvet = int(self.max_context * 0.30)
+                    dostupno_dlya_rag = max(
+                        self.max_context - zapas_na_otvet - 500 - prompt_tokeni - 1000,
+                        int(self.max_context * 0.15)  # хотя бы 15% контекста
+                    )
+
+                    if rag_tokeni > dostupno_dlya_rag:
+                        print(f"⚠ RAG контекст: {rag_tokeni} токенов > доступно: {dostupno_dlya_rag}. Сжимаем...")
+                        rag_context = self._szhatRagKontekst(rag_context, search_query)
+                    else:
+                        print(f"✓ RAG контекст: {rag_tokeni} токенов (влезает)")
+
+                    print("✓ RAG контекст готов")
                 else:
                     print("⚠ RAG не вернул результатов по запросу")
-                    
+
             except Exception as e:
                 import traceback
                 print(f"⚠ Ошибка получения RAG контекста: {e}")
@@ -294,31 +300,29 @@ class DCAnalyzer(QObject):
 
         # Модифицируем промпт, добавляя найденный контекст
         if rag_context:
-            enhanced_prompt = f"""ВНИМАНИЕ: Ниже приведена дополнительная информация из базы знаний (RAG), которая может быть полезна для выполнения задачи. Используй её как приоритетный источник фактов.
+            enhanced_prompt = f"""ВНИМАНИЕ: Ниже приведена дополнительная информация из базы знаний (RAG), которая может быть полезна для выполнения задачи. Используй её как приоритетный источник фактов. Проигнорируй дубликаты и нерелевантные фрагменты. Если информация повторяется — укажи это кратко, не дублируй.
 
-        ДАННЫЕ ИЗ RAG:
-        {rag_context}
+ДАННЫЕ ИЗ RAG:
+{rag_context}
 
-        ---
-        ОСНОВНАЯ ЗАДАЧА:
-        {prompt}"""
+---
+ОСНОВНАЯ ЗАДАЧА:
+{prompt}"""
 
-            # ✅ ИСПРАВЛЕНО: Подсчёт фрагментов из возвращённой строки
-            num_fragments = rag_context.count("[Источник")
-            
-            # Превью (первые 500 символов, убираем переносы строк для компактности)
+            # Подсчёт элементов из возвращённой строки
+            num_fragments = rag_context.count("[Источник") + rag_context.count("[RAG часть")
+
+            # Превью (первые 500 символов)
             preview = rag_context[:500].replace("\n", " ").strip()
-            
-            # Показываем пользователю что нашли
+
             self.sigResultReady.emit(
-                f"✅ RAG: Найдено {num_fragments} фрагментов\n\n"
+                f"✅ RAG: {num_fragments} элементов контекста\n\n"
                 f"Превью:\n{preview}...\n\n"
                 f"🔄 Начинается анализ..."
             )
         else:
             enhanced_prompt = prompt
-            
-            # Если RAG включен, но ничего не нашёл
+
             if self.rag_enabled:
                 self.sigResultReady.emit(
                     "⚠️ RAG база не вернула результатов\n"
@@ -735,3 +739,156 @@ class DCAnalyzer(QObject):
         except Exception as e:
             print(f"✗ Ошибка сохранения: {e}")
             self.sigAnalizSohranit.emit(f"[Ошибка: {str(e)}]")
+
+    def vichislitTopK(self, prompt_text=""):
+        """
+        Вычисляет оптимальное количество RAG фрагментов.
+        Основывается на: max_context, длине промпта, запасе на ответ.
+        Запрашивает МАКСИМАЛЬНО — реальная проверка влезания происходит после получения.
+        """
+        # 30% контекста — на ответ LLM
+        zapas_na_otvet = int(self.max_context * 0.30)
+        # Служебные токены (системные инструкции, форматирование)
+        sluzhebnie = 500
+        # Оценка токенов промпта (русский: ~2.5 символа на токен)
+        prompt_tokeni = max(1, int(len(prompt_text) / 2.5))
+
+        # Доступно для RAG
+        dostupno = self.max_context - zapas_na_otvet - sluzhebnie - prompt_tokeni
+
+        if dostupno <= 0:
+            return 3
+
+        # Минимальная оценка размера фрагмента (~200 токенов),
+        # чтобы запросить больше фрагментов.
+        # Реальная проверка — после получения фрагментов.
+        min_fragment_tokeni = 200
+
+        top_k = dostupno // min_fragment_tokeni
+        return max(3, min(top_k, 50))
+
+    def _tokeniOcenka(self, text):
+        """Грубая оценка количества токенов (русский: ~2.5 символа на токен)"""
+        return max(1, int(len(text) / 2.5))
+
+    def _otpravitZaprosLLM(self, full_prompt, max_otvet_tokeni=None):
+        """
+        Отправляет один запрос к LLM и возвращает текст ответа.
+        Выделяет HTTP-логику в одно место, чтобы не дублировать в разных частях кода.
+        """
+        if self._stop_requested:
+            return "[Остановлено]"
+
+        if max_otvet_tokeni is None:
+            max_otvet_tokeni = int(self.max_context * 0.3)
+
+        headers = {"Content-Type": "application/json"}
+        data = {
+            "messages": [{"role": "user", "content": full_prompt}],
+            "temperature": self.temperature,
+            "max_tokens": max_otvet_tokeni
+        }
+        if self.model_name:
+            data["model"] = self.model_name
+
+        try:
+            response = requests.post(
+                f"{self._server_url}/chat/completions",
+                headers=headers,
+                json=data,
+                timeout=TIMEOUT_ANALYSIS
+            )
+
+            if self._stop_requested:
+                return "[Остановлено]"
+
+            if response.status_code == 200:
+                return response.json().get("choices", [{}])[0].get("message", {}).get("content", "Ошибка")
+            else:
+                return f"[Ошибка {response.status_code}: {response.text}]"
+
+        except requests.exceptions.Timeout:
+            return "[Ошибка: таймаут]"
+        except requests.exceptions.ConnectionError:
+            return "[Ошибка: не удалось подключиться к LM Studio]"
+        except Exception as e:
+            return f"[Ошибка: {str(e)}]"
+
+    def _szhatRagKontekst(self, rag_context, search_query):
+        """
+        Если RAG контекст слишком большой для одного вызова LLM —
+        обрабатывает его по частям и возвращает сжатый (компрессированный) контекст.
+        Работает по аналогии с обработкой чанков документов.
+        """
+        if not rag_context:
+            return ""
+
+        # Разделяем на отдельные фрагменты
+        fragmenti = [f.strip() for f in rag_context.split("\n---\n") if f.strip()]
+
+        if not fragmenti:
+            return rag_context
+
+        # Сколько фрагментов влезет в один batch
+        zapas_na_otvet = int(self.max_context * 0.30)
+        sluzhebnie = 500
+        prompt_ochenka = self._tokeniOcenka(
+            f"Проанализируй данные из базы знаний. Запрос: {search_query}"
+        )
+        dostupno = self.max_context - zapas_na_otvet - sluzhebnie - prompt_ochenka
+
+        # Измеряем средний размер фрагмента
+        if fragmenti:
+            avg_frag = sum(self._tokeniOcenka(f) for f in fragmenti) / len(fragmenti)
+        else:
+            avg_frag = 300
+
+        frag_per_batch = max(1, int(dostupno / max(1, avg_frag)))
+
+        # Если всё влезает в один batch — возвращаем как есть
+        if len(fragmenti) <= frag_per_batch:
+            return rag_context
+
+        # Разбиваем на batch-и
+        batchi = []
+        for i in range(0, len(fragmenti), frag_per_batch):
+            batch = "\n---\n".join(fragmenti[i:i + frag_per_batch])
+            batchi.append(batch)
+
+        self.sigResultReady.emit(
+            f"🔄 RAG контекст: {len(fragmenti)} фрагментов не влезает. "
+            f"Обработка в {len(batchi)} этапах..."
+        )
+
+        rezultati = []
+        for i, batch in enumerate(batchi):
+            if self._stop_requested:
+                return "[Остановлено]"
+
+            self.sigChunkStarted.emit(i + 1, len(batchi))
+
+            zapros = f"""Проанализируй следующие данные из базы знаний.
+    Выдели ключевую информацию, факты и выводы, релевантные запросу.
+
+    ДАННЫЕ ИЗ RAG (часть {i + 1} из {len(batchi)}):
+    {batch}
+
+    ЗАПРОС: {search_query}
+
+    Сформулируй краткий и информативный вывод (максимум 500 слов)."""
+
+            result = self._otpravitZaprosLLM(zapros)
+            rezultati.append(result)
+
+            self.sigChunkFinished.emit(i + 1, len(batchi))
+
+        # Объединяем результаты всех batch-ей
+        szhatii = "\n\n".join(
+            [f"[RAG часть {i + 1}/{len(rezultati)}]: {r}" for i, r in enumerate(rezultati)]
+        )
+
+        self.sigResultReady.emit(
+            f"✅ RAG обработан: {len(fragmenti)} фрагментов → {len(rezultati)} частей"
+        )
+
+        return szhatii
