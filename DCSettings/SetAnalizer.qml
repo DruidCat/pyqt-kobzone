@@ -19,6 +19,7 @@ Drawer {
 	property real rlTemperatura: DCSettings.analizer_temperatura//Температура ИИ
 	property int ntPerekritie: DCSettings.analizer_perekritie
 	property bool isMobile: false//true - мобильное устройство
+	property bool isEnabled: true//false - не активная страница
 	property int __parentWidth: parent.width//Ширина родителя, ширина основного окна приложения.
 	property int __minSidebarWidth: __parentWidth * 0.2//Минимум ширины боковой панели
 	property int __maxSidebarWidth: root.__parentWidth * 0.5//Максимум ширины боковой панели
@@ -188,7 +189,7 @@ Drawer {
 					anchors.left: parent.left; anchors.right: parent.right
 					anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrTexta; clrKnopki: root.clrMenuFon
-					enabled: root.enabled
+					enabled: root.isEnabled
 					opacityKnopki: 0.9
 					function fnClicked() {
 						if(pvTemperatura.visible){//Если видимый виджет, то...
@@ -226,7 +227,7 @@ Drawer {
 					anchors.left: parent.left; anchors.right: parent.right
 					anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrTexta; clrKnopki: root.clrMenuFon
-					enabled: root.enabled
+					enabled: root.isEnabled
 					opacityKnopki: 0.9
 					function fnClicked() {
 						if(pvPerekritie.visible){//Если видимый виджет, то...
@@ -276,7 +277,7 @@ Drawer {
 					ntWidth: root.ntWidth/2//Для уменьшения размера текста и ширины скролбара
 					ntCoff: root.ntCoff
 					readOnly: root.readOnly
-					enabled: root.enabled
+					enabled: root.isEnabled
 					scrollAuto: false//Ручное управление скроллом
 					clrFona: "transparent"; clrTexta: root.clrTexta
 					clrPolzunka: Qt.lighter(root.clrMenuFon, 1.3); clrBorder: root.clrTexta
