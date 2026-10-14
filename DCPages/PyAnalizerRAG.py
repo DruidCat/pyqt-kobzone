@@ -87,9 +87,24 @@ class RAGLoaderWorker(QThread):
             self.parent_rag._is_loaded = True
             self.parent_rag._metadatas = metadatas
             
-            self.sigProgress.emit(11, f"RAG база успешно загружена: {len(documents)} фрагментов")
+             # Строим кэш соседей для Sentence Window Retrieval
+            self.sigProgress.emit(11, "Построение кэша соседей (Sentence Window)...")
+            self.parent_rag._chunk_lookup = {}
+            for i, meta in enumerate(metadatas):
+                if not isinstance(meta, dict):
+                    continue
+                key = (str(meta.get("filename", "")), int(meta.get("page", 0) or 0))
+                if key not in self.parent_rag._chunk_lookup:
+                    self.parent_rag._chunk_lookup[key] = []
+                self.parent_rag._chunk_lookup[key].append((int(meta.get("chunk_no", 0) or 0), i))
+
+            # Сортируем по chunk_no внутри каждой группы
+            for key in self.parent_rag._chunk_lookup:
+                self.parent_rag._chunk_lookup[key].sort()
+
+            self.sigProgress.emit(12, f"RAG база успешно загружена: {len(documents)} фрагментов")
             self.sigFinished.emit(True, "")
-            
+
         except Exception as e:
             import traceback
             error_details = traceback.format_exc()
@@ -112,13 +127,32 @@ class DCAnalizerRAG(QObject):
         self._model_name = ""
         self._loader_thread = None
         self._metadatas = []
-        self._documents_lower = None  # кэш документов в нижнем регистре (для лексического поиска)
+        self._documents_lower = None # кэш документов в нижнем регистре (для лексического поиска)
+        self._chunk_lookup = None # кэш соседей
+        self._sentence_window = False# флаг Sentence Window
+        self._window_size = 2 # ±N соседних чанков
+
+    @pyqtSlot(bool)
+    def ustSentenceWindow(self, enabled: bool): #Слот управления Sentence Window Retrieval вкл/выкл.
+        """Включает/выключает Sentence Window Retrieval"""
+        self._sentence_window = enabled
+        if enabled:
+            self.sigLog.emit(f"✓ Sentence Window Retrieval включен (±{self._window_size} чанков)")
+        else:
+            self.sigLog.emit("✓ Sentence Window Retrieval выключен")
+
+    @pyqtSlot(int) #Слот управления Sentence Window Retrieval, устанавливает размер окна чанков.
+    def ustWindowSize(self, size: int):
+        """Устанавливает размер окна (±N чанков)"""
+        self._window_size = max(1, min(size, 10))
+        self.sigLog.emit(f"✓ Размер окна: ±{self._window_size}")
 
     @pyqtSlot(str)
     def ustRagPath(self, rag_path: str):
         """Устанавливает путь к RAG базе"""
         self._metadatas = [] #сброс
         self._documents_lower = None
+        self._chunk_lookup = None # сброс кэша соседей
         # Убираем префикс file://
         if rag_path.startswith("file://"):
             rag_path = rag_path.replace("file://", "").replace("file:", "")
@@ -318,6 +352,67 @@ class DCAnalizerRAG(QObject):
 
         return rezultati[:max(1, top_k)]
 
+    # ================================================================
+    # SENTENCE WINDOW RETRIEVAL
+    # ================================================================
+    def _razvernutOkno(self, idx: int) -> tuple[str, dict]:
+        """
+        Расширяет найденный чанк до ±N соседних чанков из того же файла/страницы.
+        Возвращает (расширенный_текст, метаданные).
+        """
+        meta = {}
+        if self._metadatas and idx < len(self._metadatas):
+            meta = self._metadatas[idx]
+
+        # Если Sentence Window выключен — возвращаем как есть
+        if not self._sentence_window or self._chunk_lookup is None:
+            return self._documents[idx], meta if isinstance(meta, dict) else {}
+
+        if not isinstance(meta, dict):
+            return self._documents[idx], meta
+
+        filename = str(meta.get("filename", ""))
+        page = int(meta.get("page", 0) or 0)
+        chunk_no = int(meta.get("chunk_no", 0) or 0)
+
+        key = (filename, page)
+        neighbors = self._chunk_lookup.get(key, [])
+
+        if not neighbors:
+            return self._documents[idx], meta
+
+        # Собираем индексы соседей в пределах окна
+        okno_indeksov = []
+        for cn, i in neighbors:
+            if abs(cn - chunk_no) <= self._window_size:
+                okno_indeksov.append(i)
+
+        okno_indeksov.sort()
+        okno_indeksov = list(dict.fromkeys(okno_indeksov))  # уникализация
+
+        chasti = []
+        for i in okno_indeksov:
+            if i < len(self._documents):
+                chasti.append(self._documents[i])
+
+        razvernutyi_text = "\n\n".join(chasti)
+
+        # Логирование (только если реально расширили)
+        if len(okno_indeksov) > 1:
+            dop_info = f"файл: {filename}"
+            if page > 0:
+                dop_info += f", стр.: {page}"
+            self.sigLog.emit(
+                f"🪟 Окно: {dop_info}, чанки "
+                f"{chunk_no - self._window_size}..{chunk_no + self._window_size} "
+                f"({len(okno_indeksov)} чанков, {len(razvernutyi_text)} символов)"
+            )
+
+        return razvernutyi_text, meta
+
+    # ================================================================
+    # ОСНОВНОЙ ПОИСК
+    # ================================================================
     @pyqtSlot(str, int, result=str)
     def poluchitKontekst(self, query: str, top_k: int = 3) -> str:
         """Ищет наиболее релевантные фрагменты"""
@@ -340,11 +435,7 @@ class DCAnalizerRAG(QObject):
                     similarity = item["similarity"]
                     marker = item.get("marker", "")
 
-                    doc = self._documents[idx]
-
-                    meta = None
-                    if self._metadatas and idx < len(self._metadatas):
-                        meta = self._metadatas[idx]
+                    doc, meta = self._razvernutOkno(idx)# расширяем окном
 
                     file_name = ""
                     page = 0
@@ -438,10 +529,7 @@ class DCAnalizerRAG(QObject):
                     self.sigLog.emit(f"⚠ Фрагмент отброшен: релевантность {similarity:.2%} < {MIN_SIMILARITY:.0%}")
                     continue
 
-                # Метаданные (файл/страница)
-                meta = None
-                if hasattr(self, "_metadatas") and self._metadatas and idx < len(self._metadatas):
-                    meta = self._metadatas[idx]
+                doc, meta = self._razvernutOkno(idx)# расширяем окном (вместо прямого чтения doc/meta)
 
                 file_name = ""
                 page = 0
