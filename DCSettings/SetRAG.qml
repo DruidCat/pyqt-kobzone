@@ -34,8 +34,6 @@ Item {
     
 	property int logoRazmer: 22//Размер Логотипа
     property string logoImya: "kobzone"//Имя логотипа в DCLogo
-	property real rlProgress: 0
-	property real rlLoader: 1
 	//Массив кнопок для навигации
     property var knopkiMassiv: []//Массив кнопок, между которыми нужно листать.
     property int currentIndex: 0//Выбранная кнопка.

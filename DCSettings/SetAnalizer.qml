@@ -22,6 +22,9 @@ Drawer {
 	property int ntRAGKolichestvo: DCSettings.analizer_rag_kolichestvo
 	property bool isMobile: false//true - мобильное устройство
 	property bool isEnabled: true//false - не активная страница
+	//Массив кнопок для навигации
+    property var knopkiMassiv: []//Массив кнопок, между которыми нужно листать.
+    property int currentIndex: 0//Выбранная кнопка.
 	property int __parentWidth: parent.width//Ширина родителя, ширина основного окна приложения.
 	property int __minSidebarWidth: __parentWidth * 0.2//Минимум ширины боковой панели
 	property int __maxSidebarWidth: root.__parentWidth * 0.5//Максимум ширины боковой панели
@@ -42,6 +45,7 @@ Drawer {
 	//Методы
 	Component.onCompleted: {
 		txdPromptFinal.text = DCSettings.analizer_prompt_final
+        knopkiMassiv=[knopkaTemperatura, knopkaPerekritie, knopkaRAGSkleit, knopkaRAGKolichestvo]
 	}
 	on__ParentWidthChanged: {//Если родительская ширина экрана меняется, то ...
 		root.__sidebarWidth = root.__parentWidth * DCSettings.analizer_sidebar_shirina//Пересчит.ширину панели
@@ -106,12 +110,52 @@ Drawer {
 					root.close();//Метод обрабатывающий кнопку Закрыть боковую панель.
 					event.accepted = true;//Завершаем обработку эвента.
 				}
-			} else {
-				if (event.key === Qt.Key_F1){//Если нажата F1, то...
-					knopkaInfo.fnClicked()
-					event.accepted = true
+			} else if (event.key === Qt.Key_F1){//Если нажата F1, то...
+				knopkaInfo.fnClicked()
+				event.accepted = true
+			} else if (event.key === Qt.Key_Up || event.key === Qt.Key_K || event.key === 1051) {
+				root.currentIndex--
+				if (root.currentIndex < 0) root.currentIndex = knopkiMassiv.length - 1
+				//fnScrollKnopok(false)
+				event.accepted = true
+			} else if (event.key === Qt.Key_Down || event.key === Qt.Key_J || event.key === 1054) {
+				root.currentIndex++
+				if (root.currentIndex >= knopkiMassiv.length) root.currentIndex = 0
+				//fnScrollKnopok(true)
+				event.accepted = true	
+			} else if (event.key === Qt.Key_Enter || event.key === Qt.Key_Return) {
+				fnClickedEnter()
+				event.accepted = true
+			}
+		}
+		function fnClickedEnter() {//Функция обработки нажатия клавиши Enter
+			if (root.currentIndex >= 0 && root.currentIndex < knopkiMassiv.length) {
+				var vrKnopkaID = knopkiMassiv[root.currentIndex]
+				
+				if (vrKnopkaID && typeof vrKnopkaID.fnClicked === "function" && 
+					vrKnopkaID.visible && vrKnopkaID.enabled) {
+					vrKnopkaID.fnClicked()
 				}
 			}
+		}
+		function fnScrollKnopok(isPlus) {//Функция скроллина кнопок
+			var knopkaID = knopkiMassiv[root.currentIndex]
+			if (!knopkaID) {
+				return
+			}
+			/*
+			if (knopkaID.visible) {
+				var knopkaTop = knopkaID.y
+				var knopkaBottom = knopkaTop + knopkaID.height + root.ntWidth
+				var visibleTop = flcZona.contentY
+				var visibleBottom = visibleTop + flcZona.height
+				
+				if (knopkaTop < visibleTop)
+					flcZona.contentY = knopkaTop
+				else if (knopkaBottom > visibleBottom)
+					flcZona.contentY = knopkaBottom - flcZona.height
+			}
+			*/
 		}
 		Rectangle {//Прямоугольник узкой полоски интерфейса справа
 			id: rctBorder
@@ -206,10 +250,12 @@ Drawer {
 					ntHeight: root.ntWidth; ntCoff: root.ntCoff
 					anchors.left: parent.left; anchors.right: parent.right
 					anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
-					clrTexta: root.clrTexta; clrKnopki: root.clrMenuFon
+					clrTexta: root.clrTexta
+                    clrKnopki: (root.currentIndex === 0) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
 					enabled: root.isEnabled
 					opacityKnopki: 0.9
 					function fnClicked() {
+						root.currentIndex = 0
 						if(pvTemperatura.visible){//Если видимый виджет, то...
 							Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModels. ВАЖНО!!!
 								pvTemperatura.visible = false//Делаем невидимым виджет
@@ -246,10 +292,12 @@ Drawer {
 					ntHeight: root.ntWidth; ntCoff: root.ntCoff
 					anchors.left: parent.left; anchors.right: parent.right
 					anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
-					clrTexta: root.clrTexta; clrKnopki: root.clrMenuFon
+					clrTexta: root.clrTexta
+                    clrKnopki: (root.currentIndex === 1) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
 					enabled: root.isEnabled
 					opacityKnopki: 0.9
 					function fnClicked() {
+						root.currentIndex = 1
 						if(pvPerekritie.visible){//Если видимый виджет, то...
 							Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModels. ВАЖНО!!!
 								pvPerekritie.visible = false//Делаем невидимым виджет
@@ -275,10 +323,12 @@ Drawer {
 					ntHeight: root.ntWidth; ntCoff: root.ntCoff
 					anchors.left: parent.left; anchors.right: parent.right
 					anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
-					clrTexta: root.clrTexta; clrKnopki: root.clrMenuFon
+					clrTexta: root.clrTexta
+                    clrKnopki: (root.currentIndex === 2) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
 					enabled: root.isEnabled
 					opacityKnopki: 0.9
 					function fnClicked() {
+						root.currentIndex = 2
 						root.isRAGSkleit = !root.isRAGSkleit//Инверсируем флаг
 						pyAnalizerRAG.ustSentenceWindow(root.isRAGSkleit)//Отправляем в скрипт настройку
 						DCSettings.analizer_rag_skleit = root.isRAGSkleit//Запоминаем в реестре.
@@ -305,10 +355,12 @@ Drawer {
 					ntHeight: root.ntWidth; ntCoff: root.ntCoff
 					anchors.left: parent.left; anchors.right: parent.right
 					anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
-					clrTexta: root.clrTexta; clrKnopki: root.clrMenuFon
+					clrTexta: root.clrTexta
+                    clrKnopki: (root.currentIndex === 3) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
 					enabled: root.isEnabled ? (root.isRAGSkleit ? true : false) : false
 					opacityKnopki: 0.9
 					function fnClicked() {
+						root.currentIndex = 3
 						if(pvRAGKolichestvo.visible){//Если видимый виджет, то...
 							Qt.callLater(function(){//пауза, иначе не сработает фокус и pvRAGKolichestvo
 								pvRAGKolichestvo.visible = false//Делаем невидимым виджет
