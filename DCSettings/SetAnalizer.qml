@@ -19,6 +19,7 @@ Drawer {
 	property real rlTemperatura: DCSettings.analizer_temperatura//Температура ИИ
 	property int ntPerekritie: DCSettings.analizer_perekritie
 	property bool isRAGSkleit: DCSettings.analizer_rag_skleit
+	property int ntRAGKolichestvo: DCSettings.analizer_rag_kolichestvo
 	property bool isMobile: false//true - мобильное устройство
 	property bool isEnabled: true//false - не активная страница
 	property int __parentWidth: parent.width//Ширина родителя, ширина основного окна приложения.
@@ -50,6 +51,7 @@ Drawer {
 		else {
 			fnCloseTemperaturaIfOpen()
 			fnClosePerekritieIfOpen()
+			fnCloseRAGKolichestvoIfOpen()
 			root.readOnly = true//Если панель закрыта, то режим только чтения.
 		}
 	}
@@ -62,6 +64,12 @@ Drawer {
 	onNtPerekritieChanged: {
 		pyAnalyzer.ustPerekritie(root.ntPerekritie)//Загрузка параметр перекрытия в скрипт
 	}
+	onIsRAGSkleitChanged: {//Загрузка параметр склеить в скрипт
+		pyAnalizerRAG.ustSentenceWindow(root.isRAGSkleit)
+	}
+	onNtRAGKolichestvoChanged: {//Загрузка параметр количества чанков RAg в скрипт
+		pyAnalizerRAG.ustWindowSize(root.ntRAGKolichestvo)
+	}
 	function fnCloseTemperaturaIfOpen(){
 		if (pvTemperatura.visible) {
 			pvTemperatura.visible = false
@@ -73,6 +81,14 @@ Drawer {
 	function fnClosePerekritieIfOpen(){
 		if (pvPerekritie.visible) {
 			pvPerekritie.visible = false
+			fnFocus()//фокус root, чтоб hotkey работали.
+			return true
+		}
+		return false
+	}
+	function fnCloseRAGKolichestvoIfOpen(){
+		if (pvRAGKolichestvo.visible) {
+			pvRAGKolichestvo.visible = false
 			fnFocus()//фокус root, чтоб hotkey работали.
 			return true
 		}
@@ -162,6 +178,7 @@ Drawer {
 				onTapped: {
 					if(!pvTemperatura.jdi && !pvTemperatura.pressed) fnCloseTemperaturaIfOpen()//Закрываем
 					if(!pvPerekritie.jdi && !pvPerekritie.pressed) fnClosePerekritieIfOpen()//Закрываем
+					if(!pvRAGKolichestvo.jdi && !pvRAGKolichestvo.pressed) fnCloseRAGKolichestvoIfOpen()//Закр
 				}
 			}
 			Behavior on opacity {
@@ -207,7 +224,9 @@ Drawer {
 						}
 					}
 					onClicked: {
-						if (pressed && !pvTemperatura.pressed && !pvPerekritie.pressed) fnClicked()
+						if (pressed && !pvTemperatura.pressed
+									&& !pvPerekritie.pressed
+									&& !pvRAGKolichestvo.pressed) fnClicked()
 					}
 				}
 				DCKnopkaOriginal {//Кнопка выбора Перекрытия ИИ
@@ -245,7 +264,9 @@ Drawer {
 						}
 					}
 					onClicked: {
-						if (pressed && !pvTemperatura.pressed && !pvPerekritie.pressed) fnClicked()
+						if (pressed && !pvTemperatura.pressed
+									&& !pvPerekritie.pressed
+									&& !pvRAGKolichestvo.pressed) fnClicked()
 					}
 				}
 				DCKnopkaOriginal {//Кнопка склеивания чанков RAG вкл/выкл
@@ -263,7 +284,48 @@ Drawer {
 						DCSettings.analizer_rag_skleit = root.isRAGSkleit//Запоминаем в реестре.
 					}
 					onClicked: {
-						if (pressed && !pvTemperatura.pressed && !pvPerekritie.pressed) fnClicked()
+						if (pressed && !pvTemperatura.pressed
+									&& !pvPerekritie.pressed
+									&& !pvRAGKolichestvo.pressed) fnClicked()
+					}
+				}
+				DCKnopkaOriginal {//Кнопка выбора количества чанков до и после совпадения, которые склеить.
+					id: knopkaRAGKolichestvo
+					text: {
+						let ltText = qsTr("количество RAG чанков: ");//
+						ltText += root.ntRAGKolichestvo//Добавляем в строчку количество RAG чанков из настроек
+						for (let i = 0; i < modelRAGKolichestvo.count; i++) {//Ищем сохранённую модель в списке
+							if (modelRAGKolichestvo.get(i).spisok === root.ntRAGKolichestvo) {
+								pvRAGKolichestvo.currentIndex = i//Выставляем в карусели нужное количество
+								break
+							}
+						}
+						return ltText;
+					}
+					ntHeight: root.ntWidth; ntCoff: root.ntCoff
+					anchors.left: parent.left; anchors.right: parent.right
+					anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
+					clrTexta: root.clrTexta; clrKnopki: root.clrMenuFon
+					enabled: root.isEnabled ? (root.isRAGSkleit ? true : false) : false
+					opacityKnopki: 0.9
+					function fnClicked() {
+						if(pvRAGKolichestvo.visible){//Если видимый виджет, то...
+							Qt.callLater(function(){//пауза, иначе не сработает фокус и pvRAGKolichestvo
+								pvRAGKolichestvo.visible = false//Делаем невидимым виджет
+								fnFocus()//фокус PathView, чтоб hotkey работали.
+							})
+						}
+						else{//Если невидимый виджет, то...	
+							Qt.callLater(function(){//пауза, иначе не сработает фокус и pvRAGKolichestvo
+								pvRAGKolichestvo.visible = true//Делаем видимым виджет
+								pvRAGKolichestvo.karusel.forceActiveFocus()//фокус PathView, чтоб hotkey работ
+							})
+						}
+					}
+					onClicked: {
+						if (pressed && !pvTemperatura.pressed
+									&& !pvPerekritie.pressed
+									&& !pvRAGKolichestvo.pressed) fnClicked()
 					}
 				}
 				Text {//Содержимое файла
@@ -279,7 +341,7 @@ Drawer {
 					width: parent.width - parent.leftPadding - parent.rightPadding
 					height: {
 						let ltHeight = 0//Высота рабочей области редактирования.
-						if (pvTemperatura.visible || pvPerekritie.visible){
+						if (pvTemperatura.visible || pvPerekritie.visible || pvRAGKolichestvo.visible){
 							ltHeight = rctSidebar.height - txtPromptFinal.height
 													- knopkaTemperatura.height
 													- knopkaPerekritie.height
@@ -311,6 +373,7 @@ Drawer {
 					onPressed: {
 						fnCloseTemperaturaIfOpen()//Закрываем карусель температуры
 						fnClosePerekritieIfOpen()//Закрываем карусель перекрытия
+						fnCloseRAGKolichestvoIfOpen()//Закрываем карусель количества
 					}
 				}	
 			}
@@ -434,6 +497,36 @@ Drawer {
 					pvPerekritie.visible = false//Делаем невидимым виджет
 					root.ntPerekritie = strPerekritie//Приравнываем значение полученное
 					DCSettings.analizer_perekritie = root.ntPerekritie//Сохраняем в реестре перекрытие в %.
+				})
+			}
+			onVisibleChanged: {//Если видимость поменялась, то...
+				if(!visible) fnFocus()//Если невидимый, то фокус на root, чтоб hotkey работали.
+			}
+		}
+		ListModel {//Модель с количеством склеиваний до и после найденого совпадения в RAG БД.
+			id: modelRAGKolichestvo
+			ListElement { spisok: 1 }
+			ListElement { spisok: 2 }
+			ListElement { spisok: 3 }
+			ListElement { spisok: 4 }
+			ListElement { spisok: 5 }
+		}
+		DCPathView {
+			id: pvRAGKolichestvo
+			z: 100
+			visible: false
+			ntWidth: root.ntWidth; ntCoff: root.ntCoff
+			anchors.left: rctSidebar.left; anchors.right: rctSidebar.right; anchors.bottom: rctSidebar.bottom
+			anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
+			anchors.bottomMargin: rctOkontovka.border.width
+			clrFona: root.clrFona; clrTexta: root.clrTexta; clrMenuFon: root.clrMenuFon
+			modelData: modelRAGKolichestvo
+			onClicked: function(strRAGKolichestvo) {
+				Qt.callLater(function(){//пауза, иначе не сработает фокус и pvRAGKolichestvo. ВАЖНО!!!
+					pvRAGKolichestvo.visible = false//Делаем невидимым виджет
+					root.ntRAGKolichestvo = strRAGKolichestvo//Приравнываем значение полученное
+					pyAnalizerRAG.ustWindowSize(root.ntRAGKolichestvo)//Передаём параметр в скрипт.
+					DCSettings.analizer_rag_kolichestvo = root.ntRAGKolichestvo//Сохраняем в реестре кол-во.
 				})
 			}
 			onVisibleChanged: {//Если видимость поменялась, то...
