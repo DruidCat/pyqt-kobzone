@@ -18,6 +18,7 @@ Drawer {
 	property string strPromptFinal: DCSettings.analizer_prompt_final
 	property real rlTemperatura: DCSettings.analizer_temperatura//Температура ИИ
 	property int ntPerekritie: DCSettings.analizer_perekritie
+	property bool isRAGSkleit: DCSettings.analizer_rag_skleit
 	property bool isMobile: false//true - мобильное устройство
 	property bool isEnabled: true//false - не активная страница
 	property int __parentWidth: parent.width//Ширина родителя, ширина основного окна приложения.
@@ -242,6 +243,24 @@ Drawer {
 								pvPerekritie.karusel.forceActiveFocus()//фокус PathView, чтоб hotkey работали.
 							})
 						}
+					}
+					onClicked: {
+						if (pressed && !pvTemperatura.pressed && !pvPerekritie.pressed) fnClicked()
+					}
+				}
+				DCKnopkaOriginal {//Кнопка склеивания чанков RAG вкл/выкл
+					id: knopkaRAGSkleit
+					text: `склеить RAG чанки: ${root.isRAGSkleit ? "вкл" : "выкл"}`
+					ntHeight: root.ntWidth; ntCoff: root.ntCoff
+					anchors.left: parent.left; anchors.right: parent.right
+					anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
+					clrTexta: root.clrTexta; clrKnopki: root.clrMenuFon
+					enabled: root.isEnabled
+					opacityKnopki: 0.9
+					function fnClicked() {
+						root.isRAGSkleit = !root.isRAGSkleit//Инверсируем флаг
+						pyAnalizerRAG.ustSentenceWindow(root.isRAGSkleit)//Отправляем в скрипт настройку
+						DCSettings.analizer_rag_skleit = root.isRAGSkleit//Запоминаем в реестре.
 					}
 					onClicked: {
 						if (pressed && !pvTemperatura.pressed && !pvPerekritie.pressed) fnClicked()

@@ -19,6 +19,7 @@ QtObject {
 	property string analizer_put_text: ""
     property string analizer_put_sohranit: ""
 	property string analizer_put_rag: ""
+	property bool analizer_rag_skleit: false//true - включен режим склеивания rag чанков.
 	//LM Studio 
 	property string studio_model_imya: ""//По умолчанию отсутствует
 	property int studio_max_context: 8000//Количество токенов
@@ -59,6 +60,7 @@ QtObject {
         property alias analizer_put_text: root.analizer_put_text
         property alias analizer_put_sohranit: root.analizer_put_sohranit
         property alias analizer_put_rag: root.analizer_put_rag
+        property alias analizer_rag_skleit: root.analizer_rag_skleit
 		//LM Studio
 		property alias studio_model_imya: root.studio_model_imya
 		property alias studio_max_context: root.studio_max_context
