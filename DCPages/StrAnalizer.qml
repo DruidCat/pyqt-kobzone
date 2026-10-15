@@ -319,8 +319,10 @@ Item {
 		id: dialogZagruzka
 		title: "Выберите текстовые файлы для анализа"
 		currentFolder: {//Используем сохранённый путь из реестра, или стандартную домашнюю папку
-			if (DCSettings.analizer_put_text !== "") return "file://" + DCSettings.analizer_put_text
-			else return StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
+			if (DCSettings.analizer_put_text !== ""){
+				if (Qt.platform.os === "windows") return "file:///" + DCSettings.analizer_put_text
+				else return "file://" + DCSettings.analizer_put_text
+			} else return StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
 		}
 		nameFilters: ["Текстовые файлы (*.txt)", "Все файлы (*)"]
 		fileMode: FileDialog.OpenFiles//Множественный выбор файлов
@@ -452,6 +454,7 @@ Item {
         root.clickedInfo()
     }
     function fnClickedZagruzka() {//Функция открывающая Файловый диалог загрузки файлов
+		console.log("AAA file://" + DCSettings.analizer_put_text)
 		dialogZagruzka.open()
     }
 	function fnUstMultipleDocuments(selectedFiles) {//Загрузка нескольких документов

@@ -10,7 +10,8 @@ TODO:
 - StrAnalizer, DCTextEdit, баг Qt6.8, не рендерит большие тексты, не позволять опускаться в самый низ тексту.
 - StrAnalizer, Превью результата RAG базы данных нужно показывать полным, чтоб оценить, что возвращается.
 - StrAnalizer, если начать анализ, а потом остановить, и протом опять начать, то первый анализ с ошибкой.
-- StrAnalizer, Windows {Загрузить файлы}, в консоли ошибка QWindowsNativeFileDialogBase::shellItem: SHCreateItemFromParsingName(file://c/Users/HP/Documents/2025-12-12_08-09-21_Mentor/????????????? ?????? 239)) failed (═х эрщфхэ ёхЄхтющ яєЄ№.)
+- StrAnalizer, Windows[загрузить документы]Ошибка при загрузке файла file:///C:/Users/HP/Desktop/Смена В/ночь.txt:
+'utf-8' codec can't decode byte 0xd1 in position 13: invalid continuation byte
 - SetAnalizer, DCTextEdit, не работает пейсхолдер подсказка.
 - SetStudio, сделать настройку запуска LM Studio с sandbox и без sandbox.
 - DCLMStudio, автоматически включен режим мультимодальности, который обрабатывает картинки и занимает 2Gb VRAM
@@ -244,3 +245,4 @@ TODO:
 2026-10-14 StrInstrukciya, SetAnalizer, добавил инструкцию по склетванию и количеству склеиваемых чанков.
 2026-10-15 StrInstrukciya, SetAnalizer не работали горячие клавиши скролинга. Починил.
 2026-10-15 README, написал функционал приложения. Что оно умеет. Это необходимо для пользователей GitHub.
+2026-10-15 StrAnalizer, Windows {Загрузить файлы},в консоли ошибка QWindowsNativeFileDialogBase::shellItem,Fix
