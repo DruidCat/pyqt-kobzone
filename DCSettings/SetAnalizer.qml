@@ -25,6 +25,7 @@ Drawer {
 	//Массив кнопок для навигации
     property var knopkiMassiv: []//Массив кнопок, между которыми нужно листать.
     property int currentIndex: 0//Выбранная кнопка.
+	property bool __isClickedInfo: false//true - нажата кнока Информация.
 	property int __parentWidth: parent.width//Ширина родителя, ширина основного окна приложения.
 	property int __minSidebarWidth: __parentWidth * 0.2//Минимум ширины боковой панели
 	property int __maxSidebarWidth: root.__parentWidth * 0.5//Максимум ширины боковой панели
@@ -51,12 +52,16 @@ Drawer {
 		root.__sidebarWidth = root.__parentWidth * DCSettings.analizer_sidebar_shirina//Пересчит.ширину панели
 	}
 	onPositionChanged: {//Если позиция изменяется у боковой панели, то...
-		if(position) root.readOnly = false//Если панель открыта, то режим резактирования
+		if(position) root.readOnly = false//Если панель открыта, то режим редактирования
 		else {
 			fnCloseTemperaturaIfOpen()
 			fnClosePerekritieIfOpen()
 			fnCloseRAGKolichestvoIfOpen()
 			root.readOnly = true//Если панель закрыта, то режим только чтения.
+			if(__isClickedInfo){//Если нажата кнопка открытия инструкции, то...
+				__isClickedInfo = false//Обнуляем флаг
+				root.clickedInfo()//Сигнал нажатия на кнопку информации когда панель закрылась
+			}
 		}
 	}
 	onStrPromptFinalChanged: {//Если финальный промт изменился, то...
@@ -181,8 +186,8 @@ Drawer {
 				clrKnopki: root.clrTexta; clrFona: root.clrFona
 				tapHeight: (root.ntWidth-1)*root.ntCoff+root.ntCoff; tapWidth: tapHeight * root.tapZagolovokLevi
 				function fnClicked(){
+					root.__isClickedInfo = true//Взводим флаг, ждём, когда закроется панели и откроем Инструкц
 					root.close()//Закрываем панель, сворачиваем температуру
-					root.clickedInfo()//Сигнал нажатия на кнопку информации.
 				}
 				onClicked: fnClicked()//Функция нажатия информации.
 			}

@@ -47,10 +47,19 @@ Item {
 	Component.onCompleted: {//Когда страница отрисовалась, то...
         fnInstrukciya(root.strInstrukciya)//Функция загружающая заголовок и инструкцию по ключу.
 		txdZona.fnFocus()//Фокусируем, для листания инструкции по горячим клавишам.
-	}
+		
+	}	
 	onStrInstrukciyaChanged: {//Если переменная поменялась, то...
         fnInstrukciya(root.strInstrukciya)//Функция загружающая заголовок и инструкцию по ключу.
     }
+	onVisibleChanged: {
+		if(visible) tmrFocus.running = true//Если страница видимая, запускаем таймер с фокусом
+	}
+	Timer {
+		id: tmrFocus
+		interval: 220; repeat: false
+        onTriggered: txdZona.fnFocus()//Фокусируем, для листания инструкции по горячим клавишам.
+	}
 	onWidthChanged : {//Если родительская ширина экрана меняется, то ...
 		drwSidebar.sidebarWidth = root.width * DCSettings.instrukcii_shirina//Пересчит.ширину панели
 	}
