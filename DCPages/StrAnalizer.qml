@@ -134,10 +134,10 @@ Item {
 					if (ntTotal === 1) {
 						ldrProgress.item.text = "Финальный анализ..."
 					} else {
-						ldrProgress.item.text = `${ntCurrent}/${ntTotal + 1}`
+						ldrProgress.item.text = `${ntCurrent - 1}/${ntTotal + 1}`
 					}
 				} else if (ntTotal > 1) {
-					ldrProgress.item.text = `${ntCurrent}/${ntTotal + 1}`
+					ldrProgress.item.text = `${ntCurrent - 1}/${ntTotal + 1}`
 				}
 			}
 		}
