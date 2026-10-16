@@ -454,7 +454,6 @@ Item {
         root.clickedInfo()
     }
     function fnClickedZagruzka() {//Функция открывающая Файловый диалог загрузки файлов
-		console.log("AAA file://" + DCSettings.analizer_put_text)
 		dialogZagruzka.open()
     }
 	function fnUstMultipleDocuments(selectedFiles) {//Загрузка нескольких документов

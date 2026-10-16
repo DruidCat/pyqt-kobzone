@@ -172,8 +172,9 @@ class DCAnalyzer(QObject):
         self.final_prompt = _final_prompt
 
     @pyqtSlot(list)
-    def ustMultipleDocuments(self, file_paths): #Загружает несколько текстовых файлов и объединяет их содержим
-        from PyQt6.QtCore import QUrl #импорт QUrl
+    def ustMultipleDocuments(self, file_paths):
+        from PyQt6.QtCore import QUrl
+        from pathlib import Path
         
         try:
             if not file_paths:
@@ -186,11 +187,11 @@ class DCAnalyzer(QObject):
             
             for file_path in file_paths:
                 try:
-                    #Используем QUrl для кроссплатформенного преобразования
+                    # Используем QUrl для кроссплатформенного преобразования
                     url = QUrl(file_path)
-                    local_path = url.toLocalFile() #Автоматически обрабатывает file:/// и платформенные пути
+                    local_path = url.toLocalFile() # Автоматически обрабатывает file:/// и платформенные пути
                     
-                    #Если toLocalFile() вернул пустую строку, используем исходный путь
+                    # Если toLocalFile() вернул пустую строку, используем исходный путь
                     if not local_path:
                         local_path = file_path
                     
@@ -201,8 +202,25 @@ class DCAnalyzer(QObject):
                         combined_content.append(f"=== Файл: {file.name if file.name else Path(file_path).name} ===\n[Ошибка: файл не найден]\n")
                         continue
                     
-                    with open(file, 'r', encoding='utf-8') as f:
-                        content = f.read()
+                    # Пытаемся прочитать файл с разными кодировками
+                    content = None
+                    # Порядок важен: сначала строгие UTF-кодировки, затем cp1251 (стандарт для русской Windows)
+                    encodings_to_try = ['utf-8-sig', 'utf-8', 'cp1251', 'windows-1251']
+                    
+                    for enc in encodings_to_try:
+                        try:
+                            with open(file, 'r', encoding=enc) as f:
+                                content = f.read()
+                            print(f"✓ Файл {file.name} успешно прочитан с кодировкой {enc}")
+                            break # Если успешно, прерываем цикл
+                        except UnicodeDecodeError:
+                            continue # Пробуем следующую кодировку
+                    
+                    # Если ни одна из кодировок не подошла, читаем с заменой некорректных символов на 
+                    if content is None:
+                        with open(file, 'r', encoding='utf-8', errors='replace') as f:
+                            content = f.read()
+                        print(f"⚠ Файл {file.name} прочитан с заменой некорректных символов (кодировка не определена)")
                     
                     combined_content.append(f"=== Файл: {file.name} ===\n{content}\n")
                     filenames.append(file.stem)
@@ -214,13 +232,13 @@ class DCAnalyzer(QObject):
                     print(f"✗ Ошибка при загрузке файла {file_path}: {e}")
                     combined_content.append(f"=== Файл: {Path(file_path).name} ===\n[Ошибка загрузки: {str(e)}]\n")
             
-            #Объединяем весь текст
+            # Объединяем весь текст
             full_text = "\n".join(combined_content)
             
-            #Сохраняем в переменную класса
+            # Сохраняем в переменную класса
             self.text_content = full_text
             
-            #Формируем имя для сохранения результата
+            # Формируем имя для сохранения результата
             if len(filenames) == 1:
                 self.current_filename = filenames[0]
             elif len(filenames) > 1:
@@ -231,7 +249,7 @@ class DCAnalyzer(QObject):
             print(f"✓ Всего загружено файлов: {successfully_loaded}/{len(file_paths)}")
             print(f"✓ Общий размер текста: {len(full_text)} символов")
             
-            #Излучаем сигнал для обновления QML
+            # Излучаем сигнал для обновления QML
             self.sigDocumentsLoaded.emit(full_text, successfully_loaded)
             
         except Exception as e:
