@@ -81,14 +81,14 @@ EMBEDDING_MODELS = {
     0: {
         'name': 'sentence-transformers/all-MiniLM-L6-v2',
         'dimension': 384,
-        'description': '384D, быстрая',
+        'description': '384D, англоязычная быстрая',
         'batch_size_cpu': 32,
         'batch_size_gpu': 128
     },
     1: {
         'name': 'sentence-transformers/all-MiniLM-L12-v2',
         'dimension': 384,
-        'description': '384D, точная',
+        'description': '384D, англоязычная точная',
         'batch_size_cpu': 32,
         'batch_size_gpu': 128
     },
@@ -102,21 +102,21 @@ EMBEDDING_MODELS = {
     3: {
         'name': 'sentence-transformers/all-mpnet-base-v2',
         'dimension': 768,
-        'description': '768D, максимальное качество',
+        'description': '768D, англоязычная точная',
         'batch_size_cpu': 16,
         'batch_size_gpu': 64
     },
     4: {
         'name': 'sentence-transformers/LaBSE',
         'dimension': 768,
-        'description': '768D, 100+ языков',
+        'description': '768D, многоязычная',
         'batch_size_cpu': 16,
         'batch_size_gpu': 64
     },
     5: {
         'name': 'BAAI/bge-m3',
         'dimension': 1024,
-        'description': '1024D, мультиязычная 8K',
+        'description': '1024D, многоязычная 8K',
         'batch_size_cpu': 4,
         'batch_size_gpu': 16,
         'max_length': 8192
@@ -124,7 +124,7 @@ EMBEDDING_MODELS = {
     6: {
         'name': 'intfloat/multilingual-e5-large',
         'dimension': 1024,
-        'description': '1024D, использует GPU',
+        'description': '1024D, многоязычная GPU',
         'batch_size_cpu': 8,
         'batch_size_gpu': 32
     }

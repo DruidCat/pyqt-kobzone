@@ -630,13 +630,13 @@ Item {
 		}
 		ListModel {//Модель с Моделями движков RAG
             id: modelModeli
-            ListElement { spisok: "all-MiniLM-L6-v2 (384D, быстрая)" }
-            ListElement { spisok: "all-MiniLM-L12-v2 (384D, точная)" }
+            ListElement { spisok: "all-MiniLM-L6-v2 (384D, англоязычная быстрая)" }
+            ListElement { spisok: "all-MiniLM-L12-v2 (384D, англоязычная точная)" }
             ListElement { spisok: "paraphrase-multilingual (384D, многоязычная)" }
-            ListElement { spisok: "all-mpnet-base-v2 (768D, максимальное качество)" }
-            ListElement { spisok: "LaBSE (768D, 100+ языков)" }
-            ListElement { spisok: "BAAI/bge-m3 (1024D, мультиязычная 8K)" }
-            ListElement { spisok: "e5-multilingual-large (1024D, использует GPU)" }
+            ListElement { spisok: "all-mpnet-base-v2 (768D, англоязычная точная)" }
+            ListElement { spisok: "LaBSE (768D, многоязычная)" }
+            ListElement { spisok: "BAAI/bge-m3 (1024D, многоязычная 8K)" }
+            ListElement { spisok: "e5-multilingual-large (1024D, многоязычная GPU)" }
         }
         DCPathView {
             id: pvModeli
