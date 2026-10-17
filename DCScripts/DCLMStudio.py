@@ -1,10 +1,12 @@
+import os
 import subprocess
+import signal
 import platform
 import requests
 import threading
 from pathlib import Path
 from PyQt6.QtCore import QObject, pyqtSignal, pyqtSlot, QTimer
-
+from DCScripts.DCLMSandbox import DCLMSandbox, SandboxNotAvailable
 
 class DCLMStudio(QObject):
     """Управление LM Studio: запуск/остановка и работа с моделями"""
@@ -70,6 +72,10 @@ class DCLMStudio(QObject):
         self._server_max_popitok = self.MAX_SERVER_CHECKS
         # URL сервера (можно изменить)
         self._server_url = "http://localhost:1234/v1"
+        # Sandbox
+        self._sandbox_name = ""          # "" = без sandbox
+        self._restart_after_stop = False # если True — после остановки запускаем заново
+        self.sigStudioOstanovlen.connect(self._on_studio_stopped_internal)#перезапускать после полной остановк
     
     def __del__(self):
         """Очистка ресурсов при удалении объекта"""
@@ -253,6 +259,50 @@ class DCLMStudio(QObject):
         except Exception:
             return False
 
+    # ==================== РАБОТА С SANDBOX ====================
+    @pyqtSlot(str)
+    def ustSandbox(self, sandbox_name: str):
+        """
+        sandbox_name:
+          ""          -> обычный запуск (как сейчас, с --no-sandbox на Linux)
+          "firejail"  -> запуск через firejail
+        """
+        sandbox_name = DCLMSandbox.normalize(sandbox_name)
+
+        # ничего не делаем, если не менялось
+        if sandbox_name == self._sandbox_name:
+            return
+
+        # проверяем доступность (установлен ли firejail и т.п.)
+        try:
+            DCLMSandbox.check_available(sandbox_name)
+        except SandboxNotAvailable as e:
+            # новый код ошибки (добавь в QML обработку)
+            self._emit_error(14, str(e))
+            return
+
+        self._sandbox_name = sandbox_name
+
+        if self._sandbox_name:
+            self.sigLog.emit(f"✓ Sandbox выбран: {self._sandbox_name}")
+        else:
+            self.sigLog.emit("✓ Sandbox выключен")
+
+        # Если LM Studio уже запущен — перезапускаем с новыми параметрами
+        if self._proverkaZapushen():
+            mode = self._sandbox_name if self._sandbox_name else "без sandbox"
+            self.sigLog.emit(f"🔄 Перезапуск LM Studio ({mode})...")
+            self._restart_after_stop = True
+            self.ostanovitStudio()
+
+    @pyqtSlot()
+    def _on_studio_stopped_internal(self):
+        if not self._restart_after_stop:
+            return
+        self._restart_after_stop = False
+        # небольшой зазор, чтобы ОС успела подчистить процессы/порты
+        QTimer.singleShot(300, self.zapustitStudio)
+
     # ==================== РАБОТА С МОДЕЛЯМИ ====================
     @pyqtSlot()
     def zagruzitModeli(self):
@@ -283,20 +333,20 @@ class DCLMStudio(QObject):
             else:
                 error_msg = f"HTTP {response.status_code}: {response.text}"
                 self._emit_error(0, error_msg)
-                self.sigModelsLoaded.emit([self.AUTO_MODEL_NAME])
+                self.sigModelsLoaded.emit([self.NO_MODEL_NAME])
         
         except requests.exceptions.ConnectionError:
             error_msg = f"Не удалось подключиться к LM Studio ({self._server_url})"
             self._emit_error(1, error_msg)
-            self.sigModelsLoaded.emit([self.AUTO_MODEL_NAME])
+            self.sigModelsLoaded.emit([self.NO_MODEL_NAME])
         
         except Exception as e:
             error_msg = f"Ошибка загрузки моделей: {str(e)}"
             self._emit_error(2, error_msg)
-            self.sigModelsLoaded.emit([self.AUTO_MODEL_NAME])
+            self.sigModelsLoaded.emit([self.NO_MODEL_NAME])
     
-    @pyqtSlot()
-    def vigruzitModel(self):
+    @pyqtSlot(result=bool)
+    def vigruzitModel(self) -> bool:
         """Выгружаем модель из LM Studio"""
         if self._cli_path == "": #Если пустой путь, то...
             return False #возвращаем ошибку
@@ -314,8 +364,8 @@ class DCLMStudio(QObject):
         """Возвращает текущую модель"""
         return self._current_model 
     
-    @pyqtSlot(str, int, int)
-    def ustParametri(self, model_name, max_context, gpu_offload):
+    @pyqtSlot(str, int, int, result=bool)
+    def ustParametri(self, model_name, max_context, gpu_offload) -> bool:
         """Публичный слот для загрузки модели с параметрами"""
         if not model_name or model_name == self.NO_MODEL_NAME:# если модель "(отсутствует)" или пустая
             self.vigruzitModel()#Выгружаем модель.
@@ -517,8 +567,8 @@ class DCLMStudio(QObject):
             error_msg = f"Ошибка остановки сервера: {str(e)}"
             self._emit_error(12, error_msg)
 
-    @pyqtSlot()
-    def proverkaServera(self):
+    @pyqtSlot(result=bool)
+    def proverkaServera(self) -> bool:
         """Проверяет, запущен ли сервер LM Studio"""
         zapuschen = self._proverkaServeraZapuschen()
         self._server_zapuschen = zapuschen
@@ -564,6 +614,12 @@ class DCLMStudio(QObject):
             self._emit_error(3, error_msg)
             return
         
+        try:
+            DCLMSandbox.check_available(self._sandbox_name)
+        except SandboxNotAvailable as e:
+            self._emit_error(14, str(e))
+            return
+
         try:
             self.sigLog.emit(f"Запуск LM Studio: {lms_path.name}")
             
@@ -625,9 +681,17 @@ class DCLMStudio(QObject):
     def _zapustitVPotoke(self, lms_path):
         """Запускает LM Studio в отдельном потоке"""
         try:
+            # строим команду (и логируем, в каком режиме запускаем)
+            spec = DCLMSandbox.build_launch_spec(
+                lmstudio_path=lms_path,
+                sandbox_name=self._sandbox_name,
+                cli_path=self._cli_path
+            )
+            self.sigLog.emit(spec.description)
+
             if platform.system() == "Linux":
                 subprocess.Popen(
-                    [str(lms_path), "--no-sandbox"],
+                    spec.argv,
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                     start_new_session=True
@@ -653,6 +717,18 @@ class DCLMStudio(QObject):
         
         try:
             if platform.system() == "Linux":
+                # Шаг 0: Если есть процесс, который запускали мы — гасим его группу
+                try:
+                    if self._process is not None and self._process.poll() is None:
+                        self.sigLog.emit("Остановка (process group)...")
+                        os.killpg(self._process.pid, signal.SIGTERM)
+                        time.sleep(self.DELAY_GRACEFUL_SHUTDOWN)
+                        if self._process.poll() is None:
+                            os.killpg(self._process.pid, signal.SIGKILL)
+                        self._process = None
+                except Exception as e:
+                    self.sigLog.emit(f"⚠ Не удалось остановить по PID: {e}")
+
                 # Шаг 1: Проверяем, есть ли процессы
                 result = subprocess.run(
                     ["pgrep", "-f", "lmstudio"],
@@ -737,6 +813,12 @@ class DCLMStudio(QObject):
 
     def _proverkaZapushen(self):
         """Проверяет, запущено ли приложение LM Studio (не сервер!)"""
+        try:
+            if self._process is not None and self._process.poll() is None:
+                return True
+        except Exception:
+            pass
+
         try:
             # Проверяем процесс, а не сервер
             if platform.system() == "Linux":

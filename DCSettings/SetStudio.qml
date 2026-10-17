@@ -37,8 +37,6 @@ Item {
 	property int logoRazmer: 22//Размер Логотипа
     property string logoImya: "kobzone"//Имя логотипа в DCLogo
 	property string __strProgress: ""//строка, которая будет в строке загрузки
-	property real rlProgress: 0
-	property real rlLoader: 1
 	//Массив кнопок для навигации
     property var knopkiMassiv: []//Массив кнопок, между которыми нужно листать.
     property int currentIndex: 0//Выбранная кнопка.
@@ -48,11 +46,13 @@ Item {
 	property string serverURL: DCSettings.studio_server_url//URL Сервера LM Studio
 	property string strModel: DCSettings.studio_model_imya//Имя модели ИИ
 	property string strModelNoName: ""//Получаем имя модели ОТСУТСТВУЕТ.
+	property string strSandbox: DCSettings.studio_sandbox//имя программы, которая запускает в песочнице
 	property bool __isModelNoName: false//true - выбрана модель MODEL_NO_NAME, чтоб её выгрузить.
 	property int maxContext: DCSettings.studio_max_context//Максимальное количество токенов
 	property bool isStudioOn: false//true - LM Studio запущена.
 	property int gpuOffload: DCSettings.studio_gpu_offload
 	property bool isModelStart: false//true - первая иннициализация уже была
+	property bool isSandboxStart: false//true - первая иннициализация уже была
 	property bool isContextStart: false//true - первая иннициализация уже была
 	property bool isGpuOffloadStart: false//true - первая иннициализация уже была
 	//Настройки
@@ -67,14 +67,24 @@ Item {
 	Component.onCompleted: {
 		root.strModelNoName = pyLMStudio.polModelNoName()//Получаем имя модели ОТСУТСТВУЕТ.
 		fnModelEnabled()//Функция управляет политикой кнопок Temperatura, Context, GPU
-		knopkiMassiv = [knopkaLMStart, knopkaLMStop, knopkaLMPut, knopkaCLIPut, knopkaModeli,
+		knopkiMassiv = [knopkaLMStart, knopkaLMStop, knopkaLMPut, knopkaCLIPut, knopkaSandbox, knopkaModeli,
 						knopkaContext, knopkaGPU, knopkaServerURL]
+		
 		if (DCSettings.studio_lms_put !== "")//Передаём путь из настроек в Python
 			pyLMStudio.ustPutStudio(DCSettings.studio_lms_put)
+		if (DCSettings.studio_cli_put !== "")
+    		pyLMStudio.ustPutCLI(DCSettings.studio_cli_put)
+		pyLMStudio.ustSandbox(root.strSandbox)//передать начальное значение
 		root.forceActiveFocus()	
 	}
 	onServerURLChanged: {
 		pyLMStudio.ustServerURL(serverURL)//Загрузка при иннициации приложения и при изменении значения.
+	}
+	onStrSandboxChanged: {
+		if (isSandboxStart){//Первую иннициализацию не обрабатываем, когда данные читаются из реестра
+			pyLMStudio.ustSandbox(root.strSandbox)
+		}
+		isSandboxStart = true
 	}
 	onStrModelChanged: {//Если Модель изменится, то...
 		fnModelEnabled()//Функция управляет политикой кнопок Temperatura, Context, GPU
@@ -114,8 +124,9 @@ Item {
 				vprVopros.ntVopros = 9
 				vprVopros.visible = true
 			} else if (ntError === 10) {//10 - Модель не загрузилась
-				vprVopros.ntVopros = 6
-				vprVopros.visible = true
+            	root.toolbar(`Ошибка ${ntError}: ${errorMsg}`)
+			} else if (ntError === 14) {//14 - Ошибка по Sandbox
+            	root.toolbar(`Ошибка ${ntError}: ${errorMsg}`)
 			}
 			if(ntError !== 13){//Если это не пуста модель, то...
             	root.toolbar(`Ошибка ${ntError}: ${errorMsg}`)
@@ -140,6 +151,7 @@ Item {
 		//11 - Ошибка запуска сервера
 		//12 - Ошибка остановки сервера
 		//13 - Модель не выбрана
+		//14 - Ошибка по Sandbox
 		function onSigCLIPut(strCLIPut){//Если путь автоматически обнаружен, то он придёт из pyLMStudio
 			DCSettings.studio_cli_put	= strCLIPut;//Запоминаем в реестре настроек.
 		}
@@ -152,12 +164,14 @@ Item {
 			ldrProgress.active = true//Запускаем полосу прогресса
 		}
 		function onSigStudioZapuschen() {
+			root.isStudioOn = true//LM Studio запущена
 			vprVopros.visible = false
 			ldrProgress.active = false//Закрываем полосу прогресса
 			root.toolbar("LM Studio запущен!")
 			pyLMStudio.proverkaServera()	
 		}
 		function onSigStudioOstanovlen() {
+			root.isStudioOn = false//LM Studio остановлена
 			tmrStudioOstanovlen.running = true	
 		}		
 		function onSigStudioStatus(blStatus) {
@@ -288,9 +302,9 @@ Item {
 		title: qsTr("Выберите путь к LM Studio")
 		fileMode: FileDialog.OpenFile//Открыть один файл
 		nameFilters: {
-			if(Qt.application.os === "windows") return ["Исполняемые файлы (*.exe)", "Все файлы (*)"]
-			else if (Qt.application.os === "linux") return ["AppImage (*.AppImage)", "Все файлы (*)"]
-			else if (Qt.application.os === "osx") return ["Приложения (*.app)", "Все файлы (*)"]
+			if(Qt.platform.os === "windows") return ["Исполняемые файлы (*.exe)", "Все файлы (*)"]
+			else if (Qt.platform.os === "linux") return ["AppImage (*.AppImage)", "Все файлы (*)"]
+			else if (Qt.platform.os === "osx") return ["Приложения (*.app)", "Все файлы (*)"]
 			return ["Все файлы (*)"];//Безопасный фоллбэк
 		}
 		currentFolder: {//Используем сохранённый путь из реестра, или стандартную домашнюю папку
@@ -349,6 +363,9 @@ Item {
 		if (menuMenu.visible) {
 			menuMenu.visible = false
 		}
+		if (pvSandbox.visible) {
+			pvSandbox.visible = false
+		}
 		if (pvModels.visible) {
 			pvModels.visible = false
 		}
@@ -401,6 +418,7 @@ Item {
 		if (menuMenu.visible) 
 			menuMenu.visible = false
 		else {
+			if (pvSandbox.visible) pvSandbox.visible = false
 			if (pvModels.visible) pvModels.visible = false
 			if (txnVvod.visible) txnVvod.visible = false
 			if (vprVopros.visible) vprVopros.visible = false
@@ -419,6 +437,14 @@ Item {
 	function fnCloseMenuIfOpen() {
 		if (menuMenu.visible) {
 			menuMenu.visible = false
+			return true
+		}
+		return false
+	}
+	function fnCloseSandboxIfOpen() {
+		if (pvSandbox.visible) {
+			pvSandbox.visible = false
+			root.forceActiveFocus()//фокус root, чтоб hotkey работали.
 			return true
 		}
 		return false
@@ -732,7 +758,8 @@ Item {
 					fnCloseMenuIfOpen()//Закрыть меню если оно открыто	
 					if(!knopkaContext.pressedTmr550 && !knopkaCLIPut.pressedTmr550 
 													&& !knopkaGPU.pressedTmr550 
-													&& !knopkaServerURL) fnCloseTXNtIfOpen()
+													&& !knopkaServerURL.pressedTmr550) fnCloseTXNtIfOpen()
+					if(!pvSandbox.jdi && !pvSandbox.pressed) fnCloseSandboxIfOpen()//Закрываем карусель pv....
 					if(!pvModels.jdi && !pvModels.pressed) fnCloseModelsIfOpen()//Закрываем карусель pv....
 					if(!knopkaModeli.pressedTmr550 	&& !knopkaLMStart.pressedTmr550
 													&& !knopkaLMStop.pressedTmr550)fnCloseVoprosIfOpen()
@@ -764,7 +791,7 @@ Item {
 					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()){
-								if (pressed && !pvModels.pressed) fnPress()
+								if (pressed && !pvSandbox.pressed && !pvModels.pressed) fnPress()
 							}
 						}
 					}
@@ -786,7 +813,7 @@ Item {
 					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
-								if (pressed && !pvModels.pressed) fnPress()
+								if (pressed && !pvSandbox.pressed && !pvModels.pressed) fnPress()
 							}
 						}
 					}
@@ -815,7 +842,7 @@ Item {
 					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
-								if (pressed && !pvModels.pressed) fnPress()
+								if (pressed && !pvSandbox.pressed && !pvModels.pressed) fnPress()
 							}
 						}
 					}	
@@ -841,11 +868,39 @@ Item {
 					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
-								if (pressed && !pvModels.pressed) fnPress()
+								if (pressed && !pvSandbox.pressed && !pvModels.pressed) fnPress()
 							}
 						}
 					}	
                 }
+				DCKnopkaOriginal {//Кнопка включения Sandbox
+                    id: knopkaSandbox
+                    text: {
+                        let ltText = qsTr("sandbox ");//
+						if (root.strSandbox === "") ltText += qsTr("выкл")
+						else ltText += root.strSandbox
+						return ltText;
+                    }
+                    ntHeight: root.ntWidth; ntCoff: root.ntCoff
+					anchors.left: parent.left; anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
+					clrTexta: root.clrMenuText
+                    clrKnopki: (root.currentIndex === 4) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    opacityKnopki: 0.9
+					function fnPress() {
+						root.currentIndex = 4
+						Qt.callLater(function(){//пауза, иначе не сработает фокус и pvSandbox. ВАЖНО!!!
+							pvSandbox.visible = !pvSandbox.visible//Инверсируем
+						})
+					}
+					onClicked: {
+						if (pressed) {
+							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
+								if (pressed && !pvSandbox.pressed && !pvModels.pressed) fnPress()
+							}
+						}
+					}
+				}
 				DCKnopkaOriginal {//Кнопка выбора размера шрифта
                     id: knopkaModeli
                     text: {
@@ -863,16 +918,16 @@ Item {
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 4) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 5) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					function fnPress() {
-						root.currentIndex = 4
+						root.currentIndex = 5
 						fnClickedModel()//Функция выбора Модели.
 					}
 					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
-								if (pressed && !pvModels.pressed)fnPress()
+								if (pressed && !pvSandbox.pressed && !pvModels.pressed) fnPress()
 							}
 						}
 					}
@@ -888,16 +943,16 @@ Item {
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 5) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 6) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					function fnPress() {
-						root.currentIndex = 5
+						root.currentIndex = 6
 						fnClickedVvod(0)//Функция выбора максимального контекста
 					}
 					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
-								if (pressed && !pvModels.pressed) fnPress()
+								if (pressed && !pvSandbox.pressed && !pvModels.pressed) fnPress()
 							}
 						}
 					}
@@ -913,16 +968,16 @@ Item {
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 6) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 7) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					function fnPress() {
-						root.currentIndex = 6
+						root.currentIndex = 7
 						fnClickedVvod(2)//Функция ввода gpu offload
 					}
 					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
-								if (pressed && !pvModels.pressed) fnPress()
+								if (pressed && !pvSandbox.pressed && !pvModels.pressed) fnPress()
 							}
 						}
 					}
@@ -938,16 +993,16 @@ Item {
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 7) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 8) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					function fnPress() {
-						root.currentIndex = 7
+						root.currentIndex = 8
 						fnClickedVvod(3)//Функция ввода адреса сервера
 					}
 					onClicked: {
 						if (pressed) {
 							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
-								if (pressed && !pvModels.pressed) fnPress()
+								if (pressed && !pvSandbox.pressed && !pvModels.pressed) fnPress()
 							}
 						}
 					}
@@ -970,7 +1025,32 @@ Item {
 				}
 			}
 		}
-		ListModel {//Модель с шриштами
+		ListModel {//Модель с Sandbox приложениями
+            id: modelSandbox
+			ListElement { spisok: "выкл" }
+            ListElement { spisok: "firejail" }
+            ListElement { spisok: "sandboxie" }
+        }
+        DCPathView {
+            id: pvSandbox
+            visible: false
+            ntWidth: root.ntWidth; ntCoff: root.ntCoff
+            anchors.left: tmZona.left; anchors.right: tmZona.right; anchors.bottom: tmZona.bottom
+            anchors.leftMargin: dcScrollbar.width; anchors.rightMargin: dcScrollbar.width
+            clrFona: root.clrFona; clrTexta: root.clrMenuText; clrMenuFon: root.clrMenuFon
+            modelData: modelSandbox
+            onClicked: function(strSandbox) {
+				Qt.callLater(function(){//пауза, иначе не сработает фокус и pvSandbox. ВАЖНО!!!
+					pvSandbox.visible = false//Делаем невидимым виджет
+					if(strSandbox === "выкл" || strSandbox === "off") strSandbox = ""
+					DCSettings.studio_sandbox = strSandbox//Сохраняем в Реестре
+				})
+            }
+			onVisibleChanged: {//Если видимость поменялась, то...
+				if(!visible) root.forceActiveFocus()//Если невидимый, то фокус на root, чтоб hotkey работали.
+			}
+        }
+		ListModel {//Модель с Языковыми Моделями
             id: modelModels
 			//Будет заполняться динамически из Python
         }
@@ -1040,6 +1120,7 @@ Item {
 					knopkaLMStop.enabled = false
 					knopkaLMPut.enabled = false
 					knopkaCLIPut.enabled = false
+					knopkaSandbox.enabled = false
 					knopkaModeli.enabled = false
 					knopkaContext.enabled = false
 					knopkaGPU.enabled = false
@@ -1052,6 +1133,7 @@ Item {
 					knopkaLMStop.enabled = true
 					knopkaLMPut.enabled = true
 					knopkaCLIPut.enabled = true
+					knopkaSandbox.enabled = true
 					knopkaModeli.enabled = true
 					fnModelEnabled()//Функция управляет политикой кнопок Temperatura, Context, GPU
 					//knopkaContext.enabled = true
@@ -1102,8 +1184,9 @@ Item {
 		propagateComposedEvents: true
 		onClicked: (mouse) => {
 			mouse.accepted = false
-			if (menuMenu.visible || pvModels.visible || txnVvod.visible){
+			if (menuMenu.visible || pvSandbox.visible || pvModels.visible || txnVvod.visible){
 				menuMenu.visible = false
+				pvSandbox.visible = false
 				pvModels.visible = false
 				txnVvod.visible = false
 			} else root.forceActiveFocus()

@@ -27,6 +27,7 @@ QtObject {
 	property int studio_gpu_offload: 50//по умолчанию 50%	
 	property string studio_lms_put: ""//По умолчанию путь не задан
 	property string studio_cli_put: ""//По умолчанию путь не задан
+	property string studio_sandbox: ""//По умолчанию запуск lmstudio без sandbox
 	property string studio_server_url: "http://localhost:1234"
 	//Транскрибация
     property string transcribe_put_audio: ""
@@ -69,6 +70,7 @@ QtObject {
 		property alias studio_gpu_offload: root.studio_gpu_offload
 		property alias studio_lms_put: root.studio_lms_put
 		property alias studio_cli_put: root.studio_cli_put
+		property alias studio_sandbox: root.studio_sandbox
 		property alias studio_server_url: root.studio_server_url
 		//Транскрибация
         property alias transcribe_put_audio: root.transcribe_put_audio
