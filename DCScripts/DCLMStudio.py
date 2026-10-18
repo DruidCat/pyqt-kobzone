@@ -713,7 +713,8 @@ class DCLMStudio(QObject):
             spec = DCLMSandbox.build_launch_spec(
                 lmstudio_path=lms_path,
                 sandbox_name=self._sandbox_name,
-                cli_path=self._cli_path
+                cli_path=self._cli_path,
+                app_name=self.APP_NAME #прокидывание APP_NAME
             )
             self.sigLog.emit(spec.description)
 

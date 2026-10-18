@@ -74,7 +74,6 @@ Item {
 		if (DCSettings.studio_cli_put !== "")
     		pyLMStudio.ustPutCLI(DCSettings.studio_cli_put)
 		pyLMStudio.ustSandbox(root.strSandbox)//передать начальное значение
-		console.log(`Component ${root.strSandbox}`)
 		root.forceActiveFocus()	
 	}
 	onServerURLChanged: {
