@@ -7,9 +7,17 @@ import threading
 from pathlib import Path
 from PyQt6.QtCore import QObject, pyqtSignal, pyqtSlot, QTimer
 from DCScripts.DCLMSandbox import DCLMSandbox, SandboxNotAvailable
+from dataclasses import dataclass
+
+@dataclass(frozen=True)
+class AppSpec:
+    display_name: str
+    linux_pgrep_pattern: str     # regex для pgrep (Linux)
+    mac_pgrep_pattern: str       # regex для pgrep (macOS)
+    windows_image_name: str      # имя процесса для taskkill/tasklist (Windows)
 
 class DCLMStudio(QObject):
-    """Управление LM Studio: запуск/остановка и работа с моделями"""
+    """Управление LM Studio/Bionic: запуск/остановка и работа с моделями"""
     
     # ==================== КОНСТАНТЫ ====================
     # Таймауты (секунды)
@@ -28,16 +36,18 @@ class DCLMStudio(QObject):
     SERVER_CHECK_INTERVAL = 2000
     # Модели
     NO_MODEL_NAME = "(отсутствует)"
+    # Название приложения
+    APP_NAME = "LM Studio" #по умолчанию
     # ==================== СИГНАЛЫ ====================
-    # Сигналы для LM Studio
+    # Сигналы для LM Studio/Bionic
     sigLog = pyqtSignal(str)                # Лог
     sigError = pyqtSignal(int, str)         # Ошибка
     sigCLIPut = pyqtSignal(str)             # Возвращает путь к cli lms
-    sigStudioStarted = pyqtSignal()         # Начата проверка запуска LM Studio
-    sigStudioZapuschen = pyqtSignal()       # LM Studio запущен
-    sigStudioStoped = pyqtSignal()          # Начата проверка остановки LM Studio
-    sigStudioOstanovlen = pyqtSignal()      # LM Studio остановлен
-    sigStudioStatus = pyqtSignal(bool)      # Статус LM Studio (True - запущен, False - остановлен)
+    sigStudioStarted = pyqtSignal()         # Начата проверка запуска LM Studio/Bionic
+    sigStudioZapuschen = pyqtSignal()       # LM Studio/Bionic запущен
+    sigStudioStoped = pyqtSignal()          # Начата проверка остановки LM Studio/Bionic
+    sigStudioOstanovlen = pyqtSignal()      # LM Studio/Bionic остановлен
+    sigStudioStatus = pyqtSignal(bool)      # Статус LM Studio/Bionic (True - запущен, False - остановлен)
     sigModelsLoaded = pyqtSignal(list)      # Список моделей загружен
     sigModelZagrujena = pyqtSignal(str, int)# Модель загружена (model_name, max_content)
     sigModelVigrujena = pyqtSignal(bool)    # Модель выгружена (bool)
@@ -76,6 +86,13 @@ class DCLMStudio(QObject):
         self._sandbox_name = ""          # "" = без sandbox
         self._restart_after_stop = False # если True — после остановки запускаем заново
         self.sigStudioOstanovlen.connect(self._on_studio_stopped_internal)#перезапускать после полной остановк
+        # Название приложения
+        self._app_spec = AppSpec(
+            display_name="LM Studio",
+            linux_pgrep_pattern=r"(lm[- ]?studio|lmstudio|lm-studio)",
+            mac_pgrep_pattern=r"(LM Studio|lmstudio|lm-studio)",
+            windows_image_name="LM Studio.exe",
+        )
     
     def __del__(self):
         """Очистка ресурсов при удалении объекта"""
@@ -92,7 +109,7 @@ class DCLMStudio(QObject):
     @pyqtSlot(str, result=bool)
     def proverkaServerURL(self, server_url):
         """
-        Проверяет корректность URL сервера LM Studio
+        Проверяет корректность URL сервера LM Studio/Bionic
         
         Args:
             server_url: Адрес сервера (например: http://localhost:1234)
@@ -288,10 +305,10 @@ class DCLMStudio(QObject):
         else:
             self.sigLog.emit("✓ Sandbox выключен")
 
-        # Если LM Studio уже запущен — перезапускаем с новыми параметрами
+        # Если LM Studio/Bionic уже запущен — перезапускаем с новыми параметрами
         if self._proverkaZapushen():
             mode = self._sandbox_name if self._sandbox_name else "без sandbox"
-            self.sigLog.emit(f"🔄 Перезапуск LM Studio ({mode})...")
+            self.sigLog.emit(f"🔄 Перезапуск {self.APP_NAME} ({mode})...")
             self._restart_after_stop = True
             self.ostanovitStudio()
 
@@ -306,7 +323,7 @@ class DCLMStudio(QObject):
     # ==================== РАБОТА С МОДЕЛЯМИ ====================
     @pyqtSlot()
     def zagruzitModeli(self):
-        """Загружает список доступных моделей из LM Studio"""
+        """Загружает список доступных моделей из LM Studio/Bionic"""
         try:
             response = requests.get(
                 f"{self._server_url}/models",
@@ -336,7 +353,7 @@ class DCLMStudio(QObject):
                 self.sigModelsLoaded.emit([self.NO_MODEL_NAME])
         
         except requests.exceptions.ConnectionError:
-            error_msg = f"Не удалось подключиться к LM Studio ({self._server_url})"
+            error_msg = f"Не удалось подключиться к {self.APP_NAME} ({self._server_url})"
             self._emit_error(1, error_msg)
             self.sigModelsLoaded.emit([self.NO_MODEL_NAME])
         
@@ -347,7 +364,7 @@ class DCLMStudio(QObject):
     
     @pyqtSlot(result=bool)
     def vigruzitModel(self) -> bool:
-        """Выгружаем модель из LM Studio"""
+        """Выгружаем модель из LM Studio/Bionic"""
         if self._cli_path == "": #Если пустой путь, то...
             return False #возвращаем ошибку
         else:
@@ -355,15 +372,19 @@ class DCLMStudio(QObject):
             return flag_vigruzki#Возвращаем результат выгрузки модели.
 
     @pyqtSlot(result=str)
-    def polModelNoName(self):
+    def polModelNoName(self) -> str:
         """Возвращаем имя модели NO_MODEL_NAME"""
         return self.NO_MODEL_NAME
 
     @pyqtSlot(result=str)
-    def polModel(self):
+    def polModel(self) -> str:
         """Возвращает текущую модель"""
         return self._current_model 
-    
+   
+    @pyqtSlot(result=str)
+    def polAppName(self) -> str:
+        return self.APP_NAME
+
     @pyqtSlot(str, int, int, result=bool)
     def ustParametri(self, model_name, max_context, gpu_offload) -> bool:
         """Публичный слот для загрузки модели с параметрами"""
@@ -374,12 +395,12 @@ class DCLMStudio(QObject):
             self._emit_error(13, error_msg)  # КОД ОШИБКИ 13
             return False
 
-        if not self._proverkaZapushen():  # Проверка запуска LM Studio
-            error_msg = "LM Studio не запущен. Сначала запустите приложение."
+        if not self._proverkaZapushen():  # Проверка запуска LM Studio/Bionic
+            error_msg = f"{self.APP_NAME} не запущен. Сначала запустите приложение."
             self._emit_error(6, error_msg)
             return False
         
-        # LM Studio запущен, продолжаем загрузку
+        # LM Studio/Bionic запущен, продолжаем загрузку
         success = self._ustParametri(model_name, max_context, gpu_offload)
 
         if success:
@@ -394,7 +415,7 @@ class DCLMStudio(QObject):
     # ==================== УПРАВЛЕНИЕ СЕРВЕРОМ ====================
     @pyqtSlot(str)
     def ustServerURL(self, server_url):
-        """Устанавливает URL сервера LM Studio"""
+        """Устанавливает URL сервера LM Studio/Bionic"""
         server_url = server_url.strip().rstrip('/')
         
         if not server_url.endswith('/v1'):
@@ -484,7 +505,7 @@ class DCLMStudio(QObject):
 
     @pyqtSlot()
     def zapustitServer(self):
-        """Запускает сервер LM Studio через CLI команду"""
+        """Запускает сервер LM Studio/Bionic через CLI команду"""
         if self._proverkaServeraZapuschen():
             self.sigLog.emit("⚠ Сервер уже запущен")
             self.sigServerZapuschen.emit()
@@ -493,7 +514,7 @@ class DCLMStudio(QObject):
             return
         
         if not self._proverkaZapushen():
-            error_msg = "LM Studio не запущен. Сначала запустите приложение."
+            error_msg = f"{self.APP_NAME} не запущен. Сначала запустите приложение."
             self._emit_error(6, error_msg)
             return
         
@@ -506,7 +527,7 @@ class DCLMStudio(QObject):
             return
         
         try:
-            self.sigLog.emit("🔄 Запуск сервера LM Studio...")
+            self.sigLog.emit(f"🔄 Запуск сервера {self.APP_NAME}...")
             
             # Выполняем команду запуска сервера
             result = subprocess.run(
@@ -529,7 +550,7 @@ class DCLMStudio(QObject):
 
     @pyqtSlot()
     def ostanovitServer(self):
-        """Останавливает сервер LM Studio через CLI команду"""
+        """Останавливает сервер LM Studio/Bionic через CLI команду"""
         if not self._proverkaServeraZapuschen():
             self.sigLog.emit("⚠ Сервер уже остановлен")
             self.sigServerOstanovlen.emit()
@@ -545,7 +566,7 @@ class DCLMStudio(QObject):
             return
         
         try:
-            self.sigLog.emit("🔄 Остановка сервера LM Studio...")
+            self.sigLog.emit(f"🔄 Остановка сервера {self.APP_NAME}...")
             
             result = subprocess.run(
                 [lms_cli, "server", "stop"],
@@ -569,11 +590,11 @@ class DCLMStudio(QObject):
 
     @pyqtSlot(result=bool)
     def proverkaServera(self) -> bool:
-        """Проверяет, запущен ли сервер LM Studio"""
+        """Проверяет, запущен ли сервер LM Studio/Bionic"""
         zapuschen = self._proverkaServeraZapuschen()
         self._server_zapuschen = zapuschen
         self.sigServerStatus.emit(zapuschen)
-        self.sigLog.emit(f"Сервер LM Studio: {'запущен' if zapuschen else 'остановлен'}")
+        self.sigLog.emit(f"Сервер {self.APP_NAME}: {'запущен' if zapuschen else 'остановлен'}")
         return zapuschen
 
     @pyqtSlot()
@@ -589,19 +610,26 @@ class DCLMStudio(QObject):
     # ==================== ЗАПУСК/ОСТАНОВКА ПРИЛОЖЕНИЯ ====================
     @pyqtSlot(str)
     def ustPutStudio(self, path):
-        """Устанавливает путь к LM Studio"""
+        """Устанавливает путь к LM Studio/Bionic и определяет тип приложения"""
         self._custom_path = path
-        print(f"✓ Путь к LM Studio: {path}")
+
+        try:
+            spec = self._detect_app_spec_from_path(path)
+            self._apply_app_spec(spec)
+        except Exception as e:
+            self.sigLog.emit(f"⚠ Не удалось определить тип приложения: {e}")
+
+        print(f"✓ Путь к {self.APP_NAME}: {path}")
     
     @pyqtSlot()
     def zapustitStudio(self):
-        """Запускает LM Studio"""
+        """Запускает LM Studio/Bionic"""
         if self._zapusk_v_processe:
             print("⚠ Запуск уже выполняется")
             return
         
         if self._proverkaZapushen():
-            self.sigLog.emit("LM Studio уже работает")
+            self.sigLog.emit(f"{self.APP_NAME} уже работает")
             self.sigStudioZapuschen.emit()
             # Проверяем статус сервера
             self.proverkaServera()
@@ -610,7 +638,7 @@ class DCLMStudio(QObject):
         lms_path = self._naitiLMStudio()
         
         if not lms_path:
-            error_msg = "Не удалось найти LM Studio. Укажите путь в настройках."
+            error_msg = f"Не удалось найти {self.APP_NAME}. Укажите путь в настройках."
             self._emit_error(3, error_msg)
             return
         
@@ -621,7 +649,7 @@ class DCLMStudio(QObject):
             return
 
         try:
-            self.sigLog.emit(f"Запуск LM Studio: {lms_path.name}")
+            self.sigLog.emit(f"Запуск {self.APP_NAME}: {lms_path.name}")
             
             self._zapusk_v_processe = True
             
@@ -638,7 +666,7 @@ class DCLMStudio(QObject):
             self._popitki = 0
             self._timer.start(self.STARTUP_CHECK_INTERVAL)
             self.sigStudioStarted.emit()
-            self.sigLog.emit("Ожидание запуска LM Studio...")
+            self.sigLog.emit(f"Ожидание запуска {self.APP_NAME}...")
         
         except Exception as e:
             error_msg = f"Ошибка запуска: {str(e)}"
@@ -647,7 +675,7 @@ class DCLMStudio(QObject):
 
     @pyqtSlot()
     def ostanovitStudio(self):
-        """Останавливает LM Studio с graceful shutdown (неблокирующий)"""
+        """Останавливает LM Studio/Bionic с graceful shutdown (неблокирующий)"""
         # Запускаем остановку в отдельном потоке
         thread = threading.Thread(
             target=self._ostanovitVPotoke,
@@ -656,11 +684,11 @@ class DCLMStudio(QObject):
         thread.start()
        
         self.sigStudioStoped.emit()
-        self.sigLog.emit("Ожидание остановки LM Studio...")
+        self.sigLog.emit(f"Ожидание остановки {self.APP_NAME}...")
     
     @pyqtSlot()
     def proverkaStudio(self):
-        """Проверяет доступность LM Studio (приложения)"""
+        """Проверяет доступность LM Studio/Bionic (приложения)"""
         if self._proverkaZapushen():
             self.sigStudioStatus.emit(True)
         else:
@@ -679,7 +707,7 @@ class DCLMStudio(QObject):
             self._timer.timeout.connect(self._proverkaDostupnosti)
     
     def _zapustitVPotoke(self, lms_path):
-        """Запускает LM Studio в отдельном потоке"""
+        """Запускает LM Studio/Bionic в отдельном потоке"""
         try:
             # строим команду (и логируем, в каком режиме запускаем)
             spec = DCLMSandbox.build_launch_spec(
@@ -712,7 +740,7 @@ class DCLMStudio(QObject):
             self._zapusk_v_processe = False
 
     def _ostanovitVPotoke(self):
-        """Останавливает LM Studio в отдельном потоке (не блокирует UI)"""
+        """Останавливает LM Studio/Bionic в отдельном потоке (не блокирует UI)"""
         import time
         
         try:
@@ -731,14 +759,14 @@ class DCLMStudio(QObject):
 
                 # Шаг 1: Проверяем, есть ли процессы
                 result = subprocess.run(
-                    ["pgrep", "-f", "lmstudio"],
+                    ["pgrep", "-if", self._app_spec.linux_pgrep_pattern],
                     capture_output=True,
                     text=True,
                     timeout=2
                 )
                 
                 if result.returncode != 0:
-                    self.sigLog.emit("LM Studio не запущен")
+                    self.sigLog.emit(f"{self.APP_NAME} не запущен")
                     self._server_zapuschen = False
                     self.sigStudioOstanovlen.emit()
                     self.sigServerStatus.emit(False)
@@ -760,7 +788,7 @@ class DCLMStudio(QObject):
                 
                 # Шаг 4: Проверяем, завершились ли процессы
                 result = subprocess.run(
-                    ["pgrep", "-f", "lmstudio"],
+                    ["pgrep", "-if", self._app_spec.linux_pgrep_pattern],
                     capture_output=True,
                     text=True,
                     timeout=2
@@ -779,31 +807,31 @@ class DCLMStudio(QObject):
                                 self.sigLog.emit(f"✗ Ошибка SIGKILL: {e}")
                 
                 self._server_zapuschen = False
-                self.sigLog.emit("✓ LM Studio остановлен")
+                self.sigLog.emit(f"✓ {self.APP_NAME} остановлен")
                 self.sigStudioOstanovlen.emit()
                 self.sigServerStatus.emit(False)
             
             elif platform.system() == "Darwin":
                 # macOS: аналогично Linux
-                subprocess.run(["pkill", "-TERM", "-f", "LM Studio"], timeout=2)
+                subprocess.run(["pkill", "-TERM", "-f", self._app_spec.mac_pgrep_pattern], timeout=2)
                 time.sleep(self.DELAY_GRACEFUL_SHUTDOWN)
-                subprocess.run(["pkill", "-KILL", "-f", "LM Studio"], timeout=2)
+                subprocess.run(["pkill", "-KILL", "-f", self._app_spec.mac_pgrep_pattern], timeout=2)
                 
                 self._server_zapuschen = False
-                self.sigLog.emit("✓ LM Studio остановлен")
+                self.sigLog.emit(f"✓ {self.APP_NAME} остановлен")
                 self.sigStudioOstanovlen.emit()
                 self.sigServerStatus.emit(False)
             
             elif platform.system() == "Windows":
                 # Windows: используем /T для дерева процессов
                 subprocess.run(
-                    ["taskkill", "/F", "/T", "/IM", "Bionic.exe"],
+                    ["taskkill", "/F", "/T", "/IM", image],
                     shell=True,
                     timeout=5
                 )
                 
                 self._server_zapuschen = False
-                self.sigLog.emit("✓ Bionic остановлен")
+                self.sigLog.emit(f"✓ {self.APP_NAME} остановлен")
                 self.sigStudioOstanovlen.emit()
                 self.sigServerStatus.emit(False)
         
@@ -812,42 +840,35 @@ class DCLMStudio(QObject):
             self._emit_error(5, error_msg)
 
     def _proverkaZapushen(self):
-        """Проверяет, запущено ли приложение LM Studio (не сервер!)"""
+        """Проверяет, запущено ли приложение (LM Studio/Bionic)"""
         try:
-            if self._process is not None and self._process.poll() is None:
-                return True
-        except Exception:
-            pass
-
-        try:
-            # Проверяем процесс, а не сервер
             if platform.system() == "Linux":
                 result = subprocess.run(
-                    ["pgrep", "-f", "lmstudio"],
+                    ["pgrep", "-if", self._app_spec.linux_pgrep_pattern],
                     capture_output=True,
                     text=True,
                     timeout=2
                 )
                 return result.returncode == 0
-            
+
             elif platform.system() == "Darwin":
                 result = subprocess.run(
-                    ["pgrep", "-f", "LM Studio"],
+                    ["pgrep", "-if", self._app_spec.mac_pgrep_pattern],
                     capture_output=True,
                     text=True,
                     timeout=2
                 )
                 return result.returncode == 0
-            
+
             elif platform.system() == "Windows":
                 result = subprocess.run(
-                    ["tasklist", "/FI", "IMAGENAME eq Bionic.exe"],
+                    ["tasklist", "/FI", f"IMAGENAME eq {self._app_spec.windows_image_name}"],
                     capture_output=True,
                     text=True,
                     timeout=2
                 )
-                return "Bionic.exe" in result.stdout
-            
+                return self._app_spec.windows_image_name.lower() in result.stdout.lower()
+
             return False
         except:
             return False
@@ -862,7 +883,7 @@ class DCLMStudio(QObject):
                 self._timer.stop()
             self._popitki = 0
             self._zapusk_v_processe = False
-            self.sigLog.emit("✓ LM Studio приложение запущено!")
+            self.sigLog.emit(f"✓ {self.APP_NAME} приложение запущено!")
             self.sigStudioZapuschen.emit()
             
             # Теперь проверяем сервер отдельно
@@ -875,13 +896,13 @@ class DCLMStudio(QObject):
                     self._timer.stop()
                 self._popitki = 0
                 self._zapusk_v_processe = False
-                error_msg = "LM Studio не запустился. Запустите вручную или проверьте путь."
+                error_msg = f"{self.APP_NAME} не запустился. Запустите вручную или проверьте путь."
                 self._emit_error(8, error_msg)
             else:
                 self.sigLog.emit(f"⏳ Попытка {self._popitki}/{self._max_popitok}...")
     
     def _naitiLMStudio(self):
-        """Находит путь к LM Studio"""
+        """Находит путь к LM Studio/Bionic"""
         if self._custom_path:
             custom = Path(self._custom_path)
             if custom.exists():
@@ -911,6 +932,10 @@ class DCLMStudio(QObject):
                                 path = Path(exec_path)
                                 if path.exists():
                                     print(f"✓ Найден через .desktop: {path}")
+                                    try:
+                                        self._apply_app_spec(self._detect_app_spec_from_path(str(path)))
+                                    except Exception:
+                                        pass
                                     return path
                 except Exception as e:
                     print(f"⚠ Ошибка чтения .desktop: {e}")
@@ -933,7 +958,12 @@ class DCLMStudio(QObject):
         
         for path in paths:
             if path.exists():
-                print(f"✓ Найден LM Studio: {path}")
+                try:
+                    self._apply_app_spec(self._detect_app_spec_from_path(str(path)))
+                except Exception:
+                    pass
+
+                print(f"✓ Найден {self.APP_NAME}: {path}")
                 return path
         
         if platform.system() == "Linux":
@@ -1359,3 +1389,49 @@ class DCLMStudio(QObject):
         except Exception as e:
             self.sigLog.emit(f"✗ Ошибка обновления конфига: {e}")
             return False
+
+    def _detect_app_spec_from_path(self, app_path: str) -> AppSpec:
+        """
+        Определяет LM Studio или Bionic по имени файла.
+        Поддерживает AppImage с версиями (LM-Studio-0.4.26-...AppImage и т.п.)
+        и Windows exe (Bionic.exe).
+        """
+        p = Path(app_path).expanduser().resolve()
+        filename = p.name.lower()        # например "LM-Studio-0.4.26-4-linux-x64.AppImage" -> lower
+        stem = p.stem.lower()            # имя без расширения
+
+        s = f"{filename} {stem}"
+
+        # Bionic
+        if "bionic" in s:
+            return AppSpec(
+                display_name="Bionic",
+                linux_pgrep_pattern=r"(bionic)",
+                mac_pgrep_pattern=r"(Bionic|bionic)",
+                windows_image_name="Bionic.exe",
+            )
+
+        # LM Studio (варианты: lm-studio, lm studio, lmstudio)
+        if ("lm-studio" in s) or ("lm studio" in s) or ("lmstudio" in s):
+            return AppSpec(
+                display_name="LM Studio",
+                linux_pgrep_pattern=r"(lm[- ]?studio|lmstudio|lm-studio)",
+                mac_pgrep_pattern=r"(LM Studio|lmstudio|lm-studio)",
+                windows_image_name="LM Studio.exe",
+            )
+
+        # Если не распознали — оставляем текущее (или дефолт LM Studio)
+        return self._app_spec
+
+
+    def _apply_app_spec(self, spec: AppSpec) -> None:
+        """Применяет AppSpec и обновляет APP_NAME для логов/команд."""
+        old = getattr(self, "_app_spec", None)
+        self._app_spec = spec
+
+        # ВАЖНО: обновляем именно классовую переменную (глобальную для класса)
+        type(self).APP_NAME = spec.display_name
+
+        if old and old.display_name != spec.display_name:
+            self.sigLog.emit(f"✓ Определено приложение: {old.display_name} → {spec.display_name}")
+
