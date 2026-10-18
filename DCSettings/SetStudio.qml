@@ -52,7 +52,6 @@ Item {
 	property bool isStudioOn: false//true - LM Studio запущена.
 	property int gpuOffload: DCSettings.studio_gpu_offload
 	property bool isModelStart: false//true - первая иннициализация уже была
-	property bool isSandboxStart: false//true - первая иннициализация уже была
 	property bool isContextStart: false//true - первая иннициализация уже была
 	property bool isGpuOffloadStart: false//true - первая иннициализация уже была
 	//Настройки
@@ -75,16 +74,14 @@ Item {
 		if (DCSettings.studio_cli_put !== "")
     		pyLMStudio.ustPutCLI(DCSettings.studio_cli_put)
 		pyLMStudio.ustSandbox(root.strSandbox)//передать начальное значение
+		console.log(`Component ${root.strSandbox}`)
 		root.forceActiveFocus()	
 	}
 	onServerURLChanged: {
 		pyLMStudio.ustServerURL(serverURL)//Загрузка при иннициации приложения и при изменении значения.
 	}
 	onStrSandboxChanged: {
-		if (isSandboxStart){//Первую иннициализацию не обрабатываем, когда данные читаются из реестра
-			pyLMStudio.ustSandbox(root.strSandbox)
-		}
-		isSandboxStart = true
+		pyLMStudio.ustSandbox(root.strSandbox)
 	}
 	onStrModelChanged: {//Если Модель изменится, то...
 		fnModelEnabled()//Функция управляет политикой кнопок Temperatura, Context, GPU
@@ -537,7 +534,6 @@ Item {
 			path = path.substring(7)//Убираем "file://"
 		}
 		path = decodeURIComponent(path)//Декодируем URL-кодирование (%20 → пробел, %3F → ?)
-		root.log(`ПУТЬ ИЗ ДИАЛОГА ${path}`)
 		if (Qt.platform.os === "windows") {//Windows: если путь начинается с /C:/, убираем первый /
 			if (path.length > 2 && path[0] === '/' && path[2] === ':') {
 				path = path.substring(1)
@@ -1039,11 +1035,12 @@ Item {
             anchors.leftMargin: dcScrollbar.width; anchors.rightMargin: dcScrollbar.width
             clrFona: root.clrFona; clrTexta: root.clrMenuText; clrMenuFon: root.clrMenuFon
             modelData: modelSandbox
-            onClicked: function(strSandbox) {
+            onClicked: function(sandbox) {
 				Qt.callLater(function(){//пауза, иначе не сработает фокус и pvSandbox. ВАЖНО!!!
 					pvSandbox.visible = false//Делаем невидимым виджет
-					if(strSandbox === "выкл" || strSandbox === "off") strSandbox = ""
-					DCSettings.studio_sandbox = strSandbox//Сохраняем в Реестре
+					if(sandbox === "выкл" || sandbox === "off") sandbox = ""
+					root.strSandbox = sandbox//Сохраняем значение
+					DCSettings.studio_sandbox = sandbox//записываем в реестр.
 				})
             }
 			onVisibleChanged: {//Если видимость поменялась, то...
