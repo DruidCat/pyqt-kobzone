@@ -53,7 +53,13 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-5. **Установите LM Studio:**
+5. **Создание ресурсов:**
+
+```bash
+python DCScripts/DCCompileRCC.py
+```
+
+6. **Установите LM Studio:**
 
 ```bash
 # Установите libfuse2 чтоб запускать *.AppImage
@@ -66,15 +72,16 @@ chmod +x lmstudio.AppImage
 ./lmstudio.AppImage
 ```
 
-6. **Настройте LM Studio:**
+7. **Настройте LM Studio:**
    - Запустите LM Studio
    - Скачайте нужную языковую модель
-   - Запустите локальный сервер (обычно на порту 1234)
+   - Перейдите во вкладку "Developer" -> "Status: Running"
+   - Запустите локальный сервер "Running" (по умолчанию Base URL http://localhost:1234)
 
-7. **Запустите приложение:**
+8. **Запустите приложение:**
 
 ```bash
-python3.13 main.py
+python main.py
 ```
 
 ### Windows 10, 11
@@ -117,18 +124,24 @@ python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-6. **Установите LM Studio:**
+6. **Создание ресурсов:**
+
+```bash
+python DCScripts/DCCompileRCC.py
+```
+
+7. **Установите LM Studio:**
    - Скачайте LM Studio для Windows: https://lmstudio.ai/download
    - Запустите установщик и следуйте инструкциям
    - После установки запустите LM Studio
 
-7. **Настройте LM Studio:**
+8. **Настройте LM Studio:**
    - Запустите LM Studio
    - Скачайте нужную языковую модель (рекомендуется начать с моделей до 7B параметров)
    - Перейдите во вкладку "Developer" -> "Status: Running"
-   - Запустите сервер "Running" (по умолчанию Base URL http://localhost:1234)
+   - Запустите локальный сервер "Running" (по умолчанию Base URL http://localhost:1234)
 
-8. **Запустите приложение:**
+9. **Запустите приложение:**
 
 ```cmd
 python main.py
