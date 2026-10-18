@@ -49,8 +49,18 @@ class DCLMSandbox:
         if sandbox_name == "firejail":
             if os_name != "Linux":
                 raise SandboxNotAvailable("firejail поддерживается только на Linux")
-            if shutil.which("firejail") is None:
-                raise SandboxNotAvailable("firejail не установлен. Установите: sudo apt install firejail")
+
+            from pathlib import Path
+            import shutil
+            firejail_path = shutil.which("firejail")
+            if not firejail_path:
+                for p in ("/usr/bin/firejail", "/bin/firejail", "/usr/local/bin/firejail", "/opt/firejail"):
+                    if Path(p).exists():
+                        firejail_path = p
+                        break
+            if not firejail_path:
+                raise SandboxNotAvailable("firejail не найден. Установите: sudo apt install firejail")
+
             return
 
         # Заглушки на будущее
