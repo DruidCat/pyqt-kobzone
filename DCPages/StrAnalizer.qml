@@ -204,6 +204,7 @@ Item {
 		//11 - Ошибка запуска сервера
 		//12 - Ошибка остановки сервера
 		//13 - Модель не выбрана
+		//14 - Ошибка по Sandbox
 		function onSigStudioZapuschen() {//Если запущена LM Studio
 			vprVopros.visible = false//Эта строка закрывает плашку с вопросом, которая автоматич. появляется
 		}
@@ -642,19 +643,38 @@ Item {
                 bottomPadding: root.ntCoff * 2
                 leftPadding: root.ntCoff * 2
                 rightPadding: root.ntCoff * 2
-                DCKnopkaOriginal {//Кнопка загрузки файла
-                    id: knopkaZagruzit
-                    text: "📁 загрузить документы"
-                    ntHeight: root.ntWidth; ntCoff: root.ntCoff
-					clrKnopki: root.clrTexta; clrTexta: root.clrFona
-					anchors.left: parent.left; anchors.right: parent.right
-                    anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
-					onClicked: {
-                        if (!fnCloseMenuIfOpen()) {
-                            fnClickedZagruzka()//Функция открывающая Файловый диалог загрузки файлов
-                        }
-                    }
-                }
+				RowLayout {//import QtQuick.Layouts
+                    width: parent.width - parent.leftPadding - parent.rightPadding
+                    spacing: root.ntCoff
+					DCKnopkaZakrit {
+						id: knopkaZagruzitOchistit_1
+						ntWidth: root.ntWidth; ntCoff: root.ntCoff
+						clrKnopki: root.clrTexta; clrFona: root.clrFona
+						onClicked: {
+                        	if (!fnCloseMenuIfOpen()) txdContent.text = ""
+						}
+					}
+					DCKnopkaOriginal {//Кнопка загрузки файла
+						id: knopkaZagruzit
+						text: "📁 загрузить документы"
+						ntHeight: root.ntWidth; ntCoff: root.ntCoff
+						clrKnopki: root.clrTexta; clrTexta: root.clrFona
+						Layout.fillWidth: true //Растягиваемся по всей длине
+						onClicked: {
+							if (!fnCloseMenuIfOpen()) {
+								fnClickedZagruzka()//Функция открывающая Файловый диалог загрузки файлов
+							}
+						}
+					}
+					DCKnopkaZakrit {
+						id: knopkaZagruzitOchistit_2
+						ntWidth: root.ntWidth; ntCoff: root.ntCoff
+						clrKnopki: root.clrTexta; clrFona: root.clrFona
+						onClicked: {
+                        	if (!fnCloseMenuIfOpen()) txdContent.text = ""
+						}
+					}
+				}
                 Text {//Содержимое документов
                     text: "Содержимое документов:"
                     font.pixelSize: root.ntWidth/2 * root.ntCoff
