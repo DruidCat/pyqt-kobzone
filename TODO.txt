@@ -16,6 +16,7 @@ TODO:
 - SetStudio, sandbox, не открывается параметр в настройке в карусели. Карусель автоматически не выставляется.
 - SetStudio, Выставлять имя приложения LM Studio/Bionic через pyLMStudio.polAppName()
 - SetStudio, если macOS, то knopkaSandbox enabled: false всегда.
+- SetStudio, если путь к Студии и путь к lms не заполненны, то sandbox не активен.
 - DCLMStudio, автоматически включен режим мультимодальности, который обрабатывает картинки и занимает 2Gb VRAM
 - StrRAG, реализовать поддержку документов DOC.
 - StrRAG, реализовать поддержку документов Exel.
