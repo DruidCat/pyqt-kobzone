@@ -19,6 +19,7 @@ ApplicationWindow {
 	property int ntWidth: 2 * shrift
 	property int ntCoff: 8
  	
+	property string strStudioImya: "LM Studio"
 	property string pythonVersion: "N/A"
 	property string qtVersion: "N/A"
 	property bool isMobile: {//Переменная определяющая, мобильная это платформа или нет. true - мобильная.
@@ -112,9 +113,17 @@ ApplicationWindow {
 		stvStr.currentItem.forceActiveFocus()
 		toolbar.log("✓ Шрифт:" + " " + font.family)
 		//загружаем данные из python
+		root.strStudioImya = pyLMStudio.polAppName();//Получаем название имени студии LM Studio/Bionic
 		root.pythonVersion = pyPythonInfo.pythonVersion
 		root.qtVersion = pyQtInfo.qtVersion
         if(!isMobile) Qt.callLater(ensureOnScreen)//Немного отложим, чтобы гарантированно применились размеры
+	}
+	Connections {//Обработчик загрузки моделей из Python
+        target: pyLMStudio
+
+		function onSigAppName(strAppName) {//Обработка сигнала сообщений из Класса
+
+		}
 	}
 	DCToolbar {
 		id: toolbar
@@ -653,8 +662,7 @@ ApplicationWindow {
 				toolbarHeight: pgStrInstrukciya.rctStrToolbar.height
 				radiusZona: pgStrInstrukciya.rctStrZona.radius//Радиус берём из настроек элемента qml
 				tapZagolovokLevi: 1.3; tapZagolovokPravi: 1.3; tapToolbarLevi: 1.3; tapToolbarPravi: 1.3
-				pythonVersion: root.pythonVersion
-    			qtVersion: root.qtVersion
+				strStudioImya: root.strStudioImya;pythonVersion: root.pythonVersion; qtVersion: root.qtVersion
 				onClickedNazad: {
 					stvStr.pop()//Назад страницу
 					Qt.callLater(function() { stvStr.currentItem.forceActiveFocus() })

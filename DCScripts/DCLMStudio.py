@@ -59,7 +59,8 @@ class DCLMStudio(QObject):
     sigServerOstanovlen = pyqtSignal()      # Сервер остановлен
     sigServerStatus = pyqtSignal(bool)      # Статус сервера (True - запущен, False - остановлен)
     sigServerError = pyqtSignal(str)        # Ошибка сервера
-    
+    sigAppName = pyqtSignal(str)            # Имя приложения изменилось (LM Studio/Bionic)    
+
     def __init__(self):
         super().__init__()
         # Управление моделями
@@ -1427,12 +1428,12 @@ class DCLMStudio(QObject):
 
     def _apply_app_spec(self, spec: AppSpec) -> None:
         """Применяет AppSpec и обновляет APP_NAME для логов/команд."""
-        old = getattr(self, "_app_spec", None)
+        old_name = getattr(self, "_app_spec", None).display_name if getattr(self, "_app_spec", None) else ""
+
         self._app_spec = spec
+        type(self).APP_NAME = spec.display_name# ВАЖНО: обновляем именно классовую переменную (глобальную для класса)
 
-        # ВАЖНО: обновляем именно классовую переменную (глобальную для класса)
-        type(self).APP_NAME = spec.display_name
-
-        if old and old.display_name != spec.display_name:
-            self.sigLog.emit(f"✓ Определено приложение: {old.display_name} → {spec.display_name}")
+        if old_name != spec.display_name:# Эмитим только если реально поменялось
+            self.sigLog.emit(f"✓ Определено приложение: {old_name or '(неизвестно)'} → {spec.display_name}")
+            self.sigAppName.emit(spec.display_name)
 

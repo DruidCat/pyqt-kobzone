@@ -18,7 +18,6 @@ TODO:
 - StrInstrukciya, заменить везде LM Studio нa APP_NAME.
 - SetStudio, если macOS, то knopkaSandbox enabled: false всегда.
 - DCLMStudio, автоматически включен режим мультимодальности, который обрабатывает картинки и занимает 2Gb VRAM
-- DCLMStudio, если имя приложения поменялось, нужен сигнал об этом из pyLMStudio.
 - StrRAG, реализовать поддержку документов DOC.
 - StrRAG, реализовать поддержку документов Exel.
 - DCRAGPdf, сделать сканирование изображений, чтоб на них читать надписи и добавлять их в RAG БД.
@@ -262,3 +261,4 @@ TODO:
 2026-10-18 DCLMSandbox, Windows 10-11, реализовал запуск sandbox через sandboxei.
 2026-10-18 DCLMSandbox, Прокидывается имя приложения LM Studio/Bionic в логах правильно.
 2026-10-18 StrInstrukciya, добавил описание настройки sandbox.
+2026-10-18 DCLMStudio, если имя приложения поменялось, сделал сигнал об этом из pyLMStudio.
