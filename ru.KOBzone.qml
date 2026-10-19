@@ -112,6 +112,7 @@ ApplicationWindow {
 	Component.onCompleted: {
 		stvStr.currentItem.forceActiveFocus()
 		toolbar.log("✓ Шрифт:" + " " + font.family)
+		shrift = DCSettings.kobzone_set_shrift + 1//Загружаем настройки шрифта из реестра.
 		//загружаем данные из python
 		root.strStudioImya = pyLMStudio.polAppName();//Получаем название имени студии LM Studio/Bionic
 		root.pythonVersion = pyPythonInfo.pythonVersion
