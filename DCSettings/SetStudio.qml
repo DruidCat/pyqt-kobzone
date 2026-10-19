@@ -48,6 +48,7 @@ Item {
 	property string strModel: DCSettings.studio_model_imya//Имя модели ИИ
 	property string strModelNoName: ""//Получаем имя модели ОТСУТСТВУЕТ.
 	property string strSandbox: DCSettings.studio_sandbox//имя программы, которая запускает в песочнице
+	property bool __isMacOS: false//true - запуск на MacOS
 	property bool __isModelNoName: false//true - выбрана модель MODEL_NO_NAME, чтоб её выгрузить.
 	property int maxContext: DCSettings.studio_max_context//Максимальное количество токенов
 	property bool isStudioOn: false//true - Studio запущена.
@@ -75,6 +76,10 @@ Item {
 		if (DCSettings.studio_cli_put !== "")
     		pyLMStudio.ustPutCLI(DCSettings.studio_cli_put)
 		pyLMStudio.ustSandbox(root.strSandbox)//передать начальное значение
+		if (Qt.platform.os === "osx"){//Если это macOS, то...
+			__isMacOS = true;//Запуск на macOS
+			knopkaSandbox.enabled = false//В macOS не используется sandbox
+		} else knopkaSandbox.enabled = true//Если не macOS, то sandbox предусмотрен.
 		root.forceActiveFocus()	
 	}
 	onServerURLChanged: {
@@ -1140,7 +1145,8 @@ Item {
 					knopkaLMStop.enabled = true
 					knopkaLMPut.enabled = true
 					knopkaCLIPut.enabled = true
-					knopkaSandbox.enabled = true
+					if(__isMacOS) knopkaSandbox.enabled = false//В macOS не используется sandbox
+					else knopkaSandbox.enabled = true
 					knopkaModeli.enabled = true
 					fnModelEnabled()//Функция управляет политикой кнопок Temperatura, Context, GPU
 					//knopkaContext.enabled = true

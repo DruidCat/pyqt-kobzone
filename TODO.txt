@@ -13,7 +13,6 @@ TODO:
 - StrAnalizer, если начать анализ, а потом остановить, и протом опять начать, то первый анализ с ошибкой.
 - SetAnalizer, DCTextEdit, не работает пейсхолдер подсказка.
 - SetStudio, Если выбрано приложение для sandbox не предназначенное для данной ОС, Сделать предупреждение.
-- SetStudio, если macOS, то knopkaSandbox enabled: false всегда.
 - SetStudio, если путь к Студии и путь к lms не заполненны, то sandbox не активен.
 - DCLMStudio, автоматически включен режим мультимодальности, который обрабатывает картинки и занимает 2Gb VRAM
 - StrRAG, реализовать поддержку документов DOC.
@@ -264,3 +263,4 @@ TODO:
 2026-10-19 README, добавил возможность работы с Bionic.
 2026-10-19 ru.KOBzone, Выставлил имя приложения LM Studio/Bionic через pyLMStudio.polAppName().
 2026-10-19 SetStudio, sandbox, карусель автоматически не выставляется. Исправил.
+2026-10-19 SetStudio, если macOS, то knopkaSandbox enabled: false всегда.
