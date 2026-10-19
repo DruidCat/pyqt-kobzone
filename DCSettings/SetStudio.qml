@@ -873,8 +873,18 @@ Item {
                     id: knopkaSandbox
                     text: {
                         let ltText = qsTr("sandbox ");//
-						if (root.strSandbox === "") ltText += qsTr("выкл")
-						else ltText += root.strSandbox
+						if (root.strSandbox === ""){
+						   	ltText += qsTr("выкл")
+							pvSandbox.currentIndex = 0//Первый элемент = выкл
+						} else {
+							ltText += root.strSandbox
+							for (let i = 0; i < modelSandbox.count; i++) {//Ищем сохранённую модель в списке
+								if (modelSandbox.get(i).spisok === root.strSandbox) {
+									pvSandbox.currentIndex = i//Выставляем в карусели нужный элемент.
+									break
+								}
+							}
+						}
 						return ltText;
                     }
                     ntHeight: root.ntWidth; ntCoff: root.ntCoff
