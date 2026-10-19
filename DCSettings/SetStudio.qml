@@ -76,10 +76,10 @@ Item {
 		if (DCSettings.studio_cli_put !== "")
     		pyLMStudio.ustPutCLI(DCSettings.studio_cli_put)
 		pyLMStudio.ustSandbox(root.strSandbox)//передать начальное значение
-		if (Qt.platform.os === "osx"){//Если это macOS, то...
+		if (Qt.platform.os === "osx" || putLMStudio === "" || putCLI === ""){//Если это macOS или пустые пути
 			__isMacOS = true;//Запуск на macOS
-			knopkaSandbox.enabled = false//В macOS не используется sandbox
-		} else knopkaSandbox.enabled = true//Если не macOS, то sandbox предусмотрен.
+			knopkaSandbox.enabled = false//не активная кнопка
+		} else knopkaSandbox.enabled = true//активная кнопка.
 		root.forceActiveFocus()	
 	}
 	onServerURLChanged: {
@@ -107,6 +107,20 @@ Item {
 	onPutLMStudioChanged: {//Если путь к Studio изменился, то...
 		if (root.putLMStudio !== ""){//Если он не пустой, то...
 			pyLMStudio.ustPutStudio(root.putLMStudio)//Передаём его в логику Python
+			if(__isMacOS || putCLI === "") knopkaSandbox.enabled = false
+			else knopkaSandbox.enabled = true
+		} else {//Если пустой путь, то...
+			knopkaSandbox.enabled = false//Кнопка не активна.
+			DCSettings.studio_sandbox = ""//Выключаем sandbox
+		}
+	}
+	onPutCLIChanged: {//Если путь к серверу поменялся, то...
+		if (root.putCLI === "") {//Если путь к серверу пустой, то...
+			knopkaSandbox.enabled = false//Кнопка не активна.
+			DCSettings.studio_sandbox = ""//Выключаем sandbox
+		} else {
+			if(__isMacOS || putLMStudio === "") knopkaSandbox.enabled = false
+			else knopkaSandbox.enabled = true
 		}
 	}
     Connections {//Обработчик загрузки моделей из Python
@@ -1145,7 +1159,7 @@ Item {
 					knopkaLMStop.enabled = true
 					knopkaLMPut.enabled = true
 					knopkaCLIPut.enabled = true
-					if(__isMacOS) knopkaSandbox.enabled = false//В macOS не используется sandbox
+					if(__isMacOS || putLMStudio === "" || putCLI === "") knopkaSandbox.enabled = false
 					else knopkaSandbox.enabled = true
 					knopkaModeli.enabled = true
 					fnModelEnabled()//Функция управляет политикой кнопок Temperatura, Context, GPU
