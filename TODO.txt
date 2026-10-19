@@ -263,3 +263,4 @@ TODO:
 2026-10-18 StrInstrukciya, добавил описание настройки sandbox.
 2026-10-18 DCLMStudio, если имя приложения поменялось, сделал сигнал об этом из pyLMStudio.
 2026-10-18 StrInstrukciya, заменил везде LM Studio нa STUDIO_IMYA.
+2026-10-19 DCLMStudio, windows, не закрывалась студия. Исправил.

@@ -827,7 +827,7 @@ class DCLMStudio(QObject):
             elif platform.system() == "Windows":
                 # Windows: используем /T для дерева процессов
                 subprocess.run(
-                    ["taskkill", "/F", "/T", "/IM", image],
+                    ["taskkill", "/F", "/T", "/IM", self._app_spec.windows_image_name],
                     shell=True,
                     timeout=5
                 )
