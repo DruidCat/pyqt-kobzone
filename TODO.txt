@@ -23,7 +23,6 @@ TODO:
 - DCRAGPdf, сделать сканирование изображений, чтоб на них читать надписи и добавлять их в RAG БД.
 - DCRAGMake, отсекание мусора сделать умным Boilerplate Removal/Document Cleaning (Удаление шаблонного мусора)
 - DCMarkdown, символ $\rightarrow$ не отрисовывается.
-- README, добавить возможность работы Bionic
 
 
 ПОЧИНИЛ:
@@ -264,3 +263,4 @@ TODO:
 2026-10-18 DCLMStudio, если имя приложения поменялось, сделал сигнал об этом из pyLMStudio.
 2026-10-18 StrInstrukciya, заменил везде LM Studio нa STUDIO_IMYA.
 2026-10-19 DCLMStudio, windows, не закрывалась студия. Исправил.
+2026-10-19 README, добавил возможность работы с Bionic.
