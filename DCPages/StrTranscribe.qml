@@ -39,6 +39,7 @@ Item {
     
 	property int logoRazmer: 22//Размер Логотипа
     property string logoImya: "kobzone"//Имя логотипа в DCLogo
+	property string strStudioImya: "LM Studio"//LM Studio приложение по умолчанию, может быть Bionic.
 	property bool isMobile: false//true - мобильное устройство
 	//Свойства для управления состоянием транскрибации
 	property bool isTranscribing: false//true - транскрибация началась.
@@ -145,7 +146,7 @@ Item {
 						pyTranscriber.start(DCSettings.transcribe_put_audio, DCSettings.transcribe_put_text)
 					}				
 				}
-				if(blStatus){//Если LM Studio запущена, то...
+				if(blStatus){//Если Studio запущена, то...
 					var vrModel = pyLMStudio.polModel()
 					if(vrModel){//Если модель не пустая строка, значит она загружена.
 						vprVopros.ntVopros = 1//1 - выгрузить модель?
@@ -451,7 +452,7 @@ Item {
 			}
 			text: {
 				if(ntVopros === 0) return qsTr("ОСТАНОВИТЬ ТРАНСКРИБАЦИЮ?")
-				else if(ntVopros === 1) return qsTr("В LM Studio загружена языковая модель. Выгрузить её?")
+				else if(ntVopros === 1) return qsTr(`В ${root.strStudioImya} загружена языковая модель. Выгрузить её?`)
 				else return qsTr("Любовь")
 			}
 			onVisibleChanged: {

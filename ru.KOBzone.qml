@@ -122,7 +122,11 @@ ApplicationWindow {
         target: pyLMStudio
 
 		function onSigAppName(strAppName) {//Обработка сигнала сообщений из Класса
-
+			root.strStudioImya = strAppName
+			tmSetStudio.strStudioImya = strAppName//Обновляем переменную имени студии в настройках студии.
+			tmAnalizer.strStudioImya = strAppName//Обновляем переменную имени студии в Нейро анализе.
+			tmTranscribe.strStudioImya = strAppName//Обновляем переменную имени студии в Транскрибации.
+			tmRAG.strStudioImya = strAppName//Обновляем переменную имени студии в RAG БД.
 		}
 	}
 	DCToolbar {
@@ -295,7 +299,7 @@ ApplicationWindow {
 				toolbarWidth: pgStrAnalizer.rctStrToolbar.width
 				toolbarHeight: pgStrAnalizer.rctStrToolbar.height
                 tapZagolovokLevi: 1.3; tapZagolovokPravi: 1.3; tapToolbarLevi: 1.3; tapToolbarPravi: 1.3
-				logoRazmer: root.logoRazmer; logoImya: root.logoImya
+				strStudioImya: root.strStudioImya; logoRazmer: root.logoRazmer; logoImya: root.logoImya
 				isMobile: root.isMobile
 				onClickedNazad: {
 					stvStr.pop()
@@ -321,15 +325,15 @@ ApplicationWindow {
 				}
 			}
 		}
-		Stranica {//Настройка нейро анализа 
-		///////////////////////////////////////
-		///Н А С Т Р О Й К А   А Н А Л И З А///
-		///////////////////////////////////////
+		Stranica {//Настройка студии
+		/////////////////////////////////////
+		///Н А С Т Р О Й К А   С Т У Д И И///
+		/////////////////////////////////////
 			id: pgStrSetStudio
 			visible: false; focus: true
 			ntWidth: root.ntWidth; ntCoff: root.ntCoff
 			clrFona: root.clrFona; clrTexta: root.clrKnopok; clrRabOblasti: root.clrStranic
-			textZagolovok: "НАСТРОЙКА LM STUDIO"
+			textZagolovok: `НАСТРОЙКА ${root.strStudioImya.toUpperCase()}`
 			zagolovokLevi: 1.3; zagolovokPravi: 1.3; toolbarLevi: 1.3; toolbarPravi: 1.3
 			onVisibleChanged: if (visible) Qt.callLater(function() { tmSetStudio.forceActiveFocus() })
 			SetStudio{
@@ -347,7 +351,7 @@ ApplicationWindow {
 				toolbarWidth: pgStrSetStudio.rctStrToolbar.width
 				toolbarHeight: pgStrSetStudio.rctStrToolbar.height
 				tapZagolovokLevi: 1.3; tapZagolovokPravi: 1.3; tapToolbarLevi: 1.3; tapToolbarPravi: 1.3
-				logoRazmer: root.logoRazmer; logoImya: root.logoImya
+				strStudioImya: root.strStudioImya; logoRazmer: root.logoRazmer; logoImya: root.logoImya
 				onClickedNazad: {
 					stvStr.pop()//Назад страницу
 					Qt.callLater(function() { stvStr.currentItem.forceActiveFocus() })
@@ -482,7 +486,7 @@ ApplicationWindow {
 				toolbarWidth: pgStrTranscribe.rctStrToolbar.width
 				toolbarHeight: pgStrTranscribe.rctStrToolbar.height
 				tapZagolovokLevi: 1.3; tapZagolovokPravi: 1.3; tapToolbarLevi: 1.3; tapToolbarPravi: 1.3
-				logoRazmer: root.logoRazmer; logoImya: root.logoImya
+				strStudioImya: root.strStudioImya; logoRazmer: root.logoRazmer; logoImya: root.logoImya
 				isMobile: root.isMobile
 				onClickedNazad: {
 					stvStr.pop()
@@ -574,7 +578,7 @@ ApplicationWindow {
 				toolbarWidth: pgStrRAG.rctStrToolbar.width
 				toolbarHeight: pgStrRAG.rctStrToolbar.height
 				tapZagolovokLevi: 1.3; tapZagolovokPravi: 1.3; tapToolbarLevi: 1.3; tapToolbarPravi: 1.3
-				logoRazmer: root.logoRazmer; logoImya: root.logoImya
+				strStudioImya: root.strStudioImya; logoRazmer: root.logoRazmer; logoImya: root.logoImya
 				isMobile: root.isMobile
 				onClickedNazad: {
 					stvStr.pop()

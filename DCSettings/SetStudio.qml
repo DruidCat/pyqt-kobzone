@@ -36,20 +36,21 @@ Item {
     
 	property int logoRazmer: 22//Размер Логотипа
     property string logoImya: "kobzone"//Имя логотипа в DCLogo
+	property string strStudioImya: "LM Studio"//LM Studio приложение по умолчанию, может быть Bionic.
 	property string __strProgress: ""//строка, которая будет в строке загрузки
 	//Массив кнопок для навигации
     property var knopkiMassiv: []//Массив кнопок, между которыми нужно листать.
     property int currentIndex: 0//Выбранная кнопка.
 	//Модель
-	property string putLMStudio: DCSettings.studio_lms_put//Путь к приложению LM Studio из реестра.
-	property string putCLI: DCSettings.studio_cli_put//Путь к cli lms LM Studio из реестра.
-	property string serverURL: DCSettings.studio_server_url//URL Сервера LM Studio
+	property string putLMStudio: DCSettings.studio_lms_put//Путь к приложению Studio из реестра.
+	property string putCLI: DCSettings.studio_cli_put//Путь к cli lms Studio из реестра.
+	property string serverURL: DCSettings.studio_server_url//URL Сервера Studio
 	property string strModel: DCSettings.studio_model_imya//Имя модели ИИ
 	property string strModelNoName: ""//Получаем имя модели ОТСУТСТВУЕТ.
 	property string strSandbox: DCSettings.studio_sandbox//имя программы, которая запускает в песочнице
 	property bool __isModelNoName: false//true - выбрана модель MODEL_NO_NAME, чтоб её выгрузить.
 	property int maxContext: DCSettings.studio_max_context//Максимальное количество токенов
-	property bool isStudioOn: false//true - LM Studio запущена.
+	property bool isStudioOn: false//true - Studio запущена.
 	property int gpuOffload: DCSettings.studio_gpu_offload
 	property bool isModelStart: false//true - первая иннициализация уже была
 	property bool isContextStart: false//true - первая иннициализация уже была
@@ -98,7 +99,7 @@ Item {
 			fnUstParametri()//Устанавливаем параметры root.strModel, ltMaxContext, ltTemperatura, ltGPU
 		isGpuOffloadStart = true
 	}	
-	onPutLMStudioChanged: {//Если путь к LM Studio изменился, то...
+	onPutLMStudioChanged: {//Если путь к Studio изменился, то...
 		if (root.putLMStudio !== ""){//Если он не пустой, то...
 			pyLMStudio.ustPutStudio(root.putLMStudio)//Передаём его в логику Python
 		}
@@ -110,10 +111,10 @@ Item {
 			root.log(logMsg)
 		}
         function onSigError(ntError, errorMsg) {
-			if(ntError === 3){//3 - Не удалось найти исполняемый файл LM Studio
+			if(ntError === 3){//3 - Не удалось найти исполняемый файл Studio
 				vprVopros.ntVopros = 3
 				vprVopros.visible = true
-			} else if (ntError === 6){//6 - LM Studio не запущен.
+			} else if (ntError === 6){//6 - Studio не запущен.
 				vprVopros.ntVopros = 6
 				vprVopros.visible = true
 			} else if (ntError === 9){//9 - CLI lms не найден. Укажите путь в настройках
@@ -134,12 +135,12 @@ Item {
 			}
         }
 		//0 - Ошибка HTTP при запросе списка моделей (сервер ответил кодом, отличным от 200).
-		//1 - Ошибка сетевого подключения к LM Studio (сервер недоступен или не запущен).
+		//1 - Ошибка сетевого подключения к Studio (сервер недоступен или не запущен).
 		//2 - Неизвестная критическая ошибка при парсинге или загрузке списка моделей.
-		//3 - Не удалось найти исполняемый файл LM Studio (требуется указать путь вручную в настройках).
+		//3 - Не удалось найти исполняемый файл Studio (требуется указать путь вручную в настройках).
 		//4 - Ошибка при инициализации процесса запуска (сбой до или во время создания потока).
-		//5 - Ошибка при попытке принудительной остановки процесса LM Studio (нет прав или процесс уже мертв).
-		//6 - LM Studio не запущен.
+		//5 - Ошибка при попытке принудительной остановки процесса Studio (нет прав или процесс уже мертв).
+		//6 - Studio не запущен.
 		//7 - Ошибка системного запуска процесса (сбой subprocess.Popen в фоновом потоке).
 		//8 - Превышено время ожидания запуска (сервер не стал доступен после 10 попыток по 3 секунды).
 		//9 - CLI lms не найден. Укажите путь в настройках
@@ -151,23 +152,23 @@ Item {
 		function onSigCLIPut(strCLIPut){//Если путь автоматически обнаружен, то он придёт из pyLMStudio
 			DCSettings.studio_cli_put	= strCLIPut;//Запоминаем в реестре настроек.
 		}
-		function onSigStudioStarted() {//Обработка сигнала старта LM Studio
-			root.__strProgress = qsTr("Загрузка LM Studio.")
+		function onSigStudioStarted() {//Обработка сигнала старта Studio
+			root.__strProgress = qsTr(`Загрузка ${root.strStudioImya}.`)
 			ldrProgress.active = true//Запускаем полосу прогресса
 		}
-		function onSigStudioStoped() {//Обработка сигнала остановки LM Studio
-			root.__strProgress = qsTr("Остановка LM Studio.")
+		function onSigStudioStoped() {//Обработка сигнала остановки Studio
+			root.__strProgress = qsTr(`Остановка ${root.strStudioImya}.`)
 			ldrProgress.active = true//Запускаем полосу прогресса
 		}
 		function onSigStudioZapuschen() {
-			root.isStudioOn = true//LM Studio запущена
+			root.isStudioOn = true//Studio запущена
 			vprVopros.visible = false
 			ldrProgress.active = false//Закрываем полосу прогресса
-			root.toolbar("LM Studio запущен!")
+			root.toolbar(`${root.strStudioImya} запущен!`)
 			pyLMStudio.proverkaServera()	
 		}
 		function onSigStudioOstanovlen() {
-			root.isStudioOn = false//LM Studio остановлена
+			root.isStudioOn = false//Studio остановлена
 			tmrStudioOstanovlen.running = true	
 		}		
 		function onSigStudioStatus(blStatus) {
@@ -178,7 +179,7 @@ Item {
 		}
 		function onSigServerZapuschen() {
 			if(pvModels.isServerZapustit){
-				root.toolbar("✓ Сервер LM Studio готов")
+				root.toolbar(`✓ Сервер ${root.strStudioImya} готов`)
 				pyLMStudio.zagruzitModeli()//Загружаем модели после запуска сервера
 				pvModels.visible = true//Делаем видимым виджет
 				pvModels.karusel.forceActiveFocus()//фокус PathView, чтоб hotkey работали.
@@ -295,7 +296,7 @@ Item {
 	}
 	FileDialog {
 		id: dialogLMPut
-		title: qsTr("Выберите путь к LM Studio")
+		title: qsTr(`Выберите путь к ${root.strStudioImya}`)
 		fileMode: FileDialog.OpenFile//Открыть один файл
 		nameFilters: {
 			if(Qt.platform.os === "windows") return ["Исполняемые файлы (*.exe)", "Все файлы (*)"]
@@ -314,13 +315,13 @@ Item {
 		onAccepted: {
 			var vrPut = fnUrlToLocalPath(selectedFile)//Используем кроссплатформенную функцию
 			DCSettings.studio_lms_put = vrPut
-			if(knopkaLMStart.isStartBezPuti){//Если путь к LM Studio выбран и была попытка старта, то...
+			if(knopkaLMStart.isStartBezPuti){//Если путь к Studio выбран и была попытка старта, то...
 				knopkaLMStart.isStartBezPuti = false;//Сбрасываем флаг.
-				pyLMStudio.zapustitStudio()//Запускаем LM Studio.
+				pyLMStudio.zapustitStudio()//Запускаем Studio.
 			}
-			if(knopkaLMStop.isStopBezPuti){//Если путь к LM Studio выбран и была попытка остановки, то...
+			if(knopkaLMStop.isStopBezPuti){//Если путь к Studio выбран и была попытка остановки, то...
 				knopkaLMStop.isStopBezPuti = false;//Сбрасываем флаг.
-				pyLMStudio.ostanovitStudio()//Останавливаем LM Studio.
+				pyLMStudio.ostanovitStudio()//Останавливаем Studio.
 			}
 		}
 		onRejected: {//Если нажата кнопка отмены, то...
@@ -369,7 +370,7 @@ Item {
     }
 	function fnClickedNazad() {
 		fnClickedEscape()//Функция нажатия на клавишу Escape
-		fnStudioStatus(false)//Функция, которая останавливает работу статуса работы LM Studio
+		fnStudioStatus(false)//Функция, которая останавливает работу статуса работы Studio
 		root.clickedNazad()
 	}
 	function fnClickedZakrit(){//Функция обрабатывающая кнопку Закрыть.
@@ -421,7 +422,7 @@ Item {
 			menuMenu.visible = true
 		}
 	}
-	function fnStudioStatus(blFlag){//Функция, которая запускает/останавливает работу статуса работы LM Studio
+	function fnStudioStatus(blFlag){//Функция, которая запускает/останавливает работу статуса работы Studio
 		if(blFlag){
 			pyLMStudio.proverkaStudio()
 			tmrStudio.running = true
@@ -496,17 +497,17 @@ Item {
 			})
 		}
 	}
-	function fnClickedLMSZapustit(){//Функция запуска LM Studio
+	function fnClickedLMSZapustit(){//Функция запуска Studio
 		if (root.putLMStudio === "") {//Если путь не задан
-			knopkaLMStart.isStartBezPuti = true;//Попутка запустить LM Studio.
-			dialogLMPut.open()//Функция выбора пути к LM Studio.
+			knopkaLMStart.isStartBezPuti = true;//Попутка запустить Studio.
+			dialogLMPut.open()//Функция выбора пути к Studio.
 		}
 		else pyLMStudio.zapustitStudio()
 	}
-	function fnClickedLMSZaktit() {//Функция закрытия LM Studio
+	function fnClickedLMSZaktit() {//Функция закрытия Studio
 		if (root.putLMStudio === "") {//Если путь не задан
-			knopkaLMStop.isStopBezPuti = true;//Попытка остановить LM Studio.
-			dialogLMPut.open()//Функция выбора пути к LM Studio.
+			knopkaLMStop.isStopBezPuti = true;//Попытка остановить Studio.
+			dialogLMPut.open()//Функция выбора пути к Studio.
 		}
 		else pyLMStudio.ostanovitStudio()
 	}
@@ -550,12 +551,12 @@ Item {
            pyLMStudio.proverkaStudio()
         }
     }
-	Timer {//ТАЙМЕР остановки LM Studio 
+	Timer {//ТАЙМЕР остановки Studio 
         id: tmrStudioOstanovlen
         interval: 1100; running: false; repeat: false
         onTriggered: {
 			ldrProgress.active = false//Закрываем полосу прогресса
-			root.toolbar("LM Studio остановлен")
+			root.toolbar(`${root.strStudioImya} остановлен`)
         }
     }
 	Item {//Заголовок
@@ -691,16 +692,16 @@ Item {
 			visible: false
 			property int ntVopros: 0//Смотри на номера ошибок sigError
 			text: {
-				if(ntVopros === 3) return qsTr("Путь к исполняемому файлу LM Studio не действительный. Задать?")
-				else if(ntVopros === 6) return qsTr("LM Studio не запущена. Запустить?")
+				if(ntVopros === 3) return qsTr(`Путь к исполняемому файлу ${root.strStudioImya} не действительный. Задать?`)
+				else if(ntVopros === 6) return qsTr(`${root.strStudioImya} не запущена. Запустить?`)
 				else if (ntVopros === 9) return qsTr("Путь к серверу lms не действительный. Задать?")
 				else return qsTr("Любовь")
 			}
 			function fnVoprosOk(flag){//Функция открытия вопроса по флагу
 				if(flag === 3){
-					dialogLMPut.open()//Функция выбора пути к LM Studio.
+					dialogLMPut.open()//Функция выбора пути к Studio.
 				} else if (flag === 6){
-					fnClickedLMSZapustit()//Функция запуска LM Studio
+					fnClickedLMSZapustit()//Функция запуска Studio
 				} else if (flag === 9){
 					fnClickedVvod(1)//Функция задания пути для cli lms
 				}
@@ -769,19 +770,19 @@ Item {
 				leftPadding: root.ntCoff * 2
 				rightPadding: root.ntCoff * 2
 				//ТУТ КОНТЕНТ НАСТРОЕК
-				DCKnopkaOriginal {//Кнопка запуска/остановки LM Studio
+				DCKnopkaOriginal {//Кнопка запуска/остановки Studio
 					id: knopkaLMStart
-					text: qsTr("запустить LM Studio")
+					text: qsTr(`запустить ${root.strStudioImya}`)
 					ntHeight: root.ntWidth; ntCoff: root.ntCoff
 					anchors.left: parent.left; anchors.right: parent.right
 					anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
                     clrKnopki: (root.currentIndex === 0) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
-					property bool isStartBezPuti: false//true - попытка запуска LM Studio без заданного пути.
+					property bool isStartBezPuti: false//true - попытка запуска Studio без заданного пути.
 					function fnPress() {
 						root.currentIndex = 0
-						fnClickedLMSZapustit()//Функция запуска LM Studio
+						fnClickedLMSZapustit()//Функция запуска Studio
 					}
 					onClicked: {
 						if (pressed) {
@@ -791,19 +792,19 @@ Item {
 						}
 					}
 				}
-				DCKnopkaOriginal {//Кнопка остановки LM Studio
+				DCKnopkaOriginal {//Кнопка остановки Studio
 					id: knopkaLMStop
-					text: qsTr("остановить LM Studio")
+					text: qsTr(`остановить ${root.strStudioImya}`)
 					ntHeight: root.ntWidth; ntCoff: root.ntCoff
 					anchors.left: parent.left; anchors.right: parent.right
 					anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
                     clrKnopki: (root.currentIndex === 1) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
-					property bool isStopBezPuti: false//true - попытка запуска LM Studio без заданного пути.
+					property bool isStopBezPuti: false//true - попытка запуска Studio без заданного пути.
 					function fnPress() {
 						root.currentIndex = 1
-						fnClickedLMSZaktit()//Функция закрытия LM Studio
+						fnClickedLMSZaktit()//Функция закрытия Studio
 					}
 					onClicked: {
 						if (pressed) {
@@ -813,10 +814,10 @@ Item {
 						}
 					}
 				}
-				DCKnopkaOriginal {//Кнопка выбора пути LM Studio 
+				DCKnopkaOriginal {//Кнопка выбора пути Studio 
                     id: knopkaLMPut
                     text: {
-                        let ltText = qsTr("путь к LM Studio: ");//
+                        let ltText = qsTr(`путь к ${root.strStudioImya}: `);//
 						if (root.putLMStudio === "") ltText += qsTr("не задан")
 						else {//Отображаем путь в зависимости от операционной системы
 							if (Qt.platform.os === "windows") ltText += root.putLMStudio.replace(/\//g, "\\");
@@ -832,7 +833,7 @@ Item {
                     opacityKnopki: 0.9
 					function fnPress() {
 						root.currentIndex = 2
-						dialogLMPut.open()//Функция выбора пути к LM Studio.
+						dialogLMPut.open()//Функция выбора пути к Studio.
 					}
 					onClicked: {
 						if (pressed) {

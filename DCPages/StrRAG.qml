@@ -39,6 +39,7 @@ Item {
     
 	property int logoRazmer: 22//Размер Логотипа
     property string logoImya: "kobzone"//Имя логотипа в DCLogo
+	property string strStudioImya: "LM Studio"//LM Studio приложение по умолчанию, может быть Bionic.
 	property bool isMobile: false//true - мобильное устройство
 	//Свойства для управления состоянием создания RAG
 	property bool isRAG: false//true - создание RAG началось.
@@ -144,7 +145,7 @@ Item {
 									DCSettings.rag_rejim, DCSettings.rag_perekritie)
 					}
 				}
-				if(blStatus){//Если LM Studio запущена, то...
+				if(blStatus){//Если Studio запущена, то...
 					if(pyLMStudio.polModel()){//Если модель не пустая строка, значит она загружена.
 						vprVopros.ntVopros = 1//1 - выгрузить модель?
 						vprVopros.visible = true
@@ -398,7 +399,7 @@ Item {
 			}
 			text: {
 				if(ntVopros === 0) return qsTr("ОСТАНОВИТЬ СОЗДАНИЕ RAG БАЗЫ ДАННЫХ?")
-				else if(ntVopros === 1) return qsTr("В LM Studio загружена языковая модель. Выгрузить её?")
+				else if(ntVopros === 1) return qsTr(`В ${root.strStudioImya} загружена языковая модель. Выгрузить её?`)
 				else return qsTr("Любовь")
 			}
 			onVisibleChanged: {

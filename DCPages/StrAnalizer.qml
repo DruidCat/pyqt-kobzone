@@ -39,6 +39,7 @@ Item {
     
     property int logoRazmer: 22//Размер Логотипа
     property string logoImya: "kobzone"//Имя логотипа в DCLogo
+	property string strStudioImya: "LM Studio"//LM Studio приложение по умолчанию, может быть Bionic.
 
 	property bool isServerZapustit: false//true - запускаем сервер для начала анализа
 	property bool isModelZagruzit: false//true - жду загрузки модели из StrAnalizer
@@ -172,11 +173,11 @@ Item {
         target: pyLMStudio
 	
         function onSigError(ntError, errorMsg) {
-			if(ntError === 3){//3 - Не удалось найти исполняемый файл LM Studio
+			if(ntError === 3){//3 - Не удалось найти исполняемый файл Studio
 				vprVopros.ntFlag = 3//3 - вопрос, что не найден cli lms
 				vprVopros.visible = true
-			} else if (ntError === 6){//6 - LM Studio не запущен.
-				vprVopros.ntFlag = 6//6 - вопрос, что не запустилась LM Studio
+			} else if (ntError === 6){//6 - Studio не запущен.
+				vprVopros.ntFlag = 6//6 - вопрос, что не запустилась Studio
 				vprVopros.visible = true
 			} else if (ntError === 9){//9 - CLI lms не найден. Укажите путь в настройках
 				vprVopros.ntFlag = 9//9 - вопрос, что не найден cli lms
@@ -191,12 +192,12 @@ Item {
 			root.isModelZagruzit = false//Сбрасываю флаг
         }
 		//0 - Ошибка HTTP при запросе списка моделей (сервер ответил кодом, отличным от 200).
-		//1 - Ошибка сетевого подключения к LM Studio (сервер недоступен или не запущен).
+		//1 - Ошибка сетевого подключения к Studio (сервер недоступен или не запущен).
 		//2 - Неизвестная критическая ошибка при парсинге или загрузке списка моделей.
-		//3 - Не удалось найти исполняемый файл LM Studio (требуется указать путь вручную в настройках).
+		//3 - Не удалось найти исполняемый файл Studio (требуется указать путь вручную в настройках).
 		//4 - Ошибка при инициализации процесса запуска (сбой до или во время создания потока).
-		//5 - Ошибка при попытке принудительной остановки процесса LM Studio (нет прав или процесс уже мертв).
-		//6 - LM Studio не запущен.
+		//5 - Ошибка при попытке принудительной остановки процесса Studio (нет прав или процесс уже мертв).
+		//6 - Studio не запущен.
 		//7 - Ошибка системного запуска процесса (сбой subprocess.Popen в фоновом потоке).
 		//8 - Превышено время ожидания запуска (сервер не стал доступен после 10 попыток по 3 секунды).
 		//9 - CLI lms не найден. Укажите путь в настройках
@@ -205,7 +206,7 @@ Item {
 		//12 - Ошибка остановки сервера
 		//13 - Модель не выбрана
 		//14 - Ошибка по Sandbox
-		function onSigStudioZapuschen() {//Если запущена LM Studio
+		function onSigStudioZapuschen() {//Если запущена Studio
 			vprVopros.visible = false//Эта строка закрывает плашку с вопросом, которая автоматич. появляется
 		}
 		function onSigServerZapuschen() {//Если сервер запустился, то начинаем анализ Документов.
@@ -567,9 +568,10 @@ Item {
 			visible: false
 			property int ntFlag: 0;//смотри ошибки в sigError
 			text: {
-				if(ntFlag === 3) return qsTr("Путь к исполняемому файлу LM Studio не действительный. Перейти к настройкам запуска LM Studio?")
-				else if(ntFlag === 6) return qsTr("LM Studio не запущена. Перейти к настройкам запуска LM Studio?")
-				else if (ntFlag === 9) return qsTr("Сервер LM Studio не запущен. Перейти к настройкам cli lms?")
+				if(ntFlag === 3)
+					return qsTr(`Путь к исполняемому файлу ${root.strStudioImya} не действительный. Перейти к настройкам запуска ${root.strStudioImya}?`)
+				else if(ntFlag === 6) return qsTr(`${root.strStudioImya} не запущена. Перейти к настройкам запуска ${root.strStudioImya}?`)
+				else if (ntFlag === 9) return qsTr(`Сервер ${root.strStudioImya} не запущен. Перейти к настройкам cli lms?`)
 				else if (ntFlag === 13) return qsTr("Модель не выбрана. Перейти к настройкам?")
 				else if (ntFlag === 22) return qsTr("ОСТАНОВИТЬ АНАЛИЗ ДОКУМЕНТОВ?")
 				else return qsTr("Любовь")
@@ -908,7 +910,7 @@ Item {
                 } else if (ntNomer === 4) {
                     fnClickedSohranit()//Функция сохранения результата анализа.
                 } else if (ntNomer === 5) {
-                    fnClickedMenu()//Функция открытия настроек LM Studio
+                    fnClickedMenu()//Функция открытия настроек Studio
                 }  else if (ntNomer === 6) {
                     fnClickedSidebar()//Функция нажатия кнопки SideBar.
                 }else if (ntNomer === 7) {
