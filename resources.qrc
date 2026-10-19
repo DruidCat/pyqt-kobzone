@@ -18,6 +18,8 @@
         <file>resources/images/high_priestess.png</file>
 		<file>resources/images/Qt_logo_2016.png</file>
 		<file>resources/images/DCButtons/24x24/DCKnopkaInfo.png</file>
+		<file>resources/images/DCButtons/24x24/DCKnopkaLM_1.png</file>
+		<file>resources/images/DCButtons/24x24/DCKnopkaLM_2.png</file>
         <file>resources/images/DCButtons/24x24/DCKnopkaMenu.png</file>
         <file>resources/images/DCButtons/24x24/DCKnopkaMinus.png</file>
         <file>resources/images/DCButtons/24x24/DCKnopkaNastroiki.png</file>
@@ -43,6 +45,8 @@
         <file>resources/images/DCButtons/24x24/DCKnopkaVidelit_2.png</file>  
         <file>resources/images/DCButtons/24x24/DCKnopkaSozdat_2.png</file>
 		<file>resources/images/DCButtons/48x48/DCKnopkaInfo.png</file>
+		<file>resources/images/DCButtons/48x48/DCKnopkaLM_1.png</file>
+		<file>resources/images/DCButtons/48x48/DCKnopkaLM_2.png</file>
         <file>resources/images/DCButtons/48x48/DCKnopkaMenu.png</file>
         <file>resources/images/DCButtons/48x48/DCKnopkaMinus.png</file>
         <file>resources/images/DCButtons/48x48/DCKnopkaNastroiki.png</file>
@@ -68,6 +72,8 @@
         <file>resources/images/DCButtons/48x48/DCKnopkaVidelit_1.png</file>
         <file>resources/images/DCButtons/48x48/DCKnopkaVidelit_2.png</file>
         <file>resources/images/DCButtons/96x96/DCKnopkaInfo.png</file>
+        <file>resources/images/DCButtons/96x96/DCKnopkaLM_1.png</file>
+        <file>resources/images/DCButtons/96x96/DCKnopkaLM_2.png</file>
         <file>resources/images/DCButtons/96x96/DCKnopkaMenu.png</file>
         <file>resources/images/DCButtons/96x96/DCKnopkaMinus.png</file>
         <file>resources/images/DCButtons/96x96/DCKnopkaNastroiki.png</file>
@@ -93,6 +99,8 @@
         <file>resources/images/DCButtons/96x96/DCKnopkaVidelit_1.png</file>
         <file>resources/images/DCButtons/96x96/DCKnopkaVidelit_2.png</file>
         <file>resources/images/DCButtons/144x144/DCKnopkaInfo.png</file>
+        <file>resources/images/DCButtons/144x144/DCKnopkaLM_1.png</file>
+        <file>resources/images/DCButtons/144x144/DCKnopkaLM_2.png</file>
         <file>resources/images/DCButtons/144x144/DCKnopkaMenu.png</file>
         <file>resources/images/DCButtons/144x144/DCKnopkaMinus.png</file>
         <file>resources/images/DCButtons/144x144/DCKnopkaNastroiki.png</file>

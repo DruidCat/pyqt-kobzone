@@ -20,7 +20,6 @@ TODO:
 - DCRAGMake, отсекание мусора сделать умным Boilerplate Removal/Document Cleaning (Удаление шаблонного мусора)
 - DCMarkdown, символ $\rightarrow$ не отрисовывается.
 - SetStudio, Переписать пейсхолдер с путями putCLI под разные операционные системы.
-- StrInstrukciya, SetStudio, значёк LM активный/не активный показать что он означает.
 
 
 ПОЧИНИЛ:
@@ -266,3 +265,4 @@ TODO:
 2026-10-19 SetStudio, sandbox, карусель автоматически не выставляется. Исправил.
 2026-10-19 SetStudio, если macOS, то knopkaSandbox enabled: false всегда.
 2026-10-19 SetStudio, если путь к Студии и путь к lms не заполненны, то sandbox не активен.
+2026-10-19 StrInstrukciya, SetStudio, значёк LM активный/не активный описал, что он означает.
