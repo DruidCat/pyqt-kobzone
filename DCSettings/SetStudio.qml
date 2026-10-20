@@ -140,12 +140,14 @@ Item {
 				vprVopros.ntVopros = 9
 				vprVopros.visible = true
 			} else if (ntError === 10) {//10 - Модель не загрузилась
-            	root.toolbar(`Ошибка ${ntError}: ${errorMsg}`)
-			} else if (ntError === 14) {//14 - Ошибка по Sandbox
-            	root.toolbar(`Ошибка ${ntError}: ${errorMsg}`)
+				//Тут отобразится сообщение if(ntError !== 13)
+			} else if (ntError === 14) {//14 - Ошибка по Sandbox, если песочница не та или не установлена, то.
+				pvSandbox.currentIndex = 0//Первый элемент sandbox = выкл
+				root.strSandbox = ""//Сохраняем значение
+				DCSettings.studio_sandbox = ""//записываем в реестр.
 			}
 			if(ntError !== 13){//Если это не пуста модель, то...
-            	root.toolbar(`Ошибка ${ntError}: ${errorMsg}`)
+            	root.toolbar(`Ошибка: ${errorMsg}`)
 				pvModels.isServerZapustit = false
 				ldrProgress.active = false
 			} else if(root.__isModelNoName){//Если выгрузка модели, то...
@@ -648,8 +650,8 @@ Item {
 				placeholderText: {//Подсказки пользователю
 					if (ntVvod === 0) return qsTr("8000-131072")
 					else if(ntVvod === 1) {
-						if (Qt.platform.os === "windows") return qsTr("~\\.lmstudio\\bin\\lms.exe")
-						else return qsTr("~/.lmstudio/bin/lms")
+						if (Qt.platform.os === "windows") return "~\\.lmstudio\\bin\\lms.exe"
+					   	return "~/.lmstudio/bin/lms"
 					} else if(ntVvod === 2) return qsTr("0-100")
 					else if(ntVvod === 3) return qsTr("http://127.0.0.1:1234")
 				}
