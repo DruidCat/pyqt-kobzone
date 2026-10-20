@@ -159,6 +159,75 @@ python main.py
    - Установите Sandboxie или Sandboxie Plus, чтоб запускать LM Studio или Bionic в защищённой песочнице (sandbox).
    - Для этого cкачайте Sandboxie или Sandboxie Plus с официального сайта: https://sandboxie-plus.com/downloads/
 
+
+### macOS
+
+1. **Установите Python 3.13:**
+   - Скачайте Python 3.13 с официального сайта: https://www.python.org/downloads/macos/
+   - Запустите скачанный `.pkg` установщик и следуйте инструкциям (в macOS Python автоматически добавляется в PATH)
+   - Убедитесь, что установка прошла успешно, открыв Терминал и введя команду `python3 --version`
+
+2. **Установите Git (опционально):**
+   - Скачайте с https://git-scm.com/download/mac
+   - Или скачайте проект напрямую как ZIP-архив с GitHub
+
+3. **Клонируйте репозиторий:**
+
+Через стандартный Терминал (Terminal):
+```bash
+git clone https://github.com/DruidCat/pyqt-kobzone.git
+cd pyqt-kobzone
+```
+
+Или распакуйте скачанный ZIP-архив и откройте эту папку в Терминале (например, через правый клик по папке → «Новый терминал по адресу папки» или командой `cd` после перетаскивания папки в окно терминала).
+
+4. **Создайте виртуальное окружение:**
+Через Терминал:
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+```bash
+# Когда ты попадёшь в виртуальное пространство venv, из него можно будет выйти командой
+deactivate
+```
+
+5. **Установите зависимости:**
+
+```bash
+python3 -m pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+6. **Создание ресурсов:**
+
+```bash
+python3 DCScripts/DCCompileRCC.py
+```
+
+7. **Установите LM Studio или Bionic:**
+   - Скачайте LM Studio или Bionic для macOS (выберите версию Universal, Apple Silicon или Intel в зависимости от вашего Mac): https://lmstudio.ai/download
+   - Откройте скачанный `.dmg` образ и перетащите приложение в папку «Программы» (Applications)
+   - После установки запустите LM Studio или Bionic (при первом запуске macOS может потребовать подтвердить открытие приложения в Системных настройках)
+
+8. **Настройте LM Studio или Bionic:**
+   - Запустите LM Studio или Bionic
+   - Скачайте нужную языковую модель (рекомендуется начать с моделей до 7B параметров)
+   - Перейдите во вкладку "Developer" -> "Status: Running"
+   - Запустите локальный сервер "Running" (по умолчанию Base URL http://localhost:1234)
+
+9. **Запустите приложение:**
+
+```bash
+python3 main.py
+```
+
+10. **Работа в sandbox:**
+   - Запуск LM Studio или Bionic в sandbox не поддерживается.
+   - Для безопасности данных создайте отдельную учётную запись и в ней запускайте LM Studio или Bionic.
+
+
 ## Структура проекта
 
 ```
