@@ -144,7 +144,9 @@ Item {
 			} else if (ntError === 14) {//14 - Ошибка по Sandbox, если песочница не та или не установлена, то.
 				pvSandbox.currentIndex = 0//Первый элемент sandbox = выкл
 				root.strSandbox = ""//Сохраняем значение
-				DCSettings.studio_sandbox = ""//записываем в реестр.
+				Qt.callLater(function(){//Важна небольшая пауза, иначе запищется этот а потом другой sandbox
+					DCSettings.studio_sandbox = ""//записываем в реестр.
+				})
 			}
 			if(ntError !== 13){//Если это не пуста модель, то...
             	root.toolbar(`Ошибка: ${errorMsg}`)
