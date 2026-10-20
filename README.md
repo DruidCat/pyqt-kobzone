@@ -84,6 +84,14 @@ chmod +x lmstudio.AppImage
 python main.py
 ```
 
+9. **Установите sandbox firejail:**
+
+```bash
+# Установите firejail, чтоб запускать LM Studio или Bionic в защищённой песочнице (sandbox).
+sudo apt install firejail
+```
+
+
 ### Windows 10, 11
 
 1. **Установите Python 3.13:**
@@ -146,6 +154,10 @@ python DCScripts/DCCompileRCC.py
 ```cmd
 python main.py
 ```
+
+10. **Установите sandbox Sandboxie или Sandboxie Plus:**
+   - Установите Sandboxie или Sandboxie Plus, чтоб запускать LM Studio или Bionic в защищённой песочнице (sandbox).
+   - Для этого cкачайте Sandboxie или Sandboxie Plus с официального сайта: https://sandboxie-plus.com/downloads/
 
 ## Структура проекта
 
