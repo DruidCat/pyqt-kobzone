@@ -428,7 +428,6 @@ class DCLMStudio(QObject):
         zapuschen = self._proverkaServeraZapuschen()
         self._server_zapuschen = zapuschen
         self.sigServerStatus.emit(zapuschen)
-        self.sigLog.emit(f"Сервер {self.APP_NAME}: {'запущен' if zapuschen else 'остановлен'}")
         return zapuschen
 
     @pyqtSlot()

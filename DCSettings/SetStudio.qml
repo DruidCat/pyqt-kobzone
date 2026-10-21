@@ -52,6 +52,7 @@ Item {
 	property bool __isModelNoName: false//true - выбрана модель MODEL_NO_NAME, чтоб её выгрузить.
 	property int maxContext: DCSettings.studio_max_context//Максимальное количество токенов
 	property bool isStudioOn: false//true - Studio запущена.
+	property bool isServerLMS: false//true - сервер lms запущена на стороне LM Studio или Bionic.
 	property int gpuOffload: DCSettings.studio_gpu_offload
 	property bool isModelStart: false//true - первая иннициализация уже была
 	property bool isContextStart: false//true - первая иннициализация уже была
@@ -184,14 +185,12 @@ Item {
 			ldrProgress.active = true//Запускаем полосу прогресса
 		}
 		function onSigStudioZapuschen() {
-			root.isStudioOn = true//Studio запущена
 			vprVopros.visible = false
 			ldrProgress.active = false//Закрываем полосу прогресса
 			root.toolbar(`${root.strStudioImya} запущен!`)
 			pyLMStudio.proverkaServera()	
 		}
 		function onSigStudioOstanovlen() {
-			root.isStudioOn = false//Studio остановлена
 			tmrStudioOstanovlen.running = true	
 		}		
 		function onSigStudioStatus(blStatus) {
@@ -213,7 +212,7 @@ Item {
 			root.toolbar("Сервер остановлен")
 		}
 		function onSigServerStatus(blStatus) {
-
+			root.isServerLMS = blStatus
 		}
 		function onSigServerError(strError) {
 			root.log(strError)//В лог
@@ -393,7 +392,7 @@ Item {
     }
 	function fnClickedNazad() {
 		fnClickedEscape()//Функция нажатия на клавишу Escape
-		fnStudioStatus(false)//Функция, которая останавливает работу статуса работы Studio
+		fnServerStatus(false)//Функция, которая останавливает мониторинг сервера lms
 		root.clickedNazad()
 	}
 	function fnClickedZakrit(){//Функция обрабатывающая кнопку Закрыть.
@@ -445,14 +444,8 @@ Item {
 			menuMenu.visible = true
 		}
 	}
-	function fnStudioStatus(blFlag){//Функция, которая запускает/останавливает работу статуса работы Studio
-		if(blFlag){
-			pyLMStudio.proverkaStudio()
-			tmrStudio.running = true
-		} else {
-			root.isStudioOn = false//Сбрасываем флаг
-			tmrStudio.running = false
-		}
+	function fnServerStatus(blFlag){//Функция,которая проверку запуска сервера lms на стороне LM Studio Bionic
+		tmrServerLMS.running = blFlag//Запускаем/останавливаем мониторинг запуска lms сервера
 	}
 	function fnCloseMenuIfOpen() {
 		if (menuMenu.visible) {
@@ -524,15 +517,13 @@ Item {
 		if (root.putLMStudio === "") {//Если путь не задан
 			knopkaLMStart.isStartBezPuti = true;//Попутка запустить Studio.
 			dialogLMPut.open()//Функция выбора пути к Studio.
-		}
-		else pyLMStudio.zapustitStudio()
+		} else pyLMStudio.zapustitStudio()
 	}
 	function fnClickedLMSZaktit() {//Функция закрытия Studio
 		if (root.putLMStudio === "") {//Если путь не задан
 			knopkaLMStop.isStopBezPuti = true;//Попытка остановить Studio.
 			dialogLMPut.open()//Функция выбора пути к Studio.
-		}
-		else pyLMStudio.ostanovitStudio()
+		} else pyLMStudio.ostanovitStudio()
 	}
 	function fnClickedVvod(vvod){//Функция выбора Ввода данных
 		txnVvod.ntVvod = vvod
@@ -568,10 +559,10 @@ Item {
 		return path
 	}
 	Timer {//ТАЙМЕР анимации логотипа
-        id: tmrStudio
+        id: tmrServerLMS
         interval: 3300; running: false; repeat: true
         onTriggered: {
-           pyLMStudio.proverkaStudio()
+			pyLMStudio.proverkaServera()
         }
     }
 	Timer {//ТАЙМЕР остановки Studio 
@@ -600,7 +591,7 @@ Item {
             clrKnopki: root.clrTexta; clrFona: root.clrFona
             tapHeight: root.ntWidth * root.ntCoff + root.ntCoff; tapWidth: tapHeight * root.tapZagolovokPravi
 			enabled: false
-			isLMZapuschen: root.isStudioOn
+			isLMZapuschen: root.isServerLMS
         }
 		DCKnopkaZakrit {
             id: knopkaZakrit

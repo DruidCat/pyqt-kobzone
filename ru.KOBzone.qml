@@ -307,7 +307,7 @@ ApplicationWindow {
 					Qt.callLater(function() { stvStr.currentItem.forceActiveFocus() })
 				}
 				onClickedSettings: {
-					tmSetStudio.fnStudioStatus(true)//Функция, которая запускает работу статуса работы LMS
+					tmSetStudio.fnServerStatus(true)//Функция, которая запускает работу статуса сервера LMS
 					stvStr.push(pgStrSetStudio)
 				}
 				onClickedInfo: {
