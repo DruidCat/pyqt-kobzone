@@ -7,14 +7,8 @@ import threading
 from pathlib import Path
 from PyQt6.QtCore import QObject, pyqtSignal, pyqtSlot, QTimer
 from DCScripts.DCLMSandbox import DCLMSandbox, SandboxNotAvailable
+from DCScripts.DCLMHDD import DCLMHDD, AppSpec
 from dataclasses import dataclass
-
-@dataclass(frozen=True)
-class AppSpec:
-    display_name: str
-    linux_pgrep_pattern: str     # regex для pgrep (Linux)
-    mac_pgrep_pattern: str       # regex для pgrep (macOS)
-    windows_image_name: str      # имя процесса для taskkill/tasklist (Windows)
 
 class DCLMStudio(QObject):
     """Управление LM Studio/Bionic: запуск/остановка и работа с моделями"""
@@ -63,6 +57,7 @@ class DCLMStudio(QObject):
 
     def __init__(self):
         super().__init__()
+        self._hdd = DCLMHDD(log_callback=self.sigLog.emit)
         # Управление моделями
         self._current_model = ""
         self._models_list = []
@@ -115,147 +110,18 @@ class DCLMStudio(QObject):
         Args:
             server_url: Адрес сервера (например: http://localhost:1234)
         
-        Returns:
+        Return:
             True - если URL корректен
             False - если URL некорректен
         """
-        import re
-        
-        if not server_url:
-            return False
-        
-        # Удаляем пробелы по краям
-        server_url = server_url.strip()
-        
-        # Проверяем максимальную длину (30 символов)
-        if len(server_url) > 30:
-            self.sigLog.emit(f"⚠ URL слишком длинный: {len(server_url)} символов (максимум 30)")
-            return False
-        
-        # Регулярное выражение для проверки формата
-        # Допустимые форматы:
-        # http://localhost:порт
-        # http://127.0.0.1:порт
-        # http://IP:порт (например: http://192.168.1.100:1234)
-        pattern = re.compile(
-            r'^http://'                          # Обязательно начинается с http://
-            r'('                                 # Начало группы для хоста
-            r'localhost|'                        # localhost ИЛИ
-            r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}'  # IP адрес (например: 127.0.0.1)
-            r')'                                 # Конец группы для хоста
-            r':'                                 # Обязательное двоеточие
-            r'(\d{1,5})'                         # Порт (от 1 до 5 цифр)
-            r'$'                                 # Конец строки
-        )
-        
-        match = pattern.match(server_url)
-        
-        if not match:
-            self.sigLog.emit(f"⚠ Неверный формат URL: {server_url}")
-            self.sigLog.emit("   Допустимый формат: http://localhost:1234 или http://127.0.0.1:1234")
-            return False
-        
-        # Проверяем корректность IP адреса (если не localhost)
-        host = match.group(1)
-        port = int(match.group(2))
-        
-        if host != "localhost":
-            # Проверяем, что каждый октет IP <= 255
-            octets = host.split('.')
-            for octet in octets:
-                if int(octet) > 255:
-                    self.sigLog.emit(f"⚠ Неверный IP адрес: {host} (октет {octet} > 255)")
-                    return False
-        
-        # Проверяем корректность порта (1-65535)
-        if port < 1 or port > 65535:
-            self.sigLog.emit(f"⚠ Неверный порт: {port} (допустимый диапазон: 1-65535)")
-            return False
-        
-        # Все проверки пройдены
-        self.sigLog.emit(f"✓ URL корректен: {server_url}")
-        return True
+        return self._hdd.proverka_server_url(server_url)
 
     @pyqtSlot(str, result=bool)
     def proverkaLMSFaila(self, file_path: str) -> bool:
         """
         Проверяет, является ли файл корректным исполняемым файлом lms CLI
         """
-        if not file_path:
-            return False
-        
-        try:
-            path = Path(file_path).expanduser().resolve()
-            
-            if not path.is_file():
-                self.sigLog.emit(f"⚠ Файл не найден: {file_path}")
-                return False
-            
-            file_name = path.name.lower()
-            file_stem = path.stem.lower()
-            file_suffix = path.suffix.lower()
-            
-            current_os = platform.system()
-            
-            if current_os == "Linux":
-                if file_name == "lms":
-                    # ✅ ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА: файл исполняемый?
-                    import os
-                    if os.access(path, os.X_OK):
-                        self.sigLog.emit(f"✓ Найден lms для Linux: {path}")
-                        return True
-                    else:
-                        self.sigLog.emit(f"⚠ Файл не исполняемый: {path}")
-                        self.sigLog.emit(f"   Выполните: chmod +x {path}")
-                        return False
-                else:
-                    self.sigLog.emit(f"⚠ Неверное имя файла для Linux: {file_name}")
-                    self.sigLog.emit(f"   Ожидается: lms")
-                    return False
-            
-            elif current_os == "Darwin":  # macOS
-                if file_name == "lms" or file_suffix == ".app":
-                    if file_stem == "lms" or file_name == "lms":
-                        # ✅ ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА для обычного файла
-                        if file_suffix != ".app":
-                            import os
-                            if not os.access(path, os.X_OK):
-                                self.sigLog.emit(f"⚠ Файл не исполняемый: {path}")
-                                self.sigLog.emit(f"   Выполните: chmod +x {path}")
-                                return False
-                        
-                        self.sigLog.emit(f"✓ Найден lms для macOS: {path}")
-                        return True
-                    else:
-                        self.sigLog.emit(f"⚠ Неверное имя файла для macOS: {file_name}")
-                        self.sigLog.emit(f"   Ожидается: lms или lms.app")
-                        return False
-                else:
-                    self.sigLog.emit(f"⚠ Неверное расширение для macOS: {file_suffix}")
-                    self.sigLog.emit(f"   Ожидается: (без расширения) или .app")
-                    return False
-            
-            elif current_os == "Windows":
-                if file_suffix == ".exe":
-                    if file_stem == "lms":
-                        self.sigLog.emit(f"✓ Найден lms для Windows: {path}")
-                        return True
-                    else:
-                        self.sigLog.emit(f"⚠ Неверное имя файла для Windows: {file_name}")
-                        self.sigLog.emit(f"   Ожидается: lms.exe")
-                        return False
-                else:
-                    self.sigLog.emit(f"⚠ Неверное расширение для Windows: {file_suffix}")
-                    self.sigLog.emit(f"   Ожидается: .exe")
-                    return False
-            
-            else:
-                self.sigLog.emit(f"⚠ Неподдерживаемая ОС: {current_os}")
-                return False
-        
-        except Exception as e:
-            self.sigLog.emit(f"✗ Ошибка проверки файла: {str(e)}")
-            return False
+        return self._hdd.proverka_lms_faila(file_path)
 
     @pyqtSlot(str, result=bool)
     def proverkaFaila(self, file_path: str) -> bool:
@@ -263,19 +129,7 @@ class DCLMStudio(QObject):
         Проверяет, существует ли файл по указанному пути.
         Работает со скрытыми файлами (.file) и путями с ~ (домашняя директория).
         """
-        if not file_path:
-            return False
-            
-        try:
-            # expanduser() превращает ~/ в /home/user/, что критично для Linux
-            # resolve() очищает путь от лишних ./ или ../
-            path = Path(file_path).expanduser().resolve()
-            
-            # is_file() проверяет, что это именно файл, а не папка
-            return path.is_file()
-            
-        except Exception:
-            return False
+        return self._hdd.proverka_faila(file_path)
 
     # ==================== РАБОТА С SANDBOX ====================
     @pyqtSlot(str)
@@ -445,64 +299,24 @@ class DCLMStudio(QObject):
         self._cli_path = path
         print(f"✓ Путь к lms CLI: {path}")
 
-    def _naitiLMS_CLI(self):
-        """Находит путь к lms CLI"""
-        # Если задан пользовательский путь
-        if self._cli_path:
-            cli = Path(self._cli_path)
-            if cli.exists():
-                print(f"✓ Используется путь к CLI из настроек: {cli}")
-                return str(cli)
-        
-        # Автопоиск в стандартных местах
-        home = Path.home()
-        
-        if platform.system() == "Linux" or platform.system() == "Darwin":
-            search_paths = [
-                home / ".lmstudio" / "bin" / "lms",
-                home / ".local" / "bin" / "lms",
-                Path("/usr/local/bin/lms"),
-                Path("/usr/bin/lms"),
-            ]
-            
-            for path in search_paths:
-                if path.exists():
-                    print(f"✓ Найден lms CLI: {path}")
-                    self.sigCLIPut.emit(str(path))
-                    return str(path)
-        
-        elif platform.system() == "Windows":
-            import os
-            search_paths = [
-                Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "LMStudio" / "lms.exe",
-                Path(os.environ.get("APPDATA", "")) / "LMStudio" / "lms.exe",
-            ]
-            
-            for path in search_paths:
-                if path.exists():
-                    print(f"✓ Найден lms CLI: {path}")
-                    self.sigCLIPut.emit(str(path))
-                    return str(path)
-        
-        # Проверяем, доступен ли lms в PATH
-        try:
-            result = subprocess.run(
-                ["which", "lms"] if platform.system() != "Windows" else ["where", "lms"],
-                capture_output=True,
-                text=True,
-                timeout=2
-            )
-            if result.returncode == 0:
-                lms_path = result.stdout.strip().split('\n')[0]
-                print(f"✓ Найден lms в PATH: {lms_path}")
-                self.sigCLIPut.emit(lms_path)
-                return lms_path
-        except:
-            pass
-        
-        error_msg = "CLI lms не найден. Укажите путь в настройках (~/.lmstudio/bin/lms)"
-        self._emit_error(9, error_msg)
-        return None
+    def _naitiLMS_CLI(self) -> str | None:
+        """
+        ФАСАДНЫЙ метод: DCLMHDD ищет CLI, а DCLMStudio:
+        - эмитит sigCLIPut (чтобы QML сохранил в DCSettings)
+        - генерирует _emit_error(9), если не найдено
+        """
+        lms_cli = self._hdd.find_lms_cli(preferred_path=self._cli_path)
+
+        if not lms_cli:
+            self._emit_error(9, "CLI lms не найден. Укажите путь в настройках (~/.lmstudio/bin/lms)")
+            return None
+
+        # если нашли новый путь — сохраняем и уведомляем QML
+        if lms_cli != self._cli_path:
+            self._cli_path = lms_cli
+            self.sigCLIPut.emit(lms_cli)
+
+        return lms_cli
 
     @pyqtSlot()
     def zapustitServer(self):
@@ -903,104 +717,25 @@ class DCLMStudio(QObject):
             else:
                 self.sigLog.emit(f"⏳ Попытка {self._popitki}/{self._max_popitok}...")
     
-    def _naitiLMStudio(self):
-        """Находит путь к LM Studio/Bionic"""
-        if self._custom_path:
-            custom = Path(self._custom_path)
-            if custom.exists():
-                print(f"✓ Используется путь из настроек: {custom}")
-                return custom
-            else:
-                print(f"⚠ Путь из настроек не существует: {custom}")
-        
-        home = Path.home()
-        
-        if platform.system() == "Linux":
-            paths = [
-                home / ".local" / "share" / "applications" / "LM-Studio.AppImage",
-                home / "Applications" / "LM-Studio.AppImage",
-                home / ".cache" / "lmstudio" / "LM-Studio.AppImage",
-                Path("/opt/LM-Studio/LM-Studio.AppImage")
-            ]
-            
-            desktop_file = home / ".local" / "share" / "applications" / "lm-studio.desktop"
-            if desktop_file.exists():
-                try:
-                    with open(desktop_file, 'r') as f:
-                        for line in f:
-                            if line.startswith("Exec="):
-                                exec_path = line.split("=", 1)[1].strip().split()[0]
-                                exec_path = exec_path.replace('"', '').replace("'", '')
-                                path = Path(exec_path)
-                                if path.exists():
-                                    print(f"✓ Найден через .desktop: {path}")
-                                    try:
-                                        self._apply_app_spec(self._detect_app_spec_from_path(str(path)))
-                                    except Exception:
-                                        pass
-                                    return path
-                except Exception as e:
-                    print(f"⚠ Ошибка чтения .desktop: {e}")
-        
-        elif platform.system() == "Darwin":
-            paths = [
-                Path("/Applications/LM Studio.app"),
-                home / "Applications" / "LM Studio.app"
-            ]
-        
-        elif platform.system() == "Windows":
-            import os
-            paths = [
-                Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "LM Studio" / "LM Studio.exe",
-                Path(os.environ.get("PROGRAMFILES", "")) / "LM Studio" / "LM Studio.exe",
-                Path(os.environ.get("PROGRAMFILES", "")) / "Bionic" / "Bionic.exe"
-            ]
-        else:
+    def _naitiLMStudio(self) -> Path | None:
+        """
+        ФАСАДНЫЙ метод поиска приложения.
+        Реальный поиск выполняет DCLMHDD, а фасад:
+        - применяет AppSpec (обновит APP_NAME и отправит sigAppName)
+        """
+        app_path = self._hdd.find_app_path(custom_path=self._custom_path)
+        if not app_path:
             return None
-        
-        for path in paths:
-            if path.exists():
-                try:
-                    self._apply_app_spec(self._detect_app_spec_from_path(str(path)))
-                except Exception:
-                    pass
 
-                print(f"✓ Найден {self.APP_NAME}: {path}")
-                return path
-        
-        if platform.system() == "Linux":
-            appimage = self._naitiAppImage()
-            if appimage:
-                return appimage
-        
-        return None
-    
-    def _naitiAppImage(self):
-        """Рекурсивный поиск AppImage (только Linux)"""
-        search_dirs = [
-            Path.home() / ".local" / "share",
-            Path.home() / "Applications",
-            Path.home() / "Downloads",
-            Path.home() / ".cache"
-        ]
-        
-        for base_dir in search_dirs:
-            if not base_dir.exists():
-                continue
-            
-            try:
-                for item in base_dir.iterdir():
-                    if item.is_file():
-                        name_lower = item.name.lower()
-                        if ("lm" in name_lower and "studio" in name_lower and 
-                            item.suffix.lower() == ".appimage"):
-                            print(f"✓ Найден через поиск: {item}")
-                            return item
-            except PermissionError:
-                continue
-        
-        return None
+        # Применяем AppSpec (LM Studio/Bionic) по имени файла
+        try:
+            spec = self._detect_app_spec_from_path(str(app_path))
+            self._apply_app_spec(spec)
+        except Exception as e:
+            self.sigLog.emit(f"⚠ Не удалось определить тип приложения: {e}")
 
+        return app_path
+        
     def _proverkaServeraZapuschen(self):
         """Внутренняя проверка статуса сервера"""
         try:
@@ -1394,37 +1129,10 @@ class DCLMStudio(QObject):
 
     def _detect_app_spec_from_path(self, app_path: str) -> AppSpec:
         """
-        Определяет LM Studio или Bionic по имени файла.
-        Поддерживает AppImage с версиями (LM-Studio-0.4.26-...AppImage и т.п.)
-        и Windows exe (Bionic.exe).
+        Обёртка над DCLMHDD.detect_app_spec_from_path.
+        Оставляем это имя, чтобы не менять остальной код.
         """
-        p = Path(app_path).expanduser().resolve()
-        filename = p.name.lower()        # например "LM-Studio-0.4.26-4-linux-x64.AppImage" -> lower
-        stem = p.stem.lower()            # имя без расширения
-
-        s = f"{filename} {stem}"
-
-        # Bionic
-        if "bionic" in s:
-            return AppSpec(
-                display_name="Bionic",
-                linux_pgrep_pattern=r"(bionic)",
-                mac_pgrep_pattern=r"(Bionic|bionic)",
-                windows_image_name="Bionic.exe",
-            )
-
-        # LM Studio (варианты: lm-studio, lm studio, lmstudio)
-        if ("lm-studio" in s) or ("lm studio" in s) or ("lmstudio" in s):
-            return AppSpec(
-                display_name="LM Studio",
-                linux_pgrep_pattern=r"(lm[- ]?studio|lmstudio|lm-studio)",
-                mac_pgrep_pattern=r"(LM Studio|lmstudio|lm-studio)",
-                windows_image_name="LM Studio.exe",
-            )
-
-        # Если не распознали — оставляем текущее (или дефолт LM Studio)
-        return self._app_spec
-
+        return self._hdd.detect_app_spec_from_path(app_path, fallback=self._app_spec)
 
     def _apply_app_spec(self, spec: AppSpec) -> None:
         """Применяет AppSpec и обновляет APP_NAME для логов/команд."""
