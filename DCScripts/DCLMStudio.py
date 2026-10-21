@@ -9,6 +9,7 @@ from PyQt6.QtCore import QObject, pyqtSignal, pyqtSlot, QTimer
 from DCScripts.DCLMSandbox import DCLMSandbox, SandboxNotAvailable
 from DCScripts.DCLMHDD import DCLMHDD, AppSpec
 from DCScripts.DCLMApp import DCLMApp
+from DCScripts.DCLMAPI import DCLMAPI
 from dataclasses import dataclass
 
 class DCLMStudio(QObject):
@@ -60,6 +61,7 @@ class DCLMStudio(QObject):
         super().__init__()
         self._hdd = DCLMHDD(log_callback=self.sigLog.emit)
         self._app = DCLMApp(log_callback=self.sigLog.emit)
+        self._api = DCLMAPI(log_callback=self.sigLog.emit)
         # Управление моделями
         self._current_model = ""
         self._models_list = []
@@ -179,45 +181,32 @@ class DCLMStudio(QObject):
 
     # ==================== РАБОТА С МОДЕЛЯМИ ====================
     @pyqtSlot()
+    @pyqtSlot()
     def zagruzitModeli(self):
-        """Загружает список доступных моделей из LM Studio/Bionic"""
-        try:
-            response = requests.get(
-                f"{self._server_url}/models",
-                timeout=self.TIMEOUT_MODEL_LIST
-            )
-            
-            if response.status_code == 200:
-                data = response.json()
-                models = []
-                
-                # Добавляем опцию "отсутствует" ПЕРВЫМ элементом
-                models.append(self.NO_MODEL_NAME)  # "отсутствует" первым
+        """Загружает список доступных моделей из LM Studio/Bionic (через DCLMAPI)"""
+        success, models, error_msg = self._api.fetch_models(
+            self._server_url,
+            timeout=self.TIMEOUT_MODEL_LIST
+        )
 
-                # Добавляем реальные модели (фильтруем embedding)
-                for model_info in data.get("data", []):
-                    model_id = model_info.get("id", "")
-                    if model_id and "embed" not in model_id.lower():
-                        models.append(model_id)
-                
-                self._models_list = models
-                self.sigModelsLoaded.emit(models)
-                
-                print(f"✓ Загружено моделей: {len(models) - 1}")  # -1 для автовыбора
-            else:
-                error_msg = f"HTTP {response.status_code}: {response.text}"
+        if not success:
+            # Определяем код ошибки по типу (упрощенно)
+            if "подключиться" in error_msg.lower():
+                self._emit_error(1, error_msg)
+            elif "HTTP" in error_msg:
                 self._emit_error(0, error_msg)
-                self.sigModelsLoaded.emit([self.NO_MODEL_NAME])
-        
-        except requests.exceptions.ConnectionError:
-            error_msg = f"Не удалось подключиться к {self.APP_NAME} ({self._server_url})"
-            self._emit_error(1, error_msg)
+            else:
+                self._emit_error(2, error_msg)
+
+            # Возвращаем только "(отсутствует)"
             self.sigModelsLoaded.emit([self.NO_MODEL_NAME])
-        
-        except Exception as e:
-            error_msg = f"Ошибка загрузки моделей: {str(e)}"
-            self._emit_error(2, error_msg)
-            self.sigModelsLoaded.emit([self.NO_MODEL_NAME])
+            return
+
+        # Успех: добавляем "(отсутствует)" первым (UI-логика)
+        full_list = [self.NO_MODEL_NAME] + models
+        self._models_list = full_list
+        self.sigModelsLoaded.emit(full_list)
+        print(f"✓ Загружено моделей: {len(models)}")
     
     @pyqtSlot(result=bool)
     def vigruzitModel(self) -> bool:
@@ -273,27 +262,24 @@ class DCLMStudio(QObject):
     @pyqtSlot(str)
     def ustServerURL(self, server_url):
         """Устанавливает URL сервера LM Studio/Bionic"""
-        server_url = server_url.strip().rstrip('/')
-        
-        if not server_url.endswith('/v1'):
-            server_url += '/v1'
-        
+        server_url = self._api.normalize_url(server_url)
+        if not server_url:
+            return
+
         old_url = self._server_url
         self._server_url = server_url
-        
+
         self.sigLog.emit(f"✓ URL сервера обновлён: {server_url}")
-        
+
         if old_url != server_url:
             print(f"✓ Сервер URL изменён: {old_url} → {server_url}")
-            # Излучаем сигнал об изменении
             self.sigServerURLIzmenen.emit(server_url)
-            # Проверяем доступность нового сервера
             self.proverkaServera()
 
-    @pyqtSlot(result=str)
-    def polServerURL(self):
-        """Возвращает текущий URL сервера"""
-        return self._server_url
+        @pyqtSlot(result=str)
+        def polServerURL(self):
+            """Возвращает текущий URL сервера"""
+            return self._server_url
 
     @pyqtSlot(str)
     def ustPutCLI(self, path):
@@ -345,25 +331,17 @@ class DCLMStudio(QObject):
         
         try:
             self.sigLog.emit(f"🔄 Запуск сервера {self.APP_NAME}...")
-            
-            # Выполняем команду запуска сервера
-            result = subprocess.run(
-                [lms_cli, "server", "start"],
-                capture_output=True,
-                text=True,
-                timeout=self.TIMEOUT_SERVER_START
-            )
-            
-            if result.returncode == 0:
+
+            success, error_msg = self._api.start_server(lms_cli, timeout=self.TIMEOUT_SERVER_START)
+
+            if success:
                 self.sigLog.emit("✓ Команда запуска выполнена")
                 self._zapustitProverkuServera()
             else:
-                error_msg = f"Ошибка выполнения команды: {result.stderr}"
                 self.sigServerError.emit(error_msg)
-        
+
         except Exception as e:
-            error_msg = f"Ошибка запуска сервера: {str(e)}"
-            self._emit_error(11, error_msg)
+            self._emit_error(11, f"Ошибка запуска сервера: {str(e)}")
 
     @pyqtSlot()
     def ostanovitServer(self):
@@ -384,26 +362,19 @@ class DCLMStudio(QObject):
         
         try:
             self.sigLog.emit(f"🔄 Остановка сервера {self.APP_NAME}...")
-            
-            result = subprocess.run(
-                [lms_cli, "server", "stop"],
-                capture_output=True,
-                text=True,
-                timeout=self.TIMEOUT_SERVER_START
-            )
-            
-            if result.returncode == 0:
+
+            success, error_msg = self._api.stop_server(lms_cli, timeout=self.TIMEOUT_SERVER_START)
+
+            if success:
                 self._server_zapuschen = False
                 self.sigLog.emit("✓ Сервер остановлен")
                 self.sigServerOstanovlen.emit()
                 self.sigServerStatus.emit(False)
             else:
-                error_msg = f"Ошибка выполнения команды: {result.stderr}"
                 self.sigServerError.emit(error_msg)
-        
+
         except Exception as e:
-            error_msg = f"Ошибка остановки сервера: {str(e)}"
-            self._emit_error(12, error_msg)
+            self._emit_error(12, f"Ошибка остановки сервера: {str(e)}")
 
     @pyqtSlot(result=bool)
     def proverkaServera(self) -> bool:
@@ -613,16 +584,9 @@ class DCLMStudio(QObject):
 
         return app_path
         
-    def _proverkaServeraZapuschen(self):
-        """Внутренняя проверка статуса сервера"""
-        try:
-            response = requests.get(
-                f"{self._server_url}/models", 
-                timeout=self.TIMEOUT_SERVER_CHECK
-            )
-            return response.status_code == 200
-        except:
-            return False
+    def _proverkaServeraZapuschen(self) -> bool:
+        """Внутренняя проверка статуса сервера (через DCLMAPI)"""
+        return self._api.is_server_running(self._server_url, timeout=self.TIMEOUT_SERVER_CHECK)
 
     def _zapustitProverkuServera(self):
         """Запускает автоматическую проверку запуска сервера"""
