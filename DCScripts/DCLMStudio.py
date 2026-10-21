@@ -8,6 +8,7 @@ from pathlib import Path
 from PyQt6.QtCore import QObject, pyqtSignal, pyqtSlot, QTimer
 from DCScripts.DCLMSandbox import DCLMSandbox, SandboxNotAvailable
 from DCScripts.DCLMHDD import DCLMHDD, AppSpec
+from DCScripts.DCLMApp import DCLMApp
 from dataclasses import dataclass
 
 class DCLMStudio(QObject):
@@ -58,6 +59,7 @@ class DCLMStudio(QObject):
     def __init__(self):
         super().__init__()
         self._hdd = DCLMHDD(log_callback=self.sigLog.emit)
+        self._app = DCLMApp(log_callback=self.sigLog.emit)
         # Управление моделями
         self._current_model = ""
         self._models_list = []
@@ -522,172 +524,47 @@ class DCLMStudio(QObject):
             self._timer.timeout.connect(self._proverkaDostupnosti)
     
     def _zapustitVPotoke(self, lms_path):
-        """Запускает LM Studio/Bionic в отдельном потоке"""
+        """Запускает LM Studio/Bionic в отдельном потоке через DCLMApp (не блокирует UI)"""
         try:
-            # строим команду (и логируем, в каком режиме запускаем)
-            spec = DCLMSandbox.build_launch_spec(
-                lmstudio_path=lms_path,
+            self._app.start(
+                app_path=lms_path,
                 sandbox_name=self._sandbox_name,
                 cli_path=self._cli_path,
-                app_name=self.APP_NAME #прокидывание APP_NAME
+                app_name=self.APP_NAME
             )
-            self.sigLog.emit(spec.description)
 
-            if platform.system() == "Linux":
-                subprocess.Popen(
-                    spec.argv,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                    start_new_session=True
-                )
-            elif platform.system() == "Darwin":
-                subprocess.Popen(["open", "-a", str(lms_path)])
-            elif platform.system() == "Windows":
-                subprocess.Popen(
-                    [str(lms_path)],
-                    creationflags=subprocess.CREATE_NO_WINDOW
-                )
-            
+            # если тебе нужно хранить _process в DCLMStudio для совместимости
+            self._process = self._app.process
+
             self._zapusk_v_processe = False
-        
+
         except Exception as e:
-            error_msg = f"Ошибка запуска: {str(e)}"
-            self._emit_error(7, error_msg)
+            self._emit_error(7, f"Ошибка запуска: {str(e)}")
             self._zapusk_v_processe = False
 
     def _ostanovitVPotoke(self):
-        """Останавливает LM Studio/Bionic в отдельном потоке (не блокирует UI)"""
-        import time
-        
+        """Останавливает LM Studio/Bionic в отдельном потоке через DCLMApp (не блокирует UI)"""
         try:
-            if platform.system() == "Linux":
-                # Шаг 0: Если есть процесс, который запускали мы — гасим его группу
-                try:
-                    if self._process is not None and self._process.poll() is None:
-                        self.sigLog.emit("Остановка (process group)...")
-                        os.killpg(self._process.pid, signal.SIGTERM)
-                        time.sleep(self.DELAY_GRACEFUL_SHUTDOWN)
-                        if self._process.poll() is None:
-                            os.killpg(self._process.pid, signal.SIGKILL)
-                        self._process = None
-                except Exception as e:
-                    self.sigLog.emit(f"⚠ Не удалось остановить по PID: {e}")
+            self._app.stop(
+                app_spec=self._app_spec,
+                app_name=self.APP_NAME,
+                graceful_seconds=self.DELAY_GRACEFUL_SHUTDOWN
+            )
 
-                # Шаг 1: Проверяем, есть ли процессы
-                result = subprocess.run(
-                    ["pgrep", "-if", self._app_spec.linux_pgrep_pattern],
-                    capture_output=True,
-                    text=True,
-                    timeout=2
-                )
-                
-                if result.returncode != 0:
-                    self.sigLog.emit(f"{self.APP_NAME} не запущен")
-                    self._server_zapuschen = False
-                    self.sigStudioOstanovlen.emit()
-                    self.sigServerStatus.emit(False)
-                    return
-                
-                pids = result.stdout.strip().split('\n')
-                
-                # Шаг 2: SIGTERM (мягкая остановка)
-                self.sigLog.emit("Отправка SIGTERM...")
-                for pid in pids:
-                    if pid:
-                        try:
-                            subprocess.run(["kill", "-15", pid], timeout=2)
-                        except Exception as e:
-                            self.sigLog.emit(f"⚠ Не удалось отправить SIGTERM: {e}")
-                
-                # Шаг 3: Ждём 3 секунды (НЕ блокирует UI, т.к. в отдельном потоке)
-                time.sleep(self.DELAY_GRACEFUL_SHUTDOWN)
-                
-                # Шаг 4: Проверяем, завершились ли процессы
-                result = subprocess.run(
-                    ["pgrep", "-if", self._app_spec.linux_pgrep_pattern],
-                    capture_output=True,
-                    text=True,
-                    timeout=2
-                )
-                
-                if result.returncode == 0:
-                    # Процессы ещё живы — SIGKILL
-                    self.sigLog.emit("⚠ Процесс не завершился, использую SIGKILL...")
-                    pids = result.stdout.strip().split('\n')
-                    
-                    for pid in pids:
-                        if pid:
-                            try:
-                                subprocess.run(["kill", "-9", pid], timeout=2)
-                            except Exception as e:
-                                self.sigLog.emit(f"✗ Ошибка SIGKILL: {e}")
-                
-                self._server_zapuschen = False
-                self.sigLog.emit(f"✓ {self.APP_NAME} остановлен")
-                self.sigStudioOstanovlen.emit()
-                self.sigServerStatus.emit(False)
-            
-            elif platform.system() == "Darwin":
-                # macOS: аналогично Linux
-                subprocess.run(["pkill", "-TERM", "-f", self._app_spec.mac_pgrep_pattern], timeout=2)
-                time.sleep(self.DELAY_GRACEFUL_SHUTDOWN)
-                subprocess.run(["pkill", "-KILL", "-f", self._app_spec.mac_pgrep_pattern], timeout=2)
-                
-                self._server_zapuschen = False
-                self.sigLog.emit(f"✓ {self.APP_NAME} остановлен")
-                self.sigStudioOstanovlen.emit()
-                self.sigServerStatus.emit(False)
-            
-            elif platform.system() == "Windows":
-                # Windows: используем /T для дерева процессов
-                subprocess.run(
-                    ["taskkill", "/F", "/T", "/IM", self._app_spec.windows_image_name],
-                    shell=True,
-                    timeout=5
-                )
-                
-                self._server_zapuschen = False
-                self.sigLog.emit(f"✓ {self.APP_NAME} остановлен")
-                self.sigStudioOstanovlen.emit()
-                self.sigServerStatus.emit(False)
-        
+            # синхронизируем совместимость со старым полем
+            self._process = None
+            self._server_zapuschen = False
+
+            # Qt-сигналы (важно оставить в фасаде)
+            self.sigStudioOstanovlen.emit()
+            self.sigServerStatus.emit(False)
+
         except Exception as e:
-            error_msg = f"Ошибка остановки: {str(e)}"
-            self._emit_error(5, error_msg)
+            self._emit_error(5, f"Ошибка остановки: {str(e)}")
 
-    def _proverkaZapushen(self):
+    def _proverkaZapushen(self) -> bool:
         """Проверяет, запущено ли приложение (LM Studio/Bionic)"""
-        try:
-            if platform.system() == "Linux":
-                result = subprocess.run(
-                    ["pgrep", "-if", self._app_spec.linux_pgrep_pattern],
-                    capture_output=True,
-                    text=True,
-                    timeout=2
-                )
-                return result.returncode == 0
-
-            elif platform.system() == "Darwin":
-                result = subprocess.run(
-                    ["pgrep", "-if", self._app_spec.mac_pgrep_pattern],
-                    capture_output=True,
-                    text=True,
-                    timeout=2
-                )
-                return result.returncode == 0
-
-            elif platform.system() == "Windows":
-                result = subprocess.run(
-                    ["tasklist", "/FI", f"IMAGENAME eq {self._app_spec.windows_image_name}"],
-                    capture_output=True,
-                    text=True,
-                    timeout=2
-                )
-                return self._app_spec.windows_image_name.lower() in result.stdout.lower()
-
-            return False
-        except:
-            return False
+        return self._app.is_running(self._app_spec) 
     
     def _proverkaDostupnosti(self):
         """Периодическая проверка доступности приложения"""
