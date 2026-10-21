@@ -12,12 +12,11 @@ from typing import Callable, Optional
 
 
 @dataclass(frozen=True)
-class AppSpec:
-    display_name: str
-    linux_pgrep_pattern: str     # regex для pgrep (Linux)
-    mac_pgrep_pattern: str       # regex для pgrep (macOS)
-    windows_image_name: str      # имя процесса для taskkill/tasklist (Windows)
-
+class DCPassport:
+    display_name: str = "LM Studio"
+    linux_pgrep_pattern: str = r"(lm[- ]?studio|lmstudio|lm-studio)"# regex для pgrep (Linux)
+    mac_pgrep_pattern: str = r"(LM Studio|lmstudio|lm-studio)"      # regex для pgrep (macOS)
+    windows_image_name: str = "LM Studio.exe"                       # имя процесса для taskkill/tasklist (Windows)
 
 class DCLMHDD:
     """
@@ -151,11 +150,11 @@ class DCLMHDD:
 
     # -------------------- detect app type --------------------
 
-    def detect_app_spec_from_path(self, app_path: str, fallback: AppSpec | None = None) -> AppSpec:
+    def detect_passport_from_path(self, app_path: str, fallback: DCPassport | None = None) -> DCPassport:
         """
         Определяет LM Studio или Bionic по имени файла (с учётом AppImage версий).
         """
-        default = fallback or AppSpec(
+        default = fallback or DCPassport(
             display_name="LM Studio",
             linux_pgrep_pattern=r"(lm[- ]?studio|lmstudio|lm-studio)",
             mac_pgrep_pattern=r"(LM Studio|lmstudio|lm-studio)",
@@ -169,7 +168,7 @@ class DCLMHDD:
             s = f"{filename} {stem}"
 
             if "bionic" in s:
-                return AppSpec(
+                return DCPassport(
                     display_name="Bionic",
                     linux_pgrep_pattern=r"(bionic)",
                     mac_pgrep_pattern=r"(Bionic|bionic)",
@@ -178,7 +177,7 @@ class DCLMHDD:
 
             # LM Studio: lm-studio / lm studio / lmstudio
             if ("lm-studio" in s) or ("lm studio" in s) or ("lmstudio" in s):
-                return AppSpec(
+                return DCPassport(
                     display_name="LM Studio",
                     linux_pgrep_pattern=r"(lm[- ]?studio|lmstudio|lm-studio)",
                     mac_pgrep_pattern=r"(LM Studio|lmstudio|lm-studio)",

@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Callable, Optional
 
 from DCScripts.DCLMSandbox import DCLMSandbox
-from DCScripts.DCLMHDD import AppSpec
+from DCScripts.DCLMHDD import DCPassport
 
 
 class DCLMApp:
@@ -28,7 +28,7 @@ class DCLMApp:
             self._log(msg)
 
     # ---СТАТУС---
-    def is_running(self, app_spec: AppSpec) -> bool:
+    def is_running(self, passport: DCPassport) -> bool:
         """
         Проверяет запущено ли приложение.
         Сначала пытается по self.process, потом OS-level проверки.
@@ -44,24 +44,24 @@ class DCLMApp:
 
             if os_name == "Linux":
                 r = subprocess.run(
-                    ["pgrep", "-if", app_spec.linux_pgrep_pattern],
+                    ["pgrep", "-if", passport.linux_pgrep_pattern],
                     capture_output=True, text=True, timeout=2
                 )
                 return r.returncode == 0
 
             if os_name == "Darwin":
                 r = subprocess.run(
-                    ["pgrep", "-if", app_spec.mac_pgrep_pattern],
+                    ["pgrep", "-if", passport.mac_pgrep_pattern],
                     capture_output=True, text=True, timeout=2
                 )
                 return r.returncode == 0
 
             if os_name == "Windows":
                 r = subprocess.run(
-                    ["tasklist", "/FI", f"IMAGENAME eq {app_spec.windows_image_name}"],
+                    ["tasklist", "/FI", f"IMAGENAME eq {passport.windows_image_name}"],
                     capture_output=True, text=True, timeout=2
                 )
-                return app_spec.windows_image_name.lower() in r.stdout.lower()
+                return passport.windows_image_name.lower() in r.stdout.lower()
 
         except Exception:
             return False
@@ -125,7 +125,7 @@ class DCLMApp:
         raise RuntimeError(f"Unsupported OS: {os_name}")
 
     # ---СТОП---
-    def stop(self, app_spec: AppSpec, app_name: str, graceful_seconds: int = 3) -> None:
+    def stop(self, passport: DCPassport, app_name: str, graceful_seconds: int = 3) -> None:
         """
         Останавливает приложение.
         Пытается мягко, затем жёстко.
@@ -133,20 +133,20 @@ class DCLMApp:
         os_name = platform.system()
 
         if os_name == "Linux":
-            self._stop_linux(app_spec, app_name, graceful_seconds)
+            self._stop_linux(passport, app_name, graceful_seconds)
             return
 
         if os_name == "Darwin":
-            self._stop_macos(app_spec, app_name, graceful_seconds)
+            self._stop_macos(passport, app_name, graceful_seconds)
             return
 
         if os_name == "Windows":
-            self._stop_windows(app_spec, app_name)
+            self._stop_windows(passport, app_name)
             return
 
         raise RuntimeError(f"Unsupported OS: {os_name}")
 
-    def _stop_linux(self, app_spec: AppSpec, app_name: str, graceful_seconds: int) -> None:
+    def _stop_linux(self, passport: DCPassport, app_name: str, graceful_seconds: int) -> None:
         # 0) если есть process group (то, что мы запускали) — пробуем остановить
         try:
             if self.process is not None and self.process.poll() is None:
@@ -163,7 +163,7 @@ class DCLMApp:
 
         # 1) fallback: pgrep/kill по паттерну
         r = subprocess.run(
-            ["pgrep", "-if", app_spec.linux_pgrep_pattern],
+            ["pgrep", "-if", passport.linux_pgrep_pattern],
             capture_output=True, text=True, timeout=2
         )
         if r.returncode != 0:
@@ -181,7 +181,7 @@ class DCLMApp:
         time.sleep(graceful_seconds)
 
         r2 = subprocess.run(
-            ["pgrep", "-if", app_spec.linux_pgrep_pattern],
+            ["pgrep", "-if", passport.linux_pgrep_pattern],
             capture_output=True, text=True, timeout=2
         )
         if r2.returncode == 0:
@@ -195,16 +195,16 @@ class DCLMApp:
 
         self.log(f"✓ {app_name} остановлен")
 
-    def _stop_macos(self, app_spec: AppSpec, app_name: str, graceful_seconds: int) -> None:
-        subprocess.run(["pkill", "-TERM", "-f", app_spec.mac_pgrep_pattern], timeout=2)
+    def _stop_macos(self, passport: DCPassport, app_name: str, graceful_seconds: int) -> None:
+        subprocess.run(["pkill", "-TERM", "-f", passport.mac_pgrep_pattern], timeout=2)
         time.sleep(graceful_seconds)
-        subprocess.run(["pkill", "-KILL", "-f", app_spec.mac_pgrep_pattern], timeout=2)
+        subprocess.run(["pkill", "-KILL", "-f", passport.mac_pgrep_pattern], timeout=2)
         self.process = None
         self.log(f"✓ {app_name} остановлен")
 
-    def _stop_windows(self, app_spec: AppSpec, app_name: str) -> None:
+    def _stop_windows(self, passport: DCPassport, app_name: str) -> None:
         subprocess.run(
-            ["taskkill", "/F", "/T", "/IM", app_spec.windows_image_name],
+            ["taskkill", "/F", "/T", "/IM", passport.windows_image_name],
             shell=True,
             timeout=5
         )

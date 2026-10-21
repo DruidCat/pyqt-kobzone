@@ -2,7 +2,7 @@ import threading
 from pathlib import Path
 from PyQt6.QtCore import QObject, pyqtSignal, pyqtSlot, QTimer
 from DCScripts.DCLMSandbox import DCLMSandbox, SandboxNotAvailable
-from DCScripts.DCLMHDD import DCLMHDD, AppSpec
+from DCScripts.DCLMHDD import DCLMHDD, DCPassport
 from DCScripts.DCLMApp import DCLMApp
 from DCScripts.DCLMAPI import DCLMAPI
 from DCScripts.DCLMCLI import DCLMCLI
@@ -55,6 +55,7 @@ class DCLMStudio(QObject):
     def __init__(self):
         super().__init__()
         self._hdd = DCLMHDD(log_callback=self.sigLog.emit)
+        self._passport = DCPassport()# По умолчанию создаётся паспорт для LM Studio
         self._app = DCLMApp(log_callback=self.sigLog.emit)
         self._api = DCLMAPI(log_callback=self.sigLog.emit)
         self._cli = DCLMCLI(log_callback=self.sigLog.emit)
@@ -79,14 +80,7 @@ class DCLMStudio(QObject):
         # Sandbox
         self._sandbox_name = ""          # "" = без sandbox
         self._restart_after_stop = False # если True — после остановки запускаем заново
-        self.sigStudioOstanovlen.connect(self._on_studio_stopped_internal)#перезапускать после полной остановк
-        # Название приложения
-        self._app_spec = AppSpec(
-            display_name="LM Studio",
-            linux_pgrep_pattern=r"(lm[- ]?studio|lmstudio|lm-studio)",
-            mac_pgrep_pattern=r"(LM Studio|lmstudio|lm-studio)",
-            windows_image_name="LM Studio.exe",
-        )
+        self.sigStudioOstanovlen.connect(self._on_studio_stopped_internal)#перезапускать после полной остановк 
     
     def __del__(self):
         """Очистка ресурсов при удалении объекта"""
@@ -141,8 +135,8 @@ class DCLMStudio(QObject):
         self._custom_path = path
 
         try:
-            spec = self._detect_app_spec_from_path(path)
-            self._apply_app_spec(spec)
+            passport = self._detect_passport_from_path(path)
+            self._apply_passport(passport)
         except Exception as e:
             self.sigLog.emit(f"⚠ Не удалось определить тип приложения: {e}")
 
@@ -171,38 +165,38 @@ class DCLMStudio(QObject):
         """
         ФАСАДНЫЙ метод поиска приложения.
         Реальный поиск выполняет DCLMHDD, а фасад:
-        - применяет AppSpec (обновит APP_NAME и отправит sigAppName)
+        - применяет DCPassport (обновит APP_NAME и отправит sigAppName)
         """
         app_path = self._hdd.find_app_path(custom_path=self._custom_path)
         if not app_path:
             return None
 
-        # Применяем AppSpec (LM Studio/Bionic) по имени файла
+        # Применяем DCPassport (LM Studio/Bionic) по имени файла
         try:
-            spec = self._detect_app_spec_from_path(str(app_path))
-            self._apply_app_spec(spec)
+            passport = self._detect_passport_from_path(str(app_path))
+            self._apply_passport(passport)
         except Exception as e:
             self.sigLog.emit(f"⚠ Не удалось определить тип приложения: {e}")
 
         return app_path
 
-    def _detect_app_spec_from_path(self, app_path: str) -> AppSpec:
+    def _detect_passport_from_path(self, app_path: str) -> DCPassport:
         """
-        Обёртка над DCLMHDD.detect_app_spec_from_path.
+        Обёртка над DCLMHDD.detect_passport_from_path.
         Оставляем это имя, чтобы не менять остальной код.
         """
-        return self._hdd.detect_app_spec_from_path(app_path, fallback=self._app_spec)
+        return self._hdd.detect_passport_from_path(app_path, fallback=self._passport)
 
-    def _apply_app_spec(self, spec: AppSpec) -> None:
-        """Применяет AppSpec и обновляет APP_NAME для логов/команд."""
-        old_name = getattr(self, "_app_spec", None).display_name if getattr(self, "_app_spec", None) else ""
+    def _apply_passport(self, passport: DCPassport) -> None:
+        """Применяет DCPassport и обновляет APP_NAME для логов/команд."""
+        old_name = getattr(self, "_passport", None).display_name if getattr(self, "_passport", None) else ""
 
-        self._app_spec = spec
-        type(self).APP_NAME = spec.display_name# ВАЖНО: обновляем именно классовую переменную (глобальную для класса)
+        self._passport = passport
+        type(self).APP_NAME = passport.display_name# ВАЖНО: обновляем именно классовую переменную (глобальную для класса)
 
-        if old_name != spec.display_name:# Эмитим только если реально поменялось
-            self.sigLog.emit(f"✓ Определено приложение: {old_name or '(неизвестно)'} → {spec.display_name}")
-            self.sigAppName.emit(spec.display_name)
+        if old_name != passport.display_name:# Эмитим только если реально поменялось
+            self.sigLog.emit(f"✓ Определено приложение: {old_name or '(неизвестно)'} → {passport.display_name}")
+            self.sigAppName.emit(passport.display_name)
 
     # ==================== РАБОТА СО СТУДИЕЙ И SANDBOX ЧЕРЕЗ DCLMApp====================
     @pyqtSlot(str)
@@ -338,7 +332,7 @@ class DCLMStudio(QObject):
         """Останавливает LM Studio/Bionic в отдельном потоке через DCLMApp (не блокирует UI)"""
         try:
             self._app.stop(
-                app_spec=self._app_spec,
+                passport=self._passport,
                 app_name=self.APP_NAME,
                 graceful_seconds=self.DELAY_GRACEFUL_SHUTDOWN
             )
@@ -355,7 +349,7 @@ class DCLMStudio(QObject):
 
     def _proverkaZapushen(self) -> bool:
         """Проверяет, запущено ли приложение (LM Studio/Bionic)"""
-        return self._app.is_running(self._app_spec) 
+        return self._app.is_running(self._passport) 
 
     def _initTimer(self):
         """Ленивая инициализация таймера"""
