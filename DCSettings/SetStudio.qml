@@ -67,16 +67,16 @@ Item {
     signal log(var strLog)
 	//Методы
 	Component.onCompleted: {
-		root.strModelNoName = pyLMStudio.polModelNoName()//Получаем имя модели ОТСУТСТВУЕТ.
+		root.strModelNoName = pyLM.polModelNoName()//Получаем имя модели ОТСУТСТВУЕТ.
 		fnModelEnabled()//Функция управляет политикой кнопок Temperatura, Context, GPU
 		knopkiMassiv = [knopkaLMStart, knopkaLMStop, knopkaLMPut, knopkaCLIPut, knopkaSandbox, knopkaModeli,
 						knopkaContext, knopkaGPU, knopkaServerURL]
 		
 		if (DCSettings.studio_lms_put !== "")//Передаём путь из настроек в Python
-			pyLMStudio.ustPutStudio(DCSettings.studio_lms_put)
+			pyLM.ustPutStudio(DCSettings.studio_lms_put)
 		if (DCSettings.studio_cli_put !== "")
-    		pyLMStudio.ustPutCLI(DCSettings.studio_cli_put)
-		pyLMStudio.ustSandbox(root.strSandbox)//передать начальное значение
+    		pyLM.ustPutCLI(DCSettings.studio_cli_put)
+		pyLM.ustSandbox(root.strSandbox)//передать начальное значение
 		if (Qt.platform.os === "osx" || putLMStudio === "" || putCLI === ""){//Если это macOS или пустые пути
 			__isMacOS = true;//Запуск на macOS
 			knopkaSandbox.enabled = false//не активная кнопка
@@ -84,10 +84,10 @@ Item {
 		root.forceActiveFocus()	
 	}
 	onServerURLChanged: {
-		pyLMStudio.ustServerURL(serverURL)//Загрузка при иннициации приложения и при изменении значения.
+		pyLM.ustServerURL(serverURL)//Загрузка при иннициации приложения и при изменении значения.
 	}
 	onStrSandboxChanged: {
-		pyLMStudio.ustSandbox(root.strSandbox)
+		pyLM.ustSandbox(root.strSandbox)
 	}
 	onStrModelChanged: {//Если Модель изменится, то...
 		fnModelEnabled()//Функция управляет политикой кнопок Temperatura, Context, GPU
@@ -107,7 +107,7 @@ Item {
 	}	
 	onPutLMStudioChanged: {//Если путь к Studio изменился, то...
 		if (root.putLMStudio !== ""){//Если он не пустой, то...
-			pyLMStudio.ustPutStudio(root.putLMStudio)//Передаём его в логику Python
+			pyLM.ustPutStudio(root.putLMStudio)//Передаём его в логику Python
 			if(__isMacOS || putCLI === "") knopkaSandbox.enabled = false
 			else knopkaSandbox.enabled = true
 		} else {//Если пустой путь, то...
@@ -125,7 +125,7 @@ Item {
 		}
 	}
     Connections {//Обработчик загрузки моделей из Python
-        target: pyLMStudio
+        target: pyLM
 
 		function onSigLog(logMsg) {//Обработка сигнала сообщений из Класса
 			root.log(logMsg)
@@ -173,7 +173,7 @@ Item {
 		//12 - Ошибка остановки сервера
 		//13 - Модель не выбрана
 		//14 - Ошибка по Sandbox
-		function onSigCLIPut(strCLIPut){//Если путь автоматически обнаружен, то он придёт из pyLMStudio
+		function onSigCLIPut(strCLIPut){//Если путь автоматически обнаружен, то он придёт из pyLM
 			DCSettings.studio_cli_put	= strCLIPut;//Запоминаем в реестре настроек.
 		}
 		function onSigStudioStarted() {//Обработка сигнала старта Studio
@@ -188,7 +188,7 @@ Item {
 			vprVopros.visible = false
 			ldrProgress.active = false//Закрываем полосу прогресса
 			root.toolbar(`${root.strStudioImya} запущен!`)
-			pyLMStudio.proverkaServera()	
+			pyLM.proverkaServera()	
 		}
 		function onSigStudioOstanovlen() {
 			tmrStudioOstanovlen.running = true	
@@ -202,7 +202,7 @@ Item {
 		function onSigServerZapuschen() {
 			if(pvModels.isServerZapustit){
 				root.toolbar(`✓ Сервер ${root.strStudioImya} готов`)
-				pyLMStudio.zagruzitModeli()//Загружаем модели после запуска сервера
+				pyLM.zagruzitModeli()//Загружаем модели после запуска сервера
 				pvModels.visible = true//Делаем видимым виджет
 				pvModels.karusel.forceActiveFocus()//фокус PathView, чтоб hotkey работали.
 				pvModels.isServerZapustit = false
@@ -339,11 +339,11 @@ Item {
 			DCSettings.studio_lms_put = vrPut
 			if(knopkaLMStart.isStartBezPuti){//Если путь к Studio выбран и была попытка старта, то...
 				knopkaLMStart.isStartBezPuti = false;//Сбрасываем флаг.
-				pyLMStudio.zapustitStudio()//Запускаем Studio.
+				pyLM.zapustitStudio()//Запускаем Studio.
 			}
 			if(knopkaLMStop.isStopBezPuti){//Если путь к Studio выбран и была попытка остановки, то...
 				knopkaLMStop.isStopBezPuti = false;//Сбрасываем флаг.
-				pyLMStudio.ostanovitStudio()//Останавливаем Studio.
+				pyLM.ostanovitStudio()//Останавливаем Studio.
 			}
 		}
 		onRejected: {//Если нажата кнопка отмены, то...
@@ -406,9 +406,9 @@ Item {
 			else DCSettings.studio_max_context = ltResult//Сохраняем в реестре значение.
 		} else if(txnVvod.ntVvod === 1){//Путь к cli lms
 			var vrPutCLI = txnVvod.text
-			if(pyLMStudio.proverkaLMSFaila(vrPutCLI)){//Если такой путь существует, то...
+			if(pyLM.proverkaLMSFaila(vrPutCLI)){//Если такой путь существует, то...
 				DCSettings.studio_cli_put  = vrPutCLI
-				pyLMStudio.ustPutCLI(vrPutCLI)
+				pyLM.ustPutCLI(vrPutCLI)
 			} else {
 				root.toolbar("Указан неверный путь до lms.")
 			}
@@ -421,7 +421,7 @@ Item {
 			}
 		} else if(txnVvod.ntVvod === 3){//Server URL
 			var vrServerURL = txnVvod.text
-			if(pyLMStudio.proverkaServerURL(vrServerURL)){//Если такой url существует, то...
+			if(pyLM.proverkaServerURL(vrServerURL)){//Если такой url существует, то...
 				DCSettings.studio_server_url = vrServerURL
 			} else {
 				root.toolbar("Указан неверный адрес сервера.")
@@ -490,7 +490,7 @@ Item {
 		let ltMaxContext = DCSettings.studio_max_context
 		let ltGPU = DCSettings.studio_gpu_offload
 		ldrProgress.active = true//Запускаем полосу прогресса загрузки модели
-		pyLMStudio.ustParametri(root.strModel, ltMaxContext, ltGPU)
+		pyLM.ustParametri(root.strModel, ltMaxContext, ltGPU)
 	}
 	function fnModelEnabled(){//Функция управляет политикой кнопок Temperatura, Context, GPU
 		let ltFlag = true//Истина
@@ -508,7 +508,7 @@ Item {
 		else{//Если невидимый виджет, то...
 			Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModels. ВАЖНО!!!
 				pvModels.isServerZapustit = true
-			   	pyLMStudio.zapustitServer()//Всегда запускаем сервер, даже если он запущен.
+			   	pyLM.zapustitServer()//Всегда запускаем сервер, даже если он запущен.
 				root.toolbar(qsTr("Ожидайте."))
 			})
 		}
@@ -517,13 +517,13 @@ Item {
 		if (root.putLMStudio === "") {//Если путь не задан
 			knopkaLMStart.isStartBezPuti = true;//Попутка запустить Studio.
 			dialogLMPut.open()//Функция выбора пути к Studio.
-		} else pyLMStudio.zapustitStudio()
+		} else pyLM.zapustitStudio()
 	}
 	function fnClickedLMSZaktit() {//Функция закрытия Studio
 		if (root.putLMStudio === "") {//Если путь не задан
 			knopkaLMStop.isStopBezPuti = true;//Попытка остановить Studio.
 			dialogLMPut.open()//Функция выбора пути к Studio.
-		} else pyLMStudio.ostanovitStudio()
+		} else pyLM.ostanovitStudio()
 	}
 	function fnClickedVvod(vvod){//Функция выбора Ввода данных
 		txnVvod.ntVvod = vvod
@@ -562,7 +562,7 @@ Item {
         id: tmrServerLMS
         interval: 3300; running: false; repeat: true
         onTriggered: {
-			pyLMStudio.proverkaServera()
+			pyLM.proverkaServera()
         }
     }
 	Timer {//ТАЙМЕР остановки Studio 

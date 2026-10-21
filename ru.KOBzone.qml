@@ -114,13 +114,13 @@ ApplicationWindow {
 		toolbar.log("✓ Шрифт:" + " " + font.family)
 		shrift = DCSettings.kobzone_set_shrift + 1//Загружаем настройки шрифта из реестра.
 		//загружаем данные из python
-		root.strStudioImya = pyLMStudio.polAppName();//Получаем название имени студии LM Studio/Bionic
+		root.strStudioImya = pyLM.polAppName();//Получаем название имени студии LM Studio/Bionic
 		root.pythonVersion = pyPythonInfo.pythonVersion
 		root.qtVersion = pyQtInfo.qtVersion
         if(!isMobile) Qt.callLater(ensureOnScreen)//Немного отложим, чтобы гарантированно применились размеры
 	}
 	Connections {//Обработчик загрузки моделей из Python
-        target: pyLMStudio
+        target: pyLM
 
 		function onSigAppName(strAppName) {//Обработка сигнала сообщений из Класса
 			root.strStudioImya = strAppName

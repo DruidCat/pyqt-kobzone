@@ -78,7 +78,7 @@ Item {
 		function onSigBazaLoaded(success) {
 			ldrProgress.active = false//В любом случае отключаем DCProgress
 			if (success) {
-				pyLMStudio.zapustitServer()//Всегда запускаем сервер, даже если он запущен.
+				pyLM.zapustitServer()//Всегда запускаем сервер, даже если он запущен.
 			} else {
 				root.toolbar("❌ Ошибка загрузки RAG базы")
 				tmrLogo.running = false//Останавливаем анимации и прогресс анализа.
@@ -170,7 +170,7 @@ Item {
 		}
 	}
 	Connections {//Обработчик загрузки моделей из Python
-        target: pyLMStudio
+        target: pyLM
 	
         function onSigError(ntError, errorMsg) {
 			if(ntError === 3){//3 - Не удалось найти исполняемый файл Studio
@@ -212,7 +212,7 @@ Item {
 		function onSigServerZapuschen() {//Если сервер запустился, то начинаем анализ Документов.
 			if(root.isServerZapustit){
 				root.isServerZapustit = false//Сбрасываем флаг.
-				let ltModel = pyLMStudio.polModel()//Получаем имя модели.
+				let ltModel = pyLM.polModel()//Получаем имя модели.
 				if (ltModel){//Если это не пустая строка, то...
 					if (root.isModelZagruzit) {//Если модель загружена по просьбе StrAnalizer, то...
 						root.isModelZagruzit = false//Сбрасываю флаг
@@ -222,7 +222,7 @@ Item {
 					ldrProgress.active = true//Запускаем полосу прогресса загрузки модели
 					ldrProgress.total = 1//Задаём скорость движения полосы прогресса.
 					if(ldrProgress.item)ldrProgress.item.text="Загрузка модели: "+DCSettings.studio_model_imya
-					pyLMStudio.ustParametri(DCSettings.studio_model_imya, DCSettings.studio_max_context,
+					pyLM.ustParametri(DCSettings.studio_model_imya, DCSettings.studio_max_context,
 											DCSettings.studio_gpu_offload)
 				}
 			}
@@ -487,7 +487,7 @@ Item {
         } else {
             pyAnalyzer.ustRagEnabled(false)
             root.log("✓ Анализ будет выполнен без RAG базы")
-			pyLMStudio.zapustitServer()//Всегда запускаем сервер, даже если он запущен.
+			pyLM.zapustitServer()//Всегда запускаем сервер, даже если он запущен.
         }
     }
 	function fnClickedStop() {//Функция останавливающая Анализ документов

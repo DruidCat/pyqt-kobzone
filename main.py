@@ -17,7 +17,7 @@ from DCPages.PyAnalizerRAG import DCAnalizerRAG # Импорт нового кл
 from DCPages.PyJurnal import DCJurnal #Из PyJurnal.py импортируем класс DCJurnal
 from DCScripts.DCFileOpener import DCFileOpener #Из DCFileOpener.py импортируем класс DCFileOpener
 from DCScripts.DCConsoleLog import DCConsoleLog #Из DCConsoleLog.py импортируем класс DCConsoleLog
-from DCScripts.DCLMStudio import DCLMStudio
+from DCScripts.DCLM import DCLM
 
 import resources_rc
 
@@ -115,7 +115,7 @@ class MainApp:
         self.jurnal = DCJurnal()# Инициализация class DCJurnal из PyJurnal.py
         self.file_opener = DCFileOpener()#Иннициализация class DCFileOpener из DCFileOpener.py
         self.console_log = DCConsoleLog()#Иннициализация class DCConsoleLog из DCConsoleLog.py
-        self.lm_studio = DCLMStudio()#Иннициализация class DCLMStudio из DCLMStudio.py
+        self.lm = DCLM()#Иннициализация class DCLM из DCLM.py
         self.python_info = None
         self.qt_info = None
         self.load_custom_font()#Загружаем шрифт
@@ -164,7 +164,7 @@ class MainApp:
         # Создаём ВСЕ объекты ДО загрузки QML
         self.python_info = PythonInfo()
         self.qt_info = QtInfo()
-        # ВАЖНО: Связываем анализатор и LM Studio ПЕРЕД регистрацией
+        # ВАЖНО: Связываем анализатор и Studio ПЕРЕД регистрацией
         self._connect_analyzer_to_lmstudio()
         # РЕГИСТРИРУЕМ КОНТЕКСТНЫЕ СВОЙСТВА.
         self.engine.rootContext().setContextProperty("pyAnalyzer", self.analyzer)
@@ -174,7 +174,7 @@ class MainApp:
         self.engine.rootContext().setContextProperty("pyJurnal", self.jurnal)#доступен в QML как "jurnal"
         self.engine.rootContext().setContextProperty("pyFileOpener", self.file_opener)#в QML pyFileOpener
         self.engine.rootContext().setContextProperty("pyConsole", self.console_log)#в QML pyConsole
-        self.engine.rootContext().setContextProperty("pyLMStudio", self.lm_studio)#в QML pyLMStudio
+        self.engine.rootContext().setContextProperty("pyLM", self.lm)#в QML pyLM
         self.engine.rootContext().setContextProperty("pyPythonInfo", self.python_info)
         self.engine.rootContext().setContextProperty("pyQtInfo", self.qt_info)
         
@@ -212,10 +212,10 @@ class MainApp:
             print(f"✓ Установлено имя файла: {Path(path).name}")
         
     def _connect_analyzer_to_lmstudio(self):
-        """Связывает DCAnalyzer и DCLMStudio для автоматической перезагрузки модели"""
-        self.lm_studio.sigServerURLIzmenen.connect(self.analyzer.ustServerURL)
-        self.lm_studio.sigParametriIzmeneni.connect(self.analyzer.ustParametri)
-        print("✓ DCAnalyzer связан с DCLMStudio") 
+        """Связывает DCAnalyzer и DCLM для автоматической перезагрузки модели"""
+        self.lm.sigServerURLIzmenen.connect(self.analyzer.ustServerURL)
+        self.lm.sigParametriIzmeneni.connect(self.analyzer.ustParametri)
+        print("✓ DCAnalyzer связан с DCLM") 
 
     def run(self):
         """Запуск приложения"""

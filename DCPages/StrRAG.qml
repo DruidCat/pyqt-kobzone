@@ -130,7 +130,7 @@ Item {
         root.forceActiveFocus()
     }
 	Connections {
-		target: pyLMStudio
+		target: pyLM
 		function onSigStudioStatus(blStatus){
 			if(root.isRAGClicked){//Если нажата кнопка Создать RAG БД
 				root.isRAGClicked = false//Сбрасываем флаг
@@ -146,7 +146,7 @@ Item {
 					}
 				}
 				if(blStatus){//Если Studio запущена, то...
-					if(pyLMStudio.polModel()){//Если модель не пустая строка, значит она загружена.
+					if(pyLM.polModel()){//Если модель не пустая строка, значит она загружена.
 						vprVopros.ntVopros = 1//1 - выгрузить модель?
 						vprVopros.visible = true
 					} else fnStart()//Запускаем работу созадния RAG БД
@@ -252,7 +252,7 @@ Item {
     }
 	function fnClickedRAG() {//Функция нажатия кнопки начала создания RAG.	
 		root.isRAGClicked = true//Нажата кнопка создания RAG БД
-		pyLMStudio.proverkaStudio()
+		pyLM.proverkaStudio()
 	}	
 	function fnStopRAG() {//Функция Остановки создания RAG.
 		root.isRAG = false//возвращаем флаг, что создание RAG окончилась.	
@@ -394,7 +394,7 @@ Item {
 					fnStopRAG()//Останавливаем создание RAG
 				} else if (flag === 1){//Выгрызить модель?
 					isModelOstanovit = true//Запускаем остановку модели.
-					pyLMStudio.vigruzitModel()//Выгружаем модель
+					pyLM.vigruzitModel()//Выгружаем модель
 				} 
 			}
 			text: {

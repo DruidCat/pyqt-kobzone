@@ -134,7 +134,7 @@ Item {
         root.forceActiveFocus()
     }
 	Connections {
-		target: pyLMStudio
+		target: pyLM
 		function onSigStudioStatus(blStatus){
 			if(root.isTranscribeClicked){//Если нажата кнопка Начать Транскрибацию
 				root.isTranscribeClicked = false//Сбрасываем флаг
@@ -147,7 +147,7 @@ Item {
 					}				
 				}
 				if(blStatus){//Если Studio запущена, то...
-					var vrModel = pyLMStudio.polModel()
+					var vrModel = pyLM.polModel()
 					if(vrModel){//Если модель не пустая строка, значит она загружена.
 						vprVopros.ntVopros = 1//1 - выгрузить модель?
 						vprVopros.visible = true
@@ -282,7 +282,7 @@ Item {
     }
 	function fnClickedTranscribe() {//Функция нажатия кнопки начала транскрибации.
 		root.isTranscribeClicked = true//Нажата кнопка Транскрибации
-		pyLMStudio.proverkaStudio()
+		pyLM.proverkaStudio()
 	}	
 	function fnStopTranscriber() {//Функция Остановки транскрибации.
 		root.isTranscribing = false//возвращаем флаг, что транскрибация окончилась.	
@@ -447,7 +447,7 @@ Item {
 					fnStopTranscriber()//Останавливаем транскрибацию.
 				} else if (flag === 1){//Выгрызить модель?
 					isModelOstanovit = true//Запускаем остановку модели.
-					pyLMStudio.vigruzitModel()//Выгружаем модель
+					pyLM.vigruzitModel()//Выгружаем модель
 				} 
 			}
 			text: {

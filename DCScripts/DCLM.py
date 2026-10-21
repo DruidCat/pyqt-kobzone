@@ -7,7 +7,7 @@ from DCScripts.DCLMApp import DCLMApp
 from DCScripts.DCLMAPI import DCLMAPI
 from DCScripts.DCLMCLI import DCLMCLI
 
-class DCLMStudio(QObject):
+class DCLM(QObject):
     """Управление LM Studio/Bionic: запуск/остановка и работа с моделями"""
     
     # ==================== КОНСТАНТЫ ====================
@@ -55,10 +55,10 @@ class DCLMStudio(QObject):
     def __init__(self):
         super().__init__()
         self._hdd = DCLMHDD(log_callback=self.sigLog.emit)
-        self._passport = DCPassport()# По умолчанию создаётся паспорт для LM Studio
         self._app = DCLMApp(log_callback=self.sigLog.emit)
         self._api = DCLMAPI(log_callback=self.sigLog.emit)
         self._cli = DCLMCLI(log_callback=self.sigLog.emit)
+        self._passport = DCPassport()# По умолчанию создаётся паспорт для LM Studio
         # Управление моделями
         self._current_model = ""
         # Управление процессом
@@ -144,7 +144,7 @@ class DCLMStudio(QObject):
 
     def _naitiLMS_CLI(self) -> str | None:
         """
-        ФАСАДНЫЙ метод: DCLMHDD ищет CLI, а DCLMStudio:
+        ФАСАДНЫЙ метод: DCLMHDD ищет CLI, а DCLM:
         - эмитит sigCLIPut (чтобы QML сохранил в DCSettings)
         - генерирует _emit_error(9), если не найдено
         """
