@@ -47,6 +47,7 @@ Item {
 	property string serverURL: DCSettings.studio_server_url//URL Сервера Studio
 	property string strModel: DCSettings.studio_model_imya//Имя модели ИИ
 	property string strModelNoName: ""//Получаем имя модели ОТСУТСТВУЕТ.
+	property bool isMmproj: false//true - значит именно выбранная модель имеет режим мультимодальности
 	property string strSandbox: DCSettings.studio_sandbox//имя программы, которая запускает в песочнице
 	property bool __isMacOS: false//true - запуск на MacOS
 	property bool __isModelNoName: false//true - выбрана модель MODEL_NO_NAME, чтоб её выгрузить.
@@ -70,7 +71,7 @@ Item {
 		root.strModelNoName = pyLM.polModelNoName()//Получаем имя модели ОТСУТСТВУЕТ.
 		fnModelEnabled()//Функция управляет политикой кнопок Temperatura, Context, GPU
 		knopkiMassiv = [knopkaLMStart, knopkaLMStop, knopkaLMPut, knopkaCLIPut, knopkaSandbox, knopkaModeli,
-						knopkaContext, knopkaGPU, knopkaServerURL]
+						knopkaMmproj, knopkaContext, knopkaGPU, knopkaServerURL]
 		
 		if (DCSettings.studio_lms_put !== "")//Передаём путь из настроек в Python
 			pyLM.ustPutStudio(DCSettings.studio_lms_put)
@@ -223,6 +224,7 @@ Item {
 		function onSigModelsLoaded(models) {
             modelModels.clear()//Очищаем старую модель
             for (let i = 0; i < models.length; i++) {//Заполняем новыми данными
+				console.log(models[i])
                 modelModels.append({ spisok: models[i] })
             }
             let savedModel = DCSettings.studio_model_imya//Устанавливаем текущий индекс
@@ -250,6 +252,10 @@ Item {
 			if (ldrProgress.item) {
 				ldrProgress.item.progress = ntProgress
 			}
+		}
+		function onSigMmprojStatus(isMultimodal, isStatus) {
+			console.log("MMPROJ", isMultimodal, isStatus)
+			root.isMmproj = isMultimodal
 		}
 	}
 	Keys.onPressed: (event) => {
@@ -938,6 +944,27 @@ Item {
 						}
 					}
 				}
+				DCKnopkaOriginal {//Кнопка включения Sandbox
+                    id: knopkaMmproj
+					text: root.isMmproj ? qsTr("mmproj вкл") : qsTr("mmproj выкл")
+					ntHeight: root.ntWidth; ntCoff: root.ntCoff
+					anchors.left: parent.left; anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
+					clrTexta: root.clrMenuText
+                    clrKnopki: (root.currentIndex === 6) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    opacityKnopki: 0.9
+					function fnPress() {
+						root.currentIndex = 6
+						//root.isMmproj = !root.isMmproj
+					}
+					onClicked: {
+						if (pressed) {
+							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
+								if (pressed && !pvSandbox.pressed && !pvModels.pressed) fnPress()
+							}
+						}
+					}
+				}
 				DCKnopkaOriginal {//Кнопка выбора максимального количества токенов
                     id: knopkaContext
                     text: {
@@ -949,10 +976,10 @@ Item {
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 6) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 7) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					function fnPress() {
-						root.currentIndex = 6
+						root.currentIndex = 7
 						fnClickedVvod(0)//Функция выбора максимального контекста
 					}
 					onClicked: {
@@ -974,10 +1001,10 @@ Item {
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 7) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 8) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					function fnPress() {
-						root.currentIndex = 7
+						root.currentIndex = 8
 						fnClickedVvod(2)//Функция ввода gpu offload
 					}
 					onClicked: {
@@ -999,10 +1026,10 @@ Item {
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 8) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 9) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					function fnPress() {
-						root.currentIndex = 8
+						root.currentIndex = 9
 						fnClickedVvod(3)//Функция ввода адреса сервера
 					}
 					onClicked: {
@@ -1129,6 +1156,7 @@ Item {
 					knopkaCLIPut.enabled = false
 					knopkaSandbox.enabled = false
 					knopkaModeli.enabled = false
+					knopkaMmproj.enabled = false
 					knopkaContext.enabled = false
 					knopkaGPU.enabled = false
 					knopkaServerURL.enabled = false
@@ -1143,6 +1171,7 @@ Item {
 					if(__isMacOS || putLMStudio === "" || putCLI === "") knopkaSandbox.enabled = false
 					else knopkaSandbox.enabled = true
 					knopkaModeli.enabled = true
+					knopkaMmproj.enabled = true
 					fnModelEnabled()//Функция управляет политикой кнопок Temperatura, Context, GPU
 					//knopkaContext.enabled = true
 					//knopkaGPU.enabled = true

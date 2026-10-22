@@ -7,6 +7,7 @@ from DCScripts.DCLMHDD import DCLMHDD, DCPassport
 from DCScripts.DCLMApp import DCLMApp
 from DCScripts.DCLMAPI import DCLMAPI, ApiErrorType
 from DCScripts.DCLMCLI import DCLMCLI
+from DCScripts.DCLMMmproj import DCLMMmproj
 
 class DCLM(QObject):
     """Управление LM Studio/Bionic: запуск/остановка и работа с моделями"""
@@ -52,6 +53,10 @@ class DCLM(QObject):
     sigServerStatus = pyqtSignal(bool)      # Статус сервера (True - запущен, False - остановлен)
     sigServerError = pyqtSignal(str)        # Ошибка сервера
     sigAppName = pyqtSignal(str)            # Имя приложения изменилось (LM Studio/Bionic)    
+    # Сигналы для mmproj (мультимодальность)
+    sigMmprojStatus = pyqtSignal(bool, bool)# (is_multimodal, enabled) — статус после загрузки/проверки
+    sigMmprojPereklyuchen = pyqtSignal(bool)# mmproj успешно переключён, новое состояние (enabled)
+    sigMmprojError = pyqtSignal(str)        # ошибка операции с mmproj
 
     def __init__(self):
         super().__init__()
@@ -59,6 +64,7 @@ class DCLM(QObject):
         self._app = DCLMApp(log_callback=self.sigLog.emit)
         self._api = DCLMAPI(log_callback=self.sigLog.emit)
         self._cli = DCLMCLI(log_callback=self.sigLog.emit)
+        self._mmproj = DCLMMmproj(log_callback=self.sigLog.emit)
         self._passport = DCPassport()  # По умолчанию создаётся паспорт для LM Studio
 
         # ВАЖНО: APP_NAME теперь атрибут ЭКЗЕМПЛЯРА (а не класса), чтобы несколько
@@ -644,6 +650,7 @@ class DCLM(QObject):
                 self._current_model = model_name
 
                 self.sigModelZagrujena.emit(model_name, max_content)
+                self._proverkaMmprojVPotoke(model_name) # авто-проверка мультимодальности сразу после загрузки
                 return
 
             self.sigModelProgress.emit(0)
@@ -674,6 +681,7 @@ class DCLM(QObject):
         ok = self._cli.vigruzit_model(lms_cli)
         self._current_model = ""
         self.sigModelVigrujena.emit(bool(ok))
+        self.sigMmprojStatus.emit(False, False) #сброс индикатора mmproj в UI при выгрузке
         return bool(ok)
 
     def _fallback_to_config(self, model_name, max_content):
@@ -724,6 +732,69 @@ class DCLM(QObject):
     def _zapustitServerPosledujushii(self):
         self.sigLog.emit("🔄 Запуск сервера с новыми параметрами...")
         self.zapustitServer()
+
+    # ==================== РАБОТА С MMPROJ (мультимодальность) ====================
+    @pyqtSlot(str)
+    def proverkaMmproj(self, model_name: str) -> None:
+        """
+        Публичный слот: проверяет mmproj-статус указанной модели и эмитит sigMmprojStatus.
+        Можно вызывать для ЛЮБОЙ модели из списка (не обязательно загруженной),
+        например чтобы показать иконку "мультимодальная" в выпадающем списке.
+        """
+        threading.Thread(
+            target=self._proverkaMmprojVPotoke, args=(model_name,), daemon=True
+        ).start()
+
+    def _proverkaMmprojVPotoke(self, model_name: str) -> None:
+        lms_cli = self._naitiLMS_CLI()
+        if not lms_cli:
+            return  # ошибка 9 уже отправлена внутри _naitiLMS_CLI
+        status = self._mmproj.proverit_status(model_name, lms_cli_put=Path(lms_cli))
+        self.sigMmprojStatus.emit(status.is_multimodal, status.enabled)
+
+    @pyqtSlot(str, bool)
+    def pereklyuchitMmproj(self, model_name: str, vkliuchit: bool) -> None:
+        """
+        Включает/выключает mmproj для указанной модели.
+        Если эта модель сейчас загружена в LM Studio/Bionic — сначала выгружает её
+        (чтобы не менять файлы "на лету" под уже запущенным сервером).
+        После переключения self._current_model сбрасывается (если это была
+        текущая модель) — пользователю нужно будет заново выбрать/загрузить модель.
+        """
+        threading.Thread(
+            target=self._pereklyuchitMmprojVPotoke,
+            args=(model_name, vkliuchit),
+            daemon=True,
+        ).start()
+
+    def _pereklyuchitMmprojVPotoke(self, model_name: str, vkliuchit: bool) -> None:
+        lms_cli = self._naitiLMS_CLI()
+        if not lms_cli:
+            return
+
+        if self._current_model == model_name:
+            ok = self._vigruzitModel(lms_cli)
+            if not ok:
+                self._emit_mmproj_error(
+                    f"Не удалось выгрузить модель {model_name} перед переключением mmproj"
+                )
+                return
+
+        cli_put = Path(lms_cli)
+        if vkliuchit:
+            result = self._mmproj.vklyuchit(model_name, lms_cli_put=cli_put)
+        else:
+            result = self._mmproj.vyklyuchit(model_name, lms_cli_put=cli_put)
+
+        if result.success:
+            self.sigMmprojPereklyuchen.emit(result.status.enabled)
+            self.sigMmprojStatus.emit(result.status.is_multimodal, result.status.enabled)
+        else:
+            self._emit_mmproj_error(result.error)
+
+    def _emit_mmproj_error(self, message: str) -> None:
+        self.sigLog.emit(f"[mmproj] {message}")
+        self.sigMmprojError.emit(message)
 
     # ==================== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ====================
     def _emit_error(self, code, message):
