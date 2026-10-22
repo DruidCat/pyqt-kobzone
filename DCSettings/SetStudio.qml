@@ -77,10 +77,9 @@ Item {
 		if (DCSettings.studio_cli_put !== "")
     		pyLM.ustPutCLI(DCSettings.studio_cli_put)
 		pyLM.ustSandbox(root.strSandbox)//передать начальное значение
-		if (Qt.platform.os === "osx" || putLMStudio === "" || putCLI === ""){//Если это macOS или пустые пути
-			__isMacOS = true;//Запуск на macOS
-			knopkaSandbox.enabled = false//не активная кнопка
-		} else knopkaSandbox.enabled = true//активная кнопка.
+		if (Qt.platform.os === "osx")__isMacOS = true;//Запуск на macOS
+		if (__isMacOS || putLMStudio === "" || putCLI === "")knopkaSandbox.enabled = false//не активная кнопка
+		else knopkaSandbox.enabled = true//активная кнопка.
 		root.forceActiveFocus()	
 	}
 	onServerURLChanged: {
@@ -106,13 +105,13 @@ Item {
 		isGpuOffloadStart = true
 	}	
 	onPutLMStudioChanged: {//Если путь к Studio изменился, то...
-		if (root.putLMStudio !== ""){//Если он не пустой, то...
+		if (root.putLMStudio === ""){//Если пустой, то...
+			knopkaSandbox.enabled = false//Кнопка не активна.
+			DCSettings.studio_sandbox = ""//Выключаем sandbox
+		} else {//Если не пустой путь, то...
 			pyLM.ustPutStudio(root.putLMStudio)//Передаём его в логику Python
 			if(__isMacOS || putCLI === "") knopkaSandbox.enabled = false
 			else knopkaSandbox.enabled = true
-		} else {//Если пустой путь, то...
-			knopkaSandbox.enabled = false//Кнопка не активна.
-			DCSettings.studio_sandbox = ""//Выключаем sandbox
 		}
 	}
 	onPutCLIChanged: {//Если путь к серверу поменялся, то...
