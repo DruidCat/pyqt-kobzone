@@ -96,7 +96,7 @@ QtObject {
         urlMusic = urlMusic !== "" ? urlMusic : cnDomPut
         urlDocuments = urlDocuments !== "" ? urlDocuments : cnDomPut
 		urlDocuments = fnUrlToLocalPath(urlDocuments)//Удаляем file:// с помощью кроссплатформенной функции
-		if (studio_model_imya === "") studio_model_imya = pyLMStudio.polModelNoName()//имя ОТСУТСТВУЕТ.
+		if (studio_model_imya === "") studio_model_imya = pyLM.polModelNoName()//имя ОТСУТСТВУЕТ.
 		if (analizer_put_text === "") {//Если настройки ёще были записаны, то...
             analizer_put_text = urlDocuments//Записываем в реестр
         }

@@ -173,8 +173,11 @@ Item {
 		//12 - Ошибка остановки сервера
 		//13 - Модель не выбрана
 		//14 - Ошибка по Sandbox
+		function onSigLMSPut(strLMSPut){//Если путь к Студии автоматически обнаружен, то он придут из PyLM
+			DCSettings.studio_lms_put = strLMSPut;//Записываем в реестр настроек.
+		}
 		function onSigCLIPut(strCLIPut){//Если путь автоматически обнаружен, то он придёт из pyLM
-			DCSettings.studio_cli_put	= strCLIPut;//Запоминаем в реестре настроек.
+			DCSettings.studio_cli_put = strCLIPut;//Запоминаем в реестре настроек.
 		}
 		function onSigStudioStarted() {//Обработка сигнала старта Studio
 			root.__strProgress = qsTr(`Загрузка ${root.strStudioImya}.`)
@@ -337,18 +340,8 @@ Item {
 		onAccepted: {
 			var vrPut = fnUrlToLocalPath(selectedFile)//Используем кроссплатформенную функцию
 			DCSettings.studio_lms_put = vrPut
-			if(knopkaLMStart.isStartBezPuti){//Если путь к Studio выбран и была попытка старта, то...
-				knopkaLMStart.isStartBezPuti = false;//Сбрасываем флаг.
-				pyLM.zapustitStudio()//Запускаем Studio.
-			}
-			if(knopkaLMStop.isStopBezPuti){//Если путь к Studio выбран и была попытка остановки, то...
-				knopkaLMStop.isStopBezPuti = false;//Сбрасываем флаг.
-				pyLM.ostanovitStudio()//Останавливаем Studio.
-			}
 		}
 		onRejected: {//Если нажата кнопка отмены, то...
-			knopkaLMStart.isStartBezPuti = false;//Сбрасываем флаг.
-			knopkaLMStop.isStopBezPuti = false;//Сбрасываем флаг.
 		}
 	}
 	function fnClickedEnter() {//Функция обработки нажатия клавиши Enter
@@ -514,16 +507,10 @@ Item {
 		}
 	}
 	function fnClickedLMSZapustit(){//Функция запуска Studio
-		if (root.putLMStudio === "") {//Если путь не задан
-			knopkaLMStart.isStartBezPuti = true;//Попутка запустить Studio.
-			dialogLMPut.open()//Функция выбора пути к Studio.
-		} else pyLM.zapustitStudio()
+		pyLM.zapustitStudio()//Запускаем Студию, если путь не задан,то автоматически искать будет или ошибку=3
 	}
 	function fnClickedLMSZaktit() {//Функция закрытия Studio
-		if (root.putLMStudio === "") {//Если путь не задан
-			knopkaLMStop.isStopBezPuti = true;//Попытка остановить Studio.
-			dialogLMPut.open()//Функция выбора пути к Studio.
-		} else pyLM.ostanovitStudio()
+		pyLM.ostanovitStudio()//Закрываем студию.
 	}
 	function fnClickedVvod(vvod){//Функция выбора Ввода данных
 		txnVvod.ntVvod = vvod
@@ -708,7 +695,7 @@ Item {
 			visible: false
 			property int ntVopros: 0//Смотри на номера ошибок sigError
 			text: {
-				if(ntVopros === 3) return qsTr(`Путь к исполняемому файлу ${root.strStudioImya} не действительный. Задать?`)
+				if(ntVopros === 3) return qsTr(`Путь к исполняемому файлу ${root.strStudioImya} не найден. Задать?`)
 				else if(ntVopros === 6) return qsTr(`${root.strStudioImya} не запущена. Запустить?`)
 				else if (ntVopros === 9) return qsTr("Путь к серверу lms не действительный. Задать?")
 				else return qsTr("Любовь")
@@ -795,7 +782,6 @@ Item {
 					clrTexta: root.clrMenuText
                     clrKnopki: (root.currentIndex === 0) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
-					property bool isStartBezPuti: false//true - попытка запуска Studio без заданного пути.
 					function fnPress() {
 						root.currentIndex = 0
 						fnClickedLMSZapustit()//Функция запуска Studio
@@ -817,7 +803,6 @@ Item {
 					clrTexta: root.clrMenuText
                     clrKnopki: (root.currentIndex === 1) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
-					property bool isStopBezPuti: false//true - попытка запуска Studio без заданного пути.
 					function fnPress() {
 						root.currentIndex = 1
 						fnClickedLMSZaktit()//Функция закрытия Studio

@@ -159,17 +159,44 @@ class DCLM(QObject):
     def _naitiLMStudio(self) -> Path | None:
         """
         ФАСАДНЫЙ метод поиска приложения.
-        Реальный поиск выполняет DCLMHDD, а фасад применяет DCPassport.
+        Реальный поиск выполняет DCLMHDD, а фасад:
+        - применяет DCPassport (обновит APP_NAME и отправит sigAppName)
+        - если путь найден автопоиском ВПЕРВЫЕ (т.е. отличается от уже известного
+          self._custom_path) — фиксирует его и эмитит sigLMSPut, чтобы QML сохранил
+          путь в настройках (реестре). Это нужно, чтобы при повторных запусках
+          zapustitStudio() автопоиск по диску больше НЕ выполнялся (актуально,
+          если в системе одновременно установлены и LM Studio, и Bionic —
+          иначе автопоиск мог бы в следующий раз найти другое приложение).
         """
+        staryj_put = self._custom_path
+
         app_path = self._hdd.naiti_put_prilozhenia(custom_path=self._custom_path)
         if not app_path:
-            return None 
+            return None
 
         try:
             passport = self._detect_passport_from_path(str(app_path))
             self._apply_passport(passport)
         except Exception as e:
             self.sigLog.emit(f"⚠ Не удалось определить тип приложения: {e}")
+
+        novyj_put = str(app_path)
+
+        # Сравниваем с уже известным путём (с учётом возможных различий
+        # в написании пути — например, относительный путь vs resolve()).
+        put_izmenilsya = True
+        if staryj_put:
+            try:
+                put_izmenilsya = (
+                    Path(staryj_put).expanduser().resolve() != Path(novyj_put).expanduser().resolve()
+                )
+            except Exception:
+                put_izmenilsya = (staryj_put != novyj_put)
+
+        if put_izmenilsya:
+            self._custom_path = novyj_put
+            self.sigLog.emit(f"✓ Путь к {self.APP_NAME} определён автоматически: {novyj_put}")
+            self.sigLMSPut.emit(novyj_put)
 
         return app_path
 
