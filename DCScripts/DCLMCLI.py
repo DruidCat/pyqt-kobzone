@@ -1,13 +1,16 @@
 # DCScripts/DCLMCLI.py
 from __future__ import annotations
 
-import json
+import queue
 import re
 import subprocess
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Callable, Optional
+import threading
+import time
 from dataclasses import dataclass, field
+from pathlib import Path
+import json
+from typing import Callable, Optional
+
 
 @dataclass(frozen=True)
 class LoadResult:
@@ -19,11 +22,11 @@ class LoadResult:
     timeout: bool = False
     hints: list[str] = field(default_factory=list)
 
+
 class DCLMCLI:
     """
     Работа с lms CLI (чистый Python, без Qt):
-    - unload модели
-    - load модели с прогрессом
+    - vigruzit_model / zagruzit_model (с прогрессом)
     - fallback стратегии GPU при OOM
     - обновление ~/.lmstudio/server-config.json
     """
@@ -35,15 +38,15 @@ class DCLMCLI:
         if self._log:
             self._log(msg)
 
-    # -------------------- GPU params --------------------
-    def get_gpu_params(self, gpu_offload: int) -> tuple[str, str]:
+    # -------------------- GPU параметры --------------------
+    def poluchit_gpu_parametri(self, gpu_offload: int) -> tuple[str, str]:
         if gpu_offload == 0:
             return "off", "CPU only"
         if gpu_offload >= 100:
             return "max", "Full GPU"
-        return str(gpu_offload / 100.0), f"{gpu_offload}% GPU"
+        return f"{gpu_offload / 100:.2f}", f"{gpu_offload}% GPU"
 
-    def get_fallback_strategies(self, gpu_offload: int) -> list[tuple[str, str]]:
+    def poluchit_strategii_otkata(self, gpu_offload: int) -> list[tuple[str, str]]:
         if gpu_offload >= 100:
             return [("0.5", "50% GPU"), ("0.3", "30% GPU"), ("off", "CPU only")]
         if gpu_offload >= 50:
@@ -52,14 +55,16 @@ class DCLMCLI:
             return [("off", "CPU only")]
         return []
 
-    def _is_oom_error(self, text: str) -> bool:
+    def _eto_oom_oshibka(self, text: str) -> bool:
         t = (text or "").lower()
         return ("out of memory" in t) or ("cuda" in t) or ("cublas" in t)
 
-    # -------------------- unload --------------------
-    def unload_model(self, lms_cli: str, timeout: float = 30.0) -> bool:
+    # -------------------- выгрузка --------------------
+    def vigruzit_model(self, lms_cli: str, timeout: float = 30.0) -> bool:
         """
-        Выгружает модель. Возвращает True даже если модели не было (это не ошибка).
+        Выгружает модель.
+        True  — модель выгружена ИЛИ её и не было загружено (не ошибка).
+        False — реальная ошибка выполнения команды.
         """
         try:
             self.log("🔄 Выгрузка предыдущей модели...")
@@ -76,20 +81,23 @@ class DCLMCLI:
                 return True
 
             err = (r.stderr or "").strip()
-            # “нет модели” считаем нормальным исходом
+            # "нет модели" считаем нормальным исходом
             if "you don't have any models loaded" in err.lower():
                 self.log("Нет загруженной модели для выгрузки")
                 return True
 
-            self.log(f"⚠ Предупреждение при выгрузке: {err[:200]}")
-            return True
+            self.log(f"⚠ Ошибка при выгрузке модели: {err[:500]}")
+            return False
 
+        except subprocess.TimeoutExpired:
+            self.log(f"⚠ Таймаут выгрузки модели ({timeout}s)")
+            return False
         except Exception as e:
             self.log(f"⚠ Ошибка выгрузки модели: {e}")
-            return True  # не критично
+            return False
 
-    # -------------------- load (with progress) --------------------
-    def load_model(
+    # -------------------- загрузка (с прогрессом) --------------------
+    def zagruzit_model(
         self,
         lms_cli: str,
         model_name: str,
@@ -100,16 +108,16 @@ class DCLMCLI:
     ) -> LoadResult:
         """
         Пытается загрузить модель:
-        1) unload
+        1) vigruzit_model (unload)
         2) load с прогрессом
         3) при OOM — fallback стратегии GPU
         """
-        # unload всегда сначала
-        self.unload_model(lms_cli)
+        # unload всегда сначала (ошибку выгрузки не считаем фатальной для загрузки)
+        self.vigruzit_model(lms_cli)
 
-        gpu_param, gpu_desc = self.get_gpu_params(gpu_offload)
+        gpu_param, gpu_desc = self.poluchit_gpu_parametri(gpu_offload)
 
-        res = self._load_once_with_progress(
+        res = self._zagruzit_odnokratno_s_progressom(
             lms_cli=lms_cli,
             model_name=model_name,
             max_context=max_context,
@@ -126,10 +134,10 @@ class DCLMCLI:
             self.log(f"⚠ {gpu_desc}: не хватает памяти")
             self.log("🔄 Пробуем альтернативные стратегии GPU...")
 
-            for fb_gpu, fb_desc in self.get_fallback_strategies(gpu_offload):
+            for fb_gpu, fb_desc in self.poluchit_strategii_otkata(gpu_offload):
                 self.log(f"🔄 Попытка: {fb_desc}...")
 
-                fb = self._load_once_simple(
+                fb = self._zagruzit_odnokratno_prosto(
                     lms_cli=lms_cli,
                     model_name=model_name,
                     max_context=max_context,
@@ -154,11 +162,20 @@ class DCLMCLI:
 
         return res
 
-    def _load_once_with_progress( self, lms_cli: str, model_name: str, max_context: int, gpu_param: str,
-        timeout: float, progress_cb: Optional[Callable[[int], None]] = None,) -> LoadResult:
+    def _zagruzit_odnokratno_s_progressom(
+        self,
+        lms_cli: str,
+        model_name: str,
+        max_context: int,
+        gpu_param: str,
+        timeout: float,
+        progress_cb: Optional[Callable[[int], None]] = None,
+    ) -> LoadResult:
         """
-        Запуск lms load через Popen + чтение stdout (stderr объединяем со stdout, чтобы не блокировалось).
+        Запуск lms load через Popen + чтение stdout в отдельном потоке (через Queue),
+        чтобы таймаут реально прерывал зависший процесс.
         """
+        process: subprocess.Popen | None = None
         try:
             self.log("🔄 Загрузка модели с новыми параметрами...")
 
@@ -181,15 +198,47 @@ class DCLMCLI:
                 universal_newlines=True
             )
 
+            line_queue: "queue.Queue[str | None]" = queue.Queue()
+
+            def _reader():
+                try:
+                    if process.stdout:
+                        for line in process.stdout:
+                            line_queue.put(line)
+                finally:
+                    line_queue.put(None)  # сигнал конца потока вывода
+
+            reader_thread = threading.Thread(target=_reader, daemon=True)
+            reader_thread.start()
+
             progress_pattern = re.compile(r'Loading\s+\S+\s+(\d+)%')
             last_progress = -1
             tail_lines: list[str] = []
+            deadline = time.monotonic() + timeout
 
-            # читаем вывод построчно до завершения процесса
             while True:
-                line = process.stdout.readline() if process.stdout else ""
-                if not line:
-                    break
+                if time.monotonic() > deadline:
+                    self.log(f"⚠ Таймаут загрузки модели ({timeout}s), прерываю процесс...")
+                    try:
+                        process.kill()
+                    except Exception:
+                        pass
+                    if progress_cb:
+                        progress_cb(0)
+                    return LoadResult(
+                        False,
+                        error="Таймаут загрузки модели",
+                        timeout=True,
+                        hints=self.sozdat_podskazki("Таймаут загрузки модели", oom=False, timeout=True)
+                    )
+
+                try:
+                    line = line_queue.get(timeout=1.0)
+                except queue.Empty:
+                    continue  # ещё не вышел таймаут — продолжаем ждать
+
+                if line is None:
+                    break  # поток вывода закрылся — процесс завершается
 
                 line = line.strip()
                 if line:
@@ -204,7 +253,19 @@ class DCLMCLI:
                         last_progress = p
                         progress_cb(p)
 
-            process.wait(timeout=timeout)
+            # дожидаемся завершения процесса (stdout уже закрыт, не должно висеть долго)
+            try:
+                process.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                if progress_cb:
+                    progress_cb(0)
+                return LoadResult(
+                    False,
+                    error="Процесс не завершился после закрытия вывода",
+                    timeout=True,
+                    hints=self.sozdat_podskazki("Таймаут завершения процесса", oom=False, timeout=True)
+                )
 
             if process.returncode == 0:
                 if progress_cb:
@@ -212,7 +273,7 @@ class DCLMCLI:
                 return LoadResult(True)
 
             err_text = "\n".join(tail_lines).strip() or "Неизвестная ошибка"
-            oom = self._is_oom_error(err_text)
+            oom = self._eto_oom_oshibka(err_text)
             if progress_cb:
                 progress_cb(0)
 
@@ -220,29 +281,25 @@ class DCLMCLI:
                 success=False,
                 error=err_text[:400],
                 oom=oom,
-                hints=self.make_hints(err_text, oom=oom, timeout=False)
+                hints=self.sozdat_podskazki(err_text, oom=oom, timeout=False)
             )
 
-        except subprocess.TimeoutExpired:
-            if progress_cb:
-                progress_cb(0)
-            return LoadResult(
-                False,
-                error="Таймаут загрузки модели",
-                timeout=True,
-                hints=self.make_hints("Таймаут загрузки модели", oom=False, timeout=True)
-            )
         except Exception as e:
+            if process is not None:
+                try:
+                    process.kill()
+                except Exception:
+                    pass
             if progress_cb:
                 progress_cb(0)
             msg = str(e)
             return LoadResult(
                 False,
                 error=msg,
-                hints=self.make_hints(msg, oom=False, timeout=False)
+                hints=self.sozdat_podskazki(msg, oom=False, timeout=False)
             )
 
-    def _load_once_simple(
+    def _zagruzit_odnokratno_prosto(
         self,
         lms_cli: str,
         model_name: str,
@@ -266,13 +323,13 @@ class DCLMCLI:
                 return LoadResult(True)
 
             err = (r.stderr or r.stdout or "").strip() or "Неизвестная ошибка"
-            oom = self._is_oom_error(err)
+            oom = self._eto_oom_oshibka(err)
 
             return LoadResult(
                 False,
                 error=err[:400],
                 oom=oom,
-                hints=self.make_hints(err, oom=oom, timeout=False)
+                hints=self.sozdat_podskazki(err, oom=oom, timeout=False)
             )
 
         except subprocess.TimeoutExpired:
@@ -280,14 +337,14 @@ class DCLMCLI:
                 False,
                 error="Таймаут загрузки модели",
                 timeout=True,
-                hints=self.make_hints("Таймаут загрузки модели", oom=False, timeout=True)
+                hints=self.sozdat_podskazki("Таймаут загрузки модели", oom=False, timeout=True)
             )
         except Exception as e:
             return LoadResult(False, error=str(e))
 
-    # -------------------- config --------------------
+    # -------------------- конфиг --------------------
 
-    def update_server_config(self, max_context: int) -> bool:
+    def obnovit_konfig_servera(self, max_context: int) -> bool:
         """
         Обновляет ~/.lmstudio/server-config.json (или создаёт).
         """
@@ -324,8 +381,7 @@ class DCLMCLI:
             return False
 
     # --- ПОДСКАЗКИ ---
-    def make_hints(self, error_text: str, oom: bool, timeout: bool) -> list[str]:
-        t = (error_text or "").lower()
+    def sozdat_podskazki(self, error_text: str, oom: bool, timeout: bool) -> list[str]:
         hints: list[str] = []
 
         if timeout:
@@ -342,6 +398,7 @@ class DCLMCLI:
             hints.append("   3. Уменьшите контекст (например, до 4096)")
             return hints
 
+        t = (error_text or "").lower()
         if "not found" in t:
             hints.append('💡 Модель не найдена. Проверьте имя модели: "lms ls"')
             return hints

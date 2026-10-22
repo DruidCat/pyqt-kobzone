@@ -14,9 +14,11 @@ from typing import Callable, Optional
 @dataclass(frozen=True)
 class DCPassport:
     display_name: str = "LM Studio"
-    linux_pgrep_pattern: str = r"(lm[- ]?studio|lmstudio|lm-studio)"# regex для pgrep (Linux)
-    mac_pgrep_pattern: str = r"(LM Studio|lmstudio|lm-studio)"      # regex для pgrep (macOS)
-    windows_image_name: str = "LM Studio.exe"                       # имя процесса для taskkill/tasklist (Windows)
+    linux_pgrep_pattern: str = r"(lm[- ]?studio|lmstudio|lm-studio)" # regex для pgrep (Linux)
+    mac_pgrep_pattern: str = r"(LM Studio|lmstudio|lm-studio)"       # regex для pgrep (macOS)
+    windows_image_name: str = "LM Studio.exe"                        # имя процесса для taskkill/tasklist (Windows)
+    cli_name: str = "lms"                                            # имя CLI без расширения (lms / lms.exe)
+
 
 class DCLMHDD:
     """
@@ -79,13 +81,15 @@ class DCLMHDD:
         try:
             path = Path(file_path).expanduser().resolve()
             return path.is_file()
-        except Exception:
+        except Exception as e:
+            self.log(f"⚠ Ошибка проверки файла {file_path}: {e}")
             return False
 
     # --- ПРОВЕРКА LMS ФАЙЛА ---
-    def proverka_lms_faila(self, file_path: str) -> bool:
+    def proverka_lms_faila(self, file_path: str, cli_name: str = "lms") -> bool:
         """
-        Проверка, что путь указывает на корректный lms CLI под текущую ОС.
+        Проверка, что путь указывает на корректный CLI под текущую ОС.
+        cli_name — имя CLI без расширения (по умолчанию "lms").
         """
         if not file_path:
             return False
@@ -101,15 +105,16 @@ class DCLMHDD:
             file_stem = path.stem.lower()
             file_suffix = path.suffix.lower()
             current_os = platform.system()
+            cli_name_lower = cli_name.lower()
 
             if current_os == "Linux":
-                if file_name != "lms":
+                if file_name != cli_name_lower:
                     self.log(f"⚠ Неверное имя файла для Linux: {file_name}")
-                    self.log("   Ожидается: lms")
+                    self.log(f"   Ожидается: {cli_name_lower}")
                     return False
 
                 if os.access(path, os.X_OK):
-                    self.log(f"✓ Найден lms для Linux: {path}")
+                    self.log(f"✓ Найден {cli_name_lower} для Linux: {path}")
                     return True
 
                 self.log(f"⚠ Файл не исполняемый: {path}")
@@ -117,28 +122,30 @@ class DCLMHDD:
                 return False
 
             if current_os == "Darwin":
-                # Обычно lms без расширения, иногда могут попытаться дать .app (редко)
-                if file_name == "lms" or file_suffix == ".app":
-                    if file_stem == "lms" or file_name == "lms":
-                        if file_suffix != ".app" and not os.access(path, os.X_OK):
-                            self.log(f"⚠ Файл не исполняемый: {path}")
-                            self.log(f"   Выполните: chmod +x {path}")
-                            return False
+                # Бандл .app — исполняемость не проверяем так (внутри своя структура)
+                if file_suffix == ".app":
+                    self.log(f"✓ Найден {cli_name_lower} для macOS (bundle): {path}")
+                    return True
 
-                        self.log(f"✓ Найден lms для macOS: {path}")
-                        return True
+                if file_stem == cli_name_lower or file_name == cli_name_lower:
+                    if not os.access(path, os.X_OK):
+                        self.log(f"⚠ Файл не исполняемый: {path}")
+                        self.log(f"   Выполните: chmod +x {path}")
+                        return False
+                    self.log(f"✓ Найден {cli_name_lower} для macOS: {path}")
+                    return True
 
                 self.log(f"⚠ Неверный файл для macOS: {file_name}")
-                self.log("   Ожидается: lms (без расширения)")
+                self.log(f"   Ожидается: {cli_name_lower} (без расширения)")
                 return False
 
             if current_os == "Windows":
-                if file_suffix != ".exe" or file_stem != "lms":
+                if file_suffix != ".exe" or file_stem != cli_name_lower:
                     self.log(f"⚠ Неверный файл для Windows: {file_name}")
-                    self.log("   Ожидается: lms.exe")
+                    self.log(f"   Ожидается: {cli_name_lower}.exe")
                     return False
 
-                self.log(f"✓ Найден lms для Windows: {path}")
+                self.log(f"✓ Найден {cli_name_lower} для Windows: {path}")
                 return True
 
             self.log(f"⚠ Неподдерживаемая ОС: {current_os}")
@@ -148,9 +155,9 @@ class DCLMHDD:
             self.log(f"✗ Ошибка проверки файла: {e}")
             return False
 
-    # -------------------- detect app type --------------------
+    # -------------------- определение паспорта приложения --------------------
 
-    def detect_passport_from_path(self, app_path: str, fallback: DCPassport | None = None) -> DCPassport:
+    def opredelit_pasport_po_puti(self, app_path: str, fallback: DCPassport | None = None) -> DCPassport:
         """
         Определяет LM Studio или Bionic по имени файла (с учётом AppImage версий).
         """
@@ -159,6 +166,7 @@ class DCLMHDD:
             linux_pgrep_pattern=r"(lm[- ]?studio|lmstudio|lm-studio)",
             mac_pgrep_pattern=r"(LM Studio|lmstudio|lm-studio)",
             windows_image_name="LM Studio.exe",
+            cli_name="lms",
         )
 
         try:
@@ -173,6 +181,7 @@ class DCLMHDD:
                     linux_pgrep_pattern=r"(bionic)",
                     mac_pgrep_pattern=r"(Bionic|bionic)",
                     windows_image_name="Bionic.exe",
+                    cli_name="lms",  # при необходимости поменять на реальное имя CLI Bionic
                 )
 
             # LM Studio: lm-studio / lm studio / lmstudio
@@ -182,18 +191,21 @@ class DCLMHDD:
                     linux_pgrep_pattern=r"(lm[- ]?studio|lmstudio|lm-studio)",
                     mac_pgrep_pattern=r"(LM Studio|lmstudio|lm-studio)",
                     windows_image_name="LM Studio.exe",
+                    cli_name="lms",
                 )
 
             return default
-        except Exception:
+        except Exception as e:
+            self.log(f"⚠ Ошибка определения паспорта по пути {app_path}: {e}")
             return default
 
-    # -------------------- find lms cli --------------------
+    # -------------------- поиск lms cli --------------------
 
-    def find_lms_cli(self, preferred_path: str = "") -> str | None:
+    def naiti_lms_cli(self, preferred_path: str = "", cli_name: str = "lms") -> str | None:
         """
-        Возвращает путь к lms (CLI) или None.
+        Возвращает путь к CLI (lms) или None.
         preferred_path — путь из настроек, если задан.
+        cli_name — имя CLI без расширения.
         """
         if preferred_path:
             p = Path(preferred_path).expanduser().resolve()
@@ -206,41 +218,41 @@ class DCLMHDD:
 
         if os_name in ("Linux", "Darwin"):
             search_paths = [
-                home / ".lmstudio" / "bin" / "lms",
-                home / ".local" / "bin" / "lms",
-                Path("/usr/local/bin/lms"),
-                Path("/usr/bin/lms"),
+                home / ".lmstudio" / "bin" / cli_name,
+                home / ".local" / "bin" / cli_name,
+                Path(f"/usr/local/bin/{cli_name}"),
+                Path(f"/usr/bin/{cli_name}"),
             ]
             for p in search_paths:
                 if p.exists():
-                    self.log(f"✓ Найден lms CLI: {p}")
+                    self.log(f"✓ Найден {cli_name} CLI: {p}")
                     return str(p)
 
-            # PATH
-            found = shutil.which("lms")
+            found = shutil.which(cli_name)
             if found:
-                self.log(f"✓ Найден lms в PATH: {found}")
+                self.log(f"✓ Найден {cli_name} в PATH: {found}")
                 return found
 
         elif os_name == "Windows":
+            exe_name = f"{cli_name}.exe"
             search_paths = [
-                Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "LMStudio" / "lms.exe",
-                Path(os.environ.get("APPDATA", "")) / "LMStudio" / "lms.exe",
+                Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "LMStudio" / exe_name,
+                Path(os.environ.get("APPDATA", "")) / "LMStudio" / exe_name,
             ]
             for p in search_paths:
                 if p.exists():
-                    self.log(f"✓ Найден lms CLI: {p}")
+                    self.log(f"✓ Найден {cli_name} CLI: {p}")
                     return str(p)
 
-            found = shutil.which("lms.exe") or shutil.which("lms")
+            found = shutil.which(exe_name) or shutil.which(cli_name)
             if found:
-                self.log(f"✓ Найден lms в PATH: {found}")
+                self.log(f"✓ Найден {cli_name} в PATH: {found}")
                 return found
 
         return None
 
-    # ---ПОИСК ИСПОЛНЯЕМЫХ ФАЙЛОВ---
-    def find_app_path(self, custom_path: str = "") -> Path | None:
+    # --- ПОИСК ИСПОЛНЯЕМЫХ ФАЙЛОВ ---
+    def naiti_put_prilozhenia(self, custom_path: str = "") -> Path | None:
         """
         Ищет путь к LM Studio/Bionic.
         1) custom_path (если задан)
@@ -259,13 +271,11 @@ class DCLMHDD:
         os_name = platform.system()
 
         if os_name == "Linux":
-            # 1) пробуем Exec= из desktop
-            from_desktop = self._find_app_from_desktop_linux(home)
+            from_desktop = self._naiti_cherez_desktop_linux(home)
             if from_desktop and from_desktop.exists():
                 self.log(f"✓ Найден через .desktop: {from_desktop}")
                 return from_desktop
 
-            # 2) ищем AppImage в популярных местах (без рекурсии)
             search_dirs = [
                 home / "lmstudio",
                 home / "Applications",
@@ -276,7 +286,7 @@ class DCLMHDD:
                 Path("/usr/local/bin"),
             ]
 
-            found = self._find_appimage_in_dirs(
+            found = self._naiti_appimage_v_papkah(
                 dirs=search_dirs,
                 keywords_any=[("lm", "studio"), ("bionic",)]
             )
@@ -314,7 +324,7 @@ class DCLMHDD:
 
         return None
 
-    def _find_app_from_desktop_linux(self, home: Path) -> Path | None:
+    def _naiti_cherez_desktop_linux(self, home: Path) -> Path | None:
         """
         Поиск Exec=... в *.desktop.
         Сначала пытаемся известные имена, затем лёгкий glob.
@@ -330,23 +340,22 @@ class DCLMHDD:
             desktop_dir / "Bionic.desktop",
         ]
 
-        # добавим ещё “похожие” файлы, но без полного обхода всех desktop
         try:
             desktop_files += list(desktop_dir.glob("*lm*studio*.desktop"))
             desktop_files += list(desktop_dir.glob("*bionic*.desktop"))
-        except Exception:
-            pass
+        except Exception as e:
+            self.log(f"⚠ Ошибка поиска .desktop файлов: {e}")
 
         for df in desktop_files:
             if not df.exists():
                 continue
-            p = self._parse_desktop_exec(df)
+            p = self._razobrat_desktop_exec(df)
             if p and p.exists():
                 return p
 
         return None
 
-    def _parse_desktop_exec(self, desktop_file: Path) -> Path | None:
+    def _razobrat_desktop_exec(self, desktop_file: Path) -> Path | None:
         """
         Достаёт путь из строки Exec=... и возвращает Path.
         """
@@ -359,11 +368,12 @@ class DCLMHDD:
                         exec_path = exec_path.replace('"', "").replace("'", "")
                         p = Path(exec_path).expanduser()
                         return p
-        except Exception:
+        except Exception as e:
+            self.log(f"⚠ Ошибка разбора {desktop_file}: {e}")
             return None
         return None
 
-    def _find_appimage_in_dirs(self, dirs: list[Path], keywords_any: list[tuple[str, ...]]) -> Path | None:
+    def _naiti_appimage_v_papkah(self, dirs: list[Path], keywords_any: list[tuple[str, ...]]) -> Path | None:
         """
         Ищет AppImage в указанных директориях без рекурсии.
         keywords_any: список наборов ключевых слов; если любое множество совпало — файл подходит.
@@ -387,7 +397,8 @@ class DCLMHDD:
                             return item
             except PermissionError:
                 continue
-            except Exception:
+            except Exception as e:
+                self.log(f"⚠ Ошибка сканирования {base_dir}: {e}")
                 continue
 
         return None

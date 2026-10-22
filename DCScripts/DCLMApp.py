@@ -15,20 +15,24 @@ from DCScripts.DCLMHDD import DCPassport
 
 class DCLMApp:
     """
-    Управление процессом приложения (LM Studio/Bionic): start/stop/is_running.
+    Управление процессом приложения (LM Studio/Bionic): zapustit/ostanovit/proverka_zapuschen.
     Чистый Python: никаких Qt сигналов.
     """
 
     def __init__(self, log_callback: Optional[Callable[[str], None]] = None):
         self._log = log_callback
-        self.process: subprocess.Popen | None = None  # то, что мы запускали (если запускали)
+        # self.process хранит процесс, только если МЫ его запускали.
+        # ВАЖНО: на macOS это процесс "open" (короткоживущий), а не само приложение.
+        # На Windows/Linux с sandbox это может быть процесс-лаунчер, а не целевое приложение.
+        # Поэтому proverka_zapuschen() всегда дополнительно делает OS-level проверку (pgrep/tasklist).
+        self.process: subprocess.Popen | None = None
 
     def log(self, msg: str) -> None:
         if self._log:
             self._log(msg)
 
-    # ---СТАТУС---
-    def is_running(self, passport: DCPassport) -> bool:
+    # --- СТАТУС ---
+    def proverka_zapuschen(self, passport: DCPassport) -> bool:
         """
         Проверяет запущено ли приложение.
         Сначала пытается по self.process, потом OS-level проверки.
@@ -63,14 +67,15 @@ class DCLMApp:
                 )
                 return passport.windows_image_name.lower() in r.stdout.lower()
 
-        except Exception:
+        except Exception as e:
+            self.log(f"⚠ Ошибка проверки статуса процесса: {e}")
             return False
 
         return False
 
-    # ---СТАРТ---
-    def start(self, app_path: str | Path, sandbox_name: str, cli_path: str | None,
-              app_name: str) -> None:
+    # --- СТАРТ ---
+    def zapustit(self, app_path: str | Path, sandbox_name: str, cli_path: str | None,
+                 app_name: str) -> None:
         """
         Запускает приложение. Бросает исключения наружу при ошибках.
         app_path: путь к AppImage/Exe/.app
@@ -78,7 +83,7 @@ class DCLMApp:
         """
         app_path = Path(app_path).expanduser().resolve()
 
-        spec = DCLMSandbox.build_launch_spec(
+        spec = DCLMSandbox.postroit_komandu_zapuska(
             lmstudio_path=app_path,
             sandbox_name=sandbox_name,
             cli_path=cli_path,
@@ -124,8 +129,8 @@ class DCLMApp:
 
         raise RuntimeError(f"Unsupported OS: {os_name}")
 
-    # ---СТОП---
-    def stop(self, passport: DCPassport, app_name: str, graceful_seconds: int = 3) -> None:
+    # --- СТОП ---
+    def ostanovit(self, passport: DCPassport, app_name: str, graceful_seconds: int = 3) -> None:
         """
         Останавливает приложение.
         Пытается мягко, затем жёстко.
@@ -133,20 +138,20 @@ class DCLMApp:
         os_name = platform.system()
 
         if os_name == "Linux":
-            self._stop_linux(passport, app_name, graceful_seconds)
+            self._ostanovit_linux(passport, app_name, graceful_seconds)
             return
 
         if os_name == "Darwin":
-            self._stop_macos(passport, app_name, graceful_seconds)
+            self._ostanovit_macos(passport, app_name, graceful_seconds)
             return
 
         if os_name == "Windows":
-            self._stop_windows(passport, app_name)
+            self._ostanovit_windows(passport, app_name)
             return
 
         raise RuntimeError(f"Unsupported OS: {os_name}")
 
-    def _stop_linux(self, passport: DCPassport, app_name: str, graceful_seconds: int) -> None:
+    def _ostanovit_linux(self, passport: DCPassport, app_name: str, graceful_seconds: int) -> None:
         # 0) если есть process group (то, что мы запускали) — пробуем остановить
         try:
             if self.process is not None and self.process.poll() is None:
@@ -195,17 +200,17 @@ class DCLMApp:
 
         self.log(f"✓ {app_name} остановлен")
 
-    def _stop_macos(self, passport: DCPassport, app_name: str, graceful_seconds: int) -> None:
+    def _ostanovit_macos(self, passport: DCPassport, app_name: str, graceful_seconds: int) -> None:
         subprocess.run(["pkill", "-TERM", "-f", passport.mac_pgrep_pattern], timeout=2)
         time.sleep(graceful_seconds)
         subprocess.run(["pkill", "-KILL", "-f", passport.mac_pgrep_pattern], timeout=2)
         self.process = None
         self.log(f"✓ {app_name} остановлен")
 
-    def _stop_windows(self, passport: DCPassport, app_name: str) -> None:
+    def _ostanovit_windows(self, passport: DCPassport, app_name: str) -> None:
+        # shell=True здесь не нужен — taskkill прекрасно работает без shell.
         subprocess.run(
             ["taskkill", "/F", "/T", "/IM", passport.windows_image_name],
-            shell=True,
             timeout=5
         )
         self.process = None

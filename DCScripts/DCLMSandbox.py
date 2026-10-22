@@ -27,21 +27,58 @@ class DCLMSandbox:
     """
     Унифицированная логика формирования команды запуска приложения (LM Studio / Bionic):
     - Linux: без sandbox (--no-sandbox) или firejail
-    - Windows: без sandbox или sandboxie (Sandboxie/Sandboxie-Plus)
+    - Windows: без sandbox или sandboxie (Sandboxie/Sandboxie-Plus), с опциональным "sandboxie:BoxName"
     - macOS: без sandbox
     """
 
+    # -------------------- нормализация имени --------------------
+
     @staticmethod
-    def normalize(name: str) -> str:
-        name = (name or "").strip().lower()
-        if name in ("off", "выкл", "none", "no", "-"):
+    def normalizovat(name: str) -> str:
+        """
+        Нормализует имя sandbox'а. Поддерживает формат "sandboxie:BoxName" —
+        при этом регистр BoxName СОХРАНЯЕТСЯ (box-имена могут быть чувствительны к регистру),
+        а базовое имя sandbox'а приводится к нижнему регистру.
+        """
+        raw = (name or "").strip()
+        if not raw:
             return ""
-        return name
+
+        if ":" in raw:
+            base, box = raw.split(":", 1)
+            base = base.strip().lower()
+            box = box.strip()
+
+            if base in ("off", "выкл", "none", "no", "-"):
+                return ""
+
+            return f"{base}:{box}" if box else base
+
+        base = raw.lower()
+        if base in ("off", "выкл", "none", "no", "-"):
+            return ""
+        return base
+
+    @staticmethod
+    def _bazovoe_imya(sandbox_name: str) -> str:
+        """Возвращает базовое имя sandbox'а без суффикса ':BoxName'."""
+        if not sandbox_name:
+            return ""
+        return sandbox_name.split(":", 1)[0]
+
+    @staticmethod
+    def _izvlech_box(sandbox_name: str, default: str = "DefaultBox") -> str:
+        """Извлекает имя box'а из строки вида 'sandboxie:BoxName' (регистр сохраняется)."""
+        if ":" in sandbox_name:
+            _, box = sandbox_name.split(":", 1)
+            box = box.strip()
+            return box or default
+        return default
 
     # -------------------- Linux: firejail --------------------
 
     @staticmethod
-    def _find_firejail() -> str | None:
+    def _naiti_firejail() -> str | None:
         firejail_path = shutil.which("firejail")
         if firejail_path:
             return firejail_path
@@ -59,7 +96,7 @@ class DCLMSandbox:
     # -------------------- Windows: sandboxie --------------------
 
     @staticmethod
-    def _windows_program_dirs() -> list[Path]:
+    def _poluchit_programm_papki_windows() -> list[Path]:
         dirs: list[Path] = []
         for env in ("ProgramFiles", "ProgramFiles(x86)", "LOCALAPPDATA"):
             v = os.environ.get(env)
@@ -68,13 +105,13 @@ class DCLMSandbox:
         return dirs
 
     @staticmethod
-    def _sandboxie_common_dirs() -> list[Path]:
+    def _poluchit_obschie_papki_sandboxie() -> list[Path]:
         """
         На разных системах Sandboxie может стоять в разных местах.
         Собираем максимально универсальный набор кандидатов.
         """
         candidates: list[Path] = []
-        for base in DCLMSandbox._windows_program_dirs():
+        for base in DCLMSandbox._poluchit_programm_papki_windows():
             candidates += [
                 base / "Sandboxie",
                 base / "Sandboxie-Plus",
@@ -85,7 +122,7 @@ class DCLMSandbox:
         return candidates
 
     @staticmethod
-    def _find_sandboxie_start_exe() -> Path | None:
+    def _naiti_sandboxie_start_exe() -> Path | None:
         """
         Ищет Start.exe от Sandboxie/Sandboxie-Plus максимально универсально.
         """
@@ -95,13 +132,13 @@ class DCLMSandbox:
             return Path(p)
 
         # 2) частые директории установки
-        for d in DCLMSandbox._sandboxie_common_dirs():
+        for d in DCLMSandbox._poluchit_obschie_papki_sandboxie():
             exe = d / "Start.exe"
             if exe.exists():
                 return exe
 
         # 3) если папка называется иначе, но начинается на "Sandboxie"
-        for base in DCLMSandbox._windows_program_dirs():
+        for base in DCLMSandbox._poluchit_programm_papki_windows():
             try:
                 if not base.exists():
                     continue
@@ -146,7 +183,6 @@ class DCLMSandbox:
                         if not disp or "sandboxie" not in str(disp).lower():
                             continue
 
-                        # InstallLocation
                         for value_name in ("InstallLocation", "InstallSource"):
                             try:
                                 loc, _ = winreg.QueryValueEx(sk, value_name)
@@ -157,7 +193,6 @@ class DCLMSandbox:
                             except OSError:
                                 pass
 
-                        # DisplayIcon -> папка рядом
                         try:
                             icon, _ = winreg.QueryValueEx(sk, "DisplayIcon")
                             if icon:
@@ -188,27 +223,28 @@ class DCLMSandbox:
 
         return None
 
-    # -------------------- availability --------------------
+    # -------------------- проверка доступности --------------------
 
     @staticmethod
-    def check_available(sandbox_name: str) -> None:
-        sandbox_name = DCLMSandbox.normalize(sandbox_name)
+    def proverit_dostupnost(sandbox_name: str) -> None:
+        sandbox_name = DCLMSandbox.normalizovat(sandbox_name)
         if not sandbox_name:
             return
 
+        base_name = DCLMSandbox._bazovoe_imya(sandbox_name)
         os_name = platform.system()
 
-        if sandbox_name == "firejail":
+        if base_name == "firejail":
             if os_name != "Linux":
                 raise SandboxNotAvailable("firejail поддерживается только на Linux")
-            if not DCLMSandbox._find_firejail():
+            if not DCLMSandbox._naiti_firejail():
                 raise SandboxNotAvailable("firejail не найден. Установите: sudo apt install firejail")
             return
 
-        if sandbox_name == "sandboxie":
+        if base_name == "sandboxie":
             if os_name != "Windows":
                 raise SandboxNotAvailable("sandboxie поддерживается только на Windows")
-            if not DCLMSandbox._find_sandboxie_start_exe():
+            if not DCLMSandbox._naiti_sandboxie_start_exe():
                 raise SandboxNotAvailable(
                     "Sandboxie не найден (Start.exe отсутствует). Установите Sandboxie или Sandboxie-Plus."
                 )
@@ -216,10 +252,10 @@ class DCLMSandbox:
 
         raise SandboxNotAvailable(f"Неизвестный sandbox: {sandbox_name}")
 
-    # -------------------- misc helpers --------------------
+    # -------------------- вспомогательное --------------------
 
     @staticmethod
-    def guess_lmstudio_dir_from_cli(cli_path: str | None) -> Path:
+    def opredelit_papku_lmstudio_po_cli(cli_path: str | None) -> Path:
         """
         ~/.lmstudio/bin/lms -> ~/.lmstudio
         """
@@ -233,16 +269,17 @@ class DCLMSandbox:
                 pass
         return Path.home() / ".lmstudio"
 
-    # -------------------- build command --------------------
+    # -------------------- построение команды --------------------
 
     @staticmethod
-    def build_launch_spec(
+    def postroit_komandu_zapuska(
         lmstudio_path: str | Path,
         sandbox_name: str,
         cli_path: str | None = None,
         app_name: str = "LM Studio",
     ) -> LaunchSpec:
-        sandbox_name = DCLMSandbox.normalize(sandbox_name)
+        sandbox_name = DCLMSandbox.normalizovat(sandbox_name)
+        base_name = DCLMSandbox._bazovoe_imya(sandbox_name)
         lmstudio_path = Path(lmstudio_path).expanduser().resolve()
         os_name = platform.system()
 
@@ -254,17 +291,20 @@ class DCLMSandbox:
                     description=f"Запуск {app_name} без sandbox (--no-sandbox)"
                 )
 
-            if sandbox_name == "firejail":
-                DCLMSandbox.check_available("firejail")
-                whitelist_dir = DCLMSandbox.guess_lmstudio_dir_from_cli(cli_path)
+            if base_name == "firejail":
+                DCLMSandbox.proverit_dostupnost("firejail")
+                firejail_bin = DCLMSandbox._naiti_firejail() or "firejail"
+                whitelist_dir = DCLMSandbox.opredelit_papku_lmstudio_po_cli(cli_path)
+
+                argv = [firejail_bin, f"--whitelist={whitelist_dir}"]
+                # --appimage добавляем только если файл реально AppImage,
+                # иначе firejail может отказаться запускать обычный бинарник/desktop-exec.
+                if lmstudio_path.suffix.lower() == ".appimage":
+                    argv.append("--appimage")
+                argv.append(str(lmstudio_path))
 
                 return LaunchSpec(
-                    argv=[
-                        "firejail",
-                        "--appimage",
-                        f"--whitelist={str(whitelist_dir)}",
-                        str(lmstudio_path)
-                    ],
+                    argv=argv,
                     description=f"Запуск {app_name} в sandbox: firejail (whitelist: {whitelist_dir})"
                 )
 
@@ -287,17 +327,14 @@ class DCLMSandbox:
                     description=f"Запуск {app_name} (Windows)"
                 )
 
-            if sandbox_name == "sandboxie":
-                DCLMSandbox.check_available("sandboxie")
-                start_exe = DCLMSandbox._find_sandboxie_start_exe()
+            if base_name == "sandboxie":
+                DCLMSandbox.proverit_dostupnost("sandboxie")
+                start_exe = DCLMSandbox._naiti_sandboxie_start_exe()
                 if not start_exe:
                     raise SandboxNotAvailable("Sandboxie Start.exe не найден")
 
-                # можно расширять: "sandboxie:MyBox"
-                box = "DefaultBox"
-                if ":" in sandbox_name:
-                    _, box = sandbox_name.split(":", 1)
-                    box = box.strip() or "DefaultBox"
+                # теперь реально работает: "sandboxie:MyBox" -> box="MyBox" (регистр сохранён)
+                box = DCLMSandbox._izvlech_box(sandbox_name)
 
                 return LaunchSpec(
                     argv=[str(start_exe), f"/box:{box}", str(lmstudio_path)],
