@@ -6,7 +6,7 @@ from pathlib import Path
 from PyQt6.QtCore import QObject, pyqtSignal, pyqtSlot, QThread
 
 class RAGWorker(QThread):
-    """Рабочий поток для запуска DCRAGMake.py"""
+    """Рабочий поток для запуска DCRAG.py"""
     
     logMessage = pyqtSignal(str)
     progressUpdate = pyqtSignal(int, int)
@@ -27,13 +27,13 @@ class RAGWorker(QThread):
         self._should_stop = False
     
     def run(self):
-        """Запуск DCRAGMake.py с передачей путей"""
+        """Запуск DCRAG.py с передачей путей"""
         try:
-            script_path = Path(__file__).parent.parent / "DCScripts" / "DCRAGMake.py"
+            script_path = Path(__file__).parent.parent / "DCScripts" / "DCRAG.py"
             
             if not script_path.exists():
                 self.logMessage.emit(f"❌ Ошибка: скрипт не найден: {script_path}")
-                self.finished.emit(False, "Скрипт DCRAGMake.py не найден")
+                self.finished.emit(False, "Скрипт DCRAG.py не найден")
                 return
             
             # Формируем команду запуска

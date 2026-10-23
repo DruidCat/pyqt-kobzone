@@ -7,6 +7,19 @@ import re # Работа с регулярными выражениями.
 import tempfile #Работа с temp файлами и папками
 import platform #Работа с Операционными Системами
 from pathlib import Path #Для Path
+import shutil
+import pickle
+from transformers import AutoTokenizer#нужен как fallback в режиме 2, если embedder.tokenizer недоступен
+from sentence_transformers import SentenceTransformer
+import torch
+import time
+import threading
+from datetime import datetime
+import zipfile
+from DCRAGPdf import izvlech_text_iz_pdf_po_stranicam
+from DCRAGParagraph import poluchit_chanki as poluchit_chanki_paragraf
+from DCRAGToken import poluchit_chanki as poluchit_chanki_token
+from DCRAGRecursive import poluchit_chanki as poluchit_chanki_recursive
 
 # Чтобы импорты работали даже если python запущен в safe-path режиме
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -35,20 +48,6 @@ os.environ['HF_HUB_DISABLE_SYMLINKS_WARNING'] = '1'
 # ============================================================
 os.environ['TRANSFORMERS_VERBOSITY'] = 'error'
 os.environ['HF_HUB_DISABLE_SYMLINKS_WARNING'] = '1'
-
-import shutil
-import pickle
-from transformers import AutoTokenizer#нужен как fallback в режиме 2, если embe dder.tokenizer недоступен
-from sentence_transformers import SentenceTransformer
-import torch
-import time
-import threading
-from datetime import datetime
-import zipfile
-from DCRAGPdf import izvlech_text_iz_pdf_po_stranicam
-from DCRAGParagraph import poluchit_chanki as poluchit_chanki_paragraf
-from DCRAGToken import poluchit_chanki as poluchit_chanki_token
-from DCRAGRecursive import poluchit_chanki as poluchit_chanki_recursive
 
 # ============================================================
 # ОПРЕДЕЛЕНИЕ РЕЖИМА ЗАПУСКА
