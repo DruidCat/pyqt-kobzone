@@ -53,7 +53,7 @@ Item {
 	property bool __isModelNoName: false//true - выбрана модель MODEL_NO_NAME, чтоб её выгрузить.
 	property int maxContext: DCSettings.studio_max_context//Максимальное количество токенов
 	property bool isStudioOn: false//true - Studio запущена.
-	property bool isServerLMS: false//true - сервер lms запущена на стороне LM Studio или Bionic.
+	property bool isServerOn: false//true - сервер lms запущена на стороне LM Studio или Bionic.
 	property int gpuOffload: DCSettings.studio_gpu_offload
 	property bool isModelStart: false//true - первая иннициализация уже была
 	property bool isContextStart: false//true - первая иннициализация уже была
@@ -123,6 +123,12 @@ Item {
 			if(__isMacOS || putLMStudio === "") knopkaSandbox.enabled = false
 			else knopkaSandbox.enabled = true
 		}
+	}
+	onIsStudioOnChanged: {
+		knopkaLMPut.enabled = !root.isStudioOn//статус запуска студии поменялся, меняем политику изминения
+	}
+	onIsServerOnChanged: {
+		knopkaCLIPut.enabled = !root.isServerOn//статус запуска сервера поменялся, меняем политику изминения
 	}
     Connections {//Обработчик загрузки моделей из Python
         target: pyLM
@@ -215,7 +221,7 @@ Item {
 			root.toolbar("Сервер остановлен")
 		}
 		function onSigServerStatus(blStatus) {
-			root.isServerLMS = blStatus
+			root.isServerOn = blStatus
 		}
 		function onSigServerError(strError) {
 			root.log(strError)//В лог
@@ -563,7 +569,7 @@ Item {
         onTriggered: {
 			pyLM.proverkaStudio()
 			if(root.isStudioOn) pyLM.proverkaServera()//Если Студия запущена, проверяем статус Серевера lms
-			else root.isServerLMS = false//Если студия закрыта, то и сервер тоже неработает.
+			else root.isServerOn = false//Если студия закрыта, то и сервер тоже неработает.
         }
     }
 	Timer {//ТАЙМЕР остановки Studio 
@@ -592,7 +598,7 @@ Item {
 			clrKnopki: root.clrTexta; clrFona: root.clrFona
             tapHeight: root.ntWidth * root.ntCoff + root.ntCoff; tapWidth: tapHeight * root.tapZagolovokPravi
 			enabled: false
-			isInvers: root.isServerLMS
+			isInvers: root.isServerOn
         }
 		DCKnopkaLM {
             id: knopkaLM
@@ -883,6 +889,7 @@ Item {
 					clrTexta: root.clrMenuText
                     clrKnopki: (root.currentIndex === 3) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
+					enabled: !root.isServerOn
 					function fnPress() {
 						root.currentIndex = 3
 						fnClickedVvod(1)//Функция задающая путь к cli lms
@@ -1186,9 +1193,10 @@ Item {
 					knopkaNazad.enabled = true
 					knopkaLMStart.enabled = true
 					knopkaLMStop.enabled = true
-					if(root.isStudioOn)knopkaLMPut.enabled = false
+					if(root.isStudioOn)knopkaLMPut.enabled = false//При запущенной студии нельзя менять путь
 					else knopkaLMPut.enabled = true
-					knopkaCLIPut.enabled = true
+					if(root.isServerOn)knopkaCLIPut.enabled = false//При запущенном сервере нельзя менять путь
+					else knopkaCLIPut.enabled = true
 					if(__isMacOS || putLMStudio === "" || putCLI === "") knopkaSandbox.enabled = false
 					else knopkaSandbox.enabled = true
 					knopkaModeli.enabled = true
