@@ -856,6 +856,7 @@ Item {
 					clrTexta: root.clrMenuText
                     clrKnopki: (root.currentIndex === 2) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
+					enabled: !root.isStudioOn
 					function fnPress() {
 						root.currentIndex = 2
 						dialogLMPut.open()//Функция выбора пути к Studio.
@@ -1185,7 +1186,8 @@ Item {
 					knopkaNazad.enabled = true
 					knopkaLMStart.enabled = true
 					knopkaLMStop.enabled = true
-					knopkaLMPut.enabled = true
+					if(root.isStudioOn)knopkaLMPut.enabled = false
+					else knopkaLMPut.enabled = true
 					knopkaCLIPut.enabled = true
 					if(__isMacOS || putLMStudio === "" || putCLI === "") knopkaSandbox.enabled = false
 					else knopkaSandbox.enabled = true
