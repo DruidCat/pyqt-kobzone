@@ -130,6 +130,9 @@ Item {
 	onIsServerOnChanged: {
 		knopkaCLIPut.enabled = !root.isServerOn//статус запуска сервера поменялся, меняем политику изминения
 	}
+	onIsMmprojChanged: {
+		knopkaMmproj.enabled = root.isMmproj
+	}
     Connections {//Обработчик загрузки моделей из Python
         target: pyLM
 
@@ -1005,6 +1008,7 @@ Item {
 					clrTexta: root.clrMenuText
                     clrKnopki: (root.currentIndex === 7) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
+					enabled: root.isMmproj
 					function fnPress() {
 						root.currentIndex = 7
 						//root.isMmproj = !root.isMmproj
@@ -1200,7 +1204,8 @@ Item {
 					if(__isMacOS || putLMStudio === "" || putCLI === "") knopkaSandbox.enabled = false
 					else knopkaSandbox.enabled = true
 					knopkaModeli.enabled = true
-					knopkaMmproj.enabled = true
+					if(root.isMmproj) knopkaMmproj.enabled = true//Если модель мультимодальная, то True
+					else knopkaMmproj.enabled = false//Если модель не мультимодальная,нельзя изменить параметр
 					fnModelEnabled()//Функция управляет политикой кнопок Temperatura, Context, GPU
 					//knopkaContext.enabled = true
 					//knopkaGPU.enabled = true
