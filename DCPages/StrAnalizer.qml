@@ -183,8 +183,10 @@ Item {
 				vprVopros.ntFlag = 9//9 - вопрос, что не найден cli lms
 				vprVopros.visible = true
 			} else if (ntError === 13){//13 - Модель не выбрана
-				vprVopros.ntFlag = 13//13 - Модель не выбрана
-				vprVopros.visible = true
+				if(root.isModelZagruzit){//Если модель не загружена по просьбе StrAnalizer, то..
+					vprVopros.ntFlag = 13//13 - Модель не выбрана
+					vprVopros.visible = true
+				}
 			}
 			tmrLogo.running = false//Останавливаем анимацию анализа и политики кнопок
 			ldrProgress.active = false
