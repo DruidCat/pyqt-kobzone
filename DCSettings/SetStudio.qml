@@ -390,7 +390,7 @@ Item {
     }
 	function fnClickedNazad() {
 		fnClickedEscape()//Функция нажатия на клавишу Escape
-		fnServerStatus(false)//Функция, которая останавливает мониторинг сервера lms
+		fnStatus(false)//Функция, которая останавливает мониторинг Студии и Сервера lms
 		root.clickedNazad()
 	}
 	function fnClickedZakrit(){//Функция обрабатывающая кнопку Закрыть.
@@ -442,11 +442,8 @@ Item {
 			menuMenu.visible = true
 		}
 	}
-	function fnServerStatus(blFlag){//Функция,которая проверку запуска сервера lms на стороне LM Studio Bionic
-		tmrServerLMS.running = blFlag//Запускаем/останавливаем мониторинг запуска lms сервера
-	}
-	function fnStudioStatus(blFlag){//Функция,которая проверку запуска LM Studio или Bionic
-		tmrStudio.running = blFlag//Запускаем/останавливаем мониторинг запуска Студии
+	function fnStatus(blFlag){//Функция,которая проверку статус запуска LM Studio или Bionic и Сервера lms
+		tmrStatus.running = blFlag//Запускаем/останавливаем мониторинг запуска Студии и Сервера lms
 	}
 	function fnCloseMenuIfOpen() {
 		if (menuMenu.visible) {
@@ -557,14 +554,16 @@ Item {
         id: tmrServerLMS
         interval: 3300; running: false; repeat: true
         onTriggered: {
-			pyLM.proverkaServera()
+			if(root.isStudioOn) pyLM.proverkaServera()//Если студия запущена, то проверяем статус Сервера lms
         }
     }
 	Timer {//ТАЙМЕР запуска проверки работы LM Studio или Bionic
-        id: tmrStudio
+        id: tmrStatus
         interval: 3300; running: false; repeat: true
         onTriggered: {
 			pyLM.proverkaStudio()
+			if(root.isStudioOn) pyLM.proverkaServera()//Если Студия запущена, проверяем статус Серевера lms
+			else root.isServerLMS = false//Если студия закрыта, то и сервер тоже неработает.
         }
     }
 	Timer {//ТАЙМЕР остановки Studio 
@@ -585,6 +584,16 @@ Item {
 			tapHeight: root.ntWidth * root.ntCoff + root.ntCoff; tapWidth: tapHeight * root.tapZagolovokLevi
 			onClicked: fnClickedNazad()
 		}
+		DCKnopkaSvetofor {
+            id: knopkaServer
+            ntWidth: root.ntWidth; ntCoff: root.ntCoff
+            visible: true
+            anchors.verticalCenter: tmZagolovok.verticalCenter; anchors.right: knopkaLM.left
+			clrKnopki: root.clrTexta; clrFona: root.clrFona
+            tapHeight: root.ntWidth * root.ntCoff + root.ntCoff; tapWidth: tapHeight * root.tapZagolovokPravi
+			enabled: false
+			isInvers: root.isServerLMS
+        }
 		DCKnopkaLM {
             id: knopkaLM
             ntWidth: root.ntWidth; ntCoff: root.ntCoff

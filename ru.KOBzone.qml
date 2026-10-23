@@ -307,8 +307,7 @@ ApplicationWindow {
 					Qt.callLater(function() { stvStr.currentItem.forceActiveFocus() })
 				}
 				onClickedSettings: {
-					//tmSetStudio.fnServerStatus(true)//Функция, которая запускает работу статуса сервера LMS
-					tmSetStudio.fnStudioStatus(true)//Проверка запуска студии
+					tmSetStudio.fnStatus(true)//Проверка запуска студии
 					stvStr.push(pgStrSetStudio)
 				}
 				onClickedInfo: {
@@ -336,7 +335,7 @@ ApplicationWindow {
 			ntWidth: root.ntWidth; ntCoff: root.ntCoff
 			clrFona: root.clrFona; clrTexta: root.clrKnopok; clrRabOblasti: root.clrStranic
 			textZagolovok: `НАСТРОЙКА ${root.strStudioImya.toUpperCase()}`
-			zagolovokLevi: 1.3; zagolovokPravi: 1.3; toolbarLevi: 1.3; toolbarPravi: 1.3
+			zagolovokLevi: 2.6; zagolovokPravi: 2.6; toolbarLevi: 1.3; toolbarPravi: 1.3
 			onVisibleChanged: if (visible) Qt.callLater(function() { tmSetStudio.forceActiveFocus() })
 			SetStudio{
 				id: tmSetStudio
