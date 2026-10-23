@@ -44,6 +44,8 @@
 		<file>resources/images/DCButtons/24x24/DCKnopkaVidelit_1.png</file>
         <file>resources/images/DCButtons/24x24/DCKnopkaVidelit_2.png</file>  
         <file>resources/images/DCButtons/24x24/DCKnopkaSozdat_2.png</file>
+		<file>resources/images/DCButtons/24x24/DCKnopkaSvetofor_1.png</file>
+        <file>resources/images/DCButtons/24x24/DCKnopkaSvetofor_2.png</file>
 		<file>resources/images/DCButtons/48x48/DCKnopkaInfo.png</file>
 		<file>resources/images/DCButtons/48x48/DCKnopkaLM_1.png</file>
 		<file>resources/images/DCButtons/48x48/DCKnopkaLM_2.png</file>
@@ -69,6 +71,8 @@
         <file>resources/images/DCButtons/48x48/DCKnopkaSidebar_3.png</file>
         <file>resources/images/DCButtons/48x48/DCKnopkaSidebar_4.png</file>
 		<file>resources/images/DCButtons/48x48/DCKnopkaSozdat_2.png</file>
+		<file>resources/images/DCButtons/48x48/DCKnopkaSvetofor_1.png</file>
+        <file>resources/images/DCButtons/48x48/DCKnopkaSvetofor_2.png</file>
         <file>resources/images/DCButtons/48x48/DCKnopkaVidelit_1.png</file>
         <file>resources/images/DCButtons/48x48/DCKnopkaVidelit_2.png</file>
         <file>resources/images/DCButtons/96x96/DCKnopkaInfo.png</file>
@@ -96,6 +100,8 @@
         <file>resources/images/DCButtons/96x96/DCKnopkaSidebar_3.png</file>
         <file>resources/images/DCButtons/96x96/DCKnopkaSidebar_4.png</file>
 		<file>resources/images/DCButtons/96x96/DCKnopkaSozdat_2.png</file>
+		<file>resources/images/DCButtons/96x96/DCKnopkaSvetofor_1.png</file>
+        <file>resources/images/DCButtons/96x96/DCKnopkaSvetofor_2.png</file>
         <file>resources/images/DCButtons/96x96/DCKnopkaVidelit_1.png</file>
         <file>resources/images/DCButtons/96x96/DCKnopkaVidelit_2.png</file>
         <file>resources/images/DCButtons/144x144/DCKnopkaInfo.png</file>
@@ -123,5 +129,7 @@
         <file>resources/images/DCButtons/144x144/DCKnopkaSidebar_3.png</file>
         <file>resources/images/DCButtons/144x144/DCKnopkaSidebar_4.png</file>
         <file>resources/images/DCButtons/144x144/DCKnopkaSozdat_2.png</file> 
+		<file>resources/images/DCButtons/144x144/DCKnopkaSvetofor_1.png</file>
+        <file>resources/images/DCButtons/144x144/DCKnopkaSvetofor_2.png</file>
     </qresource>
 </RCC>
