@@ -70,8 +70,8 @@ Item {
 	Component.onCompleted: {
 		root.strModelNoName = pyLM.polModelNoName()//Получаем имя модели ОТСУТСТВУЕТ.
 		fnModelEnabled()//Функция управляет политикой кнопок Temperatura, Context, GPU
-		knopkiMassiv = [knopkaLMStart, knopkaLMStop, knopkaLMPut, knopkaCLIPut, knopkaSandbox, knopkaModeli,
-						knopkaMmproj, knopkaContext, knopkaGPU, knopkaServerURL]
+		knopkiMassiv = [knopkaLMStart, knopkaLMStop, knopkaLMPut, knopkaCLIPut, knopkaServerURL, knopkaSandbox,
+						knopkaModeli, knopkaMmproj, knopkaContext, knopkaGPU]
 		
 		if (DCSettings.studio_lms_put !== "")//Передаём путь из настроек в Python
 			pyLM.ustPutStudio(DCSettings.studio_lms_put)
@@ -894,6 +894,31 @@ Item {
 						}
 					}	
                 }
+				DCKnopkaOriginal {
+					id: knopkaServerURL
+					text: {
+						let ltText = qsTr("адрес lms сервера: ")
+						ltText += root.serverURL
+						return ltText
+					}
+					ntHeight: root.ntWidth; ntCoff: root.ntCoff
+					anchors.left: parent.left; anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
+					clrTexta: root.clrMenuText
+                    clrKnopki: (root.currentIndex === 4) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    opacityKnopki: 0.9
+					function fnPress() {
+						root.currentIndex = 4
+						fnClickedVvod(3)//Функция ввода адреса сервера
+					}
+					onClicked: {
+						if (pressed) {
+							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
+								if (pressed && !pvSandbox.pressed && !pvModels.pressed) fnPress()
+							}
+						}
+					}
+				}
 				DCKnopkaOriginal {//Кнопка включения Sandbox
                     id: knopkaSandbox
                     text: {
@@ -916,10 +941,10 @@ Item {
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 4) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 5) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					function fnPress() {
-						root.currentIndex = 4
+						root.currentIndex = 5
 						Qt.callLater(function(){//пауза, иначе не сработает фокус и pvSandbox. ВАЖНО!!!
 							pvSandbox.visible = !pvSandbox.visible//Инверсируем
 						})
@@ -949,10 +974,10 @@ Item {
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 5) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 6) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					function fnPress() {
-						root.currentIndex = 5
+						root.currentIndex = 6
 						fnClickedModel()//Функция выбора Модели.
 					}
 					onClicked: {
@@ -970,10 +995,10 @@ Item {
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 6) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 7) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					function fnPress() {
-						root.currentIndex = 6
+						root.currentIndex = 7
 						//root.isMmproj = !root.isMmproj
 					}
 					onClicked: {
@@ -995,10 +1020,10 @@ Item {
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 7) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 8) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					function fnPress() {
-						root.currentIndex = 7
+						root.currentIndex = 8
 						fnClickedVvod(0)//Функция выбора максимального контекста
 					}
 					onClicked: {
@@ -1020,10 +1045,10 @@ Item {
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 8) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 9) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					function fnPress() {
-						root.currentIndex = 8
+						root.currentIndex = 9
 						fnClickedVvod(2)//Функция ввода gpu offload
 					}
 					onClicked: {
@@ -1033,32 +1058,7 @@ Item {
 							}
 						}
 					}
-				}
-				DCKnopkaOriginal {
-					id: knopkaServerURL
-					text: {
-						let ltText = qsTr("адрес сервера: ")
-						ltText += root.serverURL
-						return ltText
-					}
-					ntHeight: root.ntWidth; ntCoff: root.ntCoff
-					anchors.left: parent.left; anchors.right: parent.right
-                    anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
-					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 9) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
-                    opacityKnopki: 0.9
-					function fnPress() {
-						root.currentIndex = 9
-						fnClickedVvod(3)//Функция ввода адреса сервера
-					}
-					onClicked: {
-						if (pressed) {
-							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
-								if (pressed && !pvSandbox.pressed && !pvModels.pressed) fnPress()
-							}
-						}
-					}
-				}
+				}	
 			}
 		}
 		DCScrollbar {//Скроллбар
