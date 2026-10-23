@@ -445,6 +445,9 @@ Item {
 	function fnServerStatus(blFlag){//Функция,которая проверку запуска сервера lms на стороне LM Studio Bionic
 		tmrServerLMS.running = blFlag//Запускаем/останавливаем мониторинг запуска lms сервера
 	}
+	function fnStudioStatus(blFlag){//Функция,которая проверку запуска LM Studio или Bionic
+		tmrStudio.running = blFlag//Запускаем/останавливаем мониторинг запуска Студии
+	}
 	function fnCloseMenuIfOpen() {
 		if (menuMenu.visible) {
 			menuMenu.visible = false
@@ -550,11 +553,18 @@ Item {
 		}
 		return path
 	}
-	Timer {//ТАЙМЕР анимации логотипа
+	Timer {//ТАЙМЕР запуска проверки соединения с сервером lms
         id: tmrServerLMS
         interval: 3300; running: false; repeat: true
         onTriggered: {
 			pyLM.proverkaServera()
+        }
+    }
+	Timer {//ТАЙМЕР запуска проверки работы LM Studio или Bionic
+        id: tmrStudio
+        interval: 3300; running: false; repeat: true
+        onTriggered: {
+			pyLM.proverkaStudio()
         }
     }
 	Timer {//ТАЙМЕР остановки Studio 
@@ -583,7 +593,7 @@ Item {
             clrKnopki: root.clrTexta; clrFona: root.clrFona
             tapHeight: root.ntWidth * root.ntCoff + root.ntCoff; tapWidth: tapHeight * root.tapZagolovokPravi
 			enabled: false
-			isLMZapuschen: root.isServerLMS
+			isLMZapuschen: root.isStudioOn
         }
 		DCKnopkaZakrit {
             id: knopkaZakrit
