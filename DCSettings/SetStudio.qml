@@ -1027,7 +1027,8 @@ Item {
 				}
 				DCKnopkaOriginal {//Кнопка включения Sandbox
                     id: knopkaMmproj
-					text: root.isMmprojStatus ? qsTr("мультимодальность модели вкл") : qsTr("мультимодальность модели выкл")
+					text: root.isMmprojStatus 	? qsTr("мультимодальность модели вкл")
+												: qsTr("мультимодальность модели выкл")
 					ntHeight: root.ntWidth; ntCoff: root.ntCoff
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
