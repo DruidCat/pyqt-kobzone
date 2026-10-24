@@ -454,7 +454,13 @@ Item {
 		}
 	}
 	function fnStatus(blFlag){//Функция,которая проверку статус запуска LM Studio или Bionic и Сервера lms
+		if(blFlag) fnTmrStatus()//Если пришёл сигнал опроса статуса Студии и lms сервера, тут же запускаем его
 		tmrStatus.running = blFlag//Запускаем/останавливаем мониторинг запуска Студии и Сервера lms
+	}
+	function fnTmrStatus() {//Функция обрабатывающая таймер Статуса
+		pyLM.proverkaStudio()
+		if(root.isStudioOn) pyLM.proverkaServera()//Если Студия запущена, проверяем статус Серевера lms
+		else root.isServerOn = false//Если студия закрыта, то и сервер тоже неработает.
 	}
 	function fnCloseMenuIfOpen() {
 		if (menuMenu.visible) {
@@ -576,9 +582,7 @@ Item {
         id: tmrStatus
         interval: 3300; running: false; repeat: true
         onTriggered: {
-			pyLM.proverkaStudio()
-			if(root.isStudioOn) pyLM.proverkaServera()//Если Студия запущена, проверяем статус Серевера lms
-			else root.isServerOn = false//Если студия закрыта, то и сервер тоже неработает.
+			fnTmrStatus()//Функция обрабатывающая таймер Статуса
         }
     }
 	Timer {//ТАЙМЕР остановки Studio 
