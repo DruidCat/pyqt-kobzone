@@ -23,7 +23,12 @@ Item {
 	height: (ntWidth * ntCoff + ntCoff) * 3 * 1.2
     //Сигналы
     signal clicked(var strSpisok);//Сигнал нажатия на элемент
+	signal element(var strElement);//Сигнал излучает имя элемента при переключении карусели
     //Функции.
+	Component.onCompleted: {//Слот, кода всё представление отрисовалось.
+        pvwKarusel.forceActiveFocus();//Без форсированного фокуса не будут работать клавиши.
+        root.element(root.getCurrentElementName());//Излучаем сигнал с начальным элементом при запуске
+	}
     onCurrentIndexChanged: {//Если индекс отображения элемента изменился, то...
         if (pvwKarusel.currentIndex !== root.currentIndex){//Если значение не равно, то...
             pvwKarusel.internalChange = true;//Это против самозацикливания. Взводим флаг.
@@ -37,6 +42,24 @@ Item {
 			root.jdi = true;//Жди, виджет только что открылся
 			tmrJdi.restart();//Запускаем таймер сбрасывающий флаг root.jdi
 		}
+    }
+    function getCurrentElementName() {//Функция получает имя действующего элемента в карусели.
+        var currentSpisok = "";
+        if (root.modelData) {
+            var idx = pvwKarusel.currentIndex;
+            if (idx >= 0) {
+                if (typeof root.modelData.get === "function") { // Если это ListModel
+                    var el = root.modelData.get(idx);
+                    if (el) currentSpisok = el.spisok;
+                } else if (Array.isArray(root.modelData)) { // Если это обычный массив (Array)
+                    if (idx < root.modelData.length) {
+                        var elArr = root.modelData[idx];
+                        if (elArr) currentSpisok = elArr.spisok;
+                    }
+                }
+            }
+        }
+        return currentSpisok;
     }
 	Timer {//Таймер оставляет флаг pressed взведённым на интервал,чтоб обработчики сигнала страболи в програме
 		id: tmrPressed
@@ -209,6 +232,7 @@ Item {
         onCurrentIndexChanged: {//Если индекс отображаемого элемента изменился, то...
             if (!internalChange && root.currentIndex !== currentIndex) {//Если значение ещё не менялось, то...
                 root.currentIndex = pvwKarusel.currentIndex//Изменяем значение в root переменной currentIndex
+                root.element(root.getCurrentElementName());//сигнал с именем текущего элемента при прокрутке
             }
         }
         function fnClickedEnter() {//Функция выбора активного элемента модели.
@@ -365,8 +389,5 @@ Item {
 				pvwKarusel.decrementCurrentIndex()//Прокрутка вверх
         }
     }
-    */
-	Component.onCompleted: {//Слот, кода всё представление отрисовалось.
-        pvwKarusel.forceActiveFocus();//Без форсированного фокуса не будут работать клавиши.
-	}
+    */	
 }
