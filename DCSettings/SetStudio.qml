@@ -47,7 +47,8 @@ Item {
 	property string serverURL: DCSettings.studio_server_url//URL Сервера Studio
 	property string strModel: DCSettings.studio_model_imya//Имя модели ИИ
 	property string strModelNoName: ""//Получаем имя модели ОТСУТСТВУЕТ.
-	property bool isMmproj: false//true - значит именно выбранная модель имеет режим мультимодальности
+	property bool isMmprojMulti: DCSettings.studio_mmproj_multi//режим мультимодальности имеется/не имеется
+	property bool isMmprojStatus: DCSettings.studio_mmproj_status//режим мультимодальности включен/выключен
 	property string strSandbox: DCSettings.studio_sandbox//имя программы, которая запускает в песочнице
 	property bool __isMacOS: false//true - запуск на MacOS
 	property bool __isModelNoName: false//true - выбрана модель MODEL_NO_NAME, чтоб её выгрузить.
@@ -130,8 +131,8 @@ Item {
 	onIsServerOnChanged: {
 		knopkaCLIPut.enabled = !root.isServerOn//статус запуска сервера поменялся, меняем политику изминения
 	}
-	onIsMmprojChanged: {
-		knopkaMmproj.enabled = root.isMmproj
+	onIsMmprojMultiChanged: {
+		knopkaMmproj.enabled = root.isMmprojMulti
 	}
     Connections {//Обработчик загрузки моделей из Python
         target: pyLM
@@ -248,6 +249,7 @@ Item {
                     }
                 }
             }
+			fnMmprojStatus(savedModel)//Проверяем статус mmproj у модели и выставляем его.
             root.log(`Загружено моделей: ${models.length}`)
         }
 		function onSigModelZagrujena(strModel, ntContext){//Модель загрузилась
@@ -263,8 +265,8 @@ Item {
 			}
 		}
 		function onSigMmprojStatus(isMultimodal, isStatus) {
-			console.log("MMPROJ", isMultimodal, isStatus)
-			root.isMmproj = isMultimodal
+			root.isMmprojMulti = isMultimodal
+			root.isMmprojStatus = isStatus
 		}
 	}
 	Keys.onPressed: (event) => {
@@ -519,6 +521,10 @@ Item {
 				root.toolbar(qsTr("Ожидайте."))
 			})
 		}
+	}
+	function fnMmprojStatus(strModel) {//Проверяем статус mmproj у модели и выставляем его.
+		if (strModel !== "" && strModel !== root.strModelNoName) pyLM.proverkaMmproj(strModel)
+		else root.isMmprojMulti = false//Не активная кнопка по прерывани. будет.
 	}
 	function fnClickedLMSZapustit(){//Функция запуска Studio
 		pyLM.zapustitStudio()//Запускаем Студию, если путь не задан,то автоматически искать будет или ошибку=3
@@ -1001,17 +1007,17 @@ Item {
 				}
 				DCKnopkaOriginal {//Кнопка включения Sandbox
                     id: knopkaMmproj
-					text: root.isMmproj ? qsTr("mmproj вкл") : qsTr("mmproj выкл")
+					text: root.isMmprojStatus ? qsTr("mmproj вкл") : qsTr("mmproj выкл")
 					ntHeight: root.ntWidth; ntCoff: root.ntCoff
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
                     clrKnopki: (root.currentIndex === 7) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
-					enabled: root.isMmproj
+					enabled: root.isMmprojMulti
 					function fnPress() {
 						root.currentIndex = 7
-						//root.isMmproj = !root.isMmproj
+						//root.isMmprojStatus = !root.isMmprojStatus
 					}
 					onClicked: {
 						if (pressed) {
@@ -1128,12 +1134,19 @@ Item {
             clrFona: root.clrFona; clrTexta: root.clrMenuText; clrMenuFon: root.clrMenuFon
             modelData: modelModels
 			property bool isServerZapustit: false//true - запускаем сервер для показа списка моделей.
+			property bool isStartPerti: true//false - загрузка модели не первый раз.
             onClicked: function(strModel) {
 				Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModels. ВАЖНО!!!
 					pvModels.visible = false//Делаем невидимым виджет
 					DCSettings.studio_model_imya = strModel//Сохраняем в Реестре
+					DCSettings.studio_mmproj_multi = root.isMmprojMulti//Запоминаем режим мультимодальности
+					DCSettings.studio_mmproj_status = root.isMmprojStatus//Запоминаем статус мультимодальности
 				})
             }
+			onElement: function(strElement) {
+				if(isStartPerti) isStartPerti = false//Если первый раз старт, элемент всегда пустой будет.
+				else fnMmprojStatus(strElement)//Проверяем статус mmproj у модели и выставляем его.
+			}
 			onVisibleChanged: {//Если видимость поменялась, то...
 				if(!visible) root.forceActiveFocus()//Если невидимый, то фокус на root, чтоб hotkey работали.
 			}
@@ -1204,7 +1217,7 @@ Item {
 					if(__isMacOS || putLMStudio === "" || putCLI === "") knopkaSandbox.enabled = false
 					else knopkaSandbox.enabled = true
 					knopkaModeli.enabled = true
-					if(root.isMmproj) knopkaMmproj.enabled = true//Если модель мультимодальная, то True
+					if(root.isMmprojMulti) knopkaMmproj.enabled = true//Если модель мультимодальная, то True
 					else knopkaMmproj.enabled = false//Если модель не мультимодальная,нельзя изменить параметр
 					fnModelEnabled()//Функция управляет политикой кнопок Temperatura, Context, GPU
 					//knopkaContext.enabled = true

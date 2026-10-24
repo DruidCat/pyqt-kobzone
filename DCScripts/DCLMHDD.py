@@ -210,7 +210,7 @@ class DCLMHDD:
         if preferred_path:
             p = Path(preferred_path).expanduser().resolve()
             if p.exists():
-                self.log(f"✓ Используется путь к CLI из настроек: {p}")
+                # self.log(f"✓ Используется путь к CLI из настроек: {p}")
                 return str(p)
 
         home = Path.home()

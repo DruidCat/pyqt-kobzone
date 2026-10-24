@@ -22,13 +22,15 @@ QtObject {
 	property bool analizer_rag_skleit: false//true - включен режим склеивания rag чанков.
 	property int analizer_rag_kolichestvo: 2// 1-5 склеить количество чанков до и после совпадения.
 	//LM Studio 
-	property string studio_model_imya: ""//По умолчанию отсутствует
-	property int studio_max_context: 8000//Количество токенов
-	property int studio_gpu_offload: 50//по умолчанию 50%	
 	property string studio_lms_put: ""//По умолчанию путь не задан
 	property string studio_cli_put: ""//По умолчанию путь не задан
-	property string studio_sandbox: ""//По умолчанию запуск lmstudio без sandbox
 	property string studio_server_url: "http://localhost:1234"
+	property string studio_sandbox: ""//По умолчанию запуск lmstudio без sandbox
+	property string studio_model_imya: ""//По умолчанию отсутствует
+	property bool studio_mmproj_multi: false//true - имеет функционал мультимодальности выбранная модель
+	property bool studio_mmproj_status: false//true - включена мультимодальность в выбраной модели
+	property int studio_max_context: 8000//Количество токенов
+	property int studio_gpu_offload: 50//по умолчанию 50%	
 	//Транскрибация
     property string transcribe_put_audio: ""
     property string transcribe_put_text: ""
@@ -65,13 +67,15 @@ QtObject {
         property alias analizer_rag_skleit: root.analizer_rag_skleit
         property alias analizer_rag_kolichestvo: root.analizer_rag_kolichestvo
 		//LM Studio
-		property alias studio_model_imya: root.studio_model_imya
-		property alias studio_max_context: root.studio_max_context
-		property alias studio_gpu_offload: root.studio_gpu_offload
 		property alias studio_lms_put: root.studio_lms_put
 		property alias studio_cli_put: root.studio_cli_put
-		property alias studio_sandbox: root.studio_sandbox
 		property alias studio_server_url: root.studio_server_url
+		property alias studio_sandbox: root.studio_sandbox
+		property alias studio_model_imya: root.studio_model_imya
+		property alias studio_mmproj_multi: root.studio_mmproj_multi
+		property alias studio_mmproj_status: root.studio_mmproj_status
+		property alias studio_max_context: root.studio_max_context
+		property alias studio_gpu_offload: root.studio_gpu_offload
 		//Транскрибация
         property alias transcribe_put_audio: root.transcribe_put_audio
         property alias transcribe_put_text: root.transcribe_put_text
