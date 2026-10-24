@@ -56,7 +56,6 @@ class DCLM(QObject):
     # Сигналы для mmproj (мультимодальность)
     sigMmprojStatus = pyqtSignal(bool, bool)# (is_multimodal, enabled) — статус после загрузки/проверки
     sigMmprojPereklyuchen = pyqtSignal(bool)# mmproj успешно переключён, новое состояние (enabled)
-    sigMmprojError = pyqtSignal(str)        # ошибка операции с mmproj
 
     def __init__(self):
         super().__init__()
@@ -775,7 +774,7 @@ class DCLM(QObject):
         if self._current_model == model_name:
             ok = self._vigruzitModel(lms_cli)
             if not ok:
-                self._emit_mmproj_error(
+                self._emit_error( 15,
                     f"Не удалось выгрузить модель {model_name} перед переключением mmproj"
                 )
                 return
@@ -790,11 +789,7 @@ class DCLM(QObject):
             self.sigMmprojPereklyuchen.emit(result.status.enabled)
             self.sigMmprojStatus.emit(result.status.is_multimodal, result.status.enabled)
         else:
-            self._emit_mmproj_error(result.error)
-
-    def _emit_mmproj_error(self, message: str) -> None:
-        self.sigLog.emit(f"[mmproj] {message}")
-        self.sigMmprojError.emit(message)
+            self._emit_error(15, result.error)
 
     # ==================== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ====================
     def _emit_error(self, code, message):

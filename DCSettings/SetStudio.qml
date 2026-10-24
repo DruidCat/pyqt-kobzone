@@ -52,6 +52,7 @@ Item {
 	property string strSandbox: DCSettings.studio_sandbox//имя программы, которая запускает в песочнице
 	property bool __isMacOS: false//true - запуск на MacOS
 	property bool __isModelNoName: false//true - выбрана модель MODEL_NO_NAME, чтоб её выгрузить.
+	property bool __isMmprojOn: false//true - запущен режим смены статуса мультимодальности.
 	property int maxContext: DCSettings.studio_max_context//Максимальное количество токенов
 	property bool isStudioOn: false//true - Studio запущена.
 	property bool isServerOn: false//true - сервер lms запущена на стороне LM Studio или Bionic.
@@ -134,6 +135,9 @@ Item {
 	onIsMmprojMultiChanged: {
 		knopkaMmproj.enabled = root.isMmprojMulti
 	}
+	onIsMmprojStatusChanged: {
+		
+	}
     Connections {//Обработчик загрузки моделей из Python
         target: pyLM
 
@@ -159,12 +163,13 @@ Item {
 					DCSettings.studio_sandbox = ""//записываем в реестр.
 				})
 			}
-			if(ntError !== 13){//Если это не пуста модель, то...
+			if(ntError !== 13){//Если это ошибка связана не с выбранной модели, то...
             	root.toolbar(`Ошибка: ${errorMsg}`)
 				pvModels.isServerZapustit = false
 				ldrProgress.active = false
 			} else if(root.__isModelNoName){//Если выгрузка модели, то...
 				root.__isModelNoName = false//Сбрасываем флаг.
+				root.__isMmprojOn = false//сбрасываем флаг, так как при выгрузке модели может возникнуть ошиб.
 				ldrProgress.active = false
 			}
         }
@@ -183,6 +188,7 @@ Item {
 		//12 - Ошибка остановки сервера
 		//13 - Модель не выбрана
 		//14 - Ошибка по Sandbox
+		//15 - Ошибка связанная с Mmproj
 		function onSigLMSPut(strLMSPut){//Если путь к Студии автоматически обнаружен, то он придут из PyLM
 			DCSettings.studio_lms_put = strLMSPut;//Записываем в реестр настроек.
 		}
@@ -256,8 +262,12 @@ Item {
 			ldrProgress.active = false
 		}
 		function onSigModelVigrujena(blStatus){
-			if(root.__isModelNoName) ldrProgress.active = false
-			root.__isModelNoName = false//Сбрасываем флаг.
+			if(root.__isModelNoName) {//Если выбран режим выгрузки модели, то...
+				ldrProgress.active = false
+				root.__isModelNoName = false//Сбрасываем флаг.
+			} else if (root.__isMmprojOn) {//Если активирован режим мультимодальности модели, то...
+				root.__strProgress = qsTr(`Переключение мультимодальности ${root.strModel}`)
+			}
 		}
 		function onSigModelProgress(ntProgress) {
 			if (ldrProgress.item) {
@@ -267,6 +277,12 @@ Item {
 		function onSigMmprojStatus(isMultimodal, isStatus) {
 			root.isMmprojMulti = isMultimodal
 			root.isMmprojStatus = isStatus
+		}
+		function onSigMmprojPereklyuchen(isStatus) {//Сигнал о том, что режим мультимодальности переключён.
+			root.isMmprojStatus = isStatus//Запоминае, чтоб переключатель на кнопке переключился.
+			DCSettings.studio_mmproj_status = root.isMmprojStatus//Сохраняем в реестре.
+			root.__isMmprojOn = false//Сбрасываю флаг, так как на этом этапе скрипт перестал работать.
+			fnUstParametri()//Устанавливаем параметры root.strModel, ltMaxContext, ltTemperatura, ltGPU
 		}
 	}
 	Keys.onPressed: (event) => {
@@ -501,7 +517,7 @@ Item {
 	}
 	function fnUstParametri() {//Устанавливаем параметры root.strModel, ltMaxContext, ltTemperatura, ltGPU
 		if(root.strModel === root.strModelNoName) root.__isModelNoName = true
-		else root.__strProgress = "Загрузка модели: " + root.strModel
+		else root.__strProgress = qsTr(`Загрузка модели: ${root.strModel}`)
 		let ltMaxContext = DCSettings.studio_max_context
 		let ltGPU = DCSettings.studio_gpu_offload
 		ldrProgress.active = true//Запускаем полосу прогресса загрузки модели
@@ -1011,7 +1027,7 @@ Item {
 				}
 				DCKnopkaOriginal {//Кнопка включения Sandbox
                     id: knopkaMmproj
-					text: root.isMmprojStatus ? qsTr("mmproj вкл") : qsTr("mmproj выкл")
+					text: root.isMmprojStatus ? qsTr("мультимодальность модели вкл") : qsTr("мультимодальность модели выкл")
 					ntHeight: root.ntWidth; ntCoff: root.ntCoff
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
@@ -1021,7 +1037,10 @@ Item {
 					enabled: root.isMmprojMulti
 					function fnPress() {
 						root.currentIndex = 7
-						//root.isMmprojStatus = !root.isMmprojStatus
+						root.__strProgress = qsTr(`Выгружаем модель: ${root.strModel}`)
+						root.__isMmprojOn = true//Активируем режим смены мультимодальности модели.
+						ldrProgress.active = true//Запускаем полосу прогресса загрузки модели
+						pyLM.pereklyuchitMmproj(root.strModel, !root.isMmprojStatus)
 					}
 					onClicked: {
 						if (pressed) {
