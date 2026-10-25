@@ -56,7 +56,7 @@ pip install -r requirements.txt
 5. **Создание ресурсов:**
 
 ```bash
-python DCScripts/DCCompileRCC.py
+python3.13 DCScripts/DCCompileRCC.py
 ```
 
 6. **Установите LM Studio:**
@@ -81,7 +81,7 @@ chmod +x lmstudio.AppImage
 8. **Запустите приложение:**
 
 ```bash
-python main.py
+python3.13 main.py
 ```
 
 9. **Установите sandbox firejail:**
