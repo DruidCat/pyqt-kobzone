@@ -19,7 +19,7 @@ Item {
 	property string strPapka: ""//Текущая папка выбора
 	property string strVibranniy: ""//Выбранный пусковой файл
 	property var fllModel: []//Модель списка файлов из Python (fnSpisokPapki)
-	property var fnSpisokPapki: null//Функция.backend списков папки(papka)->JSON, если не задана то pyLM.fnSpisok_Papki
+	property var fnSpisokPapki: null//Функция.backend списков папки(papka)->JSON, если не задана то pyLM.polSpisokPapki
 	property int ntWidth: 2//Толщина элементов (как в других виджетах DCMethods), вместе с ntCoff задаёт высоту кнопки «наверх» и размер шрифта всех текстов.
 	property int ntCoff: 8//Коэффициент размеров и отступов.
 	property color clrTexta: "orange"//Цвет текста, рамки и выделения.
@@ -69,7 +69,7 @@ Item {
 	}
 	function fnObnovit() {//Функция обновления списка папки, включая скрытые файлы
 		if (root.fnSpisokPapki !== null) root.fllModel = JSON.parse(root.fnSpisokPapki(root.strPapka))
-		else root.fllModel = JSON.parse(pyLM.fnSpisok_Papki(root.strPapka))
+		else root.fllModel = JSON.parse(pyLM.polSpisokPapki(root.strPapka))
 	}
 	function fnOtkrit(strZag, strPutFil) {//Функция открытия панели, strPutFil сохранённый путь к файлу (может быть пустым)
 		root.strZagolovok = strZag

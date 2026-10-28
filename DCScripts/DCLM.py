@@ -128,7 +128,7 @@ class DCLM(QObject):
         print(f"✓ Путь к lms CLI: {path}")
 
     @pyqtSlot(str, result=str)
-    def fnSpisok_Papki(self, path):
+    def polSpisokPapki(self, path):
         """Возвращает JSON список содержимого папки, включая скрытые файлы и папки (для панели выбора путей)"""
         import json
         try:

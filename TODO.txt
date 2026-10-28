@@ -304,3 +304,4 @@ TODO:
 2026-10-28 DCKnopkaOriginal, вернул pressed=true в момент clicked, обработчики if(pressed) заработали.
 2026-10-28 DCFileDialog, интегрировал в приложение: SetStudio выбирает пути Студии и Strata через панель.
 2026-10-28 SetStudio, удалил knopkaStrataPut и настройку studio_strata_put, перенумеровал индексы кнопок.
+2026-10-28 DCLM, fnSpisok_Papki переименован в polSpisokPapki, вызовы в SetStudio и DCFileDialog обновлены.

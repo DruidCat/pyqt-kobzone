@@ -355,8 +355,8 @@ Item {
 		ntCoff: root.ntCoff
 		clrTexta: root.clrMenuText
 		clrFona: root.clrMenuFon
-		fnSpisokPapki: function(vrPapka){//Python функция списков папки, включая скрытые. ВАЖНО!!! Именно функция-обёртка, а не pyLM.fnSpisok_Papki ссылкой: сохранённый метод C++-объекта вызывается потом с this виджета, Qt ругается "...with 'this' objects different from the one they were retrieved from". pyLM внутри проверен на null — при закрытии приложения он обнуляется.
-			return pyLM ? pyLM.fnSpisok_Papki(vrPapka) : "[]"
+		fnSpisokPapki: function(vrPapka){//Python функция списков папки, включая скрытые. ВАЖНО!!! Именно функция-обёртка, а не pyLM.polSpisokPapki ссылкой: сохранённый метод C++-объекта вызывается потом с this виджета, Qt ругается "...with 'this' objects different from the one they were retrieved from". pyLM внутри проверен на null — при закрытии приложения он обнуляется.
+			return pyLM ? pyLM.polSpisokPapki(vrPapka) : "[]"
 		}
 		property var fnKudaZapisat: null//Функция куда сохранять выбранный путь
 		onVybran: (vrPut) => {//Обработчик выбора пути из панели. ВАЖНО!!! Именно функция со своим параметром (vrPut), а не блок кода: Qt ругается "Parameter \"vrPut\" is not declared. Injection of parameters into signal handlers is deprecated".
