@@ -306,3 +306,4 @@ TODO:
 2026-10-28 SetStudio, удалил knopkaStrataPut и настройку studio_strata_put, перенумеровал индексы кнопок.
 2026-10-28 DCLM, fnSpisok_Papki переименован в polSpisokPapki, вызовы в SetStudio и DCFileDialog обновлены.
 2026-10-28 DCLMHDD, реализация списка папок перенесена в DCLMHDD, polSpisokPapki в DCLM теперь слот-делегат.
+2026-10-28 DCFileDialog, SetStudio, DCLM, DCLMHDD, комментарии перенесены под лимит 110 символов.

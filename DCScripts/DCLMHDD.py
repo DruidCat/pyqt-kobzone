@@ -17,7 +17,7 @@ class DCPassport:
     display_name: str = "LM Studio"
     linux_pgrep_pattern: str = r"(lm[- ]?studio|lmstudio|lm-studio)" # regex для pgrep (Linux)
     mac_pgrep_pattern: str = r"(LM Studio|lmstudio|lm-studio)"       # regex для pgrep (macOS)
-    windows_image_name: str = "LM Studio.exe"                        # имя процесса для taskkill/tasklist (Windows)
+    windows_image_name: str = "LM Studio.exe"  # имя процесса для taskkill/tasklist (Windows)
     cli_name: str = "lms"                                            # имя CLI без расширения (lms / lms.exe)
 
 

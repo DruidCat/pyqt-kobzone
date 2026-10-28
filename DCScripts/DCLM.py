@@ -123,7 +123,7 @@ class DCLM(QObject):
 
     @pyqtSlot(str, result=str)
     def polSpisokPapki(self, path):
-        """Возвращает JSON список содержимого папки, включая скрытые файлы и папки (для панели выбора путей)"""
+        """Возвращает JSON список содержимого папки, включая скрытые файлы и папки (панель выбора путей)"""
         return self._hdd.pol_spisok_papki(path)
 
     @pyqtSlot(str)
@@ -222,7 +222,8 @@ class DCLM(QObject):
         self.APP_NAME = passport.display_name  # <-- ИСПРАВЛЕНО: атрибут экземпляра, не класса
 
         if old_name != passport.display_name:
-            self.sigLog.emit(f"✓ Определено приложение: {old_name or '(неизвестно)'} → {passport.display_name}")
+            self.sigLog.emit(f"✓ Определено приложение: {old_name or '(неизвестно)'} → "
+                             f"{passport.display_name}")
             self.sigAppName.emit(passport.display_name)
 
     # ==================== РАБОТА СО СТУДИЕЙ И SANDBOX ЧЕРЕЗ DCLMApp====================
