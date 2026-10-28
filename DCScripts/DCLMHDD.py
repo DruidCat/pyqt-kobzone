@@ -1,6 +1,7 @@
 # DCScripts/DCLMHDD.py
 from __future__ import annotations
 
+import json
 import os
 import platform
 import re
@@ -154,6 +155,24 @@ class DCLMHDD:
         except Exception as e:
             self.log(f"✗ Ошибка проверки файла: {e}")
             return False
+
+    # --- СПИСОК СОДЕРЖИМОГО ПАПКИ (для панели выбора путей) ---
+    def pol_spisok_papki(self, path: str) -> str:
+        """
+        Возвращает JSON список содержимого папки, включая скрытые файлы и папки.
+        Папки первыми, сортировка без учёта регистра. Пустой/невалидный путь -> домашняя папка.
+        """
+        try:
+            papka = Path(path) if path else Path.home()
+            if not papka.is_dir():
+                papka = Path.home()
+            sp = []
+            for element in sorted(papka.iterdir(), key=lambda e: (not e.is_dir(), str(e).lower())):
+                sp.append({"name": element.name, "path": str(element), "isFolder": element.is_dir()})
+            return json.dumps(sp, ensure_ascii=False)
+        except Exception as e:
+            self.log(f"✗ Ошибка списка папки {path}: {e}")
+            return "[]"
 
     # -------------------- определение паспорта приложения --------------------
 

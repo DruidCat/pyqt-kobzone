@@ -121,27 +121,16 @@ class DCLM(QObject):
         """Проверяет, существует ли файл по указанному пути."""
         return self._hdd.proverka_faila(file_path)
 
+    @pyqtSlot(str, result=str)
+    def polSpisokPapki(self, path):
+        """Возвращает JSON список содержимого папки, включая скрытые файлы и папки (для панели выбора путей)"""
+        return self._hdd.pol_spisok_papki(path)
+
     @pyqtSlot(str)
     def ustPutCLI(self, path):
         """Устанавливает путь к CLI lms"""
         self._cli_path = path
         print(f"✓ Путь к lms CLI: {path}")
-
-    @pyqtSlot(str, result=str)
-    def polSpisokPapki(self, path):
-        """Возвращает JSON список содержимого папки, включая скрытые файлы и папки (для панели выбора путей)"""
-        import json
-        try:
-            papka = Path(path) if path else Path.home()
-            if not papka.is_dir():
-                papka = Path.home()
-            sp = []
-            for element in sorted(papka.iterdir(), key=lambda e: (not e.is_dir(), str(e).lower())):
-                sp.append({"name": element.name, "path": str(element), "isFolder": element.is_dir()})
-            return json.dumps(sp, ensure_ascii=False)
-        except Exception as e:
-            print(f"\033[31m Ошибка списка папки {path}: {e}\033[0m")
-            return "[]"
 
     @pyqtSlot(str)
     def ustPutStudio(self, path):
