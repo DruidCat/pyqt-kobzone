@@ -43,7 +43,6 @@ Item {
 	//Модель
 	property string putLMStudio: DCSettings.studio_lms_put//Путь к приложению Studio из реестра.
 	property string putCLI: DCSettings.studio_cli_put//Путь к cli lms Studio из реестра.
-	property string putStrata: DCSettings.studio_strata_put//Путь к пусковому файлу Strata (лежит в скрытой папке)
 	property string serverURL: DCSettings.studio_server_url//URL Сервера Studio
 	property string strModel: DCSettings.studio_model_imya//Имя модели ИИ
 	property string strModelNoName: ""//Получаем имя модели ОТСУТСТВУЕТ.
@@ -72,7 +71,7 @@ Item {
 	Component.onCompleted: {
 		root.strModelNoName = pyLM.polModelNoName()//Получаем имя модели ОТСУТСТВУЕТ.
 		fnModelEnabled()//Функция управляет политикой кнопок Temperatura, Context, GPU
-		knopkiMassiv = [knopkaLMStart, knopkaLMStop, knopkaLMPut, knopkaStrataPut, knopkaCLIPut, knopkaServerURL, knopkaSandbox,
+		knopkiMassiv = [knopkaLMStart, knopkaLMStop, knopkaLMPut, knopkaCLIPut, knopkaServerURL, knopkaSandbox,
 						knopkaModeli, knopkaMmproj, knopkaContext, knopkaGPU]
 		
 		if (DCSettings.studio_lms_put !== "")//Передаём путь из настроек в Python
@@ -882,34 +881,6 @@ Item {
 					}	
                 }
 
-				DCKnopkaOriginal {//Кнопка выбора пути Strata (пусковой файл в скрытой папке)
-                    id: knopkaStrataPut
-                    text: {
-                        let ltText = qsTr("путь к Strata: ");
-						if (root.putStrata === "") ltText += qsTr("не задан")
-						else ltText += root.putStrata
-						return ltText;
-                    }
-                    ntHeight: root.ntWidth; ntCoff: root.ntCoff
-					anchors.left: parent.left; anchors.right: parent.right
-                    anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
-					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 3) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
-                    opacityKnopki: 0.9
-					enabled: !root.isStudioOn
-					function fnPress() {
-						root.currentIndex = 3
-						fnOtkritFaylovik(qsTr("Выберите пусковой файл Strata"), DCSettings.studio_strata_put,
-							function(vrPut) { DCSettings.studio_strata_put = vrPut })//Сохраняем выбранный путь в DCSettings
-					}
-					onClicked: {
-						if (pressed) {
-							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
-								if (pressed && !pvSandbox.pressed && !pvModels.pressed) fnPress()
-							}
-						}
-					}
-                }
 				DCKnopkaOriginal {//Кнопка выбора пути cli lms
                     id: knopkaCLIPut
                     text: {
@@ -922,11 +893,11 @@ Item {
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 4) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 3) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					enabled: !root.isServerOn
 					function fnPress() {
-						root.currentIndex = 4
+						root.currentIndex = 3
 						fnClickedVvod(1)//Функция задающая путь к cli lms
 					}
 					onClicked: {
@@ -948,10 +919,10 @@ Item {
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 5) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 4) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					function fnPress() {
-						root.currentIndex = 5
+						root.currentIndex = 4
 						fnClickedVvod(3)//Функция ввода адреса сервера
 					}
 					onClicked: {
@@ -984,10 +955,10 @@ Item {
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 6) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 5) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					function fnPress() {
-						root.currentIndex = 6
+						root.currentIndex = 5
 						Qt.callLater(function(){//пауза, иначе не сработает фокус и pvSandbox. ВАЖНО!!!
 							pvSandbox.visible = !pvSandbox.visible//Инверсируем
 						})
@@ -1017,10 +988,10 @@ Item {
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 7) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 6) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					function fnPress() {
-						root.currentIndex = 7
+						root.currentIndex = 6
 						fnClickedModel()//Функция выбора Модели.
 					}
 					onClicked: {
@@ -1039,11 +1010,11 @@ Item {
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 8) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 7) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					enabled: root.isMmprojMulti
 					function fnPress() {
-						root.currentIndex = 8
+						root.currentIndex = 7
 						root.__strProgress = qsTr(`Выгружаем модель: ${root.strModel}`)
 						root.__isMmprojOn = true//Активируем режим смены мультимодальности модели.
 						ldrProgress.active = true//Запускаем полосу прогресса загрузки модели
@@ -1068,10 +1039,10 @@ Item {
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 9) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 8) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					function fnPress() {
-						root.currentIndex = 9
+						root.currentIndex = 8
 						fnClickedVvod(0)//Функция выбора максимального контекста
 					}
 					onClicked: {
@@ -1093,10 +1064,10 @@ Item {
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 10) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 9) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					function fnPress() {
-						root.currentIndex = 10
+						root.currentIndex = 9
 						fnClickedVvod(2)//Функция ввода gpu offload
 					}
 					onClicked: {

@@ -129,7 +129,7 @@ class DCLM(QObject):
 
     @pyqtSlot(str, result=str)
     def fnSpisok_Papki(self, path):
-        """Возвращает JSON список содержимого папки, включая скрытые файлы и папки (для панели выбора Strata)"""
+        """Возвращает JSON список содержимого папки, включая скрытые файлы и папки (для панели выбора путей)"""
         import json
         try:
             papka = Path(path) if path else Path.home()

@@ -24,7 +24,6 @@ QtObject {
 	//LM Studio 
 	property string studio_lms_put: ""//По умолчанию путь не задан
 	property string studio_cli_put: ""//По умолчанию путь не задан
-	property string studio_strata_put: ""//По умолчанию путь к пусковому файлу Strata не задан
 	property string studio_server_url: "http://localhost:1234"
 	property string studio_sandbox: ""//По умолчанию запуск lmstudio без sandbox
 	property string studio_model_imya: ""//По умолчанию отсутствует
@@ -70,7 +69,6 @@ QtObject {
 		//LM Studio
 		property alias studio_lms_put: root.studio_lms_put
 		property alias studio_cli_put: root.studio_cli_put
-		property alias studio_strata_put: root.studio_strata_put
 		property alias studio_server_url: root.studio_server_url
 		property alias studio_sandbox: root.studio_sandbox
 		property alias studio_model_imya: root.studio_model_imya

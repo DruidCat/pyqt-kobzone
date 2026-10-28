@@ -303,3 +303,4 @@ TODO:
 2026-10-28 DCKnopkaNazad, клики не проходят сквозь кнопку (MouseArea), вернул pressed=true в момент clicked.
 2026-10-28 DCKnopkaOriginal, вернул pressed=true в момент clicked, обработчики if(pressed) заработали.
 2026-10-28 DCFileDialog, интегрировал в приложение: SetStudio выбирает пути Студии и Strata через панель.
+2026-10-28 SetStudio, удалил knopkaStrataPut и настройку studio_strata_put, перенумеровал индексы кнопок.
