@@ -127,6 +127,22 @@ class DCLM(QObject):
         self._cli_path = path
         print(f"✓ Путь к lms CLI: {path}")
 
+    @pyqtSlot(str, result=str)
+    def fnSpisok_Papki(self, path):
+        """Возвращает JSON список содержимого папки, включая скрытые файлы и папки (для панели выбора Strata)"""
+        import json
+        try:
+            papka = Path(path) if path else Path.home()
+            if not papka.is_dir():
+                papka = Path.home()
+            sp = []
+            for element in sorted(papka.iterdir(), key=lambda e: (not e.is_dir(), str(e).lower())):
+                sp.append({"name": element.name, "path": str(element), "isFolder": element.is_dir()})
+            return json.dumps(sp, ensure_ascii=False)
+        except Exception as e:
+            print(f"\033[31m Ошибка списка папки {path}: {e}\033[0m")
+            return "[]"
+
     @pyqtSlot(str)
     def ustPutStudio(self, path):
         """Устанавливает путь к LM Studio/Bionic и определяет тип приложения"""

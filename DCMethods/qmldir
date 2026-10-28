@@ -1,5 +1,6 @@
 module DCMethods
 
+DCFileDialog 1.0 DCFileDialog.qml
 DCLogo 1.0 DCLogo.qml
 DCMarkdown 1.0 DCMarkdown.qml
 DCMenu 1.0 DCMenu.qml

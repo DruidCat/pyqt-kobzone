@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Controls
-import QtCore
 import QtQuick.Dialogs
 import DCButtons 1.0
 import DCMethods 1.0
@@ -44,6 +43,7 @@ Item {
 	//Модель
 	property string putLMStudio: DCSettings.studio_lms_put//Путь к приложению Studio из реестра.
 	property string putCLI: DCSettings.studio_cli_put//Путь к cli lms Studio из реестра.
+	property string putStrata: DCSettings.studio_strata_put//Путь к пусковому файлу Strata (лежит в скрытой папке)
 	property string serverURL: DCSettings.studio_server_url//URL Сервера Studio
 	property string strModel: DCSettings.studio_model_imya//Имя модели ИИ
 	property string strModelNoName: ""//Получаем имя модели ОТСУТСТВУЕТ.
@@ -72,7 +72,7 @@ Item {
 	Component.onCompleted: {
 		root.strModelNoName = pyLM.polModelNoName()//Получаем имя модели ОТСУТСТВУЕТ.
 		fnModelEnabled()//Функция управляет политикой кнопок Temperatura, Context, GPU
-		knopkiMassiv = [knopkaLMStart, knopkaLMStop, knopkaLMPut, knopkaCLIPut, knopkaServerURL, knopkaSandbox,
+		knopkiMassiv = [knopkaLMStart, knopkaLMStop, knopkaLMPut, knopkaStrataPut, knopkaCLIPut, knopkaServerURL, knopkaSandbox,
 						knopkaModeli, knopkaMmproj, knopkaContext, knopkaGPU]
 		
 		if (DCSettings.studio_lms_put !== "")//Передаём путь из настроек в Python
@@ -351,30 +351,20 @@ Item {
 			event.accepted = true
 		}
 	}
-	FileDialog {
-		id: dialogLMPut
-		title: qsTr(`Выберите путь к ${root.strStudioImya}`)
-		fileMode: FileDialog.OpenFile//Открыть один файл
-		nameFilters: {
-			if(Qt.platform.os === "windows") return ["Исполняемые файлы (*.exe)", "Все файлы (*)"]
-			else if (Qt.platform.os === "linux") return ["AppImage (*.AppImage)", "Все файлы (*)"]
-			else if (Qt.platform.os === "osx") return ["Приложения (*.app)", "Все файлы (*)"]
-			return ["Все файлы (*)"];//Безопасный фоллбэк
+	DCFileDialog {//Панель выбора пускового файла, виджет DCFileDialog из DCMethods
+		id: pvFaylovik
+		ntCoff: root.ntCoff
+		clrTexta: root.clrMenuText
+		clrFona: root.clrMenuFon
+		fnSpisokPapki: function(vrPapka){//Python функция списков папки, включая скрытые. ВАЖНО!!! Именно функция-обёртка, а не pyLM.fnSpisok_Papki ссылкой: сохранённый метод C++-объекта вызывается потом с this виджета, Qt ругается "...with 'this' objects different from the one they were retrieved from". pyLM внутри проверен на null — при закрытии приложения он обнуляется.
+			return pyLM ? pyLM.fnSpisok_Papki(vrPapka) : "[]"
 		}
-		currentFolder: {//Используем сохранённый путь из реестра, или стандартную домашнюю папку
-			if (DCSettings.studio_lms_put !== "") {
-				var vrPut = DCSettings.studio_lms_put
-				vrPut = fnPathToUrl(vrPut)//Преобразуем сохранённый путь в URL
-				return vrPut.substring(0, vrPut.lastIndexOf("/"));//Обрезаем имя файла.
-			}
-			else return StandardPaths.writableLocation(StandardPaths.HomeLocation)//Открываем домашнюю локацию
+		property var fnKudaZapisat: null//Функция куда сохранять выбранный путь
+		onVybran: (vrPut) => {//Обработчик выбора пути из панели. ВАЖНО!!! Именно функция со своим параметром (vrPut), а не блок кода: Qt ругается "Parameter \"vrPut\" is not declared. Injection of parameters into signal handlers is deprecated".
+			if (pvFaylovik.fnKudaZapisat !== null) pvFaylovik.fnKudaZapisat(vrPut)
+			pvFaylovik.fnKudaZapisat = null
 		}
-		onAccepted: {
-			var vrPut = fnUrlToLocalPath(selectedFile)//Используем кроссплатформенную функцию
-			DCSettings.studio_lms_put = vrPut
-		}
-		onRejected: {//Если нажата кнопка отмены, то...
-		}
+		onZakrit: root.forceActiveFocus()//Возвращаем фокус корню чтобы работали горячие клавиши. ВАЖНО!!!
 	}
 	function fnClickedEnter() {//Функция обработки нажатия клавиши Enter
         if (root.currentIndex >= 0 && root.currentIndex < knopkiMassiv.length) {
@@ -568,24 +558,9 @@ Item {
 			return "file:///" + localPath//file:/// + C:/path = file:///C:/path
 		}
 	}
-	function fnUrlToLocalPath(url) {//Функция кроссплатформенного преобразования URL в путь
-		if (!url) return ""
-		var path = url.toString()
-		if (path.startsWith("file:///")) {//Если путь начинается с file:///
-			path = path.substring(7)//Убираем "file://" чтоб осталось "/" /home, /mnt и тд
-		} else if (path.startsWith("file://")) {//Если путь начинается с file://
-			path = path.substring(7)//Убираем "file://"
-		}
-		path = decodeURIComponent(path)//Декодируем URL-кодирование (%20 → пробел, %3F → ?)
-		if (Qt.platform.os === "windows") {//Windows: если путь начинается с /C:/, убираем первый /
-			if (path.length > 2 && path[0] === '/' && path[2] === ':') {
-				path = path.substring(1)
-			}
-		}
-		if (Qt.platform.os !== "windows" && path.startsWith("//")) {//Linux-убираем двойной слеш,если появился
-			path = path.substring(1)
-		}
-		return path
+	function fnOtkritFaylovik(strZag, strPapka, fnKuda) {//Функция открытия панели выбора файлов со скрытыми папками (виджет DCFileDialog)
+		pvFaylovik.fnKudaZapisat = fnKuda//Запоминаем куда сохранять выбранный путь
+		pvFaylovik.fnOtkrit(strZag, strPapka)//Стартовую папку виджет определит сам
 	}
 	Timer {//ТАЙМЕР запуска проверки соединения с сервером lms
         id: tmrServerLMS
@@ -761,7 +736,8 @@ Item {
 			}
 			function fnVoprosOk(flag){//Функция открытия вопроса по флагу
 				if(flag === 3){
-					dialogLMPut.open()//Функция выбора пути к Studio.
+					fnOtkritFaylovik(qsTr(`Выберите путь к ${root.strStudioImya}`), DCSettings.studio_lms_put,
+						function(vrPut) { DCSettings.studio_lms_put = vrPut })//Сохраняем выбранный путь в DCSettings
 				} else if (flag === 6){
 					fnClickedLMSZapustit()//Функция запуска Studio
 				} else if (flag === 9){
@@ -894,7 +870,8 @@ Item {
 					enabled: !root.isStudioOn
 					function fnPress() {
 						root.currentIndex = 2
-						dialogLMPut.open()//Функция выбора пути к Studio.
+						fnOtkritFaylovik(qsTr(`Выберите путь к ${root.strStudioImya}`), DCSettings.studio_lms_put,
+							function(vrPut) { DCSettings.studio_lms_put = vrPut })//Сохраняем выбранный путь в DCSettings
 					}
 					onClicked: {
 						if (pressed) {
@@ -903,6 +880,35 @@ Item {
 							}
 						}
 					}	
+                }
+
+				DCKnopkaOriginal {//Кнопка выбора пути Strata (пусковой файл в скрытой папке)
+                    id: knopkaStrataPut
+                    text: {
+                        let ltText = qsTr("путь к Strata: ");
+						if (root.putStrata === "") ltText += qsTr("не задан")
+						else ltText += root.putStrata
+						return ltText;
+                    }
+                    ntHeight: root.ntWidth; ntCoff: root.ntCoff
+					anchors.left: parent.left; anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
+					clrTexta: root.clrMenuText
+                    clrKnopki: (root.currentIndex === 3) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    opacityKnopki: 0.9
+					enabled: !root.isStudioOn
+					function fnPress() {
+						root.currentIndex = 3
+						fnOtkritFaylovik(qsTr("Выберите пусковой файл Strata"), DCSettings.studio_strata_put,
+							function(vrPut) { DCSettings.studio_strata_put = vrPut })//Сохраняем выбранный путь в DCSettings
+					}
+					onClicked: {
+						if (pressed) {
+							if (!fnCloseMenuIfOpen() && !fnCloseTXNtIfOpen() && !fnCloseVoprosIfOpen()) {
+								if (pressed && !pvSandbox.pressed && !pvModels.pressed) fnPress()
+							}
+						}
+					}
                 }
 				DCKnopkaOriginal {//Кнопка выбора пути cli lms
                     id: knopkaCLIPut
@@ -916,11 +922,11 @@ Item {
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 3) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 4) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					enabled: !root.isServerOn
 					function fnPress() {
-						root.currentIndex = 3
+						root.currentIndex = 4
 						fnClickedVvod(1)//Функция задающая путь к cli lms
 					}
 					onClicked: {
@@ -942,10 +948,10 @@ Item {
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 4) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 5) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					function fnPress() {
-						root.currentIndex = 4
+						root.currentIndex = 5
 						fnClickedVvod(3)//Функция ввода адреса сервера
 					}
 					onClicked: {
@@ -978,10 +984,10 @@ Item {
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 5) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 6) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					function fnPress() {
-						root.currentIndex = 5
+						root.currentIndex = 6
 						Qt.callLater(function(){//пауза, иначе не сработает фокус и pvSandbox. ВАЖНО!!!
 							pvSandbox.visible = !pvSandbox.visible//Инверсируем
 						})
@@ -1011,10 +1017,10 @@ Item {
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 6) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 7) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					function fnPress() {
-						root.currentIndex = 6
+						root.currentIndex = 7
 						fnClickedModel()//Функция выбора Модели.
 					}
 					onClicked: {
@@ -1033,11 +1039,11 @@ Item {
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 7) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 8) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					enabled: root.isMmprojMulti
 					function fnPress() {
-						root.currentIndex = 7
+						root.currentIndex = 8
 						root.__strProgress = qsTr(`Выгружаем модель: ${root.strModel}`)
 						root.__isMmprojOn = true//Активируем режим смены мультимодальности модели.
 						ldrProgress.active = true//Запускаем полосу прогресса загрузки модели
@@ -1062,10 +1068,10 @@ Item {
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 8) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 9) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					function fnPress() {
-						root.currentIndex = 8
+						root.currentIndex = 9
 						fnClickedVvod(0)//Функция выбора максимального контекста
 					}
 					onClicked: {
@@ -1087,10 +1093,10 @@ Item {
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrMenuText
-                    clrKnopki: (root.currentIndex === 9) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 10) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
                     opacityKnopki: 0.9
 					function fnPress() {
-						root.currentIndex = 9
+						root.currentIndex = 10
 						fnClickedVvod(2)//Функция ввода gpu offload
 					}
 					onClicked: {
