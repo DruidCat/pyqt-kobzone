@@ -35,6 +35,7 @@ Item {
     
 	property int logoRazmer: 22//Размер Логотипа
     property string logoImya: "kobzone"//Имя логотипа в DCLogo
+	property bool isMobile: false//true - мобильное устройство.
 	property string strStudioImya: "LM Studio"//LM Studio приложение по умолчанию, может быть Bionic.
 	property string __strProgress: ""//строка, которая будет в строке загрузки
 	//Массив кнопок для навигации
@@ -351,24 +352,19 @@ Item {
 		}
 	}
 	DCFileDialog {//Панель выбора пускового файла, виджет DCFileDialog из DCMethods
-		id: pvFaylovik
-		ntCoff: root.ntCoff
-		clrTexta: root.clrMenuText
-		clrFona: root.clrMenuFon
+		id: fldPutStudio
+		ntCoff: root.ntCoff; ntWidth: root.ntWidth
+		clrTexta: root.clrTexta; clrFona: root.clrFona; clrFonaZatem: root.clrMenuFon 
+		isMobile: root.isMobile
 		//Python функция списков папки, включая скрытые. ВАЖНО!!! Именно функция-обёртка,
-		//а не pyLM.polSpisokPapki ссылкой: сохранённый метод C++-объекта вызывается потом
-		//с this виджета, Qt ругается "...with 'this' objects different from the one retrieved".
-		//pyLM внутри проверен на null — при закрытии приложения он обнуляется.
 		fnSpisokPapki: function(vrPapka){
 			return pyLM ? pyLM.polSpisokPapki(vrPapka) : "[]"
 		}
 		property var fnKudaZapisat: null//Функция куда сохранять выбранный путь
 		//Обработчик выбора пути из панели. ВАЖНО!!! Именно функция со своим параметром (vrPut),
-		//а не блок кода: Qt ругается "Parameter \"vrPut\" is not declared. Injection of
-		//parameters into signal handlers is deprecated".
 		onVybran: (vrPut) => {
-			if (pvFaylovik.fnKudaZapisat !== null) pvFaylovik.fnKudaZapisat(vrPut)
-			pvFaylovik.fnKudaZapisat = null
+			if (fldPutStudio.fnKudaZapisat !== null) fldPutStudio.fnKudaZapisat(vrPut)
+			fldPutStudio.fnKudaZapisat = null
 		}
 		onZakrit: root.forceActiveFocus()//Возвращаем фокус корню чтобы работали горячие клавиши. ВАЖНО!!!
 	}
@@ -565,9 +561,9 @@ Item {
 		}
 	}
 	//Функция открытия панели выбора файлов со скрытыми папками (виджет DCFileDialog)
-	function fnOtkritFaylovik(strZag, strPapka, fnKuda) {
-		pvFaylovik.fnKudaZapisat = fnKuda//Запоминаем куда сохранять выбранный путь
-		pvFaylovik.fnOtkrit(strZag, strPapka)//Стартовую папку виджет определит сам
+	function fnOtkritFaylovik(strZagolovok, strPapka, fnKuda) {
+		fldPutStudio.fnKudaZapisat = fnKuda//Запоминаем куда сохранять выбранный путь
+		fldPutStudio.fnOtkrit(strZagolovok, strPapka)//Стартовую папку виджет определит сам
 	}
 	Timer {//ТАЙМЕР запуска проверки соединения с сервером lms
         id: tmrServerLMS
@@ -744,7 +740,7 @@ Item {
 			function fnVoprosOk(flag){//Функция открытия вопроса по флагу
 				if(flag === 3){
 					fnOtkritFaylovik(qsTr(`Выберите путь к ${root.strStudioImya}`), DCSettings.studio_lms_put,
-						function(vrPut) { DCSettings.studio_lms_put = vrPut })//Сохраняем выбранный путь в DCSettings
+						function(vrPut) { DCSettings.studio_lms_put = vrPut })//Сохраняем путь в DCSettings
 				} else if (flag === 6){
 					fnClickedLMSZapustit()//Функция запуска Studio
 				} else if (flag === 9){
@@ -878,7 +874,7 @@ Item {
 					function fnPress() {
 						root.currentIndex = 2
 						fnOtkritFaylovik(qsTr(`Выберите путь к ${root.strStudioImya}`), DCSettings.studio_lms_put,
-							function(vrPut) { DCSettings.studio_lms_put = vrPut })//Сохраняем выбранный путь в DCSettings
+							function(vrPut) { DCSettings.studio_lms_put = vrPut })//Сохраняем путь в DCSettings
 					}
 					onClicked: {
 						if (pressed) {

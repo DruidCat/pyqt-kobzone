@@ -3,7 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QtCore
 import DCButtons 1.0//Импортируем кнопки
-//DCFileDialog - Панель выбора пускового файла. В отличии от FileDialog показывает СКРЫТЫЕ папки и файлы.
+//DCFileDialog - Панель выбора файла. Может показывать СКРЫТЫЕ папки и файлы.
 //Открывается функцией fnOtkrit(strZag, strPutFil), выбранный путь приходит сигналом vybran(vrPut),
 //закрытие панели сигналом zakrit(). Цвета настраиваются свойствами clrTexta/clrFona/clrFonaZatem.
 Item {
@@ -12,29 +12,22 @@ Item {
 	z: 1000//Поверх всех слоёв
 	anchors.fill: parent//Перекрываем всю зону родителя
 	focus: visible//Фокус для клавиши Escape
-	//Пока панель открыта, перехватывать ВСЕ клавиатуры (в т.ч. стрелки/Enter для списка),
-	//чтобы горячие клавиши вызывающего окна не срабатывали.
-	//Если нужен чужой хендлер — выставить в false и повесить его на lvFaylovik через id виджета.
 	//Публичное свойство: клавиатура сейчас внутри панели (для отладки и логики вызывающей стороны).
 	readonly property bool klaviaturaVPaneli: lvFaylovik.activeFocus
 	//Свойства.
+	property bool isMobile: false//true - это мобильное устройсктво
 	property string strZagolovok: ""//Заголовок панели
 	property string strPapka: ""//Текущая папка выбора
 	property string strVibranniy: ""//Выбранный пусковой файл
 	property var fllModel: []//Модель списка файлов из Python (fnSpisokPapki)
-	//Функция.backend списков папки(papka)->JSON, если не задана то pyLM.polSpisokPapki
-	property var fnSpisokPapki: null
-	//Толщина элементов (как в других виджетах DCMethods), вместе с ntCoff задаёт
-	//высоту кнопки «наверх» и размер шрифта всех текстов.
+	property var fnSpisokPapki: null//Функция.backend списков папки(papka)->JSON
 	property int ntWidth: 2
-	property int ntCoff: 8//Коэффициент размеров и отступов.
-	property color clrTexta: "orange"//Цвет текста, рамки и выделения.
-	property color clrFona: "SlateGray"//Цвет фона окна панели.
-	property color clrFonaZatem: "#80000000"//Цвет затемнения фона за панелью.
-	property real pctTexta: 1//Прозрачность текста и рамки (1 непрозрачный).
-	property real pctFona: 1//Прозрачность фона окна панели (1 непрозрачный).
-	property real pctPanelWidth: 0.85//Ширина окна панели от ширины родителя.
-	property real pctPanelHeight: 0.8//Высота окна панели от высоты родителя.
+	property int ntCoff: 8
+	property color clrTexta: "orange"//Цвет текста, рамки.
+	property color clrFona: "black"//Цвет фона окна панели.
+	property color clrFonaZatem: "SlateGray"//Цвет затемнения фона за панелью.
+	property real rlPanelWidth: isMobile ? 1 : 0.85//Ширина окна панели от ширины родителя.
+	property real rlPanelHeight: isMobile ? 1 : 0.8//Высота окна панели от высоты родителя.
 	//Сигналы.
 	signal vybran(string vrPut);//Выбран пусковой файл, vrPut путь к нему.
 	signal zakrit();//Панель закрыта.
@@ -83,23 +76,18 @@ Item {
 	function fnObnovit() {//Функция обновления списка папки, включая скрытые файлы
 		if (root.fnSpisokPapki !== null) root.fllModel = JSON.parse(root.fnSpisokPapki(root.strPapka))
 		else root.fllModel = JSON.parse(pyLM.polSpisokPapki(root.strPapka))
-	}
-	//Функция открытия панели, strPutFil сохранённый путь к файлу (может быть пустым)
-	function fnOtkrit(strZag, strPutFil) {
+	}	
+	function fnOtkrit(strZag, strPutFil) {//Функция открытия панели, strPutFil сохранённый путь к файлу
 		root.strZagolovok = strZag
 		root.strVibranniy = ""
 		root.strPapka = root.fnNachalniyPapka(strPutFil)
 		root.fnObnovit()
 		root.visible = true
-		//ВАЖНО!!! Забираем фокус в панель сами (универсально для любого вызывающего окна),
-		//иначе клавиатура остаётся у него и горячие клавиши стреляют сквозь панель.
-		lvFaylovik.forceActiveFocus()
+		lvFaylovik.forceActiveFocus()//ВАЖНО!!! Забираем фокус в панель сами
 	}
 	function fnZakrit() {//Функция закрытия панели
 		root.visible = false
-		//Снимаем фокус с внутренностей панели, чтобы не «держала» его в скрытом виде
-		//(activeFocus read-only, снимается через focus), вызывающая сторона возвращает фокус себе.
-		lvFaylovik.focus = false
+		lvFaylovik.focus = false//Снимаем фокус с внутренностей панели, чтобы не «держала» его в скрытом виде
 		root.zakrit()//Сигнал вызывающей стороне, вернуть фокус своему окну. ВАЖНО!!!
 	}
 	function fnNaVerh() {//Функция подняться в родительскую папку (кнопка «назад» и Alt+стрелка влево)
@@ -120,92 +108,110 @@ Item {
 		color: root.clrFonaZatem
 		MouseArea { anchors.fill: parent}//Блокируем клики от приложения за панелью
 		Rectangle {//Окно самой панели
+			id: rctFileDialog
 			anchors.centerIn: parent
-			width: parent.width * root.pctPanelWidth; height: parent.height * root.pctPanelHeight
-			color: Qt.alpha(Qt.darker(root.clrFona, 1.5), root.pctFona)
-			border.color: Qt.alpha(root.clrTexta, root.pctTexta)
+			width: parent.width * root.rlPanelWidth; height: parent.height * root.rlPanelHeight
+			color: root.clrFonaZatem
 			radius: root.ntCoff
+			clip: true
 			ColumnLayout {
 				anchors.fill: parent
-				anchors.margins: root.ntCoff * 2
 				spacing: root.ntCoff
-				Text {//Заголовок панели
-					text: root.strZagolovok; color: Qt.alpha(root.clrTexta, root.pctTexta)
-					//Крупнее строк панели на отступ, как в других виджетах.
-					font.pixelSize: root.ntWidth*root.ntCoff+root.ntCoff
-				}
-				RowLayout {//Строка: кнопка подняться в родительскую папку + текущий путь
-					spacing: root.ntCoff
-					//Кнопка подняться в родительскую папку (как в DCPages/DCSettings),
-					//размер по умолчанию из ntWidth/ntCoff этой панели.
-					DCKnopkaNazad {
-						ntWidth: root.ntWidth
-						ntCoff: root.ntCoff
-						tapHeight: root.ntWidth*root.ntCoff+root.ntCoff; tapWidth: tapHeight
-						clrKnopki: Qt.alpha(root.clrTexta, root.pctTexta)
-						clrFona: Qt.alpha(Qt.darker(root.clrFona, 1.5), root.pctFona)
-						onClicked: root.fnNaVerh()//Подняться в родительскую папку (общий обработчик с Alt+стрелка влево).
-					}
-					Text {//Строка текущего пути
-						text: "Путь: " + root.strPapka; color: Qt.alpha(root.clrTexta, root.pctTexta)
-						//Размер шрифта по ntWidth/ntCoff, чтобы быть одинаковой высоты с кнопкой.
-						font.pixelSize: root.ntWidth*root.ntCoff
-						Layout.fillWidth: true; elide: Text.ElideMiddle
-						Layout.alignment: Qt.AlignVCenter
+				Rectangle {
+					id: rctZagolovok
+					Layout.fillWidth: true//Занимает всю доступную ширину с учётом margins ColumnLayout
+					Layout.preferredHeight: root.ntWidth * root.ntCoff + root.ntCoff * 2
+					color: root.clrFona
+					border.color: root.clrTexta
+					radius: root.ntCoff
+					Text {//Заголовок панели
+						anchors.centerIn: parent//По центру прямоугольника рисуем текст.
+						text: root.strZagolovok;
+						color: root.clrTexta
+						font.pixelSize: root.ntWidth*root.ntCoff+root.ntCoff
 					}
 				}
-				ListView {//Список папок и файлов (включая скрытые, с точкой в начале)
-					id: lvFaylovik
-					Layout.fillWidth: true; Layout.fillHeight: true
-					clip: true
-					ScrollBar.vertical: ScrollBar { policy: ScrollBar.AlwaysOn }
-					model: root.fllModel
-					//Клавиатурная навигация стрелками: файл под курсором становится выбранным,
-					//папка остаётся просто под курсором (Enter по ней = вход)
-					onCurrentIndexChanged: {
-						if (currentIndex >= 0 && currentIndex < root.fllModel.length && !root.fllModel[currentIndex].isFolder)
-							root.strVibranniy = root.fllModel[currentIndex].path
+				Rectangle {
+					id: rctPut
+					Layout.fillWidth: true//Занимает всю доступную ширину с учётом margins ColumnLayout
+					Layout.preferredHeight: root.ntWidth * root.ntCoff + root.ntCoff
+					color: root.clrFona
+					border.color: root.clrTexta
+					radius: root.ntCoff
+					RowLayout {//Строка: кнопка подняться в родительскую папку + текущий путь
+						spacing: root.ntCoff
+						anchors.verticalCenter: parent.verticalCenter//По вертикали по центру.
+						DCKnopkaNazad {//Кнопка подняться в родительскую папку (как в DCPages/DCSettings),
+							ntWidth: root.ntWidth; ntCoff: root.ntCoff
+							tapHeight: root.ntWidth*root.ntCoff+root.ntCoff; tapWidth: tapHeight
+							clrKnopki: root.clrTexta; clrFona: root.clrFona
+							onClicked: root.fnNaVerh()//Подняться в родительскую папку
+						}
+						Text {//Строка текущего пути
+							text: "Путь: " + root.strPapka
+							color: root.clrTexta
+							font.pixelSize: root.ntWidth*root.ntCoff
+							Layout.fillWidth: true; elide: Text.ElideMiddle
+							Layout.alignment: Qt.AlignVCenter
+						}
 					}
-					delegate: Rectangle {//Одна строка списка
-						//Высота строки как у кнопки «наверх» и строки пути.
-						width: lvFaylovik.width; height: root.ntWidth*root.ntCoff+root.ntCoff
-						//Выделение выбранного, тусклое — клавиатурного курсора
-						color: (modelData.path === root.strVibranniy) ? Qt.alpha(root.clrTexta, 0.3) :
-							(ListView.isCurrent ? Qt.alpha(root.clrTexta, 0.12) : "transparent")
-						MouseArea {
-							anchors.fill: parent
-							onClicked: {//Клик по папке входит в неё, клик по файлу выделяет
-								if (modelData.isFolder) {
-									root.strPapka = modelData.path
-									root.strVibranniy = ""
-									root.fnObnovit()
-								} else root.strVibranniy = modelData.path
+				}
+				Rectangle {
+					id: rctZona
+					Layout.fillWidth: true//Занимает всю доступную ширину с учётом margins ColumnLayout
+					Layout.fillHeight: true
+					color: root.clrFona
+					border.color: root.clrTexta
+					radius: root.ntCoff
+					ListView {//Список папок и файлов (включая скрытые, с точкой в начале)
+						id: lvFaylovik
+						height: rctZona.height
+						width: rctZona.width
+						clip: true
+						ScrollBar.vertical: ScrollBar { policy: ScrollBar.AlwaysOn }
+						model: root.fllModel
+						//Клавиатурная навигация стрелками: файл под курсором становится выбранным,
+						//папка остаётся просто под курсором (Enter по ней = вход)
+						onCurrentIndexChanged: {
+							if (currentIndex >= 0 	&& currentIndex < root.fllModel.length
+													&& !root.fllModel[currentIndex].isFolder)
+								root.strVibranniy = root.fllModel[currentIndex].path
+						}
+						delegate: Rectangle {//Одна строка списка
+							//Высота строки как у кнопки «наверх» и строки пути.
+							width: lvFaylovik.width; height: root.ntWidth*root.ntCoff+root.ntCoff
+							//Выделение выбранного, тусклое — клавиатурного курсора
+							color: (modelData.path === root.strVibranniy) ? Qt.alpha(root.clrTexta, 0.3) :
+								(ListView.isCurrent ? Qt.alpha(root.clrTexta, 0.12) : "transparent")
+							MouseArea {
+								anchors.fill: parent
+								onClicked: {//Клик по папке входит в неё, клик по файлу выделяет
+									if (modelData.isFolder) {
+										root.strPapka = modelData.path
+										root.strVibranniy = ""
+										root.fnObnovit()
+									} else root.strVibranniy = modelData.path
+								}
+								onDoubleClicked: if (!modelData.isFolder) root.fnVybrat()//Двойной клик по файлу = Выбрать
 							}
-							onDoubleClicked: if (!modelData.isFolder) root.fnVybrat()//Двойной клик по файлу = Выбрать
-						}
-						Text {//Название файла или папки
-							x: root.ntCoff; anchors.verticalCenter: parent.verticalCenter
-							font.pixelSize: root.ntWidth*root.ntCoff//Размер шрифта по ntWidth/ntCoff.
-							color: Qt.alpha(root.clrTexta, root.pctTexta)
-							text: modelData.isFolder ? modelData.name + "/" : modelData.name
+							Text {//Название файла или папки
+								x: root.ntCoff; anchors.verticalCenter: parent.verticalCenter
+								font.pixelSize: root.ntWidth*root.ntCoff//Размер шрифта по ntWidth/ntCoff.
+								color: root.clrTexta
+								text: modelData.isFolder ? modelData.name + "/" : modelData.name
+							}
 						}
 					}
 				}
-				//Строка кнопок управления панели. Обычный Item вместо RowLayout: Layout считает
-				//ширину по implicitWidth (у DCKnopkaOriginal он 0) и обнуляет ширину,
-				//которую кнопка вычисляет сама в Component.onCompleted.
 				Item {
 					Layout.fillWidth: true
 					Layout.preferredHeight: root.ntWidth*root.ntCoff+root.ntCoff
-					DCKnopkaOriginal {//Кнопка выбора выбранного файла (из DCButtons, как во всём проекте)
+					DCKnopkaOriginal {//Кнопка выбора выбранного файла
 						id: knopkaVybrat
 						text: qsTr("Выбрать")
-						//Размеры параметрами панели; шрифт и длина кнопки считаются внутри самой кнопки.
 						ntHeight: root.ntWidth; ntCoff: root.ntCoff
-						clrTexta: Qt.alpha(root.clrTexta, root.pctTexta)//Цвет текста в тон панеле.
-						clrKnopki: Qt.alpha(Qt.darker(root.clrFona, 2.0), root.pctFona)//Фон кнопки темнее фона окна панели.
+						clrTexta: root.clrTexta; clrKnopki: root.clrFona
 						enabled: root.strVibranniy !== ""
-						//Ставим слева от «Отмены» впритык с отступом.
 						anchors.right: knopkaOtmena.left; anchors.rightMargin: root.ntCoff
 						anchors.verticalCenter: parent.verticalCenter
 						onClicked: root.fnVybrat()
@@ -214,8 +220,7 @@ Item {
 						id: knopkaOtmena
 						text: qsTr("Отмена")
 						ntHeight: root.ntWidth; ntCoff: root.ntCoff
-						clrTexta: Qt.alpha(root.clrTexta, root.pctTexta)
-						clrKnopki: Qt.alpha(Qt.darker(root.clrFona, 2.0), root.pctFona)
+						clrTexta: root.clrTexta; clrKnopki: root.clrFona
 						anchors.right: parent.right//Прижимаем к правому краю строки.
 						anchors.verticalCenter: parent.verticalCenter
 						onClicked: root.fnZakrit()

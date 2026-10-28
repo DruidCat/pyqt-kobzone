@@ -353,6 +353,7 @@ ApplicationWindow {
 				toolbarHeight: pgStrSetStudio.rctStrToolbar.height
 				tapZagolovokLevi: 1.3; tapZagolovokPravi: 1.3; tapToolbarLevi: 1.3; tapToolbarPravi: 1.3
 				strStudioImya: root.strStudioImya; logoRazmer: root.logoRazmer; logoImya: root.logoImya
+				isMobile: root.isMobile
 				onClickedNazad: {
 					stvStr.pop()//Назад страницу
 					Qt.callLater(function() { stvStr.currentItem.forceActiveFocus() })
