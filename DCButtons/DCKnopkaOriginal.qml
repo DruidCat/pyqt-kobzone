@@ -15,9 +15,10 @@ Item {
     property real minDarker: 0.7//Миннимальная затемнённость кнопки, когда она не активная.
     property real maxDarker: 1.3//Максимальная затемнённость кнопки, когда она нажата.
     property bool enabled: true//true - активирована, false - деактивированна кнопка.
-    property bool pressed: tphKnopkaOriginal.pressed//true - нажали false - не нажали
+    //property bool pressed: tphKnopkaOriginal.pressed//true - нажали false - не нажали (вариант TapHandler)
+    property bool pressedPriKlike: false//true только в момент доставки сигнала clicked. MouseArea сбрасывает pressed в false ДО сигнала clicked, а TapHandler (старый вариант) держал pressed=true в момент сигнала. Без этого флага обработчики вида onClicked:{if(pressed){...}} (SetStudio и др.) не пропускают действие.
     property bool pressedTmr550: false//true - нажали false - не нажали
-    //property bool pressed: maKnopkaOriginal.pressed//true - нажали false - не нажали
+    property bool pressed: maKnopkaOriginal.pressed || pressedPriKlike//true - нажали false - не нажали (вариант MouseArea)
     property real opacityKnopki: 1
     property real opacityTexta: 1
     //Настройки.
@@ -46,7 +47,8 @@ Item {
             }
         }
     }
-    //Для Авроры комментируем TapHandler, расскомментируем MouseArea и наоборот.
+    //НА ДЕСКТОПЕ кнопка делается на MouseArea: TapHandler берёт ПАССИВНЫЙ граб, и клик «прокалывает» все слои вниз до кнопок, лежащих под кнопкой по z (проверено на Qt 6.10: свойства grabActiveOnPress нет, а exclusiveGrab() из QML вызывается с ошибкой TypeError). MouseArea берёт эксклюзивный граб — клик заканчивается на кнопке и дальше по слоям не идёт. Для Авроры делаем наоборот: комментируем MouseArea, расскомментируем TapHandler.
+    /*
     TapHandler {//Обработка нажатия, замена MouseArea с Qt5.10
         id: tphKnopkaOriginal
 		enabled: root.enabled
@@ -54,24 +56,33 @@ Item {
             if(root.enabled)//Если активирована кнопка, то...
                 root.clicked();//Обрабатываем клик.
         }
-		onPressedChanged: {//Если изменилось состояние, то...
-			if(pressed && root.enabled) {//Если нажато, то...
-				root.pressedTmr550 = true//Взводим флаг.
-				tmrPressed.restart()//Взводим таймер на изменение флага.
-			}
+	onPressedChanged: {//Если изменилось состояние, то...
+		if(pressed && root.enabled) {//Если нажато, то...
+			root.pressedTmr550 = true//Взводим флаг.
+			tmrPressed.restart()//Взводим таймер на изменение флага.
 		}
+	}
     }
-    /*
+    */
     MouseArea {
         id: maKnopkaOriginal
         anchors.fill: root
 		enabled: root.enabled
         onClicked: {
             if(root.enabled)//Если активирована кнопка, то...
-                root.clicked();//Обрабатываем клик.
+                {//Обрабатываем клик. Эмулируем поведение TapHandler: в момент доставки сигнала кнопка «нажата», иначе обработчики вида if(pressed) на вызывающей стороне не пропустят действие.
+                    root.pressedPriKlike = true
+                    root.clicked()
+                    root.pressedPriKlike = false
+                }
         }
+	onPressedChanged: {//Если изменилось состояние, то...
+		if(pressed && root.enabled) {//Если нажато, то...
+			root.pressedTmr550 = true//Взводим флаг.
+			tmrPressed.restart()//Взводим таймер на изменение флага.
+		}
+	}
     }
-    */
    Timer {//Таймер оставляет флаг pressed взведённым на интервал,чтоб обработчики сигнала страболи в програме
 		id: tmrPressed
 		interval: 550; running: false; repeat: false
@@ -85,8 +96,8 @@ Item {
 
         color: {
             if(root.enabled)//Если активирована кнопка, то...
-                tphKnopkaOriginal.pressed ? Qt.darker(clrKnopki, root.maxDarker) : clrKnopki
-                //maKnopkaOriginal.containsPress ? Qt.darker(clrKnopki, root.maxDarker) : clrKnopki
+                maKnopkaOriginal.pressed ? Qt.darker(clrKnopki, root.maxDarker) : clrKnopki
+                //tphKnopkaOriginal.pressed ? Qt.darker(clrKnopki, root.maxDarker) : clrKnopki
             else//Если деактивирована кнопка, то...
                 Qt.darker(clrKnopki, root.minDarker)
         }
@@ -108,8 +119,8 @@ Item {
             anchors.verticalCenter: rctKnopka.verticalCenter
             color: {
                 if(root.enabled)//Если активирована кнопка, то...
-                    tphKnopkaOriginal.pressed ? Qt.darker(clrTexta, root.maxDarker) : clrTexta
-                    //maKnopkaOriginal.containsPress ? Qt.darker(clrTexta, root.maxDarker) : clrTexta
+                    maKnopkaOriginal.pressed ? Qt.darker(clrTexta, root.maxDarker) : clrTexta
+                    //tphKnopkaOriginal.pressed ? Qt.darker(clrTexta, root.maxDarker) : clrTexta
                 else//Если деактивирована кнопка, то...
                     Qt.darker(clrTexta, root.minDarker)
             }
