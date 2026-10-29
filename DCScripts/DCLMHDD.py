@@ -168,7 +168,10 @@ class DCLMHDD:
                 papka = Path.home()
             sp = []
             for element in sorted(papka.iterdir(), key=lambda e: (not e.is_dir(), str(e).lower())):
-                sp.append({"name": element.name, "path": str(element), "isFolder": element.is_dir()})
+                # as_posix(): прямые слеши в путях на всех ОС, в QML подъём ищется по "/"
+                # (str(Path) на Windows даёт обратные слеши и навигация «назад» ломалась).
+                sp.append({"name": element.name, "path": element.as_posix(),
+                           "isFolder": element.is_dir()})
             return json.dumps(sp, ensure_ascii=False)
         except Exception as e:
             self.log(f"✗ Ошибка списка папки {path}: {e}")

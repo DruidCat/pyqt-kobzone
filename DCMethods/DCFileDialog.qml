@@ -76,9 +76,11 @@ Item {
 	}
 	//Функция возвращает папку начала выбора, или домашнюю если путь не задан
 	function fnNachalniyPapka(localPath) {
-		if (localPath !== "" && localPath !== undefined) {
-			let ntPos = localPath.lastIndexOf("/")
-			if (ntPos > 0) return localPath.substring(0, ntPos)
+		//Страховка: старый сохранённый путь на Windows мог быть с обратными слешами.
+		let strPut = (localPath || "").replace(/\\/g, "/")
+		if (strPut !== "") {
+			let ntPos = strPut.lastIndexOf("/")
+			if (ntPos > 0) return strPut.substring(0, ntPos)
 		}
 		return root.fnUrlToLocalPath(StandardPaths.writableLocation(StandardPaths.HomeLocation))
 	}
@@ -100,11 +102,18 @@ Item {
 		root.zakrit()//Сигнал вызывающей стороне, вернуть фокус своему окну. ВАЖНО!!!
 	}
 	function fnNaVerh() {//Функция подняться в родительскую папку (кнопка «назад» и Alt+стрелка влево)
-		let ntPos = root.strPapka.lastIndexOf("/")
+		//Страховка: старые сохранённые пути на Windows могли прийти с обратными слешами,
+		//нормализуем их к прямым, иначе lastIndexOf("/") не находит границу папок.
+		let strPut = root.strPapka.replace(/\\/g, "/")
+		let ntPos = strPut.lastIndexOf("/")
 		if (ntPos > 0) {
-			root.strPapka = root.strPapka.substring(0, ntPos)
-			root.strVibranniy = ""
-			root.fnObnovit()
+			let strRod = strPut.substring(0, ntPos)
+			if (/^[a-zA-Z]:$/.test(strRod)) strRod += "/"//Корень диска не отрезаем целиком.
+			if (strRod !== strPut) {//Уже на корне — ничего не делаем, иначе поднимаемся.
+				root.strPapka = strRod
+				root.strVibranniy = ""
+				root.fnObnovit()
+			}
 		}
 	}
 	function fnVybrat() {//Функция выбора выбранного файла
