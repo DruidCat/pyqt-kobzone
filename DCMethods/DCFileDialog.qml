@@ -27,9 +27,6 @@ Item {
 	property color clrFonaZatem: "SlateGray"//Цвет затемнения фона за панелью.
 	property real rlPanelWidth: isMobile ? 1 : 0.85//Ширина окна панели от ширины родителя.
 	property real rlPanelHeight: isMobile ? 1 : 0.8//Высота окна панели от высоты родителя.
-	//Масштаб шрифта заголовка и пути при изменении ширины панели считается
-	//помощниками DCFontSize (DCMethods/DCFontSize.qml): текст влезает в свою
-	//рамку с отступом, уменьшаясь до минимума, и не растёт выше базового.
 	//Сигналы.
 	signal vybran(string vrPut);//Выбран пусковой файл, vrPut путь к нему.
 	signal zakrit();//Панель закрыта.
@@ -49,9 +46,7 @@ Item {
 			if (el && el.isFolder) root.fnVojtiVPapku(el.path)
 			else root.fnVybrat()
 			event.accepted = true
-		//ВАЖНО!!! Безусловно проглатываем все прочие клавиши (стрелки съедает сам ListView раньше),
-		//чтобы горячие клавиши вызывающего окна при открытой панели не срабатывали.
-		} else event.accepted = true
+		} else event.accepted = true//горячие клавиши вызывающего окна при открытой панели не срабатывали.
 	}
 	function fnUrlToLocalPath(url) {//Функция кроссплатформенного преобразования URL в путь
 		let path = url.toString()
@@ -64,8 +59,7 @@ Item {
 		if (Qt.platform.os !== "windows" && path.startsWith("//")) path = path.substring(1)
 		return path
 	}
-	//Функция возвращает папку начала выбора, или домашнюю если путь не задан
-	function fnNachalniyPapka(localPath) {
+	function fnNachalniyPapka(localPath) {//Функция возвращает папку начала выбора,или домашнюю(путь не задан)
 		//Страховка: старый сохранённый путь на Windows мог быть с обратными слешами.
 		let strPut = (localPath || "").replace(/\\/g, "/")
 		if (strPut !== "") {
@@ -122,6 +116,22 @@ Item {
 		if (root.strVibranniy === "") return
 		root.vybran(root.strVibranniy)//Сигнал с выбранным путём
 		root.fnZakrit()
+	}
+	//Функция раздаёт ширину строки двум нижним кнопкам: когда панели не
+	//хватает места, кнопки делят её пропорционально естественным ширинам
+	//(символы*высота), а текст ужимает обработчик кнопки из DCButtons.
+	function fnRasstavitKnopki() {
+		let vys = root.ntWidth*root.ntCoff+root.ntCoff//Высота обеих кнопок
+		let shirV = knopkaVybrat.text.length*vys//Естественная ширина «Выбрать»
+		let shirO = knopkaOtmena.text.length*vys//Естественная ширина «Отмена»
+		let dost = tmRjadKnopok.width - root.ntCoff//Место минус зазор между кнопками
+		if (dost >= shirV + shirO) {//Места хватает — кнопки в естественный размер
+			knopkaVybrat.width = shirV
+			knopkaOtmena.width = shirO
+		} else {//Узко — делим поровну пропорционально естественным ширинам
+			knopkaOtmena.width = Math.max(1, Math.floor(dost*shirO/(shirV+shirO)))
+			knopkaVybrat.width = Math.max(1, dost - knopkaOtmena.width)
+		}
 	}
 	Rectangle {//Затемняющий фон панели
 		anchors.fill: parent
@@ -245,7 +255,7 @@ Item {
 							}
 							Text {//Название файла или папки
 								x: root.ntCoff; anchors.verticalCenter: parent.verticalCenter
-								font.pixelSize: root.ntWidth*root.ntCoff//Размер шрифта по ntWidth/ntCoff.
+								font.pixelSize: (root.ntWidth-1)*root.ntCoff//Размер шрифта по ntWidth/ntCoff.
 								color: root.clrTexta
 								//Строку «...» перехода наверх рисуем без слеша, как в классических диалогах.
 								text: modelData.isUp ? "..." :
@@ -265,9 +275,14 @@ Item {
 					}
 				}
 				Item {
+					id: tmRjadKnopok
 					Layout.fillWidth: true
 					Layout.preferredHeight: root.ntWidth*root.ntCoff+root.ntCoff
+					//При сужении панели кнопки строки сужаются вместе с ней, а не обрезаются.
+					onWidthChanged: root.fnRasstavitKnopki()
+					Component.onCompleted: root.fnRasstavitKnopki()
 					DCKnopkaOriginal {//Кнопка выбора выбранного файла
+						id: knopkaVybrat
 						text: qsTr("Выбрать")
 						ntHeight: root.ntWidth; ntCoff: root.ntCoff
 						clrTexta: root.clrTexta; clrKnopki: root.clrFona
