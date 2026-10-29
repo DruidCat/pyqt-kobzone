@@ -218,14 +218,17 @@ Item {
 								Qt.alpha(root.clrTexta, 0.3) : "transparent"
 							MouseArea {
 								anchors.fill: parent
-								onClicked: {//Клик по папке входит в неё, клик по файлу выделяет
+								//Одиночный клик по папке входит в неё, клик по файлу сразу его выбирает.
+								onClicked: {
 									if (modelData.isFolder) {
 										root.strPapka = modelData.path
 										root.strVibranniy = ""
 										root.fnObnovit()
-									} else root.strVibranniy = modelData.path
+									} else {
+										root.strVibranniy = modelData.path
+										root.fnVybrat()//Выбор в один клик: сигнал vybran и закрытие панели.
+									}
 								}
-								onDoubleClicked: if (!modelData.isFolder) root.fnVybrat()//Двойной клик по файлу = Выбрать
 							}
 							Text {//Название файла или папки
 								x: root.ntCoff; anchors.verticalCenter: parent.verticalCenter
