@@ -33,11 +33,9 @@ Item {
 	property color clrFonaZatem: "SlateGray"//Цвет затемнения фона за панелью.
 	property real rlPanelWidth: isMobile ? 1 : 0.85//Ширина окна панели от ширины родителя.
 	property real rlPanelHeight: isMobile ? 1 : 0.8//Высота окна панели от высоты родителя.
-	//Масштаб шрифта заголовка и пути при изменении ширины панели: при уменьшении ширины
-	//шрифт уменьшается, при увеличении растёт только до стандартного размера и не выше,
-	//для этого коэффициент ограничен сверху единицей, а снизу минимальной читаемостью.
-	property real rlShirinaEtalon: 520//Ширина панели, при которой шрифт равен стандарту.
-	readonly property real rlFontCoff: Math.min(1, rctFileDialog.width / rlShirinaEtalon)
+	//Масштаб шрифта заголовка и пути при изменении ширины панели считается
+	//помощниками DCFontSize (DCMethods/DCFontSize.qml): текст влезает в свою
+	//рамку с отступом, уменьшаясь до минимума, и не растёт выше базового.
 	//Сигналы.
 	signal vybran(string vrPut);//Выбран пусковой файл, vrPut путь к нему.
 	signal zakrit();//Панель закрыта.
@@ -159,19 +157,17 @@ Item {
 						anchors.centerIn: parent//По центру прямоугольника рисуем текст.
 						text: root.strZagolovok;
 						color: root.clrTexta
-						//Масштаб считается по ширине текста в базовом шрифте: коэффициент —
-						//доступная ширина rctZagolovok (минус ntCoff с обеих сторон),
-						//делённая на ширину текста; сверху ограничен единицей.
-						//Так заголовок любой длины всегда влезает в рамку с отступом.
-						font.pixelSize: Math.round(Math.max(root.ntCoff,
-							(root.ntWidth*root.ntCoff+root.ntCoff) * Math.min(1,
-								(rctZagolovok.width - root.ntCoff*2) /
-								Math.max(1, mtZagolovok.width))))
+						//Размер считает помощник shriftZagolovok (DCFontSize): заголовок
+						//любой длины влезает в рамку rctZagolovok с отступом ntCoff.
+						font.pixelSize: shriftZagolovok.ntShrift
 					}
-					TextMetrics {//Замер ширины заголовка базовым шрифтом, без переноса строк.
-						id: mtZagolovok
-						text: root.strZagolovok
-						font.pixelSize: root.ntWidth*root.ntCoff+root.ntCoff
+					DCFontSize {//Счётчик размера шрифта заголовка (см. DCFontSize.qml).
+						id: shriftZagolovok
+						width: parent.width//Рамка rctZagolovok, в которой рисуется заголовок.
+						strTekst: root.strZagolovok
+						ntBazovy: root.ntWidth*root.ntCoff+root.ntCoff
+						ntMin: root.ntCoff
+						ntOtstup: root.ntCoff
 					}
 				}
 				Rectangle {
@@ -185,20 +181,30 @@ Item {
 						spacing: root.ntCoff
 						anchors.verticalCenter: parent.verticalCenter//По вертикали по центру.
 						DCKnopkaNazad {//Кнопка подняться в родительскую папку (как в DCPages/DCSettings),
+							id: knopkaNazad
 							ntWidth: root.ntWidth; ntCoff: root.ntCoff
 							tapHeight: root.ntWidth*root.ntCoff+root.ntCoff; tapWidth: tapHeight
 							clrKnopki: root.clrTexta; clrFona: root.clrFona
 							onClicked: root.fnNaVerh()//Подняться в родительскую папку
 						}
 						Text {//Строка текущего пути
+							id: tekstPuti
 							text: "Путь: " + root.strPapka
 							color: root.clrTexta
-							//Шрифт пути масштабируется с шириной панели, но не больше стандартного.
-							font.pixelSize: Math.max(root.ntCoff,
-								root.ntWidth*root.ntCoff * root.rlFontCoff)
+							//Размер считает помощник shriftPuti (DCFontSize); если путь не
+							//влезает даже в минимуме шрифта, elide дорезает его многоточием.
+							font.pixelSize: shriftPuti.ntShrift
 							Layout.fillWidth: true; elide: Text.ElideMiddle
 							Layout.alignment: Qt.AlignVCenter
 						}
+					}
+					DCFontSize {//Счётчик размера шрифта пути: доступная ширина — рамка
+						//rctPut минус кнопка «назад» и отступы RowLayout.
+						id: shriftPuti
+						ntShirina: rctPut.width - knopkaNazad.width - root.ntCoff*3
+						strTekst: tekstPuti.text
+						ntBazovy: root.ntWidth*root.ntCoff
+						ntMin: root.ntCoff
 					}
 				}
 				Rectangle {
