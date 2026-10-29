@@ -16,9 +16,14 @@ Item {
     property real maxDarker: 1.3//Максимальная затемнённость кнопки, когда она нажата.
     property bool enabled: true//true - активирована, false - деактивированна кнопка.
     //property bool pressed: tphKnopkaOriginal.pressed//true - нажали false - не нажали (вариант TapHandler)
-    property bool pressedPriKlike: false//true только в момент доставки сигнала clicked. MouseArea сбрасывает pressed в false ДО сигнала clicked, а TapHandler (старый вариант) держал pressed=true в момент сигнала. Без этого флага обработчики вида onClicked:{if(pressed){...}} (SetStudio и др.) не пропускают действие.
+    //true только в момент доставки сигнала clicked. MouseArea сбрасывает pressed
+    //в false ДО сигнала clicked, а TapHandler (старый вариант) держал pressed=true
+    //в момент сигнала. Без этого флага обработчики вида onClicked:{if(pressed){...}}
+    //(SetStudio и др.) не пропускают действие.
+    property bool pressedPriKlike: false
     property bool pressedTmr550: false//true - нажали false - не нажали
-    property bool pressed: maKnopkaOriginal.pressed || pressedPriKlike//true - нажали false - не нажали (вариант MouseArea)
+    //true - нажали false - не нажали (вариант MouseArea)
+    property bool pressed: maKnopkaOriginal.pressed || pressedPriKlike
     property real opacityKnopki: 1
     property real opacityTexta: 1
     //Настройки.
@@ -47,7 +52,12 @@ Item {
             }
         }
     }
-    //НА ДЕСКТОПЕ кнопка делается на MouseArea: TapHandler берёт ПАССИВНЫЙ граб, и клик «прокалывает» все слои вниз до кнопок, лежащих под кнопкой по z (проверено на Qt 6.10: свойства grabActiveOnPress нет, а exclusiveGrab() из QML вызывается с ошибкой TypeError). MouseArea берёт эксклюзивный граб — клик заканчивается на кнопке и дальше по слоям не идёт. Для Авроры делаем наоборот: комментируем MouseArea, расскомментируем TapHandler.
+    //НА ДЕСКТОПЕ кнопка делается на MouseArea: TapHandler берёт ПАССИВНЫЙ граб,
+    //и клик «прокалывает» все слои вниз до кнопок, лежащих под кнопкой по z
+    //(проверено на Qt 6.10: свойства grabActiveOnPress нет, а exclusiveGrab() из
+    //QML вызывается с ошибкой TypeError). MouseArea берёт эксклюзивный граб —
+    //клик заканчивается на кнопке и дальше по слоям не идёт. Для Авроры делаем
+    //наоборот: комментируем MouseArea, расскомментируем TapHandler.
     /*
     TapHandler {//Обработка нажатия, замена MouseArea с Qt5.10
         id: tphKnopkaOriginal
@@ -70,7 +80,10 @@ Item {
 		enabled: root.enabled
         onClicked: {
             if(root.enabled)//Если активирована кнопка, то...
-                {//Обрабатываем клик. Эмулируем поведение TapHandler: в момент доставки сигнала кнопка «нажата», иначе обработчики вида if(pressed) на вызывающей стороне не пропустят действие.
+                //Обрабатываем клик. Эмулируем поведение TapHandler: в момент доставки
+                //сигнала кнопка «нажата», иначе обработчики вида if(pressed) на
+                //вызывающей стороне не пропустят действие.
+                {
                     root.pressedPriKlike = true
                     root.clicked()
                     root.pressedPriKlike = false
