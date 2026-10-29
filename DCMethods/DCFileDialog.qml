@@ -1,5 +1,4 @@
 ﻿import QtQuick
-import QtQuick.Controls
 import QtQuick.Layouts
 import QtCore
 import DCButtons 1.0//Импортируем кнопки
@@ -19,6 +18,7 @@ Item {
 	property bool zabanitKLAVISHI: true//Пока панель открыта, проглатывать все прочие клавиши,
 	//чтобы горячие клавиши вызвавшего панель окна при открытой панели не срабатывали
 	//Свойства.
+	property int ntShirinaPolzunka: 11//Толщина самодельной полосы прокрутки (настраивается)
 	property bool isMobile: false//true - это мобильное устройсктво
 	property string strZagolovok: ""//Заголовок панели
 	property string strPapka: ""//Текущая папка выбора
@@ -172,7 +172,6 @@ Item {
 						height: rctZona.height
 						width: rctZona.width
 						clip: true
-						ScrollBar.vertical: ScrollBar { policy: ScrollBar.AlwaysOn }
 						model: root.fllModel
 						//Клавиатурная навигация стрелками: файл под курсором становится выбранным,
 						//папка подсвечивается курсором, но не выбирается (Enter по папке = вход)
@@ -205,6 +204,16 @@ Item {
 								text: modelData.isFolder ? modelData.name + "/" : modelData.name
 							}
 						}
+					}
+					DCScrollbar {//Самодельная полоса прокрутки вместо стандартной, цвета по гамме панели
+						id: polzunka
+						flick: lvFaylovik//Следим за прокруткой списка файлов
+						width: root.ntShirinaPolzunka//Толщина настраивается свойством корня
+						radius: root.ntCoff / 2
+						clrTrack: Qt.alpha(root.clrTexta, 0.15)//Дорожка в цвете панели
+						clrPolzunokOff: Qt.alpha(root.clrTexta, 0.5)//Ползунок в покое
+						clrPolzunokOn: root.clrTexta//Ползунок активный
+						anchors.right: parent.right; anchors.top: parent.top; anchors.bottom: parent.bottom
 					}
 				}
 				Item {
