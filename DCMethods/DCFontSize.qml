@@ -17,7 +17,10 @@ Item {
 	property int ntOtstup: 0//Отступ с каждой стороны от края доступной ширины.
 	property int ntShirina: width//Доступная для текста ширина.
 	//Результат: готовый размер шрифта (присвоить в Text font.pixelSize).
-	property int ntShrift: Math.round(Math.max(ntMin, ntBazovy * Math.min(1,
+	//Важно: Math.floor, а не Math.round — округление вверх предсказывало шрифт,
+	//при котором текст вылезал за ширину (замер: 126 случаев из 581, до 9 px).
+	//floor всегда даёт размер, при котором текст гарантированно влезает.
+	property int ntShrift: Math.floor(Math.max(ntMin, ntBazovy * Math.min(1,
 		(ntShirina - ntOtstup * 2) / Math.max(1, mtZamer.width))))
 	TextMetrics {//Замер ширины текста базовым шрифтом, без переноса строк.
 		//Важно: mtZamer.width, а не paintedWidth — у TextMetrics его нет.

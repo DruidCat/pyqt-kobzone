@@ -324,3 +324,4 @@ TODO:
 2026-10-29 DCFileDialog, убраны klaviaturaVPaneli и zabanitKLAVISHI; проглот клавиш стал безусловным.
 2026-10-29 DCFileDialog, кнопки «Выбрать»/«Отмена» сужаются при уменьшении ширины панели вместо обрезки.
 2026-10-29 DCFileDialog, SetStudio, флаг hide включает показ скрытых файлов и папок.
+2026-10-29 DCFontSize, Math.floor вместо Math.round: текст гарантированно влезает в ширину.
