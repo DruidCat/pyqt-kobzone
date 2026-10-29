@@ -354,6 +354,7 @@ Item {
 	DCFileDialog {//Панель выбора пускового файла, виджет DCFileDialog из DCMethods
 		id: fldPutStudio
 		ntCoff: root.ntCoff; ntWidth: root.ntWidth
+		hide: true//Открываем с показом скрытых папок и файлов. ВАЖНО!!!
 		clrTexta: root.clrTexta; clrFona: root.clrFona; clrFonaZatem: root.clrMenuFon 
 		isMobile: root.isMobile
 		//Python функция списков папки, включая скрытые. ВАЖНО!!! Именно функция-обёртка,

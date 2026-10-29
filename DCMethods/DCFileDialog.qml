@@ -2,7 +2,7 @@
 import QtQuick.Layouts
 import QtCore
 import DCButtons 1.0//Импортируем кнопки
-//DCFileDialog - Панель выбора файла. Может показывать СКРЫТЫЕ папки и файлы.
+//DCFileDialog - Панель выбора файла. СКРЫТЫЕ папки и файлы показывает флаг hide:true.
 //Открывается функцией fnOtkrit(strZag, strPutFil), выбранный путь приходит сигналом vybran(vrPut),
 //закрытие панели сигналом zakrit(). Цвета настраиваются свойствами clrTexta/clrFona/clrFonaZatem.
 Item {
@@ -14,6 +14,7 @@ Item {
 	//Свойства.
 	property int ntShirinaPolzunka: 11//Толщина самодельной полосы прокрутки (настраивается)
 	property bool isMobile: false//true - это мобильное устройсктво
+	property bool hide: false//true - показывать скрытые папки и файлы (имя начинается с точки).
 	property string strZagolovok: ""//Заголовок панели
 	property string strPapka: ""//Текущая папка выбора
 	property string strVibranniy: ""//Выбранный пусковой файл
@@ -68,9 +69,11 @@ Item {
 		}
 		return root.fnUrlToLocalPath(StandardPaths.writableLocation(StandardPaths.HomeLocation))
 	}
-	function fnObnovit() {//Функция обновления списка папки, включая скрытые файлы
+	function fnObnovit() {//Функция обновления списка папки
 		let massiv = (root.fnSpisokPapki !== null) ?
 			JSON.parse(root.fnSpisokPapki(root.strPapka)) : []
+		//Скрытые (имя с точки в начале) оставляем в списке только при флаге hide:true.
+		if (!root.hide) massiv = massiv.filter((el) => !el.name.startsWith("."))
 		//Как в классических файловых диалогах: первой строкой "..." — вход
 		//в родительскую папку. На вершине дерева (корень) такой строки нет.
 		let strRod = root.fnRoditelnayaStr(root.strPapka)
@@ -78,6 +81,7 @@ Item {
 			massiv.unshift({name: "...", path: strRod, isFolder: true, isUp: true})
 		root.fllModel = massiv
 	}
+	onHideChanged: if (root.visible) root.fnObnovit()//Смена флага на лету перечитывает список.
 	function fnOtkrit(strZag, strPutFil) {//Функция открытия панели, strPutFil сохранённый путь к файлу
 		root.strZagolovok = strZag
 		root.strVibranniy = ""
