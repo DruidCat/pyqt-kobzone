@@ -171,7 +171,7 @@ Item {
 						ScrollBar.vertical: ScrollBar { policy: ScrollBar.AlwaysOn }
 						model: root.fllModel
 						//Клавиатурная навигация стрелками: файл под курсором становится выбранным,
-						//папка остаётся просто под курсором (Enter по ней = вход)
+						//папка подсвечивается курсором, но не выбирается (Enter по папке = вход)
 						onCurrentIndexChanged: {
 							if (currentIndex >= 0 	&& currentIndex < root.fllModel.length
 													&& !root.fllModel[currentIndex].isFolder)
@@ -180,9 +180,9 @@ Item {
 						delegate: Rectangle {//Одна строка списка
 							//Высота строки как у кнопки «наверх» и строки пути.
 							width: lvFaylovik.width; height: root.ntWidth*root.ntCoff+root.ntCoff
-							//Выделение выбранного, тусклое — клавиатурного курсора
-							color: (modelData.path === root.strVibranniy) ? Qt.alpha(root.clrTexta, 0.3) :
-								(ListView.isCurrent ? Qt.alpha(root.clrTexta, 0.12) : "transparent")
+							//Выделение курсором/выбором одинаково яркое — подсвечиваются и папки, и файлы
+							color: (modelData.path === root.strVibranniy || ListView.isCurrent) ?
+								Qt.alpha(root.clrTexta, 0.3) : "transparent"
 							MouseArea {
 								anchors.fill: parent
 								onClicked: {//Клик по папке входит в неё, клик по файлу выделяет
