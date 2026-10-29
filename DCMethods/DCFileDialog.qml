@@ -23,6 +23,7 @@ Item {
 	property string strZagolovok: ""//Заголовок панели
 	property string strPapka: ""//Текущая папка выбора
 	property string strVibranniy: ""//Выбранный пусковой файл
+	property string strKursor: ""//Путь строки под курсором стрелок (папки тоже)
 	property var fllModel: []//Модель списка файлов из Python (fnSpisokPapki)
 	property var fnSpisokPapki: null//Функция.backend списков папки(papka)->JSON
 	property int ntWidth: 2
@@ -192,17 +193,23 @@ Item {
 						clip: true
 						model: root.fllModel
 						//Клавиатурная навигация стрелками: файл под курсором становится выбранным,
-						//папка подсвечивается курсором, но не выбирается (Enter по папке = вход)
+						//папка подсвечивается курсором, но не выбирается (Enter по папке = вход).
+						//Курсор стрелок ведёт подсветку любой строки; на файле он
+						//работает как клик — файл ещё и выбирается, на папке — нет.
 						onCurrentIndexChanged: {
-							if (currentIndex >= 0 	&& currentIndex < root.fllModel.length
-													&& !root.fllModel[currentIndex].isFolder)
-								root.strVibranniy = root.fllModel[currentIndex].path
+							let item = (currentIndex >= 0 && currentIndex < root.fllModel.length) ?
+								root.fllModel[currentIndex] : null
+							root.strKursor = item ? item.path : ""
+							if (item === null) root.strVibranniy = ""
+							else if (!item.isFolder) root.strVibranniy = item.path
 						}
 						delegate: Rectangle {//Одна строка списка
 							//Высота строки как у кнопки «наверх» и строки пути.
 							width: lvFaylovik.width; height: root.ntWidth*root.ntCoff+root.ntCoff
-							//Выделение курсором/выбором одинаково яркое — подсвечиваются и папки, и файлы
-							color: (modelData.path === root.strVibranniy || ListView.isCurrent) ?
+							//Выделение курсором/выбором одинаково яркое — подсвечиваются и папки, и файлы.
+							//ListView.isCurrent на модели-массиве из Python не срабатывает, сверяем путь.
+							color: (modelData.path === root.strKursor ||
+								modelData.path === root.strVibranniy) ?
 								Qt.alpha(root.clrTexta, 0.3) : "transparent"
 							MouseArea {
 								anchors.fill: parent
