@@ -11,12 +11,6 @@ Item {
 	z: 1000//Поверх всех слоёв
 	anchors.fill: parent//Перекрываем всю зону родителя
 	focus: visible//Фокус для клавиши Escape
-	//Публичное свойство: клавиатура сейчас внутри панели (для отладки и логики вызывающей стороны).
-	readonly property bool klaviaturaVPaneli: lvFaylovik.activeFocus
-	//Свойство потерялось при переносе комментариев под лимит 110 символов — без него
-	//стрелки на краю списка уходят в окно позади панели и листают уже его меню
-	property bool zabanitKLAVISHI: true//Пока панель открыта, проглатывать все прочие клавиши,
-	//чтобы горячие клавиши вызвавшего панель окна при открытой панели не срабатывали
 	//Свойства.
 	property int ntShirinaPolzunka: 11//Толщина самодельной полосы прокрутки (настраивается)
 	property bool isMobile: false//true - это мобильное устройсктво
@@ -55,9 +49,9 @@ Item {
 			if (el && el.isFolder) root.fnVojtiVPapku(el.path)
 			else root.fnVybrat()
 			event.accepted = true
-		//ВАЖНО!!! Проглатываем все прочие клавиши (стрелки съедает сам ListView раньше),
+		//ВАЖНО!!! Безусловно проглатываем все прочие клавиши (стрелки съедает сам ListView раньше),
 		//чтобы горячие клавиши вызывающего окна при открытой панели не срабатывали.
-		} else if (root.zabanitKLAVISHI) event.accepted = true
+		} else event.accepted = true
 	}
 	function fnUrlToLocalPath(url) {//Функция кроссплатформенного преобразования URL в путь
 		let path = url.toString()
