@@ -161,7 +161,9 @@ Item {
 						Text {//Строка текущего пути
 							text: "Путь: " + root.strPapka
 							color: root.clrTexta
-							font.pixelSize: root.ntWidth*root.ntCoff
+							//Шрифт пути масштабируется с шириной панели, но не больше стандартного.
+							font.pixelSize: Math.max(root.ntCoff,
+								root.ntWidth*root.ntCoff * root.rlFontCoff)
 							Layout.fillWidth: true; elide: Text.ElideMiddle
 							Layout.alignment: Qt.AlignVCenter
 						}
