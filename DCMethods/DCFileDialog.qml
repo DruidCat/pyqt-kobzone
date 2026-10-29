@@ -52,11 +52,8 @@ Item {
 		} else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
 			let idx = lvFaylovik.currentIndex
 			let el = (idx >= 0 && idx < root.fllModel.length) ? root.fllModel[idx] : null
-			if (el && el.isFolder) {
-				root.strPapka = el.path
-				root.strVibranniy = ""
-				root.fnObnovit()
-			} else root.fnVybrat()
+			if (el && el.isFolder) root.fnVojtiVPapku(el.path)
+			else root.fnVybrat()
 			event.accepted = true
 		//ВАЖНО!!! Проглатываем все прочие клавиши (стрелки съедает сам ListView раньше),
 		//чтобы горячие клавиши вызывающего окна при открытой панели не срабатывали.
@@ -85,15 +82,14 @@ Item {
 	}
 	function fnObnovit() {//Функция обновления списка папки, включая скрытые файлы
 		let massiv = (root.fnSpisokPapki !== null) ?
-			JSON.parse(root.fnSpisokPapki(root.strPapka)) :
-			JSON.parse(pyLM.polSpisokPapki(root.strPapka))
+			JSON.parse(root.fnSpisokPapki(root.strPapka)) : []
 		//Как в классических файловых диалогах: первой строкой "..." — вход
 		//в родительскую папку. На вершине дерева (корень) такой строки нет.
 		let strRod = root.fnRoditelnayaStr(root.strPapka)
 		if (strRod !== "")
 			massiv.unshift({name: "...", path: strRod, isFolder: true, isUp: true})
 		root.fllModel = massiv
-	}	
+	}
 	function fnOtkrit(strZag, strPutFil) {//Функция открытия панели, strPutFil сохранённый путь к файлу
 		root.strZagolovok = strZag
 		root.strVibranniy = ""
@@ -119,13 +115,14 @@ Item {
 		if (strRod === strPut) return ""
 		return strRod
 	}
+	function fnVojtiVPapku(strPapka) {//Функция входа в папку: сменить текущую и обновить список.
+		root.strPapka = strPapka
+		root.strVibranniy = ""
+		root.fnObnovit()
+	}
 	function fnNaVerh() {//Функция подняться в родительскую папку (кнопка «назад» и Alt+стрелка влево)
 		let strRod = root.fnRoditelnayaStr(root.strPapka)
-		if (strRod !== "") {
-			root.strPapka = strRod
-			root.strVibranniy = ""
-			root.fnObnovit()
-		}
+		if (strRod !== "") root.fnVojtiVPapku(strRod)
 	}
 	function fnVybrat() {//Функция выбора выбранного файла
 		if (root.strVibranniy === "") return
@@ -137,7 +134,6 @@ Item {
 		color: root.clrFonaZatem
 		MouseArea { anchors.fill: parent}//Блокируем клики от приложения за панелью
 		Rectangle {//Окно самой панели
-			id: rctFileDialog
 			anchors.centerIn: parent
 			width: parent.width * root.rlPanelWidth; height: parent.height * root.rlPanelHeight
 			color: root.clrFonaZatem
@@ -147,7 +143,6 @@ Item {
 				anchors.fill: parent
 				spacing: root.ntCoff
 				Rectangle {
-					id: rctZagolovok
 					Layout.fillWidth: true//Занимает всю доступную ширину с учётом margins ColumnLayout
 					Layout.preferredHeight: root.ntWidth * root.ntCoff + root.ntCoff * 2
 					color: root.clrFona
@@ -158,12 +153,12 @@ Item {
 						text: root.strZagolovok;
 						color: root.clrTexta
 						//Размер считает помощник shriftZagolovok (DCFontSize): заголовок
-						//любой длины влезает в рамку rctZagolovok с отступом ntCoff.
+						//любой длины влезает в свою рамку с отступом ntCoff.
 						font.pixelSize: shriftZagolovok.ntShrift
 					}
 					DCFontSize {//Счётчик размера шрифта заголовка (см. DCFontSize.qml).
 						id: shriftZagolovok
-						width: parent.width//Рамка rctZagolovok, в которой рисуется заголовок.
+						width: parent.width//Рамка, в которой рисуется заголовок.
 						strTekst: root.strZagolovok
 						ntBazovy: root.ntWidth*root.ntCoff+root.ntCoff
 						ntMin: root.ntCoff
@@ -247,11 +242,8 @@ Item {
 								anchors.fill: parent
 								//Одиночный клик по папке входит в неё, клик по файлу сразу его выбирает.
 								onClicked: {
-									if (modelData.isFolder) {
-										root.strPapka = modelData.path
-										root.strVibranniy = ""
-										root.fnObnovit()
-									} else {
+									if (modelData.isFolder) root.fnVojtiVPapku(modelData.path)
+									else {
 										root.strVibranniy = modelData.path
 										root.fnVybrat()//Выбор в один клик: сигнал vybran и закрытие панели.
 									}
@@ -282,7 +274,6 @@ Item {
 					Layout.fillWidth: true
 					Layout.preferredHeight: root.ntWidth*root.ntCoff+root.ntCoff
 					DCKnopkaOriginal {//Кнопка выбора выбранного файла
-						id: knopkaVybrat
 						text: qsTr("Выбрать")
 						ntHeight: root.ntWidth; ntCoff: root.ntCoff
 						clrTexta: root.clrTexta; clrKnopki: root.clrFona
