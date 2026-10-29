@@ -200,8 +200,10 @@ Item {
 							let item = (currentIndex >= 0 && currentIndex < root.fllModel.length) ?
 								root.fllModel[currentIndex] : null
 							root.strKursor = item ? item.path : ""
-							if (item === null) root.strVibranniy = ""
-							else if (!item.isFolder) root.strVibranniy = item.path
+							//Когда курсор ушёл с файла на папку, прежнее выделение файла снимаем:
+							//иначе при движении вверх по папкам старый файл продолжает подсвечиваться.
+							if (item === null || item.isFolder) root.strVibranniy = ""
+							else root.strVibranniy = item.path
 						}
 						delegate: Rectangle {//Одна строка списка
 							//Высота строки как у кнопки «наверх» и строки пути.
