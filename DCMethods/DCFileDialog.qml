@@ -159,9 +159,19 @@ Item {
 						anchors.centerIn: parent//По центру прямоугольника рисуем текст.
 						text: root.strZagolovok;
 						color: root.clrTexta
-						//Шрифт масштабируется с шириной панели, но не больше стандартного.
-						font.pixelSize: Math.max(root.ntCoff,
-							(root.ntWidth*root.ntCoff+root.ntCoff) * root.rlFontCoff)
+						//Масштаб считается по ширине текста в базовом шрифте: коэффициент —
+						//доступная ширина rctZagolovok (минус ntCoff с обеих сторон),
+						//делённая на ширину текста; сверху ограничен единицей.
+						//Так заголовок любой длины всегда влезает в рамку с отступом.
+						font.pixelSize: Math.round(Math.max(root.ntCoff,
+							(root.ntWidth*root.ntCoff+root.ntCoff) * Math.min(1,
+								(rctZagolovok.width - root.ntCoff*2) /
+								Math.max(1, mtZagolovok.width))))
+					}
+					TextMetrics {//Замер ширины заголовка базовым шрифтом, без переноса строк.
+						id: mtZagolovok
+						text: root.strZagolovok
+						font.pixelSize: root.ntWidth*root.ntCoff+root.ntCoff
 					}
 				}
 				Rectangle {
