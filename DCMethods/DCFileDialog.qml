@@ -86,8 +86,15 @@ Item {
 		return root.fnUrlToLocalPath(StandardPaths.writableLocation(StandardPaths.HomeLocation))
 	}
 	function fnObnovit() {//Функция обновления списка папки, включая скрытые файлы
-		if (root.fnSpisokPapki !== null) root.fllModel = JSON.parse(root.fnSpisokPapki(root.strPapka))
-		else root.fllModel = JSON.parse(pyLM.polSpisokPapki(root.strPapka))
+		let massiv = (root.fnSpisokPapki !== null) ?
+			JSON.parse(root.fnSpisokPapki(root.strPapka)) :
+			JSON.parse(pyLM.polSpisokPapki(root.strPapka))
+		//Как в классических файловых диалогах: первой строкой "..." — вход
+		//в родительскую папку. На вершине дерева (корень) такой строки нет.
+		let strRod = root.fnRoditelnayaStr(root.strPapka)
+		if (strRod !== "")
+			massiv.unshift({name: "...", path: strRod, isFolder: true, isUp: true})
+		root.fllModel = massiv
 	}	
 	function fnOtkrit(strZag, strPutFil) {//Функция открытия панели, strPutFil сохранённый путь к файлу
 		root.strZagolovok = strZag
@@ -102,19 +109,24 @@ Item {
 		lvFaylovik.focus = false//Снимаем фокус с внутренностей панели, чтобы не «держала» его в скрытом виде
 		root.zakrit()//Сигнал вызывающей стороне, вернуть фокус своему окну. ВАЖНО!!!
 	}
-	function fnNaVerh() {//Функция подняться в родительскую папку (кнопка «назад» и Alt+стрелка влево)
-		//Страховка: старые сохранённые пути на Windows могли прийти с обратными слешами,
-		//нормализуем их к прямым, иначе lastIndexOf("/") не находит границу папок.
-		let strPut = root.strPapka.replace(/\\/g, "/")
+	//Функция возвращает путь родительской папки, "" если подниматься уже некуда.
+	//Страховка: старые сохранённые пути на Windows могли прийти с обратными слешами,
+	//нормализуем их к прямым, иначе lastIndexOf("/") не находит границу папок.
+	function fnRoditelnayaStr(strPapka) {
+		let strPut = strPapka.replace(/\\/g, "/")
 		let ntPos = strPut.lastIndexOf("/")
-		if (ntPos > 0) {
-			let strRod = strPut.substring(0, ntPos)
-			if (/^[a-zA-Z]:$/.test(strRod)) strRod += "/"//Корень диска не отрезаем целиком.
-			if (strRod !== strPut) {//Уже на корне — ничего не делаем, иначе поднимаемся.
-				root.strPapka = strRod
-				root.strVibranniy = ""
-				root.fnObnovit()
-			}
+		if (ntPos <= 0) return ""
+		let strRod = strPut.substring(0, ntPos)
+		if (/^[a-zA-Z]:$/.test(strRod)) strRod += "/"//Корень диска не отрезаем целиком.
+		if (strRod === strPut) return ""
+		return strRod
+	}
+	function fnNaVerh() {//Функция подняться в родительскую папку (кнопка «назад» и Alt+стрелка влево)
+		let strRod = root.fnRoditelnayaStr(root.strPapka)
+		if (strRod !== "") {
+			root.strPapka = strRod
+			root.strVibranniy = ""
+			root.fnObnovit()
 		}
 	}
 	function fnVybrat() {//Функция выбора выбранного файла
@@ -185,7 +197,6 @@ Item {
 					Layout.fillHeight: true
 					color: root.clrFona
 					border.color: root.clrTexta
-					radius: root.ntCoff
 					ListView {//Список папок и файлов (включая скрытые, с точкой в начале)
 						id: lvFaylovik
 						height: rctZona.height
@@ -234,7 +245,9 @@ Item {
 								x: root.ntCoff; anchors.verticalCenter: parent.verticalCenter
 								font.pixelSize: root.ntWidth*root.ntCoff//Размер шрифта по ntWidth/ntCoff.
 								color: root.clrTexta
-								text: modelData.isFolder ? modelData.name + "/" : modelData.name
+								//Строку «...» перехода наверх рисуем без слеша, как в классических диалогах.
+								text: modelData.isUp ? "..." :
+									(modelData.isFolder ? modelData.name + "/" : modelData.name)
 							}
 						}
 					}
