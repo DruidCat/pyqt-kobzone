@@ -45,6 +45,7 @@ Item {
     property string strOshibka: ""//Последняя ошибка Python бэкенда.
 
 	property bool isServerZapustit: false//true - запускаем сервер для начала анализа
+	property bool isMobile: false//true - мобильное устройство.
 	property bool isModelZagruzit: false//true - жду загрузки модели из StrAnalizer
 	//Настройки
     anchors.fill: parent
@@ -53,6 +54,7 @@ Item {
     signal clickedNazad()
 	signal clickedSettings()
     signal clickedInfo()
+	signal clickedInfoOrfograf()//Информация по настройкам нейроорфографии.
 	signal toolbar(var strToolbar)
     signal log(var strLog)
     //Методы
@@ -291,6 +293,7 @@ Item {
 		} else {
 			//Если меню закрыто, ничего не делаем (можно добавить другую логику)
 		}
+		fnCloseSidebarIfOpen()//Закрываем боковую панель настроек, если она открыта.
     }
     function fnClickedNazad() {//Функция закрытия страницы.
         if (tmrLogo.running) {//Если анализ идёт, спрашиваем про его остановку.
@@ -306,7 +309,18 @@ Item {
 		root.clickedSettings()//Сигнал излучает открытие настроек.
     }
     function fnClickedSidebar() {//Функция нажатия кнопки SideBar (боковая панель).
-        //Пока ничего не делает: боковая панель на странице орфографии ещё не подготовлена.
+        if(dcSidebar.position){//Если боковая панель открыта, то...
+        	dcSidebar.close()//Закрываем её
+        }
+        else//Если боковая панель закрыта, то...
+            dcSidebar.open()//Открываем её.
+    }
+    function fnCloseSidebarIfOpen() {//Закрываем боковую панель настроек, если она открыта.
+        if(dcSidebar.position){//Если боковая панель открыта, то...
+        	dcSidebar.close()//Закрываем её
+            return true
+        }
+        return false
     }
     function fnClickedInfo() {
 		fnClickedEscape()//Функция нажатия на клавишу Escape
@@ -445,6 +459,7 @@ Item {
         }
         DCKnopkaSidebar {//Кнопка боковой панели страницы орфографии.
             id: knopkaSidebar
+            opened: dcSidebar.opened//Подсвечиваем кнопку когда боковая панель открыта.
             ntWidth: root.ntWidth
             ntCoff: root.ntCoff
             anchors.verticalCenter: tmZagolovok.verticalCenter
@@ -526,6 +541,7 @@ Item {
             interactive: true
             boundsBehavior: Flickable.StopAtBounds
             opacity: 0.9//ГЛАВНАЯ ПРОЗРАЧНОСТЬ!!!
+            anchors.rightMargin: dcSidebar.position * dcSidebar.width - dcSidebar.position * root.ntCoff
             Behavior on opacity {
                 NumberAnimation {
                     duration: 300
@@ -642,7 +658,19 @@ Item {
                 }
             }
         }
-        DCScrollbar {// Скроллбар основной области
+        SetOrfograf {
+            id: dcSidebar
+            ntWidth: root.ntWidth; ntCoff: root.ntCoff
+            height: tmZona.height
+            clrTexta: root.clrTexta; clrFona: root.clrFona; clrMenuFon: root.clrMenuFon
+            isMobile: root.isMobile
+            onOpenedChanged: {//Если состояние боковой панели изменилось, она открыта или закрыта, то...
+                if(opened) fnFocus()//Фокус на странице настроек нейро орфографии
+                else root.forceActiveFocus()//Фокус на странице исправления текста.
+            }
+            onClickedInfo: root.clickedInfoOrfograf()//Информация по настройкам орфографии.
+        }
+        DCScrollbar {//Скроллбар основной области
             id: dcScrollbar
             flick: flcZona
             anchors.right: tmZona.right
@@ -709,6 +737,9 @@ Item {
 			property int interval: 2200//Интервал между смещением полосы.
 			onActiveChanged: {
 				if (active){//Если активировался прогресбар, то...
+					dcSidebar.readOnly = true//Запрещено редактировать
+					dcSidebar.isEnabled = false
+					fnCloseSidebarIfOpen()
 					knopkaInfo.visible = false
 					knopkaNastroiki.visible = false
 					knopkaMenu.enabled = false
@@ -720,6 +751,8 @@ Item {
 					knopkaAnaliz.enabled = false
 					knopkaOsmotret.enabled = false					
 				} else {
+					dcSidebar.readOnly = false//Разрешено редактировать
+					dcSidebar.isEnabled = true
 					knopkaInfo.visible = true
 					knopkaNastroiki.visible = true
 					knopkaMenu.enabled = true

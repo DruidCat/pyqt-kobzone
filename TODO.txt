@@ -333,3 +333,4 @@ TODO:
 
 2026-10-30 StrOrfograf, кнопка настроек теперь открывает SetStudio вместо SetOrfograf.
 2026-10-30 StrOrfograf, добавил knopkaSidebar (хоткей, пункт меню, клик); fnClickedSidebar() пока пуста.
+2026-10-30 SetOrfograf, панель настроек выезжает справа как в SetAnalizer; хоткеи, карусели, ширина.

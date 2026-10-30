@@ -22,6 +22,7 @@ QtObject {
 	property bool analizer_rag_skleit: false//true - включен режим склеивания rag чанков.
 	property int analizer_rag_kolichestvo: 2// 1-5 склеить количество чанков до и после совпадения.
 	//Исправление орфографии
+	property real orfograf_sidebar_shirina: 0.3//Коэффициент от общей ширины окна, показ.ширину боковой панели
 	property real orfograf_temperatura: 0.2//Температура ИИ модели, чем выше, тем креативней ответ. 0-1
 	property int orfograf_perekritie: 15//Перекрытие соседнего фрагмента в процентах: 15 это 15%
 	property int orfograf_kontekst: 6000//Размер фрагмента документа в символах, подаваемого ИИ за раз.
@@ -73,6 +74,7 @@ QtObject {
         property alias analizer_rag_skleit: root.analizer_rag_skleit
         property alias analizer_rag_kolichestvo: root.analizer_rag_kolichestvo
 		//Исправление орфографии
+		property alias orfograf_sidebar_shirina: root.orfograf_sidebar_shirina
 		property alias orfograf_temperatura: root.orfograf_temperatura
 		property alias orfograf_perekritie: root.orfograf_perekritie
 		property alias orfograf_kontekst: root.orfograf_kontekst

@@ -381,7 +381,7 @@ ApplicationWindow {
 			clrFona: root.clrFona; clrTexta: root.clrKnopok; clrRabOblasti: root.clrStranic
 			textZagolovok: "ИСПРАВЛЕНИЕ ТЕКСТА"
 			zagolovokLevi: 1.3; zagolovokPravi: 1.3; toolbarLevi: 1.3; toolbarPravi: 1.3
-			onVisibleChanged: if (visible) Qt.callLater(function() { tmAnalizer.forceActiveFocus() })
+			onVisibleChanged: if (visible) Qt.callLater(function() { tmOrfograf.forceActiveFocus() })
 			StrOrfograf {
 				id: tmOrfograf
 				ntWidth: pgStrOrfograf.ntWidth; ntCoff: pgStrOrfograf.ntCoff
@@ -410,48 +410,9 @@ ApplicationWindow {
 					tmStrInstrukciya.strInstrukciya = "orfograf"
 					stvStr.push(pgStrInstrukciya)//Переходим на страницу инструкций Проверки Орфографии
 				}
-				onToolbar: function(strToolbar) {//Если сигнал пришёл с текстом в toolbar, то...
-					toolbar.fnText(strToolbar)//Передаём на отображение в toolbar сообщение.
-				}
-				onLog: function (strLog) {//Если сигнал пришёл с текстом в log, то...
-					toolbar.log(strLog)//Передаём в лог сообщение.
-				}
-			}
-		}
-		Stranica {//Настройка орфографии
-		/////////////////////////////////////////////
-		///Н А С Т Р О Й К А   О Р Ф О Г Р А Ф И И///
-		/////////////////////////////////////////////
-			id: pgStrSetOrfograf
-			visible: false; focus: true
-			ntWidth: root.ntWidth; ntCoff: root.ntCoff
-			clrFona: root.clrFona; clrTexta: root.clrKnopok; clrRabOblasti: root.clrStranic
-			textZagolovok: "НАСТРОЙКА ОРФОГРАФИИ"
-			zagolovokLevi: 1.3; zagolovokPravi: 1.3; toolbarLevi: 1.3; toolbarPravi: 1.3
-			onVisibleChanged: if (visible) Qt.callLater(function() { tmSetOrfograf.forceActiveFocus() })
-			SetOrfograf{
-				id: tmSetOrfograf
-				ntWidth: pgStrSetOrfograf.ntWidth; ntCoff: pgStrSetOrfograf.ntCoff
-				clrTexta: pgStrSetOrfograf.clrTexta; clrFona: pgStrSetOrfograf.clrRabOblasti
-				clrMenuText: root.clrMenuText; clrMenuFon: pgStrTranscribe.clrFona
-				clrVnimanie: root.clrVnimanie
-				zagolovokX: pgStrSetOrfograf.rctStrZagolovok.x; zagolovokY: pgStrSetOrfograf.rctStrZagolovok.y
-				zagolovokWidth: pgStrSetOrfograf.rctStrZagolovok.width
-				zagolovokHeight: pgStrSetOrfograf.rctStrZagolovok.height
-				zonaX: pgStrSetOrfograf.rctStrZona.x; zonaY: pgStrSetOrfograf.rctStrZona.y
-				zonaWidth: pgStrSetOrfograf.rctStrZona.width; zonaHeight: pgStrSetOrfograf.rctStrZona.height
-				toolbarX: pgStrSetOrfograf.rctStrToolbar.x; toolbarY: pgStrSetOrfograf.rctStrToolbar.y
-				toolbarWidth: pgStrSetOrfograf.rctStrToolbar.width
-				toolbarHeight: pgStrSetOrfograf.rctStrToolbar.height
-				tapZagolovokLevi: 1.3; tapZagolovokPravi: 1.3; tapToolbarLevi: 1.3; tapToolbarPravi: 1.3
-				logoRazmer: root.logoRazmer; logoImya: root.logoImya
-				onClickedNazad: {
-					stvStr.pop()//Назад страницу
-					Qt.callLater(function() { stvStr.currentItem.forceActiveFocus() })
-				}
-				onClickedInfo: {
+				onClickedInfoOrfograf: {
 					tmStrInstrukciya.strInstrukciya = "set_orfograf"
-					stvStr.push(pgStrInstrukciya)
+					stvStr.push(pgStrInstrukciya)//Переходим на страницу инструкций Настроек Орфографии
 				}
 				onToolbar: function(strToolbar) {//Если сигнал пришёл с текстом в toolbar, то...
 					toolbar.fnText(strToolbar)//Передаём на отображение в toolbar сообщение.
