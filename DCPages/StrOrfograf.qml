@@ -1,7 +1,11 @@
 import QtQuick
 import QtQuick.Controls
+import QtCore
+import QtQuick.Dialogs
+import QtQuick.Layouts
 import DCButtons 1.0
 import DCMethods 1.0
+import DCSettings 1.0//Настройки из реестра.
 
 Item {
     id: root
@@ -36,6 +40,10 @@ Item {
     property string logoImya: "kobzone"//Имя логотипа в DCLogo
     property real rlProgress: 0
     property real rlLoader: 1
+    property var strSpisokDokumentov: []//Локальные пути загруженных .txt документов.
+    property bool blEstRezultat: false//true - есть исправленные документы для осмотра.
+    property string strLog: ""//Последнее сообщение лога Python бэкенда.
+    property string strOshibka: ""//Последняя ошибка Python бэкенда.
 	//Настройки
     anchors.fill: parent
     focus: true
@@ -65,28 +73,31 @@ Item {
             }
         }
         onRunningChanged: {
-            if (running) {
+            if (running) {//Идёт исправление: блокируем все кнопки кроме кнопкаНазад.
                 ldrProgress.active = true
-                
                 knopkaInfo.visible = false
                 knopkaNastroiki.visible = false
                 knopkaMenu.enabled = false
-                knopkaNazad.enabled = false
-                
+                knopkaNazad.enabled = true//КнопкаНазад всегда активна.
                 knopkaZagruzit.enabled = false
+                knopkaZagruzitOchistit_1.enabled = false
+                knopkaZagruzitOchistit_2.enabled = false
+                knopkaPapka.enabled = false
                 knopkaAnaliz.enabled = false
-                knopkaSohranit.enabled = false
-            } else {
-				lgLogo.ntCoff = root.logoRazmer//Задаём размер логотипа.
+                knopkaOsmotret.enabled = false
+            } else {//Исправление закончилось: возвращаем кнопки в исходное состояние.
+                lgLogo.ntCoff = root.logoRazmer//Задаём фиксированный размер логотипа.
                 ldrProgress.active = false
-                
                 knopkaInfo.visible = true
                 knopkaNastroiki.visible = true
                 knopkaMenu.enabled = true
                 knopkaNazad.enabled = true
-                
                 knopkaZagruzit.enabled = true
-                knopkaAnaliz.enabled = contentArea.text.trim() !== ""
+                knopkaZagruzitOchistit_1.enabled = true
+                knopkaZagruzitOchistit_2.enabled = true
+                knopkaPapka.enabled = true
+                knopkaAnaliz.enabled = root.strSpisokDokumentov.length > 0
+                knopkaOsmotret.enabled = root.blEstRezultat
             }
         }
     }
@@ -103,10 +114,8 @@ Item {
             }
         }
         if (event.modifiers & Qt.ControlModifier) {
-            if (event.key === Qt.Key_S || event.key === 1067) {
-                if (!menuMenu.visible && knopkaSohranit.enabled) {
-                    fnClickedSave()
-                }
+            if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                if (knopkaAnaliz.enabled) fnClickedOrfograf()//Старт исправления орфографии.
                 event.accepted = true
             }
         }
@@ -170,9 +179,14 @@ Item {
 		}
     }
     function fnClickedNazad() {//Функция закрытия страницы.
-		fnClickedEscape()//Функция нажатия на клавишу Escape
-		root.clickedNazad()
-	}
+        if (tmrLogo.running) {//Если анализ идёт, спрашиваем про его остановку.
+            vprVopros.ntFlag = 22
+            vprVopros.visible = true
+        } else {
+            fnClickedEscape()//Функция нажатия на клавишу Escape
+            root.clickedNazad()
+        }
+    }
     function fnClickedMenu() {
 		fnClickedEscape()//Функция нажатия на клавишу Escape
 		root.clickedSettings()//Сигнал излучает открытие настроек.
@@ -181,12 +195,59 @@ Item {
 		fnClickedEscape()//Функция нажатия на клавишу Escape
         root.clickedInfo()
     }
-    function fnClickedLoad() {
-        console.log("ЗАГРУЗИТЬ")
+    function fnPathToUrl(strPut) {//Преобразуем локальный путь в URL диалога.
+        if (strPut === "") return ""
+        return "file://" + strPut
     }
-	function fnClickedOrfograf() {
-        console.log("ОРФОГРАФИЯ")
-	}
+    function fnUrlToLocalPath(url) {//Преобразуем URL диалога в локальный путь.
+        var strPut = url.toString()
+        if (strPut.startsWith("file://")) strPut = strPut.substring(7)
+        return decodeURIComponent(strPut)
+    }
+    function fnImyaDokument(strPut) {//Достаём имя документа из полного пути.
+        var chPos = strPut.lastIndexOf("/")
+        if (chPos >= 0) return strPut.substring(chPos + 1)
+        return strPut
+    }
+    function fnUstanovitDokumenty(vrPutei) {//Пишем список документов, UI, и путь к папке с файлами в реестр.
+        root.strSpisokDokumentov = vrPutei
+		if(vrPutei.length > 0){//Проверяем длину массива, если она не ноль, то сохраняем в реестр путь папки.
+			var filePut = vrPutei[0].toString()//Получаем путь для первого файла.
+			filePut = fnUrlToLocalPath(filePut)//Используем кроссплатформенную функцию Убираем "file://" 
+			var papkaPut = filePut.substring(0, filePut.lastIndexOf('/'));//Обрезаем имя файла по /
+			DCSettings.orfograf_put_text = papkaPut//Записываем в реестр имя папки в реестр.
+		}
+        knopkaZagruzitOchistit_1.visible = vrPutei.length > 0
+        knopkaZagruzitOchistit_2.visible = vrPutei.length > 0
+        knopkaAnaliz.enabled = vrPutei.length > 0 && !tmrLogo.running
+    }
+    function fnClickedLoad() {//Функция открытия диалога загрузки документов.
+        dialogZagruzit.open()//Открываем диалог выбора .txt документов.
+    }
+    function fnClickedPapka() {//Функция диалога выбора папки результатов.
+        dialogPapka.open()//Открываем диалог выбора папки.
+    }
+    function fnClickedOrfograf() {//Функция запуска исправления орфографии.
+        if (root.strSpisokDokumentov.length === 0) {
+            fnClickedLoad()//Нет документов - предлагаем сначала загрузить.
+            return
+        }
+        var strPapka = DCSettings.orfograf_put_rezultat//Папка результатов из реестра.
+        if (strPapka === "") strPapka = fnUrlToLocalPath(
+            StandardPaths.writableLocation(StandardPaths.DocumentsLocation))
+        pyOrfograf.startOrfografiya(root.strSpisokDokumentov, strPapka,
+            DCSettings.orfograf_temperatura, DCSettings.orfograf_kontekst, DCSettings.orfograf_perekritie)
+        txdOtvet.text = "⏳ Исправление орфографии...\n"
+        tmrLogo.running = true//Запускаем анимацию логотипа (режим анализа).
+    }
+    function fnClickedStop() {//Функция остановки исправления орфографии.
+        pyOrfograf.stopOrfografiya()//Запрещаем дальнейшую обработку в Python бэкенде.
+        tmrLogo.running = false//Останавливаем анимацию логотипа (выход из режима анализа).
+        root.toolbar("Исправление орфографии остановлено.")
+    }
+    function fnClickedOsmotret() {//Функция диалога осмотра исправленных документов.
+        dialogOsmotr.open()//Открываем диалог в папке orfograf_put_rezultat.
+    }
     function fnToggleMenu() {
         if (menuMenu.visible) menuMenu.visible = false
         else menuMenu.visible = true
@@ -199,7 +260,90 @@ Item {
         return false
     }
     Component.onCompleted: {
-        root.forceActiveFocus()
+    	root.forceActiveFocus()
+    }
+    Connections {//CONNECTIONS сигналов Python бэкенда исправления орфографии
+    	target: pyOrfograf
+    	function onStrLog(strMessage) {//Пишем в лог приложения.
+    		root.strLog = strMessage
+    		root.log(strMessage)
+    	}
+    	function onStrOshibka(ntCode, strMessage) {//Код ошибки и текст ошибки.
+    		root.strOshibka = strMessage
+    		root.toolbar("❌ Ошибка [" + ntCode + "]: " + strMessage)
+    		if (ldrProgress.item) ldrProgress.item.text = "Ошибка [" + ntCode + "]: " + strMessage
+    	}
+    	function onSigProgress(strImya, ntFrag, ntVsego) {//Прогресс показываем в DCProgress.
+    		if (ldrProgress.item) {
+    			ldrProgress.item.text = strImya + " фрагмент " + ntFrag + "/" + ntVsego
+    			ldrProgress.item.progress = (ntVsego > 0) ? (ntFrag * 100 / ntVsego) : 0
+    		}
+    	}
+    	function onSigDokumentGotov(strImya, strPut, ntIzmenenij) {//Фрагменты склеены, файл сохранён.
+    		txdOtvet.text += "✅ " + strImya + " — исправлено мест: " + ntIzmenenij + "\n"
+    		txdOtvet.text += "   сохранён: " + strPut + "\n"
+    		txdOtvet.scrollBottom()
+    	}
+    	function onSigVseGotovo(ntVseho, ntOshibok) {//Все документы обработаны.
+    		ldrProgress.active = false//Отключаем DCProgress
+    		txdOtvet.text += "🏁 Готово: обработано " + ntVseho + ", ошибок: " + ntOshibok + "\n"
+    		txdOtvet.scrollBottom()
+    		root.blEstRezultat = true//Появились исправленные документы для осмотра.
+		tmrLogo.running = false//Анализ закончен: стоп логотип, кнопки обратно.
+		knopkaOsmotret.enabled = true//Разрешаем осмотреть исправленные документы
+    	}
+    }
+    FolderDialog {//Диалог выбора папки сохранения исправленных документов
+        id: dialogPapka
+        title: "Выберите папку для исправленных документов"
+        currentFolder: {
+            if (DCSettings.orfograf_put_rezultat !== "") {
+                return fnPathToUrl(DCSettings.orfograf_put_rezultat)
+            }
+            else return StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
+        }
+        onAccepted: {
+            DCSettings.orfograf_put_rezultat = fnUrlToLocalPath(selectedFolder)//Пишем путь в реестр.
+            root.toolbar("Папка результатов: " + DCSettings.orfograf_put_rezultat)
+        }
+        onRejected: {}
+    }
+    FileDialog {//Диалог загрузки текстовых документов
+        id: dialogZagruzit
+        title: "Выберите текстовые документы (*.txt) для исправления орфографии"
+        currentFolder: {
+            if (DCSettings.orfograf_put_text !== "") {
+                return fnPathToUrl(DCSettings.orfograf_put_text)
+            }
+            else return StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
+        }
+        nameFilters: ["Текстовые файлы (*.txt)", "Все файлы (*)"]
+        fileMode: FileDialog.OpenFiles//Множественный выбор файлов
+        onAccepted: {
+            var vrPutei = []
+            for (var i = 0; i < selectedFiles.length; i++)//Собираем локальные пути.
+                vrPutei.push(fnUrlToLocalPath(selectedFiles[i]))
+            fnUstanovitDokumenty(vrPutei)//Запоминаем список документов и сохраняем в реестр путь к папке
+            root.toolbar("Загружено документов: " + vrPutei.length)	
+        }
+        onRejected: {}
+    }
+    FileDialog {//Диалог открытия исправленного документа для просмотра
+        id: dialogOsmotr
+        title: "Выберите исправленный документ для просмотра"
+        currentFolder: {
+            if (DCSettings.orfograf_put_rezultat !== "") {
+                return fnPathToUrl(DCSettings.orfograf_put_rezultat)
+            }
+            else return StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
+        }
+        nameFilters: ["Текстовые файлы (*.txt)", "Все файлы (*)"]
+        fileMode: FileDialog.OpenFile
+        onAccepted: {
+            root.toolbar("Просмотр: " + fnUrlToLocalPath(selectedFile))
+            pyFileOpener.openFile(selectedFile.toString())//Открываем файл через Python.
+        }
+        onRejected: {}
     }
     Item {//Заголовок
         id: tmZagolovok
@@ -232,6 +376,39 @@ Item {
                 }
             }
         }
+        DCVopros {//Вопрос об остановке процесса исправления орфографии
+            id: vprVopros
+            ntWidth: root.ntWidth; ntCoff: root.ntCoff
+            anchors.top: tmZagolovok.top; anchors.bottom: tmZagolovok.bottom
+            anchors.left: tmZagolovok.left; anchors.right: tmZagolovok.right
+            clrFona: root.clrVnimanie; clrTexta: root.clrFona
+            clrKnopki: root.clrFona; clrBorder: root.clrFona
+            tapKnopkaZakrit: root.tapZagolovokLevi; tapKnopkaOk: root.tapZagolovokPravi
+            visible: false
+            property int ntFlag: 0//0 - нет вопроса, 22 - остановить анализ документов.
+            text: {
+                if (ntFlag === 22)
+                    return qsTr("ОСТАНОВИТЬ ИСПРАВЛЕНИЕ ОРФОГРАФИИ?")
+                else return qsTr("Любовь")
+            }
+            onVisibleChanged: {
+                if (visible) {//Прячем кнопки заголовка, пока висит вопрос.
+                    knopkaNazad.visible = false
+                    knopkaMenu.visible = false
+                } else {
+                    knopkaNazad.visible = true
+                    knopkaMenu.visible = true
+                    root.forceActiveFocus()//Возвращаем фокус, чтоб работали горячие клавиши.
+                }
+            }
+            onClickedOk: {
+                vprVopros.visible = false//Делаем диалог невидимым
+                if (ntFlag === 22) fnClickedStop()//Останавливаем анализ документов.
+            }
+            onClickedOtmena: {
+                vprVopros.visible = false//Делаем диалог невидимым.
+            }
+        }
     }
     Item {//Рабочая зона
         id: tmZona
@@ -241,7 +418,7 @@ Item {
             anchors.centerIn: tmZona
 			ntCoff: root.logoRazmer
 			logoImya: root.logoImya
-			logoOpacity: 0.4
+			logoOpacity: 0.1
 			z: -1
 		}
         Flickable {
@@ -270,8 +447,103 @@ Item {
                 bottomPadding: root.ntCoff * 2
                 leftPadding: root.ntCoff * 2
                 rightPadding: root.ntCoff * 2
-               
-                //ОСНОВНОЙ КОД ТУТ.
+                
+                RowLayout {//Строка загрузки документов и очистки списка
+                    id: rowZagruzit
+                    width: parent.width - parent.leftPadding - parent.rightPadding
+                    spacing: root.ntCoff / 2
+					DCKnopkaZakrit {//Кнопка очистки списка загруженных документов
+                        id: knopkaZagruzitOchistit_1
+                        ntWidth: root.ntWidth; ntCoff: root.ntCoff
+						clrKnopki: root.clrTexta; clrFona: root.clrFona
+                        visible: false
+                        onClicked: fnUstanovitDokumenty([])//Очищаем список документов.
+                    }
+                    DCKnopkaOriginal {//Кнопка загрузки документов
+                        id: knopkaZagruzit
+                        text: "📂 загрузить ваши документы"
+                        ntHeight: root.ntWidth; ntCoff: root.ntCoff
+                        clrKnopki: root.clrTexta; clrTexta: root.clrFona
+						Layout.fillWidth: true //Растягиваемся по всей длине
+						Layout.preferredHeight: root.ntWidth * root.ntCoff + root.ntCoff
+                        onClicked: {
+                            if (!fnCloseMenuIfOpen()) fnClickedLoad()
+                        }
+                    }
+                    DCKnopkaZakrit {//Кнопка очистки списка загруженных документов
+                        id: knopkaZagruzitOchistit_2
+                        ntWidth: root.ntWidth; ntCoff: root.ntCoff
+						clrKnopki: root.clrTexta; clrFona: root.clrFona
+                        visible: false
+                        onClicked: fnUstanovitDokumenty([])//Очищаем список документов.
+                    }
+                }
+                Column {//Список загруженных документов
+                    id: clmnDokumenty
+                    width: parent.width - parent.leftPadding - parent.rightPadding
+                    Repeater {
+                        model: root.strSpisokDokumentov
+                        Text {
+                            text: "   " + (index + 1) + ". " + root.fnImyaDokument(modelData)
+                            color: root.clrTexta
+                            font.pixelSize: root.ntCoff * 1.2
+                        }
+                    }
+                }
+                DCKnopkaOriginal {//Кнопка выбора папки результатов
+                    id: knopkaPapka
+                    ntHeight: root.ntWidth; ntCoff: root.ntCoff
+                    clrKnopki: root.clrTexta; clrTexta: root.clrFona
+					anchors.left: parent.left; anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
+                    text: "📁 папка результатов: " + DCSettings.orfograf_put_rezultat
+                    onClicked: {
+                        if (!fnCloseMenuIfOpen()) fnClickedPapka()
+                    }
+                }
+                DCKnopkaOriginal {//Кнопка запуска исправления орфографии
+                    id: knopkaAnaliz
+                    ntHeight: root.ntWidth; ntCoff: root.ntCoff
+                    clrKnopki: root.clrTexta; clrTexta: root.clrFona
+					anchors.left: parent.left; anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
+                    text: "✍️ исправить орфографию документов"
+                    enabled: false
+                    onClicked: {
+                        if (!fnCloseMenuIfOpen()) fnClickedOrfograf()
+                    }
+                } 
+                DCTextEdit {//Поле отчёта исправления орфографии
+                    id: txdOtvet
+                    width: parent.width - parent.leftPadding - parent.rightPadding
+                    height: 180
+                    ntWidth: root.ntWidth/2//разделить на 2, чтоб уменьшить размер шрифта и скролбар
+                    ntCoff: root.ntCoff
+                    readOnly: true
+                    scrollAuto: false
+                    clrFona: "transparent"; clrTexta: root.clrTexta
+                    clrPolzunka: Qt.lighter(root.clrMenuFon, 1.3); clrBorder: root.clrTexta
+                    radius: root.ntCoff / 2
+                    isBorder: true//Показываем бордюр области текста.
+                    placeholderText: "Отчёт об исправлении орфографии появится здесь."
+                }
+                Text {//Подсказка по горячим клавишам
+                    text: "Alt+← назад | Alt+F настройки | Ctrl+Enter старт | F1 справка"
+                    color: "grey"
+                    font.pixelSize: root.ntCoff * 1.1
+                }
+				DCKnopkaOriginal {//Кнопка осмотра исправленных документов
+                    id: knopkaOsmotret
+                    ntHeight: root.ntWidth; ntCoff: root.ntCoff
+                    clrKnopki: root.clrTexta; clrTexta: root.clrFona
+					anchors.left: parent.left; anchors.right: parent.right
+                    anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
+                    text: "👁 осмотреть исправленные документы"
+                    enabled: false
+                    onClicked: {
+                        if (!fnCloseMenuIfOpen()) fnClickedOsmotret()
+                    }
+                }
             }
         }
         DCScrollbar {// Скроллбар основной области
