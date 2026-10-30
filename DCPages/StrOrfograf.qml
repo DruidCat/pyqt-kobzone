@@ -41,9 +41,11 @@ Item {
     property real rlProgress: 0
     property real rlLoader: 1
     property var strSpisokDokumentov: []//Локальные пути загруженных .txt документов.
-    property bool blEstRezultat: false//true - есть исправленные документы для осмотра.
     property string strLog: ""//Последнее сообщение лога Python бэкенда.
     property string strOshibka: ""//Последняя ошибка Python бэкенда.
+
+	property bool isServerZapustit: false//true - запускаем сервер для начала анализа
+	property bool isModelZagruzit: false//true - жду загрузки модели из StrAnalizer
 	//Настройки
     anchors.fill: parent
     focus: true
@@ -54,6 +56,125 @@ Item {
 	signal toolbar(var strToolbar)
     signal log(var strLog)
     //Методы
+	Component.onCompleted: {
+    	root.forceActiveFocus()
+    }
+    Connections {//CONNECTIONS сигналов Python бэкенда исправления орфографии
+    	target: pyOrfograf
+    	function onStrLog(strMessage) {//Пишем в лог приложения.
+    		root.strLog = strMessage
+    		root.log(strMessage)
+    	}
+    	function onStrOshibka(ntCode, strMessage) {//Код ошибки и текст ошибки.
+        	tmrLogo.running = false//Останавливаем анимацию логотипа (выход из режима анализа).
+    		root.strOshibka = strMessage
+			txdOtvet.text += strMessage
+			root.log("❌ Ошибка [" + ntCode + "]: " + strMessage)
+    		root.toolbar("❌ Ошибка [" + ntCode + "]: " + strMessage)
+			root.isServerZapustit = false
+			root.isModelZagruzit = false//Сбрасываю флаг
+    	}
+    	function onSigProgress(strImya, ntFrag, ntVsego) {//Прогресс показываем в DCProgress.
+    		if (ldrProgress.item) {
+    			ldrProgress.item.text = strImya + " фрагмент " + ntFrag + "/" + ntVsego
+    			ldrProgress.item.progress = (ntVsego > 0) ? (ntFrag * 100 / ntVsego) : 0
+    		}
+    	}
+    	function onSigDokumentGotov(strImya, strPut, ntIzmenenij) {//Фрагменты склеены, файл сохранён.
+    		txdOtvet.text += "✅ " + strImya + " — исправлено мест: " + ntIzmenenij + "\n"
+    		txdOtvet.text += "   сохранён: " + strPut + "\n"
+    		txdOtvet.scrollBottom()
+    	}
+    	function onSigVseGotovo(ntVseho, ntOshibok) {//Все документы обработаны.
+    		txdOtvet.text += "🏁 Готово: обработано " + ntVseho + ", ошибок: " + ntOshibok + "\n"
+    		txdOtvet.scrollBottom()
+			tmrLogo.running = false//Анализ закончен: стоп логотип, кнопки обратно.
+    	}
+    }
+	Connections {//Обработчик загрузки моделей из Python
+        target: pyLM
+	
+        function onSigError(ntError, errorMsg) {
+			if(ntError === 3){//3 - Не удалось найти исполняемый файл Studio
+				//vprVopros.ntFlag = 3//3 - вопрос, что не найден cli lms
+				//vprVopros.visible = true
+			} else if (ntError === 6){//6 - Studio не запущен.
+				//vprVopros.ntFlag = 6//6 - вопрос, что не запустилась Studio
+				//vprVopros.visible = true
+			} else if (ntError === 9){//9 - CLI lms не найден. Укажите путь в настройках
+				//vprVopros.ntFlag = 9//9 - вопрос, что не найден cli lms
+				//vprVopros.visible = true
+			} else if (ntError === 13){//13 - Модель не выбрана
+				if(root.isModelZagruzit){//Если модель не загружена по просьбе StrOrfograf, то..
+				//	vprVopros.ntFlag = 13//13 - Модель не выбрана
+				//	vprVopros.visible = true
+				}
+			}
+			console.log(ntError, errorMsg)
+			tmrLogo.running = false//Останавливаем анимацию анализа и политики кнопок
+			ldrProgress.active = false
+			root.isServerZapustit = false
+			root.isModelZagruzit = false//Сбрасываю флаг
+        }
+		//0 - Ошибка HTTP при запросе списка моделей (сервер ответил кодом, отличным от 200).
+		//1 - Ошибка сетевого подключения к Studio (сервер недоступен или не запущен).
+		//2 - Неизвестная критическая ошибка при парсинге или загрузке списка моделей.
+		//3 - Не удалось найти исполняемый файл Studio (требуется указать путь вручную в настройках).
+		//4 - Ошибка при инициализации процесса запуска (сбой до или во время создания потока).
+		//5 - Ошибка при попытке принудительной остановки процесса Studio (нет прав или процесс уже мертв).
+		//6 - Studio не запущен.
+		//7 - Ошибка системного запуска процесса (сбой subprocess.Popen в фоновом потоке).
+		//8 - Превышено время ожидания запуска (сервер не стал доступен после 10 попыток по 3 секунды).
+		//9 - CLI lms не найден. Укажите путь в настройках
+		//10 - Модель не загрузилась
+		//11 - Ошибка запуска сервера
+		//12 - Ошибка остановки сервера
+		//13 - Модель не выбрана
+		//14 - Ошибка по Sandbox
+		//15 - Ошибка связанная с Mmproj
+		function onSigStudioZapuschen() {//Если запущена Studio
+			//vprVopros.visible = false//Эта строка закрывает плашку с вопросом, которая автоматич. появляется
+		}
+		function onSigServerZapuschen() {//Если сервер запустился, то начинаем анализ Документов.
+			if(root.isServerZapustit){
+				root.isServerZapustit = false//Сбрасываем флаг.
+				let ltModel = pyLM.polModel()//Получаем имя модели.
+				if (ltModel){//Если это не пустая строка, то...
+					if (root.isModelZagruzit) {//Если модель загружена по просьбе StrOrfograf, то...
+						root.isModelZagruzit = false//Сбрасываю флаг
+						pyOrfograf.startOrfografiya(root.strSpisokDokumentov,
+													DCSettings.orfograf_put_rezultat,
+													DCSettings.orfograf_temperatura,
+													DCSettings.orfograf_kontekst,
+													DCSettings.orfograf_perekritie)
+					}
+				} else {//Если пустая строка, то...
+					ldrProgress.active = true//Запускаем полосу прогресса загрузки модели
+					ldrProgress.total = 1//Задаём скорость движения полосы прогресса.
+					if(ldrProgress.item)ldrProgress.item.text="Загрузка модели: "+DCSettings.studio_model_imya
+					pyLM.ustParametri(DCSettings.studio_model_imya, DCSettings.studio_max_context,
+											DCSettings.studio_gpu_offload)
+				}
+			}
+		}
+		function onSigModelZagrujena(strModel, ntContext) {
+			ldrProgress.active = false//Отключаем прогрессбар, после загрузки Модели.
+			if (root.isModelZagruzit) {//Если модель загружена по просьбе StrAnalizer, то...
+				root.isModelZagruzit = false//Сбрасываю флаг
+				ldrProgress.active = true//Включаем прогрессбар, после загрузки Модели.
+				pyOrfograf.startOrfografiya(root.strSpisokDokumentov,
+													DCSettings.orfograf_put_rezultat,
+													DCSettings.orfograf_temperatura,
+													DCSettings.orfograf_kontekst,
+													DCSettings.orfograf_perekritie)
+			}
+		}
+		function onSigModelProgress(ntProgress) {
+			if (ldrProgress.item) {
+				ldrProgress.item.progress = ntProgress
+			}
+		}
+	}
     Timer {//ТАЙМЕР анимации логотипа
         id: tmrLogo
         interval: 110
@@ -75,32 +196,21 @@ Item {
         onRunningChanged: {
             if (running) {//Идёт исправление: блокируем все кнопки кроме кнопкаНазад.
                 ldrProgress.active = true
-                knopkaInfo.visible = false
-                knopkaNastroiki.visible = false
-                knopkaMenu.enabled = false
-                knopkaNazad.enabled = true//КнопкаНазад всегда активна.
-                knopkaZagruzit.enabled = false
-                knopkaZagruzitOchistit_1.enabled = false
-                knopkaZagruzitOchistit_2.enabled = false
-                knopkaPapka.enabled = false
-                knopkaAnaliz.enabled = false
-                knopkaOsmotret.enabled = false
             } else {//Исправление закончилось: возвращаем кнопки в исходное состояние.
                 lgLogo.ntCoff = root.logoRazmer//Задаём фиксированный размер логотипа.
-                ldrProgress.active = false
-                knopkaInfo.visible = true
-                knopkaNastroiki.visible = true
-                knopkaMenu.enabled = true
-                knopkaNazad.enabled = true
-                knopkaZagruzit.enabled = true
-                knopkaZagruzitOchistit_1.enabled = true
-                knopkaZagruzitOchistit_2.enabled = true
-                knopkaPapka.enabled = true
-                knopkaAnaliz.enabled = root.strSpisokDokumentov.length > 0
-                knopkaOsmotret.enabled = root.blEstRezultat
+				if (ldrProgress.item) ldrProgress.item.progress = 100
+				tmrProgress.running = true//Запускаем таймер отображения 100% прогресса и политику кнопок
             }
         }
     }
+	Timer {//ТАЙМЕР, чтоб можно было увидеть 100% прогресса призавершении.
+        id: tmrProgress
+        interval: 1100; running: false; repeat: false
+        onTriggered: {
+			ldrProgress.active = false
+			root.toolbar(`Анализ орфографии завершён`)
+        }
+	}
     Keys.onPressed: (event) => {//Обработка горячих клавиш
         if (event.modifiers & Qt.AltModifier) {
             if (event.key === Qt.Key_Left) {
@@ -221,7 +331,7 @@ Item {
         knopkaZagruzitOchistit_2.visible = vrPutei.length > 0
         knopkaAnaliz.enabled = vrPutei.length > 0 && !tmrLogo.running
     }
-    function fnClickedLoad() {//Функция открытия диалога загрузки документов.
+    function fnClickedZagruzit() {//Функция открытия диалога загрузки документов.
         dialogZagruzit.open()//Открываем диалог выбора .txt документов.
     }
     function fnClickedPapka() {//Функция диалога выбора папки результатов.
@@ -229,16 +339,17 @@ Item {
     }
     function fnClickedOrfograf() {//Функция запуска исправления орфографии.
         if (root.strSpisokDokumentov.length === 0) {
-            fnClickedLoad()//Нет документов - предлагаем сначала загрузить.
+            fnClickedZagruzit()//Нет документов - предлагаем сначала загрузить.
             return
         }
-        var strPapka = DCSettings.orfograf_put_rezultat//Папка результатов из реестра.
-        if (strPapka === "") strPapka = fnUrlToLocalPath(
-            StandardPaths.writableLocation(StandardPaths.DocumentsLocation))
-        pyOrfograf.startOrfografiya(root.strSpisokDokumentov, strPapka,
-            DCSettings.orfograf_temperatura, DCSettings.orfograf_kontekst, DCSettings.orfograf_perekritie)
-        txdOtvet.text = "⏳ Исправление орфографии...\n"
+		root.isServerZapustit = true
+		root.isModelZagruzit = true//Устанавливаем флаг ожидания, из Str
         tmrLogo.running = true//Запускаем анимацию логотипа (режим анализа).
+		if (DCSettings.orfograf_put_rezultat === ""){//Если путь для сохранения результатов пустой, то..
+			DCSettings.orfograf_put_rezultat = fnUrlToLocalPath(StandardPaths.writableLocation(StandardPaths.DocumentsLocation))
+		}
+        txdOtvet.text = "⏳ Исправление орфографии...\n"
+		pyLM.zapustitServer()//Всегда запускаем сервер, даже если он запущен.
     }
     function fnClickedStop() {//Функция остановки исправления орфографии.
         pyOrfograf.stopOrfografiya()//Запрещаем дальнейшую обработку в Python бэкенде.
@@ -258,41 +369,7 @@ Item {
             return true
         }
         return false
-    }
-    Component.onCompleted: {
-    	root.forceActiveFocus()
-    }
-    Connections {//CONNECTIONS сигналов Python бэкенда исправления орфографии
-    	target: pyOrfograf
-    	function onStrLog(strMessage) {//Пишем в лог приложения.
-    		root.strLog = strMessage
-    		root.log(strMessage)
-    	}
-    	function onStrOshibka(ntCode, strMessage) {//Код ошибки и текст ошибки.
-    		root.strOshibka = strMessage
-    		root.toolbar("❌ Ошибка [" + ntCode + "]: " + strMessage)
-    		if (ldrProgress.item) ldrProgress.item.text = "Ошибка [" + ntCode + "]: " + strMessage
-    	}
-    	function onSigProgress(strImya, ntFrag, ntVsego) {//Прогресс показываем в DCProgress.
-    		if (ldrProgress.item) {
-    			ldrProgress.item.text = strImya + " фрагмент " + ntFrag + "/" + ntVsego
-    			ldrProgress.item.progress = (ntVsego > 0) ? (ntFrag * 100 / ntVsego) : 0
-    		}
-    	}
-    	function onSigDokumentGotov(strImya, strPut, ntIzmenenij) {//Фрагменты склеены, файл сохранён.
-    		txdOtvet.text += "✅ " + strImya + " — исправлено мест: " + ntIzmenenij + "\n"
-    		txdOtvet.text += "   сохранён: " + strPut + "\n"
-    		txdOtvet.scrollBottom()
-    	}
-    	function onSigVseGotovo(ntVseho, ntOshibok) {//Все документы обработаны.
-    		ldrProgress.active = false//Отключаем DCProgress
-    		txdOtvet.text += "🏁 Готово: обработано " + ntVseho + ", ошибок: " + ntOshibok + "\n"
-    		txdOtvet.scrollBottom()
-    		root.blEstRezultat = true//Появились исправленные документы для осмотра.
-		tmrLogo.running = false//Анализ закончен: стоп логотип, кнопки обратно.
-		knopkaOsmotret.enabled = true//Разрешаем осмотреть исправленные документы
-    	}
-    }
+    } 
     FolderDialog {//Диалог выбора папки сохранения исправленных документов
         id: dialogPapka
         title: "Выберите папку для исправленных документов"
@@ -467,7 +544,7 @@ Item {
 						Layout.fillWidth: true //Растягиваемся по всей длине
 						Layout.preferredHeight: root.ntWidth * root.ntCoff + root.ntCoff
                         onClicked: {
-                            if (!fnCloseMenuIfOpen()) fnClickedLoad()
+                            if (!fnCloseMenuIfOpen()) fnClickedZagruzit()
                         }
                     }
                     DCKnopkaZakrit {//Кнопка очистки списка загруженных документов
@@ -539,7 +616,7 @@ Item {
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
                     text: "👁 осмотреть исправленные документы"
-                    enabled: false
+                    enabled: true
                     onClicked: {
                         if (!fnCloseMenuIfOpen()) fnClickedOsmotret()
                     }
@@ -581,7 +658,7 @@ Item {
                 menuMenu.visible = false
                 
                 if (ntNomer === 1) {
-                    fnClickedLoad()
+                    fnClickedZagruzit()
                 } else if (ntNomer === 2) {
                     fnClickedOrfograf()
                 }  else if (ntNomer === 3) {
@@ -606,15 +683,46 @@ Item {
             id: ldrProgress
             anchors.fill: tmToolbar
             source: "qrc:/DCMethods/DCProgress.qml"
-            active: false
-            onLoaded: {
+            active: false 
+			property int total: 1//Переменная, хранящая количество файлов на обработку
+			property int interval: 2200//Интервал между смещением полосы.
+			onActiveChanged: {
+				if (active){//Если активировался прогресбар, то...
+					knopkaInfo.visible = false
+					knopkaNastroiki.visible = false
+					knopkaMenu.enabled = false
+					knopkaNazad.enabled = true//КнопкаНазад всегда активна.
+					knopkaZagruzit.enabled = false
+					knopkaZagruzitOchistit_1.enabled = false
+					knopkaZagruzitOchistit_2.enabled = false
+					knopkaPapka.enabled = false
+					knopkaAnaliz.enabled = false
+					knopkaOsmotret.enabled = false					
+				} else {
+					knopkaInfo.visible = true
+					knopkaNastroiki.visible = true
+					knopkaMenu.enabled = true
+					knopkaNazad.enabled = true
+					knopkaZagruzit.enabled = true
+					knopkaZagruzitOchistit_1.enabled = true
+					knopkaZagruzitOchistit_2.enabled = true
+					knopkaPapka.enabled = true
+					knopkaAnaliz.enabled = root.strSpisokDokumentov.length > 0
+					knopkaOsmotret.enabled = true
+				}
+			}
+			onLoaded: {
                 ldrProgress.item.ntWidth = root.ntWidth
                 ldrProgress.item.ntCoff = root.ntCoff
                 ldrProgress.item.clrProgress = root.clrTexta
                 ldrProgress.item.clrTexta = "grey"
                 ldrProgress.item.radius = root.ntCoff / 4
-				ldrProgress.item.msInterval = 2200
+				ldrProgress.item.msInterval = ldrProgress.interval//Пауза между смещением.
             }
+			onTotalChanged: {//Если переменная изменилась, то происходит пересчёт скорости смещения.
+				if(ldrProgress.item)//Если существует
+					ldrProgress.item.msInterval = interval * total//Чем больше файлов, тем медленней движется.
+			}
         }
         DCKnopkaInfo {
             id: knopkaInfo

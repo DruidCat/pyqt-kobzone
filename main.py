@@ -11,6 +11,7 @@ from PyQt6.QtCore import QObject, pyqtSlot, QUrl, pyqtProperty, pyqtSignal
 from PyQt6.QtGui import QFontDatabase, QFont
 
 from DCPages.PyAnalizer import DCAnalyzer #Из PyAnalizer.py импортируем класс DCAnalyzer
+from DCPages.PyOrfograf import DCOrfograf #Из PyOrfigraf.py импортируем класс DCOrfograf
 from DCPages.PyTranscribe import DCTranscribe #Из PyTranscribe.py импортируем класс DCTranscribe
 from DCPages.PyRAG import DCRAG#Из PyRAG.py импортируем класс DCRAG
 from DCPages.PyAnalizerRAG import DCAnalizerRAG # Импорт нового класса для RAG-поиска
@@ -108,6 +109,7 @@ class MainApp:
         self.engine = QQmlApplicationEngine()
         
         self.analyzer = DCAnalyzer()#Иннициализация class DCAnalyzer из PyAnalyzer.py
+        self.orfograf = DCOrfograf()#Иннициализация class DCOrfograf из PyOrfograf.py
         self.transcriber = DCTranscribe()#Инициализация class DCTranscribe из PyTranscribe.py
         self.rag = DCRAG()#Иннициализируем clacc DCRAG из PyRAG.py
         self.analizer_rag = DCAnalizerRAG() # Инициализация RAG поиска для анализатора
@@ -168,6 +170,7 @@ class MainApp:
         self._connect_analyzer_to_lmstudio()
         # РЕГИСТРИРУЕМ КОНТЕКСТНЫЕ СВОЙСТВА.
         self.engine.rootContext().setContextProperty("pyAnalyzer", self.analyzer)
+        self.engine.rootContext().setContextProperty("pyOrfograf", self.orfograf)
         self.engine.rootContext().setContextProperty("pyTranscriber", self.transcriber)
         self.engine.rootContext().setContextProperty("pyRAG", self.rag)
         self.engine.rootContext().setContextProperty("pyAnalizerRAG", self.analizer_rag)
@@ -212,10 +215,13 @@ class MainApp:
             print(f"✓ Установлено имя файла: {Path(path).name}")
         
     def _connect_analyzer_to_lmstudio(self):
-        """Связывает DCAnalyzer и DCLM для автоматической перезагрузки модели"""
+        """Связывает DCAnalyzer, DCOrfograf и DCLM для автоматической перезагрузки модели"""
         self.lm.sigServerURLIzmenen.connect(self.analyzer.ustServerURL)
         self.lm.sigParametriIzmeneni.connect(self.analyzer.ustParametri)
+        self.lm.sigServerURLIzmenen.connect(self.orfograf.ustServerURL)
+        self.lm.sigParametriIzmeneni.connect(self.orfograf.ustParametri)
         print("✓ DCAnalyzer связан с DCLM") 
+        print("✓ DCOrfograf связан с DCLM") 
 
     def run(self):
         """Запуск приложения"""

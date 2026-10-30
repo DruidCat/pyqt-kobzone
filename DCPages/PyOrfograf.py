@@ -4,12 +4,37 @@
 просит ИИ исправить орфографию, склеивает и сохраняет файлы.
 """
 import threading
-import time
 import json
 import requests
 import os
 from pathlib import Path
-from PyQt6.QtCore import QObject, pyqtSlot, pyqtSignal
+from PyQt6.QtCore import QObject, QThread, pyqtSlot, pyqtSignal
+
+# ==================== КОНСТАНТЫ ====================
+TIMEOUT_CONNECT = 15      # сек на установление TCP-соединения
+TIMEOUT_READ_CHUNK = 600  # сек максимум МЕЖДУ соседними токенами в стриме (не на весь ответ!)
+RESERV_TOKENS = 1500      # Запас токенов под системный промпт/служебку
+CHARS_PER_TOKEN = 2.5     # Эвристика: символов на токен для кириллицы
+
+
+class DCOrfografWorker(QThread):
+    """Рабочий поток обработки документов (аналог DCAnalyzerWorker из PyAnalizer.py)"""
+
+    def __init__(self, orfograf, filePaths, strPut, rlTemperatura, ntKontekst, ntPerekritieProcent):
+        super().__init__()
+        self.orfograf = orfograf
+        self.filePaths = filePaths
+        self.strPut = strPut
+        self.rlTemperatura = rlTemperatura
+        self.ntKontekst = ntKontekst
+        self.ntPerekritieProcent = ntPerekritieProcent
+
+    def run(self):
+        """Выполняется в отдельном потоке"""
+        self.orfograf._fnProtsitOrfografiju(
+            self.filePaths, self.strPut, self.rlTemperatura,
+            self.ntKontekst, self.ntPerekritieProcent
+        )
 
 
 class DCOrfograf(QObject):
@@ -17,82 +42,116 @@ class DCOrfograf(QObject):
     Класс для исправления орфографии в текстовых документах через LLM
     """
     # СИГНАЛЫ
-    sigProgress = pyqtSignal(str, int, int)  # (имя файла, фрагмент, всего фрагментов)
-    sigVseGotovo = pyqtSignal(int, int)  # (обработано файлов, ошибок)
-    sigDokumentGotov = pyqtSignal(str, str, int)  # (имя файла, путь, правок)
-    strOshibka = pyqtSignal(int, str)  # Код ошибки и текст ошибки.
-    strLog = pyqtSignal(str)  # Пишем в лог приложения.
+    sigProgress = pyqtSignal(str, int, int)        # (имя файла, фрагмент, всего фрагментов)
+    sigVseGotovo = pyqtSignal(int, int)            # (обработано файлов, ошибок)
+    sigDokumentGotov = pyqtSignal(str, str, int)   # (имя файла, путь, правок)
+    strOshibka = pyqtSignal(int, str)              # Код ошибки и текст ошибки.
+    strLog = pyqtSignal(str)                       # Пишем в лог приложения.
 
     # КОДЫ ОШИБОК
-    ERR_REQUEST = 1000  # Ошибки requests.HTTPError
-    ERR_JSON = 1001  # Ошибки парсинга JSON (json.JSONDecodeError)
-    ERR_GENERIC = 1002  # Прочие ошибки
-    ERR_ANALYSIS = 1003  # Ошибки анализа текста ИИ
+    ERR_REQUEST = 1000
+    ERR_JSON = 1001
+    ERR_GENERIC = 1002
+    ERR_ANALYSIS = 1003
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.strServerURL = ""
-        self.model_name = ""
+        self.strServerURL = "http://localhost:1234/v1"
+        self.model_name = None
         self.ntMaxToken = 8192
-        self.blZapreshchen = False  # Пользователь запретил обработку
-        self.blIsworking = False  # Идёт ли обработка прямо сейчас
-        self.strSoderjankoe = ""  # Содержимое анализируемого фрагмента
-        self.blAnalyzeActive = False  # Флаг активности процесса анализа
+        self.blZapreshchen = False   # Пользователь запретил обработку
+        self.blIsworking = False     # Идёт ли обработка прямо сейчас
+        self.worker = None
+
+        # ВАЖНО: ссылка на текущий открытый HTTP-response.
+        # Нужна, чтобы по stopOrfografiya() реально оборвать соединение,
+        # а не просто выставить флаг, который никто не проверяет во время
+        # блокирующего ожидания ответа от сервера.
+        self._active_response = None
+        self._response_lock = threading.Lock()
 
     @pyqtSlot(str)
-    def ustServerURL(self, url):
+    def ustServerURL(self, server_url):
         """Устанавливает URL сервера для HTTP-запросов"""
-        self.strServerURL = url
-        self.strLog.emit(f"URL сервера обновлён: {self.strServerURL}")
+        server_url = server_url.strip().rstrip('/')
+        if not server_url.endswith('/v1'):
+            server_url += '/v1'
+        self.strServerURL = server_url
+        self.strLog.emit(f"pyOrfograf: URL сервера обновлён: {self.strServerURL}")
 
     @pyqtSlot(str, int)
     def ustParametri(self, model_name, ntMaxToken):
-        """
-        Устанавливает текущую модель и максимальный размер контекста
-        Args:
-            model_name (str): Название модели
-            ntMaxToken (int): Максимальный размер контекста в токенах
-        """
-        self.model_name = model_name
+        """Устанавливает текущую модель и максимальный размер контекста (в токенах)"""
+        if model_name == "" or model_name == "(отсутствует)":
+            self.model_name = None
+        else:
+            self.model_name = model_name
         self.ntMaxToken = ntMaxToken
         self.strLog.emit(f"Параметры обновлены: {model_name}, контекст: {ntMaxToken}")
 
     @pyqtSlot(list, str, float, int, int)
-    def startOrfografiya(self, filePaths, strPut, rlTemperatura,
-                         ntKontekst, ntPerekritieProcent):
+    def startOrfografiya(self, filePaths, strPut, rlTemperatura, ntKontekst, ntPerekritieProcent):
         """
         Запускает исправление орфографии в фоне, по одному документу.
         Args:
             filePaths (list): Список путей к .txt документам
             strPut (str): Папка сохранения исправленных документов
             rlTemperatura (float): Температура ИИ модели
-            ntKontekst (int): Размер фрагмента в символах
+            ntKontekst (int): Размер фрагмента в СИМВОЛАХ (не путать с ntMaxToken!)
             ntPerekritieProcent (int): Перекрытие фрагментов в процентах
         """
         if self.blIsworking:
-            self.strOshibka.emit(self.ERR_ANALYSIS,
-                                 "Обработка орфографии уже выполняется.")
+            self.strOshibka.emit(self.ERR_ANALYSIS, "Обработка орфографии уже выполняется.")
             return
         if not self.strServerURL:
             self.strOshibka.emit(self.ERR_ANALYSIS,
-                                 "URL сервера не установлен. Проверьте запуск сервера LLM.")
+                                  "URL сервера не установлен. Проверьте запуск сервера LLM.")
             return
         if not filePaths:
             self.strOshibka.emit(self.ERR_ANALYSIS, "Не выбраны документы для обработки.")
             return
-        self.blZapreshchen = False  # Разрешаем новую обработку
+
+        # На всякий случай гасим предыдущий поток, если он почему-то ещё жив
+        if self.worker and self.worker.isRunning():
+            self.worker.quit()
+            self.worker.wait()
+
+        self.blZapreshchen = False
         self.blIsworking = True
-        threading.Thread(
-            target=self._fnProtsitOrfografiju,
-            args=(filePaths, strPut, rlTemperatura, ntKontekst, ntPerekritieProcent),
-            daemon=True
-        ).start()
+
+        self.worker = DCOrfografWorker(self, filePaths, strPut, rlTemperatura,
+                                        ntKontekst, ntPerekritieProcent)
+        self.worker.start()
 
     @pyqtSlot()
     def stopOrfografiya(self):
-        """Пользователь отменил обработку орфографии"""
+        """
+        Пользователь отменил обработку орфографии.
+        ВАЖНО: одного флага недостаточно — поток может стоять внутри
+        блокирующего чтения ответа от сервера. Поэтому здесь дополнительно
+        форсированно закрываем активное HTTP-соединение: в режиме stream=True
+        сервер (LM Studio/llama.cpp) видит обрыв и реально прекращает генерацию
+        токенов, а не продолжает считать "в пустоту".
+        """
         self.blZapreshchen = True
         self.strLog.emit("Пользователь запретил обработку орфографии.")
+
+        with self._response_lock:
+            if self._active_response is not None:
+                try:
+                    self._active_response.close()
+                    self.strLog.emit("🔌 Активное соединение с сервером разорвано.")
+                except Exception:
+                    pass
+
+        if self.worker and self.worker.isRunning():
+            self.worker.quit()
+            if not self.worker.wait(3000):
+                # Крайний случай — поток завис не в HTTP, а где-то ещё
+                self.worker.terminate()
+                self.worker.wait()
+
+        self.blIsworking = False
 
     # ------------------------------------------------------------------
     def _fnRazrezatTekst(self, strTekst, ntKontekst, ntPerekritieProcent):
@@ -106,16 +165,15 @@ class DCOrfograf(QObject):
         if len_text == 0:
             return fragments
         ntPerekritie = int(ntKontekst * ntPerekritieProcent / 100)
-        ntPerekritie = min(ntPerekritie, ntKontekst // 2)  # Перекрытие не больше половины
+        ntPerekritie = min(ntPerekritie, ntKontekst // 2)
         ntShag = max(1, ntKontekst - ntPerekritie)
         ntNachalo = 0
         while ntNachalo < len_text:
             ntKonec = min(ntNachalo + ntKontekst, len_text)
-            # Двигаем конец к границе предложения (ищем после желаемого конца)
             if ntKonec < len_text:
                 for ch in ('.', '!', '?', '\n'):
                     ntGranica = strTekst.find(ch, ntKonec - 1,
-                                              min(ntKonec + int(ntKontekst * 0.1), len_text))
+                                               min(ntKonec + int(ntKontekst * 0.1), len_text))
                     if ntGranica != -1:
                         ntKonec = ntGranica + 1
                         break
@@ -126,73 +184,199 @@ class DCOrfograf(QObject):
         return fragments
 
     # ------------------------------------------------------------------
-    def _fnPostavitZapyt(self, strSoderjankoe, rlTemperatura):
+    def _fnVichislitMaxTokens(self, strSoderjankoe):
         """
-        Делает HTTP запрос к OpenAI-совместимому API на исправление орфографии.
-        Returns: исправленный текст, "ОШИБКА: описание" или None при отмене.
+        Считает безопасный max_tokens для ОДНОГО запроса исправления фрагмента.
+        ВАЖНО: современные "thinking"/reasoning модели (MoE-архитектуры типа
+        a3b/a4b) перед финальным ответом генерируют служебный блок размышлений
+        (<think>...</think> или отдельное поле reasoning_content). Этот расход
+        токенов НЕ зависит от длины входного текста — он может быть большим
+        даже для одного предложения. Поэтому нельзя считать max_tokens только
+        от длины фрагмента: при маленьком фрагменте модель получает мизерный
+        лимит, тратит его весь на размышление и не успевает дать ответ —
+        content остаётся пустым, хотя генерация честно отработала и упёрлась
+        в лимит (finish_reason: length).
         """
-        try:
-            url = f"{self.strServerURL}/chat/completions"
-            payload = {
-                "model": self.model_name,
-                "messages": [
-                    {
-                        "role": "system",
-                        "content": "Ты — корректор русских текстов. Исправь только орфографию, "
-                                   "опечатки и пунктуацию. Не перефразируй, не меняй стиль, "
-                                   "структуру и смысл, не удаляй и не добавляй абзацы. "
-                                   "Ответь ТОЛЬКО исправленным текстом без пояснений, "
-                                   "комментариев и разметки."
-                    },
-                    {"role": "user", "content": strSoderjankoe}
-                ],
-                "stream": False,
-                "temperature": rlTemperatura
-            }
-            timeout = 600000  # 10 минут
-            response = requests.post(url, json=payload, timeout=timeout)
-            response.raise_for_status()
-            result = response.json()
-            if 'error' in result:
-                self.strLog.emit(f"❌ API error: {result['error']}")
-                return f"ОШИБКА: {result['error']}"
-            content = result['choices'][0]['message']['content']
-            return content.strip()
-        except requests.exceptions.Timeout as e:
-            self.strLog.emit(f"⏱️ Timeout: {str(e)}")
-            return "ОШИБКА: Timeout"
-        except requests.exceptions.RequestException as e:
-            error_type = type(e).__name__
-            status_code = getattr(e, 'status_code', 'N/A')
-            self.strOshibka.emit(self.ERR_REQUEST, f"HTTP {status_code}: {error_type}")
-            self.strLog.emit(f"❌ {status_code}: {error_type}")
-            return f"ОШИБКА: {error_type}"
-        except json.JSONDecodeError as e:
-            self.strOshibka.emit(self.ERR_JSON, f"JSON ошибка: {str(e)}")
-            return None
-        except Exception as e:
-            error_msg = str(e).lower()
-            if "abort" in error_msg or "cancel" in error_msg or "canceled" in error_msg:
-                return None
-            self.strOshibka.emit(self.ERR_GENERIC, str(e))
-            return "ОШИБКА: " + str(e)
+        fragment_tokens = max(50, int(len(strSoderjankoe) / CHARS_PER_TOKEN))
+        zhelaemo = int(fragment_tokens * 1.5) + 200
 
+        # Фиксированный запас под возможное "размышление" модели.
+        # Если модель не thinking — эти токены просто не используются,
+        # ответ придёт раньше лимита. Если thinking — без этого запаса
+        # ответа не будет вообще никогда, независимо от размера фрагмента.
+        THINKING_RESERV = 2000
+        zhelaemo += THINKING_RESERV
+
+        dostupno = max(512, self.ntMaxToken - fragment_tokens - RESERV_TOKENS)
+        final_tokens = min(zhelaemo, dostupno)
+
+        if final_tokens < zhelaemo:
+            self.strLog.emit(
+                f"⚠ Контекст модели ({self.ntMaxToken}) мал, ответ ограничен {final_tokens} токенами "
+                f"(запрошено бы {zhelaemo})"
+            )
+        print(f"[DCOrfograf] max_tokens для фрагмента ({len(strSoderjankoe)} симв.): {final_tokens}")
+        return final_tokens
+
+    # ------------------------------------------------------------------
+    MAX_TOKENS_RETRY_MULTIPLIER = 2.5   # во сколько раз увеличиваем бюджет при повторе
+    MAX_RETRY_ATTEMPTS = 2              # сколько раз пробуем увеличивать
+
+    def _fnPostavitZapyt(self, strSoderjankoe, rlTemperatura):
+        if self.blZapreshchen:
+            return None
+
+        max_tokens = self._fnVichislitMaxTokens(strSoderjankoe)
+        # Потолок, выше которого увеличивать бессмысленно (упираемся в контекст модели)
+        hard_ceiling = max(max_tokens, self.ntMaxToken - int(len(strSoderjankoe) / CHARS_PER_TOKEN) - 500)
+
+        attempt = 0
+        while True:
+            result, finish_reason, reasoning_len = self._fnOdinZapros(
+                strSoderjankoe, rlTemperatura, max_tokens
+            )
+            if result is None:  # остановлено пользователем / сетевая ошибка
+                return None
+            if not result.startswith("ОШИБКА:"):
+                return result  # успех
+
+            # Если пусто именно из-за нехватки токенов на размышление — пробуем повторить с большим лимитом
+            if finish_reason == "length" and attempt < MAX_RETRY_ATTEMPTS and max_tokens < hard_ceiling:
+                attempt += 1
+                new_max_tokens = min(int(max_tokens * MAX_TOKENS_RETRY_MULTIPLIER), hard_ceiling)
+                self.strLog.emit(
+                    f"🔄 Модель не уложилась в {max_tokens} токенов (reasoning={reasoning_len} симв.), "
+                    f"повтор #{attempt} с лимитом {new_max_tokens}..."
+                )
+                if self.blZapreshchen:
+                    return None
+                max_tokens = new_max_tokens
+                continue
+
+            # Исчерпали попытки или ошибка другого рода
+            return result
+    # ------------------------------------------------------------------
+    def _fnOdinZapros(self, strSoderjankoe, rlTemperatura, max_tokens):
+        """
+        Один HTTP-запрос к LLM. Возвращает (result, finish_reason, reasoning_len).
+        result может начинаться с "ОШИБКА:" — тогда вызывающий код решает, повторять или нет.
+        """
+        payload = {
+            "messages": [
+                {
+                    "role": "system",
+                    "content": (
+                        "Ты — профессиональный корректор русского языка. "
+                        "Твоя ЕДИНСТВЕННАЯ задача — найти и исправить орфографические, пунктуационные и грамматические ошибки (неправильные окончания, согласование слов, слитное/раздельное написание).\n\n"
+                        "ОБЯЗАТЕЛЬНО исправляй ошибки, даже если текст короткий или выглядит разговорным. "
+                        "НЕ оставляй текст без изменений, если в нём есть ошибки.\n\n"
+                        "Запрещено: сокращать предложения, менять смысл, стиль изложения, порядок предложений, удалять или добавлять абзацы, добавлять новые мысли.\n\n"
+                        "Ответь ТОЛЬКО исправленным текстом, без пояснений, кавычек, комментариев, разметки markdown и фразы 'вот исправленный текст'."
+                    )
+                },
+                {"role": "user", "content": f"Исправь ошибки в следующем тексте:\n\n{strSoderjankoe}"}
+            ],
+            "temperature": rlTemperatura,
+            "max_tokens": max_tokens,
+            "stream": True,
+            # Пробуем отключить "размышление" для moделей, чья jinja-шаблон это поддерживает
+            # (изначально параметр для Qwen3, но некоторые llama.cpp-шаблоны уважают его
+            # универсально). Если модель/шаблон его не знает — просто игнорируется,
+            # вреда не будет.
+            "chat_template_kwargs": {"enable_thinking": False},
+        }
+        if self.model_name:
+            payload["model"] = self.model_name
+
+        url = f"{self.strServerURL}/chat/completions"
+        response = None
+        try:
+            response = requests.post(
+                url, json=payload, stream=True,
+                timeout=(TIMEOUT_CONNECT, TIMEOUT_READ_CHUNK)
+            )
+            with self._response_lock:
+                self._active_response = response
+            response.raise_for_status()
+
+            content_parts = []
+            reasoning_parts = []
+            finish_reason = None
+
+            for raw_line in response.iter_lines():
+                if self.blZapreshchen:
+                    break
+                if not raw_line:
+                    continue
+                line = raw_line.decode("utf-8", errors="replace")
+                if not line.startswith("data:"):
+                    continue
+                data_str = line[len("data:"):].strip()
+                if data_str == "[DONE]":
+                    break
+                try:
+                    chunk = json.loads(data_str)
+                except json.JSONDecodeError:
+                    continue
+                choices = chunk.get("choices") or [{}]
+                choice0 = choices[0]
+                delta = choice0.get("delta", {}) or {}
+                if choice0.get("finish_reason"):
+                    finish_reason = choice0.get("finish_reason")
+                piece = delta.get("content", "")
+                if piece:
+                    content_parts.append(piece)
+                reasoning_piece = delta.get("reasoning_content", "")
+                if reasoning_piece:
+                    reasoning_parts.append(reasoning_piece)
+
+            if self.blZapreshchen:
+                return None, None, 0
+
+            result = "".join(content_parts).strip()
+            reasoning_text = "".join(reasoning_parts).strip()
+
+            if not result:
+                return (f"ОШИБКА: Пустой ответ (finish_reason={finish_reason}, "
+                        f"reasoning={len(reasoning_text)} симв.)", finish_reason, len(reasoning_text))
+            return result, finish_reason, len(reasoning_text)
+
+        except requests.exceptions.Timeout as e:
+            if self.blZapreshchen:
+                return None, None, 0
+            self.strLog.emit(f"⏱️ Timeout: {str(e)}")
+            return "ОШИБКА: Timeout", "timeout", 0
+        except requests.exceptions.RequestException as e:
+            if self.blZapreshchen:
+                return None, None, 0
+            error_type = type(e).__name__
+            self.strOshibka.emit(self.ERR_REQUEST, f"{error_type}: {str(e)}")
+            return f"ОШИБКА: {error_type}", "error", 0
+        except Exception as e:
+            if self.blZapreshchen:
+                return None, None, 0
+            self.strOshibka.emit(self.ERR_GENERIC, str(e))
+            return "ОШИБКА: " + str(e), "error", 0
+        finally:
+            with self._response_lock:
+                self._active_response = None
+            if response is not None:
+                try:
+                    response.close()
+                except Exception:
+                    pass
     # ------------------------------------------------------------------
     def _fnSkleitFragmeny(self, fragments, corrected, ntKontekst, ntPerekritieProcent):
         """
-        Склеивает исправленные фрагменты, убирая дублированное перекрытие:
-        из каждого следующего фрагмента вырезается начало, совпадающее
-        с концом предыдущего.
-        Returns: склеенный текст
+        Склеивает исправленные фрагменты, убирая дублированное перекрытие.
         """
         result = corrected[0]
         for i in range(1, len(corrected)):
             pred = result
             cur = corrected[i]
             ntPerekritie = min(int(ntKontekst * ntPerekritieProcent / 100),
-                               len(pred), len(cur))
+                                len(pred), len(cur))
             ntNaideno = 0
-            # Ищем самое длинное совпадение конца предыдущего с началом следующего
             for j in range(ntPerekritie, 9, -1):
                 if pred[-j:] == cur[:j]:
                     ntNaideno = j
@@ -205,10 +389,7 @@ class DCOrfograf(QObject):
 
     # ------------------------------------------------------------------
     def _fnPutDljaSohraneniya(self, strPapka, strImya):
-        """
-        Строит путь сохранения: (имя)_орфография.txt, при конфликте _1, _2...
-        Returns: полный путь
-        """
+        """Строит путь сохранения: (имя)_орфография.txt, при конфликте _1, _2..."""
         os.makedirs(strPapka, exist_ok=True)
         stem = Path(strImya).stem
         put = os.path.join(strPapka, stem + "_орфография.txt")
@@ -219,8 +400,7 @@ class DCOrfograf(QObject):
         return put
 
     # ------------------------------------------------------------------
-    def _fnProtsitOrfografiju(self, filePaths, strPut, rlTemperatura,
-                              ntKontekst, ntPerekritieProcent):
+    def _fnProtsitOrfografiju(self, filePaths, strPut, rlTemperatura, ntKontekst, ntPerekritieProcent):
         """
         Основной поток обработки: каждый документ режется на фрагменты,
         каждый фрагмент исправляется ИИ, фрагменты склеиваются и сохраняются.
@@ -230,9 +410,11 @@ class DCOrfograf(QObject):
             ntOshibok = 0
             if strPut == "":
                 strPut = str(Path.home())
-            for filePath in filePaths:  # Идём по списку документов
+
+            for filePath in filePaths:
                 if self.blZapreshchen:
                     break
+
                 strImya = os.path.basename(filePath)
                 try:
                     with open(filePath, 'r', encoding='utf-8', errors='replace') as f:
@@ -241,32 +423,45 @@ class DCOrfograf(QObject):
                     ntOshibok += 1
                     self.strOshibka.emit(self.ERR_GENERIC, f"{strImya}: {str(e)}")
                     continue
+
                 fragments = self._fnRazrezatTekst(strTekst, ntKontekst, ntPerekritieProcent)
                 if not fragments:
                     self.strLog.emit(f"Пустой документ пропущен: {strImya}")
                     continue
-                corrected = []  # Исправленные фрагменты текущего документа
-                blPrervali = False  # Прерываем только цикл по фрагментам
-                for nt in range(len(fragments)):  # Идём по фрагментам текста
+
+                corrected = []
+                blPrervali = False
+                for nt in range(len(fragments)):
+                    if self.blZapreshchen:
+                        blPrervali = True
+                        break
+
                     self.sigProgress.emit(strImya, nt, len(fragments))
                     self.strLog.emit(f"Обработка {strImya}: фрагмент {nt + 1}/{len(fragments)}")
-                    self.blAnalyzeActive = True
-                    self.strSoderjankoe = fragments[nt]
-                    result = self._fnPostavitZapyt(self.strSoderjankoe, rlTemperatura)
+
+                    result = self._fnPostavitZapyt(fragments[nt], rlTemperatura)
+
                     if self.blZapreshchen or result is None:
                         blPrervali = True
                         break
                     if result.startswith("ОШИБКА:"):
-                        corrected.append(fragments[nt])  # Оставляем как есть
+                        msg = f"{strImya}, фрагмент {nt+1}/{len(fragments)}: {result}"
+                        self.strLog.emit(f"⚠ Не исправлен: {msg}")
+                        self.strOshibka.emit(self.ERR_ANALYSIS, msg)
+                        corrected.append(fragments[nt])
                         continue
+
+                    if result.strip() == fragments[nt].strip():#модель могла вернуть текст без изменений
+                        print(f"[DCOrfograf] ⚠ Фрагмент {nt+1}: модель вернула ТЕКСТ БЕЗ ИЗМЕНЕНИЙ")
+                        print(f"[DCOrfograf]   Оригинал:  {fragments[nt]!r}")
+                        print(f"[DCOrfograf]   Результат: {result!r}")
                     corrected.append(result)
-                self.blAnalyzeActive = False
+
                 if blPrervali:
                     self.strLog.emit(f"Документ не сохранён (отмена): {strImya}")
                     break
-                # Склеиваем фрагменты с устранением перекрытий
-                sborka = self._fnSkleitFragmeny(fragments, corrected,
-                                                ntKontekst, ntPerekritieProcent)
+
+                sborka = self._fnSkleitFragmeny(fragments, corrected, ntKontekst, ntPerekritieProcent)
                 put = self._fnPutDljaSohraneniya(strPut, strImya)
                 try:
                     with open(put, 'w', encoding='utf-8') as f:
@@ -275,18 +470,21 @@ class DCOrfograf(QObject):
                     ntOshibok += 1
                     self.strOshibka.emit(self.ERR_GENERIC, f"{strImya}: {str(e)}")
                     continue
+
                 ntVseho += 1
                 ntIzmenenij = sum(1 for a, b in zip(fragments, corrected) if a != b)
                 self.sigDokumentGotov.emit(strImya, put, ntIzmenenij)
                 self.strLog.emit(f"✅ Документ сохранён: {put}")
                 self.sigProgress.emit(strImya, len(fragments), len(fragments))
+
             if self.blZapreshchen:
-                self.strLog.emit(f"Орфография прервана пользователем ({'остановлен' if not self.model_name else 'модель'})")
+                self.strLog.emit("Орфография прервана пользователем")
+
             self.strLog.emit(f"Обработка завершена. Сохранено: {ntVseho}, ошибок: {ntOshibok}")
             self.sigVseGotovo.emit(ntVseho, ntOshibok)
+
         except Exception as e:
             self.strOshibka.emit(self.ERR_GENERIC, str(e))
             self.strLog.emit(f"КРИТИЧЕСКАЯ ошибка обработки: {str(e)}")
         finally:
             self.blIsworking = False
-            self.blAnalyzeActive = False
