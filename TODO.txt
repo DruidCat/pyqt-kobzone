@@ -332,3 +332,4 @@ TODO:
 2026-10-30 pyOrfograf, реализовал исправление орфографических и граматически ошибок в txt файлах с помощью ИИ.
 
 2026-10-30 StrOrfograf, кнопка настроек теперь открывает SetStudio вместо SetOrfograf.
+2026-10-30 StrOrfograf, добавил knopkaSidebar (хоткей, пункт меню, клик); fnClickedSidebar() пока пуста.

@@ -221,6 +221,10 @@ Item {
                 fnClickedMenu()//Функция Настройки
                 event.accepted = true
                 return
+            } else if (event.key === Qt.Key_S || event.key === 1067) {
+                fnClickedSidebar()//Функция открытия боковой панели
+                event.accepted = true
+                return
             }
         }
         if (event.modifiers & Qt.ControlModifier) {
@@ -300,6 +304,9 @@ Item {
     function fnClickedMenu() {
 		fnClickedEscape()//Функция нажатия на клавишу Escape
 		root.clickedSettings()//Сигнал излучает открытие настроек.
+    }
+    function fnClickedSidebar() {//Функция нажатия кнопки SideBar (боковая панель).
+        //Пока ничего не делает: боковая панель на странице орфографии ещё не подготовлена.
     }
     function fnClickedInfo() {
 		fnClickedEscape()//Функция нажатия на клавишу Escape
@@ -435,6 +442,18 @@ Item {
             tapHeight: root.ntWidth * root.ntCoff + root.ntCoff
             tapWidth: tapHeight * root.tapZagolovokLevi
             onClicked: fnClickedNazad()//Функция закрытия страницы.
+        }
+        DCKnopkaSidebar {//Кнопка боковой панели страницы орфографии.
+            id: knopkaSidebar
+            ntWidth: root.ntWidth
+            ntCoff: root.ntCoff
+            anchors.verticalCenter: tmZagolovok.verticalCenter
+            anchors.right: knopkaMenu.left
+            clrKnopki: root.clrTexta
+            tapHeight: root.ntWidth * root.ntCoff + root.ntCoff
+            tapWidth: tapHeight * root.tapZagolovokPravi
+            isInvers: true
+            onClicked: if (!fnCloseMenuIfOpen()) fnClickedSidebar()//Функция нажатия кнопки SideBar.
         }
         DCKnopkaMenu {
             id: knopkaMenu
@@ -664,8 +683,10 @@ Item {
                 }  else if (ntNomer === 3) {
                     fnClickedMenu()
                 } else if (ntNomer === 4) {
-                    fnClickedInfo()
+                    fnClickedSidebar()//Функция нажатия кнопки SideBar (боковая панель).
                 } else if (ntNomer === 5) {
+                    fnClickedInfo()
+                } else if (ntNomer === 6) {
                     Qt.quit()
                 }
             }
