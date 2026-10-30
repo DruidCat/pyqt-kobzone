@@ -665,6 +665,7 @@ Item {
 						ntHeight: root.ntWidth; ntCoff: root.ntCoff
 						clrKnopki: root.clrTexta; clrTexta: root.clrFona
 						Layout.fillWidth: true //Растягиваемся по всей длине
+						Layout.preferredHeight: root.ntWidth * root.ntCoff + root.ntCoff
 						onClicked: {
 							if (!fnCloseMenuIfOpen()) {
 								fnClickedZagruzka()//Функция открывающая Файловый диалог загрузки файлов
@@ -725,6 +726,7 @@ Item {
 						ntHeight: root.ntWidth; ntCoff: root.ntCoff
 						clrKnopki: "grey"; clrTexta: root.clrFona
 						Layout.fillWidth: true //Растягиваемся по всей длине
+						Layout.preferredHeight: root.ntWidth * root.ntCoff + root.ntCoff
 						onClicked: {
 							if (!fnCloseMenuIfOpen()) {
 								fnClickedRAG()//Функция Добавляющая RAG базу данных
