@@ -403,7 +403,8 @@ ApplicationWindow {
 					Qt.callLater(function() { stvStr.currentItem.forceActiveFocus() })
 				}
 				onClickedSettings: {
-					stvStr.push(pgStrSetOrfograf)
+					tmSetStudio.fnStatus(true)//Проверка запуска студии
+					stvStr.push(pgStrSetStudio)
 				}
 				onClickedInfo: {
 					tmStrInstrukciya.strInstrukciya = "orfograf"
