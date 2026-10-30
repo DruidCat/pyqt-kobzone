@@ -21,6 +21,12 @@ QtObject {
 	property string analizer_put_rag: ""
 	property bool analizer_rag_skleit: false//true - включен режим склеивания rag чанков.
 	property int analizer_rag_kolichestvo: 2// 1-5 склеить количество чанков до и после совпадения.
+	//Исправление орфографии
+	property real orfograf_temperatura: 0.2//Температура ИИ модели, чем выше, тем креативней ответ. 0-1
+	property int orfograf_perekritie: 15//Перекрытие соседнего фрагмента в процентах: 15 это 15%
+	property int orfograf_kontekst: 6000//Размер фрагмента документа в символах, подаваемого ИИ за раз.
+	property string orfograf_put_text: ""
+	property string orfograf_put_rezultat: ""
 	//LM Studio 
 	property string studio_lms_put: ""//По умолчанию путь не задан
 	property string studio_cli_put: ""//По умолчанию путь не задан
@@ -66,6 +72,12 @@ QtObject {
         property alias analizer_put_rag: root.analizer_put_rag
         property alias analizer_rag_skleit: root.analizer_rag_skleit
         property alias analizer_rag_kolichestvo: root.analizer_rag_kolichestvo
+		//Исправление орфографии
+		property alias orfograf_temperatura: root.orfograf_temperatura
+		property alias orfograf_perekritie: root.orfograf_perekritie
+		property alias orfograf_kontekst: root.orfograf_kontekst
+		property alias orfograf_put_text: root.orfograf_put_text
+		property alias orfograf_put_rezultat: root.orfograf_put_rezultat
 		//LM Studio
 		property alias studio_lms_put: root.studio_lms_put
 		property alias studio_cli_put: root.studio_cli_put
@@ -119,6 +131,12 @@ QtObject {
         }
 		if (rag_put_db === "") {//Если настройки ёще были записаны, то...
             rag_put_db = urlDocuments//Записываем в реестр
+        }
+		if (orfograf_put_text === "") {//Если настройки ёще были записаны, то...
+            orfograf_put_text = urlDocuments//Записываем в реестр
+        }
+		if (orfograf_put_rezultat === "") {//Если настройки ёще были записаны, то...
+            orfograf_put_rezultat = urlDocuments//Записываем в реестр
         }
     }
 	function fnUrlToLocalPath(url) {//Функция кроссплатформенного преобразования URL в путь
