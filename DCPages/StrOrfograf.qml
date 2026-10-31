@@ -147,7 +147,7 @@ Item {
 						pyOrfograf.startOrfografiya(root.strSpisokDokumentov,
 													DCSettings.orfograf_put_rezultat,
 													DCSettings.orfograf_temperatura,
-													DCSettings.orfograf_kontekst,
+													DCSettings.studio_max_context,
 													DCSettings.orfograf_perekritie)
 					}
 				} else {//Если пустая строка, то...
@@ -167,7 +167,7 @@ Item {
 				pyOrfograf.startOrfografiya(root.strSpisokDokumentov,
 													DCSettings.orfograf_put_rezultat,
 													DCSettings.orfograf_temperatura,
-													DCSettings.orfograf_kontekst,
+													DCSettings.studio_max_context,
 													DCSettings.orfograf_perekritie)
 			}
 		}
