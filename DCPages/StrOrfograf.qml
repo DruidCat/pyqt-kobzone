@@ -70,7 +70,7 @@ Item {
     	function onStrOshibka(ntCode, strMessage) {//Код ошибки и текст ошибки.
         	tmrLogo.running = false//Останавливаем анимацию логотипа (выход из режима анализа).
     		root.strOshibka = strMessage
-			txdOtvet.text += strMessage
+			txdRezultat.text += strMessage
 			root.log("❌ Ошибка [" + ntCode + "]: " + strMessage)
     		root.toolbar("❌ Ошибка [" + ntCode + "]: " + strMessage)
 			root.isServerZapustit = false
@@ -83,13 +83,13 @@ Item {
     		}
     	}
     	function onSigDokumentGotov(strImya, strPut, ntIzmenenij) {//Фрагменты склеены, файл сохранён.
-    		txdOtvet.text += "✅ " + strImya + " — исправлено мест: " + ntIzmenenij + "\n"
-    		txdOtvet.text += "   сохранён: " + strPut + "\n"
-    		txdOtvet.scrollBottom()
+    		txdRezultat.text += "✅ " + strImya + " — исправлено мест: " + ntIzmenenij + "\n"
+    		txdRezultat.text += "   сохранён: " + strPut + "\n"
+    		txdRezultat.scrollBottom()
     	}
     	function onSigVseGotovo(ntVseho, ntOshibok) {//Все документы обработаны.
-    		txdOtvet.text += "🏁 Готово: обработано " + ntVseho + ", ошибок: " + ntOshibok + "\n"
-    		txdOtvet.scrollBottom()
+    		txdRezultat.text += "🏁 Готово: обработано " + ntVseho + ", ошибок: " + ntOshibok + "\n"
+    		txdRezultat.scrollBottom()
 			tmrLogo.running = false//Анализ закончен: стоп логотип, кнопки обратно.
     	}
     }
@@ -369,7 +369,7 @@ Item {
 		if (DCSettings.orfograf_put_rezultat === ""){//Если путь для сохранения результатов пустой, то..
 			DCSettings.orfograf_put_rezultat = fnUrlToLocalPath(StandardPaths.writableLocation(StandardPaths.DocumentsLocation))
 		}
-        txdOtvet.text = "⏳ Исправление орфографии...\n"
+        txdRezultat.text = "⏳ Исправление орфографии...\n"
 		pyLM.zapustitServer()//Всегда запускаем сервер, даже если он запущен.
     }
     function fnClickedStop() {//Функция остановки исправления орфографии.
@@ -534,6 +534,9 @@ Item {
 		}
         Flickable {
             id: flcZona
+			//Свойства
+			property int __rezultatHeight: 0//Высота области Результата с кнопкой Сохранить Результат.
+			//Настройки
             anchors.fill: parent
             contentWidth: tmZona.width
             contentHeight: clmnContent.height
@@ -542,6 +545,13 @@ Item {
             boundsBehavior: Flickable.StopAtBounds
             opacity: 0.9//ГЛАВНАЯ ПРОЗРАЧНОСТЬ!!!
             anchors.rightMargin: dcSidebar.position * dcSidebar.width - dcSidebar.position * root.ntCoff
+			//Методы
+			onHeightChanged: {//Если изменяется высота Flickable, то...
+				flcZona.__rezultatHeight = flcZona.height 	- txtRezultat.height
+															- knopkaOsmotret.height
+															- txtKlavishi.height
+															- root.ntCoff * 3
+			}
             Behavior on opacity {
                 NumberAnimation {
                     duration: 300
@@ -619,16 +629,35 @@ Item {
                     clrKnopki: root.clrTexta; clrTexta: root.clrFona
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
-                    text: "✍️ исправить орфографию документов"
+					text: {
+						if(dcTimer.blStart) return "📊 исправление: " + dcTimer.strTimer
+						else return "✍️ исправить орфографию документов"
+					}
                     enabled: false
                     onClicked: {
                         if (!fnCloseMenuIfOpen()) fnClickedOrfograf()
                     }
                 } 
-                DCTextEdit {//Поле отчёта исправления орфографии
-                    id: txdOtvet
+				DCTimer {//Таймер
+					id: dcTimer
+					property string strVremyaAnaliza: ""
+				}
+				Text {//Результат
+					id: txtRezultat
+					text: {
+						let ltRezultat = "Результат: "
+						if(!dcTimer.blStart) ltRezultat += dcTimer.strVremyaAnaliza 
+						return ltRezultat
+					}
+                    font.pixelSize: root.ntWidth/2 * root.ntCoff
+                    color: root.clrTexta
+					font.bold: true//Жирный текст.
                     width: parent.width - parent.leftPadding - parent.rightPadding
-                    height: 180
+                }
+                DCTextEdit {//Поле отчёта исправления орфографии
+                    id: txdRezultat
+                    width: parent.width - parent.leftPadding - parent.rightPadding
+					height: flcZona.__rezultatHeight
                     ntWidth: root.ntWidth/2//разделить на 2, чтоб уменьшить размер шрифта и скролбар
                     ntCoff: root.ntCoff
                     readOnly: true
@@ -640,6 +669,7 @@ Item {
                     placeholderText: "Отчёт об исправлении орфографии появится здесь."
                 }
                 Text {//Подсказка по горячим клавишам
+					id: txtKlavishi
                     text: "Alt+← назад | Alt+F настройки | Ctrl+Enter старт | F1 справка"
                     color: "grey"
                     font.pixelSize: root.ntCoff * 1.1
@@ -679,7 +709,7 @@ Item {
             clrPolzunokOff: Qt.lighter(root.clrMenuFon, 1.3)
             clrPolzunokOn: root.clrTexta
             width: root.ntWidth * root.ntCoff
-            radius: 1
+            radius: 1	
             Behavior on opacity {
                 NumberAnimation {
                     duration: 300
@@ -737,6 +767,7 @@ Item {
 			property int interval: 2200//Интервал между смещением полосы.
 			onActiveChanged: {
 				if (active){//Если активировался прогресбар, то...
+					dcTimer.blStart = true//Запуск таймера.
 					dcSidebar.readOnly = true//Запрещено редактировать
 					dcSidebar.isEnabled = false
 					fnCloseSidebarIfOpen()
@@ -751,6 +782,8 @@ Item {
 					knopkaAnaliz.enabled = false
 					knopkaOsmotret.enabled = false					
 				} else {
+					dcTimer.strVremyaAnaliza = dcTimer.strTimer
+					dcTimer.blStart = false//Останавливаем таймер.
 					dcSidebar.readOnly = false//Разрешено редактировать
 					dcSidebar.isEnabled = true
 					knopkaInfo.visible = true
