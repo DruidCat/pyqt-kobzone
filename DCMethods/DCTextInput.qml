@@ -33,6 +33,28 @@ Item {
             Qt.inputMethod.reset();//Сбросить виртуальную клавиатуру, чтоб при удалении обновлялся текст.
         })
 	}
+    function fnOtkritMenuKopirovat(tochka) {//Открывает меню копирования по точке нажатия.
+        const tochkaVnutri = txnTextInput.mapToItem(root, tochka)//Точка в координатах виджета.
+        menuKop.x = Math.max(0, Math.min(root.width - menuKop.width, tochkaVnutri.x))
+        menuKop.y = Math.max(0, Math.min(root.height - menuKop.height, tochkaVnutri.y))
+        menuKop.visible = true
+    }
+    function fnSkopirovatVybran() {//Копирует выделенный текст в буфер обмена.
+        const ntDlina = txnTextInput.selectionEnd - txnTextInput.selectionStart
+        if (ntDlina > 0) {//Пустое выделение в буфер не пишем.
+            texKopii.text = txnTextInput.getText(txnTextInput.selectionStart, ntDlina)
+            texKopii.select(0, texKopii.text.length)//Выделяем всё в служебном поле.
+            texKopii.copy()//Clipboard в Qt6 из QML удалён, копируем через TextInput.
+            texKopii.text = ""//Очищаем, чтоб следующая строка не росла.
+        }
+        menuKop.visible = false
+    }
+    TextInput {//Служебный невидимый ввод: им пишем в буфер обмена (Clipboard удалён из QML).
+        id: texKopii
+        visible: false
+        readOnly: true
+    }
+
     Rectangle {
         id: rctTextInput
 		anchors.fill: root
@@ -106,6 +128,16 @@ Item {
                 }
                 //console.log(event.key);
             } 
+            MouseArea {//ПКМ по полю: всплывающее меню копирования выделенного.
+                id: maPravaKnopka
+                anchors.fill: parent
+                acceptedButtons: Qt.RightButton//Левую кнопку (курсор и выделение) не отбираем.
+                onClicked: (mouse) => {//Нажата правая кнопка мыши.
+                    if (txnTextInput.selectionEnd <= txnTextInput.selectionStart)//Выделенного текста нет.
+                        return
+                    fnOtkritMenuKopirovat(Qt.point(mouse.x, mouse.y))//Меню открываем в точке нажатия.
+                }
+            }
             Text {//Текст, подсказывающий пользователю, что нужно вводить.
                 id: txtTextInput
                 anchors.centerIn: txnTextInput//Обязательно по центру, иначе масштабирование не будет работать
@@ -140,6 +172,49 @@ Item {
 					}
 				}	
             }
+        }
+    }
+    MouseArea {//Пока меню открыто, клик мимо него закрывает меню.
+        id: maZakrytMenu
+        anchors.fill: parent
+        visible: menuKop.visible
+        z: 3//Ниже меню, но выше остального содержимого.
+        onClicked: menuKop.visible = false
+    }
+    Rectangle {//ВСПЛЫВАЮЩЕЕ меню «копировать»: ПКМ по выделенному тексту.
+        id: menuKop
+        //Настройки
+        visible: false
+        z: 4//Поверх содержимого виджета.
+        width: txtKop.paintedWidth + root.ntCoff//Ширина по надписи с полями.
+        height: root.ntCoff * root.ntWidth - 1//Высота текста (как у DCTextEdit).
+        clip: true//Надпись не выходит за пределы меню.
+        color: maKop.containsPress ? Qt.darker("SlateGray", 1.3) : "SlateGray"
+        border.width: 1
+        border.color: Qt.darker("SlateGray", 1.3)
+        onVisibleChanged: {//При закрытии снимаем фокус, чтоб горячие клавиши не попали в меню.
+            if (!visible && activeFocus)
+                forceActiveFocus(Qt.MouseFocusReason)//Передаём фокус родителю.
+        }
+        Text {//Надпись копирования выделенного текста.
+            id: txtKop
+            anchors.left: parent.left
+            anchors.leftMargin: root.ntCoff / 2
+            anchors.verticalCenter: parent.verticalCenter
+            color: root.clrTexta
+            text: "копировать"
+            font.pixelSize: dfsKop.ntShrift
+        }
+        DCFontSize {//Счётчик шрифта надписи: влезает в меню при любой ширине текста.
+            id: dfsKop
+            strTekst: txtKop.text
+            ntBazovy: root.ntCoff * root.ntWidth - 1//Базовая высота текста (как у DCTextEdit).
+            width: root.width - root.ntCoff * 2//Доступная надписи ширина.
+        }
+        MouseArea {//Клик по надписи — копируем выделенное в буфер обмена.
+            id: maKop
+            anchors.fill: parent
+            onClicked: fnSkopirovatVybran()
         }
     }
 	onWidthChanged: {//Если изменилась ширина прямоугольника, то...
@@ -240,6 +315,7 @@ Item {
     }
     TapHandler {//Обрабатывает нажатие только виджета, но не срабаывает на область txnTextInput
         id: tphRoot
+        acceptedButtons: Qt.LeftButton//ПКМ теперь открывает меню копирования.
         onTapped: {//Если тапнули, то...
             if(root.visible){//Если виджет видимый, то...
                 var vrX = point.position.x//Координата клика по X в виджете.
