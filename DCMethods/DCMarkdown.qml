@@ -7,6 +7,55 @@ QtObject {
         return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     }
 
+    function _mathMap(c) {//c - содержимое между $ знаками. null, если маппинга нет.
+        // LaTeX-команда -> юникод (стрелки, операторы, сравнение, множества, греческие).
+        var mathMap = {
+            '\\rightarrow': '→', '\\to': '→', '\\longrightarrow': '⟶',
+            '\\Rightarrow': '⇒', '\\leftarrow': '←', '\\longleftarrow': '⟵',
+            '\\Leftarrow': '⇐', '\\leftrightarrow': '↔', '\\Leftrightarrow': '⇔',
+            '\\mapsto': '↦', '\\uparrow': '↑', '\\downarrow': '↓',
+            '\\Uparrow': '↑', '\\Downarrow': '↓', '\\nearrow': '↗',
+            '\\searrow': '↘', '\\swarrow': '↙', '\\nwarrow': '↖',
+            '\\times': '×', '\\div': '÷', '\\pm': '±', '\\mp': '∓',
+            '\\cdot': '·', '\\ast': '∗', '\\star': '⋆',
+            '\\leq': '≤', '\\le': '≤', '\\geq': '≥', '\\ge': '≥',
+            '\\neq': '≠', '\\ne': '≠', '\\approx': '≈', '\\equiv': '≡',
+            '\\sim': '∼', '\\propto': '∝', '\\ll': '≪', '\\gg': '≫',
+            '\\in': '∈', '\\notin': '∉', '\\subset': '⊂', '\\subseteq': '⊆',
+            '\\supset': '⊃', '\\supseteq': '⊇', '\\cup': '∪', '\\cap': '∩',
+            '\\emptyset': '∅', '\\forall': '∀', '\\exists': '∃', '\\neg': '¬',
+            '\\land': '∧', '\\lor': '∨', '\\infty': '∞', '\\partial': '∂',
+            '\\nabla': '∇', '\\sqrt': '√', '\\angle': '∠', '\\perp': '⊥',
+            '\\alpha': 'α', '\\beta': 'β', '\\gamma': 'γ', '\\delta': 'δ',
+            '\\epsilon': 'ε', '\\zeta': 'ζ', '\\eta': 'η', '\\theta': 'θ',
+            '\\iota': 'ι', '\\kappa': 'κ', '\\lambda': 'λ', '\\mu': 'μ',
+            '\\nu': 'ν', '\\xi': 'ξ', '\\pi': 'π', '\\rho': 'ρ',
+            '\\sigma': 'σ', '\\tau': 'τ', '\\upsilon': 'υ', '\\phi': 'φ',
+            '\\chi': 'χ', '\\psi': 'ψ', '\\omega': 'ω',
+            '\\Gamma': 'Γ', '\\Delta': 'Δ', '\\Theta': 'Θ', '\\Lambda': 'Λ',
+            '\\Xi': 'Ξ', '\\Pi': 'Π', '\\Sigma': 'Σ', '\\Phi': 'Φ',
+            '\\Psi': 'Ψ', '\\Omega': 'Ω'
+        }
+        var r = c
+        for (var cmd in mathMap) {
+            // бэкслэш в ключе удваиваем, иначе \r в регулярке = возврат каретки.
+            var re = new RegExp(cmd.replace(/\\/g, '\\\\') + '(?![a-zA-Z])', 'g')
+            r = r.replace(re, mathMap[cmd])
+        }
+        return r !== c ? r : null
+    }
+
+    function _math(t) {//$...$ и $$...$$ заменяем юникодом; неизвестное оставляем как есть.
+        t = t.replace(/\$\$([^$\n]+?)\$\$/g, function(m, c) {
+            var r = _mathMap(c)
+            return r === null ? m : r
+        })
+        return t.replace(/\$([^$\n]+?)\$/g, function(m, c) {
+            var r = _mathMap(c)
+            return r === null ? m : r
+        })
+    }
+
     function _splitRow(row) {
         var t = row.trim()
         if (t.charAt(0) === '|') t = t.substring(1)
@@ -25,6 +74,8 @@ QtObject {
             codes.push(c)
             return "␁" + (codes.length - 1) + "␁"
         })
+        // 1.5 LaTeX математика ($...$ и $$...$$) в юникод-символы (стрелки и т.п.).
+        t = _math(t)
         // 2. экранировать
         t = t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
         // 3. картинки ДО ссылок!
