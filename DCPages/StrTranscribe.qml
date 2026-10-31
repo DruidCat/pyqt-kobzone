@@ -55,8 +55,82 @@ Item {
     signal clickedInfo()
 	signal toolbar(var strToolbar)
     signal log(var strLog)
-	//Методы
-    Keys.onPressed: (event) => {//Обработка горячих клавиш
+	//Методы 
+	Component.onCompleted: {
+        root.forceActiveFocus()
+    }
+	Connections {
+		target: pyLM
+		function onSigStudioStatus(blStatus){
+			if(root.isTranscribeClicked){//Если нажата кнопка Начать Транскрибацию
+				root.isTranscribeClicked = false//Сбрасываем флаг
+				function fnStart() {//Функция запуска Транскрибации.
+					if (!isTranscribing) {//Если транскрибация не запущена, то...
+						txdRezultat.strCopy = ""//Очищаем переменную Прогресса транскрибации.
+						txdRezultat.text = ""//Очищаем зону отображения прогресса транскрибации.
+						//Запускаем через бэкенд PyTranscriber.
+						pyTranscriber.start(DCSettings.transcribe_put_audio, DCSettings.transcribe_put_text)
+					}				
+				}
+				if(blStatus){//Если Studio запущена, то...
+					var vrModel = pyLM.polModel()
+					if(vrModel){//Если модель не пустая строка, значит она загружена.
+						vprVopros.ntVopros = 1//1 - выгрузить модель?
+						vprVopros.visible = true
+					} else fnStart()//Запускаем транскрибацию
+				} else fnStart()//Если студия не запущена, запускаем транскрибацию
+			}
+		}
+		function onSigModelVigrujena(blStatus){//Сигнал о выгрузке модели.
+			if(vprVopros.isModelOstanovit){//Если на этой странице запущена выгрузка модели, то...
+				vprVopros.isModelOstanovit = false//сбрасываю флаг
+				if(blStatus) root.toolbar(qsTr("Модель успешно выгрузилась."))
+				else root.toolbar(qsTr("Ошибка выгрузки модели."))
+			}
+		}
+	}
+	Connections {//Connections для транскрибера
+		target: pyTranscriber
+		function onTranscriptionStarted() {//Функция начала работы скрипта DCTranscribe.py
+			root.isTranscribing = true//Взводим флаг, что транскрибация началась.
+			tmrLogo.running = true//Запускаем анимацию логотипа и политику кнопок.
+		}
+		function onTranscriptionFinished(success, message) {//Функция окончания работы скрипта DCTranscribe.py
+			fnStopTranscriber()//Останавливаем транскрибацию.	
+			if (!success) {//Если ошибка, то...
+				txdRezultat.strCopy += "\n❌ Ошибка: " + message + "\n"
+				txdRezultat.text = txdRezultat.strCopy
+			}
+		}
+		function onLogMessage(message) {//Функция выводящая в Прогресс сообщения скрипта DCTranscribe.py
+			//Добавляем сообщение в лог
+			txdRezultat.strCopy += message + "\n"//Собираю сообщения в переменную.
+			txdRezultat.text = txdRezultat.strCopy//Отображаю в "Прогрессе транскрибации" сообщения со скрипта.
+			root.log (message)//В логи
+		}
+		function onProgressUpdate(current, total) {//Функция обновления прогресса из python
+			current = current - 1//Обязательно, чтоб с 0 прогресс начинался.
+			root.tekushiAudioFail = current
+			root.kolichestvoAudioFailov = total
+			if (ldrProgress.item) {
+				var progress = (current / (total)) * 100
+				ldrProgress.total = root.kolichestvoAudioFailov//Пересчёт скорости смещения полосы.
+				ldrProgress.item.progress = progress//Перемещение на позицию пропорции.
+				ldrProgress.item.text = `${current}/${total}`//Отображаем прогресс по середине полосы.
+			}
+		}
+	}
+	Connections {//Connections для pyFileOpener
+		target: pyFileOpener
+		function onSignalFileOpened(success, message) {
+			if (success) {
+
+			} else {
+				root.toolbar("Ошибка: " + message)
+			}
+		}
+	}
+	Keys.onPressed: (event) => {//Обработка горячих клавиш
         if (event.modifiers & Qt.AltModifier) {
             if (event.key === Qt.Key_Left) {
                 fnClickedNazad()
@@ -69,7 +143,7 @@ Item {
             }
         }
 		if (event.modifiers & Qt.ControlModifier) {
-            if (event.key === Qt.Key_T || event.key === 1045) {
+            if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
                 if (!menuMenu.visible && knopkaTranscribe.enabled) fnClickedTranscribe()
                 event.accepted = true
             } else if (event.key === Qt.Key_O || event.key === 1065) {
@@ -129,81 +203,7 @@ Item {
             event.accepted = true
         } 
 		//root.log(event.key)
-    }
-	Component.onCompleted: {
-        root.forceActiveFocus()
-    }
-	Connections {
-		target: pyLM
-		function onSigStudioStatus(blStatus){
-			if(root.isTranscribeClicked){//Если нажата кнопка Начать Транскрибацию
-				root.isTranscribeClicked = false//Сбрасываем флаг
-				function fnStart() {//Функция запуска Транскрибации.
-					if (!isTranscribing) {//Если транскрибация не запущена, то...
-						txdZona.strCopy = ""//Очищаем переменную Прогресса транскрибации.
-						txdZona.text = ""//Очищаем зону отображения прогресса транскрибации.
-						//Запускаем через бэкенд PyTranscriber.
-						pyTranscriber.start(DCSettings.transcribe_put_audio, DCSettings.transcribe_put_text)
-					}				
-				}
-				if(blStatus){//Если Studio запущена, то...
-					var vrModel = pyLM.polModel()
-					if(vrModel){//Если модель не пустая строка, значит она загружена.
-						vprVopros.ntVopros = 1//1 - выгрузить модель?
-						vprVopros.visible = true
-					} else fnStart()//Запускаем транскрибацию
-				} else fnStart()//Если студия не запущена, запускаем транскрибацию
-			}
-		}
-		function onSigModelVigrujena(blStatus){//Сигнал о выгрузке модели.
-			if(vprVopros.isModelOstanovit){//Если на этой странице запущена выгрузка модели, то...
-				vprVopros.isModelOstanovit = false//сбрасываю флаг
-				if(blStatus) root.toolbar(qsTr("Модель успешно выгрузилась."))
-				else root.toolbar(qsTr("Ошибка выгрузки модели."))
-			}
-		}
-	}
-	Connections {//Connections для транскрибера
-		target: pyTranscriber
-		function onTranscriptionStarted() {//Функция начала работы скрипта DCTranscribe.py
-			root.isTranscribing = true//Взводим флаг, что транскрибация началась.
-			tmrLogo.running = true//Запускаем анимацию логотипа и политику кнопок.
-		}
-		function onTranscriptionFinished(success, message) {//Функция окончания работы скрипта DCTranscribe.py
-			fnStopTranscriber()//Останавливаем транскрибацию.	
-			if (!success) {//Если ошибка, то...
-				txdZona.strCopy += "\n❌ Ошибка: " + message + "\n"
-				txdZona.text = txdZona.strCopy
-			}
-		}
-		function onLogMessage(message) {//Функция выводящая в Прогресс сообщения скрипта DCTranscribe.py
-			//Добавляем сообщение в лог
-			txdZona.strCopy += message + "\n"//Собираю сообщения в переменную.
-			txdZona.text = txdZona.strCopy//Отображаю в "Прогрессе транскрибации" сообщения со скрипта.
-			root.log (message)//В логи
-		}
-		function onProgressUpdate(current, total) {//Функция обновления прогресса из python
-			current = current - 1//Обязательно, чтоб с 0 прогресс начинался.
-			root.tekushiAudioFail = current
-			root.kolichestvoAudioFailov = total
-			if (ldrProgress.item) {
-				var progress = (current / (total)) * 100
-				ldrProgress.total = root.kolichestvoAudioFailov//Пересчёт скорости смещения полосы.
-				ldrProgress.item.progress = progress//Перемещение на позицию пропорции.
-				ldrProgress.item.text = `${current}/${total}`//Отображаем прогресс по середине полосы.
-			}
-		}
-	}
-	Connections {//Connections для pyFileOpener
-		target: pyFileOpener
-		function onSignalFileOpened(success, message) {
-			if (success) {
-
-			} else {
-				root.toolbar("Ошибка: " + message)
-			}
-		}
-	}
+    }	
 	Timer {//ТАЙМЕР анимации логотипа
         id: tmrLogo
         interval: 110
@@ -357,9 +357,9 @@ Item {
 			else return StandardPaths.writableLocation(StandardPaths.MusicLocation)
 		}
 		onAccepted: {
-			var vtPut = fnUrlToLocalPath(selectedFolder)//Используем кроссплатформенную функцию
-			DCSettings.transcribe_put_audio = vtPut
-			root.toolbar(`Транскрибация. Выбрана папка аудио: ${vtPut}`)//Сообщение в toolbar и журнал.
+			var vrPut = fnUrlToLocalPath(selectedFolder)//Используем кроссплатформенную функцию
+			DCSettings.transcribe_put_audio = vrPut
+			root.toolbar(`Транскрибация. Выбрана папка аудио: ${vrPut}`)//Сообщение в toolbar и журнал.
 		}
 	}	
 	FolderDialog {//Диалог выбора папки для текстовых файлов
@@ -372,9 +372,9 @@ Item {
 			else return StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
 		}
 		onAccepted: {
-			var vtPut = fnUrlToLocalPath(selectedFolder)//Используем кроссплатформенную функцию
-			DCSettings.transcribe_put_text = vtPut
-			root.toolbar(`Транскрибация. Выбрана папка результатов: ${vtPut}`)//Сообщение в toolbar и журнал.
+			var vrPut = fnUrlToLocalPath(selectedFolder)//Используем кроссплатформенную функцию
+			DCSettings.transcribe_put_text = vrPut
+			root.toolbar(`Транскрибация. Выбрана папка результатов: ${vrPut}`)//Сообщение в toolbar и журнал.
 		}
 	}	
 	FileDialog {//Диалог открытия текстового файла для просмотра
@@ -505,7 +505,8 @@ Item {
             }
 			//Методы
 			onHeightChanged: {//Если изменяется высота Flickable, то...
-				flcZona.__height = flcZona.height - txtProgress.height - knopkaOtkrit.height - root.ntCoff * 3
+				flcZona.__height = flcZona.height 	- txtProgress.height - knopkaOtkrit.height
+													- txtKlavishi.height - root.ntCoff * 4
 			}
 			TapHandler {//Нажимаем на всю область виджета.
 				onTapped: {
@@ -601,7 +602,7 @@ Item {
                     width: parent.width - parent.leftPadding - parent.rightPadding
                 }
 				DCTextEdit {
-					id: txdZona
+					id: txdRezultat
 					property string strCopy: ""
                     width: parent.width - parent.leftPadding - parent.rightPadding
 					height: flcZona.__height
@@ -618,9 +619,15 @@ Item {
 						fnCloseMenuIfOpen()
 					}
 				}
+				Text {//Подсказка по горячим клавишам
+					id: txtKlavishi
+                    text: "Alt+← назад | Alt+F настройка транскрибации | Ctrl+Enter старт транскрибации | F1 справка"
+                    color: "grey"
+                    font.pixelSize: root.ntCoff * 1.1
+                }
 				DCKnopkaOriginal {//Кнопка "Открыть результат транскрибации."
                     id: knopkaOtkrit
-                    text: "открыть результаты транскрибации"
+                    text: "👁 открыть результаты транскрибации"
                     ntHeight: root.ntWidth; ntCoff: root.ntCoff
                     clrKnopki: root.clrTexta; clrTexta: root.clrFona
                     anchors.left: parent.left; anchors.right: parent.right

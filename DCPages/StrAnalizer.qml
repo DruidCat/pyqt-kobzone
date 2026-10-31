@@ -69,8 +69,8 @@ Item {
 				ldrProgress.item.text = `${ntProgress}/${cnTotal} ${strText}`//Отображаем в полосе загрузки.
 				ldrProgress.item.progress = ntProgress * cnConst
 			}
-			txdOtvet.text += strText + "\n"
-			txdOtvet.scrollBottom()
+			txdRezultat.text += strText + "\n"
+			txdRezultat.scrollBottom()
 		}
 		function onSigLog(log) {
 			root.log(`pyAnalizerRAG ${log}`)
@@ -90,8 +90,8 @@ Item {
 	Connections {//CONNECTIONS для прогресса
 		target: pyAnalyzer
 		function onSigResultReady(result) {//Сигнал готовности результата анализа.
-			txdOtvet.text = dcMarkdown.toHtml(result)//Конвертируем Markdown в HTML
-			txdOtvet.scrollTop()//Очень важно, чтоб изображение не исчезло.
+			txdRezultat.text = dcMarkdown.toHtml(result)//Конвертируем Markdown в HTML
+			txdRezultat.scrollTop()//Очень важно, чтоб изображение не исчезло.
 			knopkaSohranit.enabled = (result !== "" && 
 									result !== "Анализируется..." &&
 									!result.startsWith("Ошибка:") &&
@@ -109,18 +109,18 @@ Item {
 			let ltCleanResult = strResult.trim()//очищаем результат от лишних пробелов/табуляций
 			let ltMarkdown = dcMarkdown.toHtml(ltCleanResult)
 			if (ntCurrent === 1) {// Первый чанк — заменяем содержимое
-				txdOtvet.text = `<h3>Часть ${ntCurrent}/${ntTotal}</h3>\n${ltMarkdown}\n`
+				txdRezultat.text = `<h3>Часть ${ntCurrent}/${ntTotal}</h3>\n${ltMarkdown}\n`
 			} else {//Последующие чанки — добавляем к существующему
-				txdOtvet.text += `\n<hr>\n<h3>Часть ${ntCurrent}/${ntTotal}</h3>\n${ltMarkdown}\n`
+				txdRezultat.text += `\n<hr>\n<h3>Часть ${ntCurrent}/${ntTotal}</h3>\n${ltMarkdown}\n`
 			}
-			//txdOtvet.scrollBottom()//Листаем в конец анализа
+			//txdRezultat.scrollBottom()//Листаем в конец анализа
 			root.log(`✓ Получен результат чанка ${ntCurrent}/${ntTotal}`)
 		}
 		function onSigAnalizFinalStart() {//Сигнал Начала финального анализа
 			root.log("✓ Начался финальный анализ")
 			//Добавляем разделитель перед финальным анализом
-			txdOtvet.text += "\n<hr style='border: 2px solid #2196F3;'>\n<h2>🔍 ФИНАЛЬНЫЙ АНАЛИЗ</h2>\n<p><i>Обработка...</i></p>\n"
-			//txdOtvet.scrollBottom()//Листаем в конец анализа
+			txdRezultat.text += "\n<hr style='border: 2px solid #2196F3;'>\n<h2>🔍 ФИНАЛЬНЫЙ АНАЛИЗ</h2>\n<p><i>Обработка...</i></p>\n"
+			//txdRezultat.scrollBottom()//Листаем в конец анализа
 			if (ldrProgress.item) {
 				ldrProgress.item.text = "Финальный анализ..."
 			}
@@ -155,7 +155,7 @@ Item {
 		function onSigAnalizStart() {//Сигнал Начала анализа.
 			root.log("✓ Анализ начался")
 			tmrLogo.running = true//Запускаем анимацию логотипа и включаем политики кнопок.
-        	txdOtvet.text = ""//ОЧИЩАЕМ txdOtvet перед началом
+        	txdRezultat.text = ""//ОЧИЩАЕМ txdRezultat перед началом
 			if (ldrProgress.item) {//Если существует объект, то...
 				ldrProgress.item.text = "Подготовка..."//Устанавливаем прогресс в режим ожидания
 				ldrProgress.item.progress = 0
@@ -264,6 +264,9 @@ Item {
                 if (!menuMenu.visible && knopkaSohranit.enabled) {
                     fnClickedSohranit()//Функция сохранения результата анализа.
                 }
+                event.accepted = true
+            } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                if (knopkaAnaliz.enabled) fnClickedAnaliz()//Старт исправления орфографии.
                 event.accepted = true
             }
         }
@@ -477,7 +480,7 @@ Item {
 		dialogRAG.open()
 	}
     function fnClickedAnaliz() {//Функция запускающая нейро анализ документов
-		txdOtvet.text = ""//Очищаем полее ввода от предыдущих выводов.
+		txdRezultat.text = ""//Очищаем полее ввода от предыдущих выводов.
 		root.isServerZapustit = true
 		root.isModelZagruzit = true//Устанавливаем флаг ожидания, из StrAnalizer
         if (DCSettings.analizer_put_rag !== "") {
@@ -613,7 +616,7 @@ Item {
         Flickable {
             id: flcZona
 			//Свойства
-			property int __rezultatHeight: 0//Высота области Результата с кнопкой Сохранить Результат.
+			property int __height: 0//Высота области Результата с кнопкой Сохранить Результат.
 			//Настройки
             anchors.fill: parent
             contentWidth: tmZona.width
@@ -625,8 +628,10 @@ Item {
         	anchors.rightMargin: dcSidebar.position * dcSidebar.width - dcSidebar.position * root.ntCoff
 			//Методы
 			onHeightChanged: {//Если изменяется высота Flickable, то...
-				flcZona.__rezultatHeight = flcZona.height - txtRezultat.height
-														- knopkaSohranit.height - root.ntCoff * 3
+				flcZona.__height = flcZona.height 	- txtRezultat.height
+															- knopkaSohranit.height
+															- txtKlavishi.height
+															- root.ntCoff * 4
 			}
 			TapHandler {//Нажимаем на всю область
 				onTapped: {
@@ -828,9 +833,9 @@ Item {
                     width: parent.width - parent.leftPadding - parent.rightPadding
                 }
 				DCTextEdit {
-					id: txdOtvet
+					id: txdRezultat
 					width: parent.width - parent.leftPadding - parent.rightPadding
-					height: flcZona.__rezultatHeight
+					height: flcZona.__height
 					ntWidth: root.ntWidth/2//Для уменьшения размера текста и ширины скролбара
 					ntCoff: root.ntCoff
 					readOnly: true//Только чтение
@@ -846,6 +851,12 @@ Item {
 						fnCloseMenuIfOpen()
 					}
 				}
+				Text {//Подсказка по горячим клавишам
+					id: txtKlavishi
+					text: "Alt+← назад | Alt+F настройка AI | Alt+S настройка нейро анализа | Ctrl+Enter старт нейро анализа | F1 справка"
+                    color: "grey"
+                    font.pixelSize: root.ntCoff * 1.1
+                }
                 DCKnopkaOriginal {//Кнопка сохранения результата
                     id: knopkaSohranit
                     text: "💾 сохранить результат"

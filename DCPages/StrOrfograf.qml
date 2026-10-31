@@ -233,6 +233,9 @@ Item {
             if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
                 if (knopkaAnaliz.enabled) fnClickedOrfograf()//Старт исправления орфографии.
                 event.accepted = true
+            } if (event.key === Qt.Key_O || event.key === 1065) {
+                if (!menuMenu.visible && knopkaOtkrit.enabled) fnClickedOtkrit()//открытия результатов
+                event.accepted = true
             }
         }
         if (event.key === Qt.Key_Escape) {
@@ -326,14 +329,34 @@ Item {
 		fnClickedEscape()//Функция нажатия на клавишу Escape
         root.clickedInfo()
     }
-    function fnPathToUrl(strPut) {//Преобразуем локальный путь в URL диалога.
-        if (strPut === "") return ""
-        return "file://" + strPut
+    function fnPathToUrl(localPath) {//Преобразуем локальный путь в URL диалога.
+		if (!localPath) return ""
+		if (localPath.startsWith("file://")) return localPath//Если это уже URL — возвращаем как есть
+		//Для локальных файлов нужен формат file:///
+		if (localPath.startsWith("/")) {//Linux: /home/user/ -> file:///home/user/ (добавляем file://)
+			return "file://" + localPath//file:// + /path = file:///path
+		} else {//Windows: C:/Users/ -> file:///C:/Users/ (добавляем file:///)
+			return "file:///" + localPath//file:/// + C:/path = file:///C:/path
+		}	
     }
     function fnUrlToLocalPath(url) {//Преобразуем URL диалога в локальный путь.
-        var strPut = url.toString()
-        if (strPut.startsWith("file://")) strPut = strPut.substring(7)
-        return decodeURIComponent(strPut)
+        if (!url) return ""
+		var path = url.toString()
+		if (path.startsWith("file:///")) {//Если путь начинается с file:///
+			path = path.substring(7)//Убираем "file://" чтоб осталось "/" /home, /mnt и тд
+		} else if (path.startsWith("file://")) {//Если путь начинается с file://
+			path = path.substring(7)//Убираем "file://"
+		}
+		path = decodeURIComponent(path)//Декодируем URL-кодирование (%20 → пробел, %3F → ?)
+		if (Qt.platform.os === "windows") {//Windows: если путь начинается с /C:/, убираем первый /
+			if (path.length > 2 && path[0] === '/' && path[2] === ':') {
+				path = path.substring(1)
+			}
+		}
+		if (Qt.platform.os !== "windows" && path.startsWith("//")) {//Linux-убираем двойной слеш,если появился
+			path = path.substring(1)
+		}
+		return path
     }
     function fnImyaDokument(strPut) {//Достаём имя документа из полного пути.
         var chPos = strPut.lastIndexOf("/")
@@ -377,8 +400,8 @@ Item {
         tmrLogo.running = false//Останавливаем анимацию логотипа (выход из режима анализа).
         root.toolbar("Исправление орфографии остановлено.")
     }
-    function fnClickedOsmotret() {//Функция диалога осмотра исправленных документов.
-        dialogOsmotr.open()//Открываем диалог в папке orfograf_put_rezultat.
+    function fnClickedOtkrit() {//Функция диалога осмотра исправленных документов.
+        dialogOtkrit.open()//Открываем диалог в папке orfograf_put_rezultat.
     }
     function fnToggleMenu() {
         if (menuMenu.visible) menuMenu.visible = false
@@ -401,8 +424,9 @@ Item {
             else return StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
         }
         onAccepted: {
-            DCSettings.orfograf_put_rezultat = fnUrlToLocalPath(selectedFolder)//Пишем путь в реестр.
-            root.toolbar("Папка результатов: " + DCSettings.orfograf_put_rezultat)
+			var vrPut = fnUrlToLocalPath(selectedFolder)//Используем кроссплатформенную функцию
+            DCSettings.orfograf_put_rezultat = vrPut//Пишем путь в реестр.
+            root.toolbar(`Орфография. Выбрана папка результатов: ${vrPut}`)
         }
         onRejected: {}
     }
@@ -427,7 +451,7 @@ Item {
         onRejected: {}
     }
     FileDialog {//Диалог открытия исправленного документа для просмотра
-        id: dialogOsmotr
+        id: dialogOtkrit
         title: "Выберите исправленный документ для просмотра"
         currentFolder: {
             if (DCSettings.orfograf_put_rezultat !== "") {
@@ -438,7 +462,8 @@ Item {
         nameFilters: ["Текстовые файлы (*.txt)", "Все файлы (*)"]
         fileMode: FileDialog.OpenFile
         onAccepted: {
-            root.toolbar("Просмотр: " + fnUrlToLocalPath(selectedFile))
+			var vrPutFaila = fnUrlToLocalPath(selectedFile);//Преобразуем в путь из url
+			root.toolbar(`Орфография. Выбран файл: ${vrPutFaila}`)//Сообщение в toolbar и журнал.
             pyFileOpener.openFile(selectedFile.toString())//Открываем файл через Python.
         }
         onRejected: {}
@@ -535,7 +560,7 @@ Item {
         Flickable {
             id: flcZona
 			//Свойства
-			property int __rezultatHeight: 0//Высота области Результата с кнопкой Сохранить Результат.
+			property int __height: 0//Высота области Результата с кнопкой Сохранить Результат.
 			//Настройки
             anchors.fill: parent
             contentWidth: tmZona.width
@@ -547,10 +572,10 @@ Item {
             anchors.rightMargin: dcSidebar.position * dcSidebar.width - dcSidebar.position * root.ntCoff
 			//Методы
 			onHeightChanged: {//Если изменяется высота Flickable, то...
-				flcZona.__rezultatHeight = flcZona.height 	- txtRezultat.height
-															- knopkaOsmotret.height
+				flcZona.__height = flcZona.height 	- txtRezultat.height
+															- knopkaOtkrit.height
 															- txtKlavishi.height
-															- root.ntCoff * 3
+															- root.ntCoff * 4
 			}
             Behavior on opacity {
                 NumberAnimation {
@@ -657,7 +682,7 @@ Item {
                 DCTextEdit {//Поле отчёта исправления орфографии
                     id: txdRezultat
                     width: parent.width - parent.leftPadding - parent.rightPadding
-					height: flcZona.__rezultatHeight
+					height: flcZona.__height
                     ntWidth: root.ntWidth/2//разделить на 2, чтоб уменьшить размер шрифта и скролбар
                     ntCoff: root.ntCoff
                     readOnly: true
@@ -670,20 +695,20 @@ Item {
                 }
                 Text {//Подсказка по горячим клавишам
 					id: txtKlavishi
-                    text: "Alt+← назад | Alt+F настройки | Ctrl+Enter старт | F1 справка"
+                    text: "Alt+← назад | Alt+F настройка AI | Alt+S настройка орфографии | Ctrl+Enter старт проверки орфографии | F1 справка"
                     color: "grey"
                     font.pixelSize: root.ntCoff * 1.1
                 }
 				DCKnopkaOriginal {//Кнопка осмотра исправленных документов
-                    id: knopkaOsmotret
+                    id: knopkaOtkrit
                     ntHeight: root.ntWidth; ntCoff: root.ntCoff
                     clrKnopki: root.clrTexta; clrTexta: root.clrFona
 					anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
-                    text: "👁 осмотреть исправленные документы"
+                    text: "👁 открыть исправленные документы"
                     enabled: true
                     onClicked: {
-                        if (!fnCloseMenuIfOpen()) fnClickedOsmotret()
+                        if (!fnCloseMenuIfOpen()) fnClickedOtkrit()
                     }
                 }
             }
@@ -780,7 +805,7 @@ Item {
 					knopkaZagruzitOchistit_2.enabled = false
 					knopkaPapka.enabled = false
 					knopkaAnaliz.enabled = false
-					knopkaOsmotret.enabled = false					
+					knopkaOtkrit.enabled = false					
 				} else {
 					dcTimer.strVremyaAnaliza = dcTimer.strTimer
 					dcTimer.blStart = false//Останавливаем таймер.
@@ -795,7 +820,7 @@ Item {
 					knopkaZagruzitOchistit_2.enabled = true
 					knopkaPapka.enabled = true
 					knopkaAnaliz.enabled = root.strSpisokDokumentov.length > 0
-					knopkaOsmotret.enabled = true
+					knopkaOtkrit.enabled = true
 				}
 			}
 			onLoaded: {

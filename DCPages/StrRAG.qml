@@ -136,8 +136,8 @@ Item {
 				root.isRAGClicked = false//Сбрасываем флаг
 				function fnStart() {//Функция запуска создания RAG базы данных.
 					if (!isRAG) {//Если создание RAG не запущена, то...
-						txdZona.strCopy = ""//Очищаем переменную Прогресса созадания RAG.
-						txdZona.text = ""//Очищаем зону отображения прогресса RAG.
+						txdRezultat.strCopy = ""//Очищаем переменную Прогресса созадания RAG.
+						txdRezultat.text = ""//Очищаем зону отображения прогресса RAG.
 						//Запускаем через бэкенд pyRAG.py	
 						pyRAG.start(DCSettings.rag_put_doc, DCSettings.rag_put_db,
 									DCSettings.rag_gpu, DCSettings.rag_model,
@@ -170,14 +170,14 @@ Item {
 		function onSigRAGFinished(success, message) {//Функция окончания работы скрипта DCRAGMake.py
 			fnStopRAG()//Останавливаем создание RAG.	
 			if (!success) {//Если ошибка, то...
-				txdZona.strCopy += "\n❌ Ошибка: " + message + "\n"
-				txdZona.text = txdZona.strCopy
+				txdRezultat.strCopy += "\n❌ Ошибка: " + message + "\n"
+				txdRezultat.text = txdRezultat.strCopy
 			}
 		}
 		function onLogMessage(message) {//Функция выводящая в Прогресс сообщения скрипта DCRAGMake.py
 			//Добавляем сообщение в лог
-			txdZona.strCopy += message + "\n"//Собираю сообщения в переменную.
-			txdZona.text = txdZona.strCopy//Отображаю в "Прогрессе транскрибации" сообщения со скрипта.
+			txdRezultat.strCopy += message + "\n"//Собираю сообщения в переменную.
+			txdRezultat.text = txdRezultat.strCopy//Отображаю в "Прогрессе транскрибации" сообщения со скрипта.
 			root.log (message)//В логи
 		}
 		function onProgressUpdate(current, total) {//Функция обновления прогресса из python
@@ -452,7 +452,7 @@ Item {
             }
 			//Методы
 			onHeightChanged: {//Если изменяется высота Flickable, то...
-				flcZona.__height = flcZona.height - txtProgress.height - root.ntCoff * 2
+				flcZona.__height = flcZona.height - txtProgress.height - txtKlavishi.height - root.ntCoff * 3
 			}
 			TapHandler {//Нажимаем на всю область виджета.
 				onTapped: {
@@ -559,7 +559,7 @@ Item {
                     width: parent.width - parent.leftPadding - parent.rightPadding
                 }
 				DCTextEdit {
-					id: txdZona
+					id: txdRezultat
 					property string strCopy: ""
 					width: parent.width - parent.leftPadding - parent.rightPadding
 					height: flcZona.__height
@@ -576,6 +576,12 @@ Item {
 						fnCloseMenuIfOpen()
 					}
 				}
+				Text {//Подсказка по горячим клавишам
+					id: txtKlavishi
+					text: "Alt+← назад | Alt+F настройка RAG бд | Ctrl+Enter старт создания RAG | F1 справка"
+                    color: "grey"
+                    font.pixelSize: root.ntCoff * 1.1
+                }
             }
         }
         DCScrollbar {//Скроллбар
