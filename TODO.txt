@@ -22,7 +22,6 @@ TODO:
 - DCRAGPdf, сделать сканирование изображений, чтоб на них читать надписи и добавлять их в RAG БД.
 - DCRAG, отсекание мусора сделать умным Boilerplate Removal/Document Cleaning (Удаление шаблонного мусора)
 - DCMarkdown, символ $\rightarrow$ не отрисовывается.
-- SetOrfograf, перенести страницу в боковую панель настроек.
 - StrAnalizer, StrTranscribe, StrRAG, под txdOtvet сделать подсказки горячих клавишь, как в StrOrfograf.
 - StrOrfograf, в момент, когда иодель загружена, орфограф её еще раз загружает.
 - StrInstrukciya, StrOrfograf, выделить жирными большими буквами, что нужно использоваь не думающую модель.
