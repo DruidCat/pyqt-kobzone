@@ -25,7 +25,7 @@ QtObject {
 	property real orfograf_sidebar_shirina: 0.3//Коэффициент от общей ширины окна, показ.ширину боковой панели
 	property real orfograf_temperatura: 0.2//Температура ИИ модели, чем выше, тем креативней ответ. 0-1
 	property int orfograf_perekritie: 15//Перекрытие соседнего фрагмента в процентах: 15 это 15%
-	property int orfograf_kontekst: 6000//Размер фрагмента документа в символах, подаваемого ИИ за раз.
+	property string orfograf_prompt: "Ты — профессиональный корректор русского языка. Твоя ЕДИНСТВЕННАЯ задача — найти и исправить орфографические, пунктуационные и грамматические ошибки (неправильные окончания, согласование слов, слитное/раздельное написание). ОБЯЗАТЕЛЬНО исправляй ошибки, даже если текст короткий или выглядит разговорным. НЕ оставляй текст без изменений, если в нём есть ошибки. Запрещено: сокращать предложения, менять смысл, стиль изложения, порядок предложений, удалять или добавлять абзацы, добавлять новые мысли. Ответь ТОЛЬКО исправленным текстом, без пояснений, кавычек, комментариев, разметки markdown и фразы 'вот исправленный текст'."
 	property string orfograf_put_text: ""
 	property string orfograf_put_rezultat: ""
 	//LM Studio 
@@ -77,7 +77,7 @@ QtObject {
 		property alias orfograf_sidebar_shirina: root.orfograf_sidebar_shirina
 		property alias orfograf_temperatura: root.orfograf_temperatura
 		property alias orfograf_perekritie: root.orfograf_perekritie
-		property alias orfograf_kontekst: root.orfograf_kontekst
+		property alias orfograf_prompt: root.orfograf_prompt
 		property alias orfograf_put_text: root.orfograf_put_text
 		property alias orfograf_put_rezultat: root.orfograf_put_rezultat
 		//LM Studio

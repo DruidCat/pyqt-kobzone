@@ -1,99 +1,84 @@
-/*Настройка нейро орфографии документа*/
-import QtQuick
-import QtQuick.Controls
-import DCButtons 1.0
-import DCMethods 1.0
-import DCSettings 1.0
-Drawer {//Выезжающая боковая панель настроек орфографии, аналог SetAnalizer.
+﻿import QtQuick //2.15
+import QtQuick.Controls//Drawer
+import DCButtons 1.0//Импортируем кнопки написанные мной.
+import DCMethods 1.0//Импортируем методы написанные мной.
+import DCSettings 1.0//Импортируем настройки
+//SetAnalizer - Боковая панель с настройками нейро анализа документов.
+Drawer {
 	id: root
 	//Свойства
-	property int ntWidth: 1//Размер шрифта заголовка для DCKnopkaX элементов.
-	property int ntCoff: 8//Коэффициент масштабирования всех элементов.
-	property color clrTexta: "white"//Цвет шрифта и обводки
-	property color clrFona: "black"//Цвет фона страницы.
-	property color clrMenuFon: "lightsteelblue"//Цвет фона кнопок и карусели.
-	property bool readOnly: false//Запрет изменять текущие настройки орфографии.
-	property real tapZagolovokLevi: 1//Коэффициент отступа слева заголовка.
-	property real tapZagolovokPravi: 1//Коэффициент отступа справа заголовка.
-	property real rlTemperatura: DCSettings.orfograf_temperatura//Температура ИИ.
-	property int ntPerekritie: DCSettings.orfograf_perekritie//Перекрытие фрагментов, %.
-	property int ntKontekst: DCSettings.orfograf_kontekst//Размер фрагмента контекста.
-	property bool isMobile: false//true - мобильное устройство.
-	property bool isEnabled: true//Разрешить изменять текущие настройки орфографии.
-	property var knopkiMassiv //Массив кнопок для перебора клавишами стрелок.
-	property int currentIndex: 0 //Текущая выбранная настройка (кнопка на панели).
-	property bool __isClickedInfo: false//Флаг, нажата или нет кнопка информации.
-	property int __parentWidth: (parent ? parent.width : 0)//Ширина родителя.
-	property int __minSidebarWidth: parent.width * 0.2//Минимальная ширина боковой панели.
-	property int __maxSidebarWidth: parent.width * 0.5//Максимальная ширина боковой панели.
-	property int __sidebarWidth: DCSettings.orfograf_sidebar_shirina * __parentWidth//Ширина боковой панели.
+    property int ntWidth: 1
+    property int ntCoff: 8
+    property color clrTexta: "Orange"
+    property color clrFona: "Black"
+    property color clrMenuFon: "SlateGray"
+	property bool readOnly: false//true - запрещено редактировать текст
+	property real tapZagolovokLevi: 1.3
+	property real tapZagolovokPravi: 1.3
+	property string strPrompt: DCSettings.orfograf_prompt
+	property real rlTemperatura: DCSettings.orfograf_temperatura//Температура ИИ
+	property int ntPerekritie: DCSettings.orfograf_perekritie
+	property bool isMobile: false//true - мобильное устройство
+	property bool isEnabled: true//false - не активная страница
+	//Массив кнопок для навигации
+    property var knopkiMassiv: []//Массив кнопок, между которыми нужно листать.
+    property int currentIndex: 0//Выбранная кнопка.
+	property bool __isClickedInfo: false//true - нажата кнока Информация.
+	property int __parentWidth: parent.width//Ширина родителя, ширина основного окна приложения.
+	property int __minSidebarWidth: __parentWidth * 0.2//Минимум ширины боковой панели
+	property int __maxSidebarWidth: root.__parentWidth * 0.5//Максимум ширины боковой панели
+	property int __sidebarWidth: root.isMobile ? root.__parentWidth//Если мобила, то ширина всего экрана
+						: Math.max(__minSidebarWidth,root.__parentWidth * DCSettings.orfograf_sidebar_shirina)
 	//Настройки
-	edge: Qt.RightEdge//Панель выезжает с правого края.
-	modal: false//Не блокируем страницу, hotkeys страницы работают.
-	dim: false//Затемнение не нужно.
-	closePolicy: Drawer.CloseOnEscape//Закрытие по Escape.
-	clip: true
-	width: __sidebarWidth
-	height: parent.height
-	y: root.ntWidth * root.ntCoff + 3 * root.ntCoff
-	interactive: true//Потянуть за край можно, closePolicy тут же CloseOnRelease.
+	edge: Qt.RightEdge
+	modal: false
+	dim: false
+	closePolicy: Drawer.CloseOnEscape//Закрываем боковую панель только при нажати Escape, другие политики выкл
+	clip: true//Обрезать всё лишнее.
+	width: __sidebarWidth//ВАЖНО! ширина боковой панели зависит только от __sidebarWidth.
+	height: parent.height//Высота боковой панели по высоте родителя.
+	y: root.ntWidth * root.ntCoff + 3 * root.ntCoff//координату по Y брал из расчёта Stranica.qml
+	interactive: true//false -  панель не реагирует на свайпы.
+	//Сигналы
+	signal clickedInfo()//Сигнал открытия информации
 	//Методы
-	signal clickedInfo()//Информация по настройкам орфографии.
 	Component.onCompleted: {
-		knopkiMassiv = [knopkaTemperatura, knopkaPerekritie, knopkaKontekst]
+		txdPrompt.text = DCSettings.orfograf_prompt
+        knopkiMassiv=[knopkaTemperatura, knopkaPerekritie]
 	}
-	on__ParentWidthChanged: {
-		__minSidebarWidth = __parentWidth * 0.2
-		__maxSidebarWidth = __parentWidth * 0.5
-		__sidebarWidth = DCSettings.orfograf_sidebar_shirina * __parentWidth
+	on__ParentWidthChanged: {//Если родительская ширина экрана меняется, то ...
+		root.__sidebarWidth = root.__parentWidth * DCSettings.orfograf_sidebar_shirina//Пересчит.ширину панели
 	}
-	onPositionChanged: {//Если сдвигаем панель, прячем все открытые карусели настроек.
-		if(pvTemperatura.visible){
-			pvTemperatura.visible = false
-			fnFocus()//фокус, чтоб hotkey работали. ВАЖНО!!!
-		}
-		if(pvPerekritie.visible){
-			pvPerekritie.visible = false
-			fnFocus()//фокус, чтоб hotkey работали. ВАЖНО!!!
-		}
-		if(pvKontekst.visible){
-			pvKontekst.visible = false
-			fnFocus()//фокус, чтоб hotkey работали. ВАЖНО!!!
-		}
-		if(opened){
-			root.readOnly = false//Разрешаем изменять настройки, панель открыта.
-			//Отправляем сигнал о нажатии кнопки Информация, если она нажата.
-			if(__isClickedInfo){
-				__isClickedInfo = false//Сбрасываем флаг нажания кнопки.
-				root.clickedInfo()//Излучаем сигнал на страницу.
+	onPositionChanged: {//Если позиция изменяется у боковой панели, то...
+		if(position) root.readOnly = false//Если панель открыта, то режим редактирования
+		else {
+			fnCloseTemperaturaIfOpen()
+			fnClosePerekritieIfOpen()
+			root.readOnly = true//Если панель закрыта, то режим только чтения.
+			if(__isClickedInfo){//Если нажата кнопка открытия инструкции, то...
+				__isClickedInfo = false//Обнуляем флаг
+				root.clickedInfo()//Сигнал нажатия на кнопку информации когда панель закрылась
 			}
-		} else {
-			root.readOnly = true//Запрещаем изменять настройки, панель закрыта.
 		}
 	}
-	function fnCloseTemperaturaIfOpen() {//Закрыть pvTemperatura, если виден.
+	onStrPromptChanged: {//Если промт изменился, то...
+		pyOrfograf.ustPrompt(root.strPrompt)
+	}
+	function fnCloseTemperaturaIfOpen(){
 		if (pvTemperatura.visible) {
 			pvTemperatura.visible = false
-			Qt.callLater(function(){//пауза, иначе не сработает фокус. ВАЖНО!!!
-				fnFocus()//фокус PathView, чтоб hotkey работали.
-			})
+			fnFocus()//фокус root, чтоб hotkey работали.
+			return true
 		}
+		return false
 	}
-	function fnClosePerekritieIfOpen() {//Закрыть pvPerekritie, если виден.
+	function fnClosePerekritieIfOpen(){
 		if (pvPerekritie.visible) {
 			pvPerekritie.visible = false
-			Qt.callLater(function(){//пауза, иначе не сработает фокус. ВАЖНО!!!
-				fnFocus()//фокус PathView, чтоб hotkey работали.
-			})
+			fnFocus()//фокус root, чтоб hotkey работали.
+			return true
 		}
-	}
-	function fnCloseKontekstIfOpen() {//Закрыть pvKontekst, если виден.
-		if (pvKontekst.visible) {
-			pvKontekst.visible = false
-			Qt.callLater(function(){//пауза, иначе не сработает фокус. ВАЖНО!!!
-				fnFocus()//фокус PathView, чтоб hotkey работали.
-			})
-		}
+		return false
 	}
 	function fnFocus(){//Фокус на странице, чтоб горячие клавиши работали.
 		rctRoot.forceActiveFocus()
@@ -103,9 +88,9 @@ Drawer {//Выезжающая боковая панель настроек ор
 		anchors.fill: parent
 		Keys.onPressed: (event) => {//Это запись для Qt6, для Qt5 нужно удалить event =>
 			if(event.modifiers & Qt.AltModifier){//Если нажат "Alt"
-				if (event.key === Qt.Key_S || event.key === 1067){//Клавиша S или С кириллица.
-					root.close();//Закрыть боковую панель настроек.
-					event.accepted = true//Завершаем обработку эвента.
+				if (event.key === Qt.Key_S || event.key === 1067){//Если нажата клавиша стрелка влево, то...
+					root.close();//Метод обрабатывающий кнопку Закрыть боковую панель.
+					event.accepted = true;//Завершаем обработку эвента.
 				}
 			} else if (event.key === Qt.Key_F1){//Если нажата F1, то...
 				knopkaInfo.fnClicked()
@@ -119,7 +104,7 @@ Drawer {//Выезжающая боковая панель настроек ор
 				root.currentIndex++
 				if (root.currentIndex >= knopkiMassiv.length) root.currentIndex = 0
 				//fnScrollKnopok(true)
-				event.accepted = true
+				event.accepted = true	
 			} else if (event.key === Qt.Key_Enter || event.key === Qt.Key_Return) {
 				fnClickedEnter()
 				event.accepted = true
@@ -128,123 +113,103 @@ Drawer {//Выезжающая боковая панель настроек ор
 		function fnClickedEnter() {//Функция обработки нажатия клавиши Enter
 			if (root.currentIndex >= 0 && root.currentIndex < knopkiMassiv.length) {
 				var vrKnopkaID = knopkiMassiv[root.currentIndex]
-				if (vrKnopkaID && typeof vrKnopkaID.fnClicked === "function" &&
-					vrKnopkaID.enabled) {
+				
+				if (vrKnopkaID && typeof vrKnopkaID.fnClicked === "function" && 
+					vrKnopkaID.visible && vrKnopkaID.enabled) {
 					vrKnopkaID.fnClicked()
 				}
 			}
 		}
-		function fnScrollKnopok(vnizu) {//Функция прокрутки кнопок по горячим клавишам.
-			// if (vnizu) tmrScroll.interval = 1000//Задержка в миллисекундах
-			// else tmrScroll.interval = 1000
-			// tmrScroll.triggered()
+		function fnScrollKnopok(isPlus) {//Функция скроллина кнопок
+			var knopkaID = knopkiMassiv[root.currentIndex]
+			if (!knopkaID) {
+				return
+			}
+			/*
+			if (knopkaID.visible) {
+				var knopkaTop = knopkaID.y
+				var knopkaBottom = knopkaTop + knopkaID.height + root.ntWidth
+				var visibleTop = flcZona.contentY
+				var visibleBottom = visibleTop + flcZona.height
+				
+				if (knopkaTop < visibleTop)
+					flcZona.contentY = knopkaTop
+				else if (knopkaBottom > visibleBottom)
+					flcZona.contentY = knopkaBottom - flcZona.height
+			}
+			*/
 		}
-		Rectangle {
+		Rectangle {//Прямоугольник узкой полоски интерфейса справа
 			id: rctBorder
-			anchors.fill: parent
-			antialiasing: true
-			color: "transparent"
-			border.width: root.ntCoff / 2
-			border.color: root.clrTexta
+			anchors.top: root.top
+			x: root.width-root.ntCoff
+			width: root.ntCoff
+			height: root.height
+			color: root.clrMenuFon
 		}
-		Rectangle {//Заголовок боковой панели.
+		Rectangle {//Прямоугольник заголовка, для надписи и кнопки закрыть.
 			id: rctZagolovok
-			width: parent.width
-			height: root.ntWidth * root.ntCoff + 3 * root.ntCoff
+			anchors.top: root.top
+			anchors.right: rctBorder.left
+			width: root.width - rctBorder.width - rctRuchka.width
+			height: root.ntCoff*(root.ntWidth-1)+root.ntCoff
 			color: root.clrFona
-			opacity: 0.9
-			DCKnopkaInfo {//Кнопка информации по настройкам орфографии.
+			border.color: root.clrTexta
+			border.width: root.ntCoff/4
+			DCKnopkaInfo {
 				id: knopkaInfo
-				ntWidth: root.ntWidth; ntCoff: root.ntCoff
-				anchors.left: parent.left
-				anchors.leftMargin: root.ntCoff * root.tapZagolovokLevi
-				anchors.verticalCenter: parent.verticalCenter
-				clrKnopki: root.clrTexta
-				function fnClicked() {
-					root.__isClickedInfo = true
-					root.close()//Закрытие панели, сигнал уйдёт в onPositionChanged.
+				ntWidth: (root.ntWidth-1); ntCoff: root.ntCoff
+				anchors.verticalCenter: rctZagolovok.verticalCenter; anchors.left: rctZagolovok.left
+				clrKnopki: root.clrTexta; clrFona: root.clrFona
+				tapHeight: (root.ntWidth-1)*root.ntCoff+root.ntCoff; tapWidth: tapHeight * root.tapZagolovokLevi
+				function fnClicked(){
+					root.__isClickedInfo = true//Взводим флаг, ждём, когда закроется панели и откроем Инструкц
+					root.close()//Закрываем панель, сворачиваем температуру
 				}
+				onClicked: fnClicked()//Функция нажатия информации.
 			}
-			DCKnopkaZakrit {//Кнопка закрыть боковую панель.
+			DCKnopkaZakrit {
 				id: knopkaZakrit
-				ntWidth: root.ntWidth; ntCoff: root.ntCoff
-				anchors.right: parent.right
-				anchors.rightMargin: root.ntCoff * root.tapZagolovokPravi
-				anchors.verticalCenter: parent.verticalCenter
-				clrKnopki: root.clrTexta
-				onClicked: { root.close() }
+				ntWidth: (root.ntWidth-1); ntCoff: root.ntCoff
+				anchors.verticalCenter: rctZagolovok.verticalCenter; anchors.right: rctZagolovok.right
+				clrKnopki: root.clrTexta; clrFona: root.clrFona
+				tapHeight: (root.ntWidth-1)*root.ntCoff+root.ntCoff; tapWidth: tapHeight * root.tapZagolovokPravi
+				onClicked: root.close();//Метод обрабатывающий кнопку Закрыть боковую панель.
 			}
-			Text {
+			Label {//Текст вписанный в границы, отображает имя заголовка.
 				id: lblZagolovok
-				anchors.left: knopkaInfo.right; anchors.right: knopkaZakrit.left
-				anchors.leftMargin: 2*root.ntCoff; anchors.rightMargin: 2*root.ntCoff
-				anchors.verticalCenter: knopkaInfo.verticalCenter
-				elide: Text.ElideRight
+				anchors.top: rctZagolovok.top
+				anchors.right: knopkaZakrit.left
+				width: root.width - rctBorder.width - rctRuchka.width - knopkaZakrit.width - knopkaInfo.width
+				height: rctZagolovok.height
 				horizontalAlignment: Text.AlignHCenter
-				text: "НАСТРОЙКА НЕЙРО ОРФОГРАФИИ"
+				verticalAlignment: Text.AlignVCenter
 				color: root.clrTexta
-				font.pixelSize: root.ntWidth * root.ntCoff
+				font.bold: true//Жирный текст.
+				font.pixelSize: root.ntCoff*(root.ntWidth-1)
+				elide: Text.ElideRight//Обрезаем текст по правой стороне точками (...)
+				text: qsTr("НАСТРОЙКА НЕЙРО ОРФОГРАФИИ")
 			}
 		}
-		Rectangle {
-			id: rctRuchka
-			x: rctBorder.x
-			y: rctBorder.y
-			width: ntCoff * 2
-			height: rctBorder.height
-			color: root.clrTexta
-			MouseArea {
-				id: mshRuchka
-				anchors.fill: parent
-				acceptedButtons: Qt.LeftButton | Qt.RightButton
-				function fnKonecDraga(){
-					root.__sidebarWidth = rctBorder.x + rctBorder.width
-					DCSettings.orfograf_sidebar_shirina = root.__sidebarWidth /
-							root.__parentWidth
-				}
-				onCanceled: {
-					fnKonecDraga()
-				}
-				onPositionChanged: (mouse) => {
-					var ltNoviX = rctBorder.x + mouse.x - mshRuchka.previousX
-					//Если меньше минимума или больше максимума, то не давим дальше.
-					if (ltNoviX < rctRuchka.mapToItem(parent, 0, 0).x +
-						root.__minSidebarWidth) return
-					if (ltNoviX > rctRuchka.mapToItem(parent, 0, 0).x +
-						root.__maxSidebarWidth) return
-					//Ставим новый X у границы панели.
-					rctBorder.x = ltNoviX
-					//Ставим новый X у заголовка панели, чтоб не отставал.
-					rctZagolovok.x = ltNoviX
-					//Ставим новый X у основной области панели, чтоб не отставал.
-					rctSidebar.x = ltNoviX + rctBorder.width + rctRuchka.width
-					rctOkontovka.x = ltNoviX
-				}
-				onReleased: {
-					fnKonecDraga()
-				}
-			}
-		}
-		Rectangle {//Основная область боковой панели настроек.
+		Rectangle {//Прямоугольник всей оставшейся боковой панели.
 			id: rctSidebar
 			anchors.top: rctZagolovok.bottom
 			anchors.right: rctBorder.left
 			width: root.width - rctBorder.width - rctRuchka.width
-			height: root.height - rctZagolovok.height
+			height: root.height-rctZagolovok.height
 			color: root.clrFona
-			clip: true
-			opacity: 0.9
+			clip: true//Обязательно обрезать всё, что не помещается в этот прямоугольник.
+			opacity: 0.9//ГЛАВНАЯ ПРОЗРАЧНОСТЬ!!!	
+			TapHandler {//Нажимаем на всю область
+				onTapped: {
+					if(!pvTemperatura.jdi && !pvTemperatura.pressed) fnCloseTemperaturaIfOpen()//Закрываем
+					if(!pvPerekritie.jdi && !pvPerekritie.pressed) fnClosePerekritieIfOpen()//Закрываем
+				}
+			}
 			Behavior on opacity {
 				NumberAnimation {
 					duration: 300
 					easing.type: Easing.InOutQuad
-				}
-			}
-			TapHandler {//Клик мимо кнопок: закрываем открытые карусели.
-				onSingleTapped: {
-					if(pvTemperatura.visible) fnCloseTemperaturaIfOpen()
-					else if(pvPerekritie.visible) fnClosePerekritieIfOpen()
-					else if(pvKontekst.visible) fnCloseKontekstIfOpen()
 				}
 			}
 			Column {
@@ -258,25 +223,16 @@ Drawer {//Выезжающая боковая панель настроек ор
 				DCKnopkaOriginal {//Кнопка выбора Температуры ИИ
 					id: knopkaTemperatura
 					text: {
-						let ltText = qsTr("температура ИИ: ")//
-						ltText += root.rlTemperatura//Добавляем в строчку температуру.
-						//Ищем индекс текущего значения в модели карусели.
-						pvTemperatura.currentIndex = 0//
-						for(let i = 0; i < modelTemperatura.count; i++) {
-							if(modelTemperatura.get(i).spisok ===
-									root.rlTemperatura){
-								pvTemperatura.currentIndex = i//Нашли, ставим индекс.
-								break
-							}
-						}
+						let ltText = qsTr("температура ");//
+						ltText += root.rlTemperatura//Добавляем в строчку температуру из параметра
+						pvTemperatura.currentIndex = root.rlTemperatura*10//Выставляем в карусели нужную Темп.
 						return ltText;
 					}
 					ntHeight: root.ntWidth; ntCoff: root.ntCoff
 					anchors.left: parent.left; anchors.right: parent.right
 					anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrTexta
-					clrKnopki: (root.currentIndex === 0) ? Qt.darker(root.clrMenuFon, 1.2) :
-						root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 0) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
 					enabled: root.isEnabled
 					opacityKnopki: 0.9
 					function fnClicked() {
@@ -286,57 +242,28 @@ Drawer {//Выезжающая боковая панель настроек ор
 								pvTemperatura.visible = false//Делаем невидимым виджет
 								fnFocus()//фокус PathView, чтоб hotkey работали.
 							})
-						} else {
+						}
+						else{//Если невидимый виджет, то...
 							Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModels. ВАЖНО!!!
 								pvTemperatura.visible = true//Делаем видимым виджет
-								fnFocus()//фокус PathView, чтоб hotkey работали.
+								pvTemperatura.karusel.forceActiveFocus()//фокус PathView, чтоб hotkey работали.
 							})
 						}
 					}
-					onClicked: if (pressed && !pvTemperatura.pressed) fnClicked()
+					onClicked: {
+						if (pressed && !pvTemperatura.pressed
+									&& !pvPerekritie.pressed) fnClicked()
+					}
 				}
-				DCKnopkaOriginal {//Кнопка выбора Перекрытия фрагментов
+				DCKnopkaOriginal {//Кнопка выбора Перекрытия ИИ
 					id: knopkaPerekritie
 					text: {
-						let ltText = qsTr("перекрытие фрагментов, %: ")//
-						ltText += root.ntPerekritie//Добавляем в строчку перекрытие.
-						pvPerekritie.currentIndex = root.ntPerekritie//Выставляем в карусели нужное перекрытие.
-						return ltText;
-					}
-					ntHeight: root.ntWidth; ntCoff: root.ntCoff
-					anchors.left: parent.left; anchors.right: parent.right
-					anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
-					clrTexta: root.clrTexta
-					clrKnopki: (root.currentIndex === 1) ? Qt.darker(root.clrMenuFon, 1.2) :
-						root.clrMenuFon
-					enabled: root.isEnabled
-					opacityKnopki: 0.9
-					function fnClicked() {
-						root.currentIndex = 1
-						if(pvPerekritie.visible){//Если видимый виджет, то...
-							Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModels. ВАЖНО!!!
-								pvPerekritie.visible = false//Делаем невидимым виджет
-								fnFocus()//фокус PathView, чтоб hotkey работали.
-							})
-						} else {
-							Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModels. ВАЖНО!!!
-								pvPerekritie.visible = true//Делаем видимым виджет
-								fnFocus()//фокус PathView, чтоб hotkey работали.
-							})
-						}
-					}
-					onClicked: if (pressed && !pvPerekritie.pressed) fnClicked()
-				}
-				DCKnopkaOriginal {//Кнопка выбора Размера фрагмента контекста
-					id: knopkaKontekst
-					text: {
-						let ltText = qsTr("размер фрагмента, символов: ")//
-						ltText += root.ntKontekst//Добавляем в строчку размер контекста.
-						//Ищем индекс текущего значения в модели карусели.
-						pvKontekst.currentIndex = 0//
-						for(let i = 0; i < modelKontekst.count; i++) {
-							if(modelKontekst.get(i).spisok === root.ntKontekst){
-								pvKontekst.currentIndex = i//Нашли, ставим индекс.
+						let ltText = qsTr("перекрытие ");//
+						ltText += root.ntPerekritie//Добавляем в строчку перекрытие из настроек
+						ltText += "%"
+						for (let i = 0; i < modelPerekritie.count; i++) {//Ищем сохранённую модель в списке
+							if (modelPerekritie.get(i).spisok === root.ntPerekritie) {
+								pvPerekritie.currentIndex = i//Выставляем в карусели нужный процент Перекрытия
 								break
 							}
 						}
@@ -346,92 +273,171 @@ Drawer {//Выезжающая боковая панель настроек ор
 					anchors.left: parent.left; anchors.right: parent.right
 					anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 					clrTexta: root.clrTexta
-					clrKnopki: (root.currentIndex === 2) ? Qt.darker(root.clrMenuFon, 1.2) :
-						root.clrMenuFon
+                    clrKnopki: (root.currentIndex === 1) ? Qt.darker(root.clrMenuFon, 1.2) : root.clrMenuFon
 					enabled: root.isEnabled
 					opacityKnopki: 0.9
 					function fnClicked() {
-						root.currentIndex = 2
-						if(pvKontekst.visible){//Если видимый виджет, то...
+						root.currentIndex = 1
+						if(pvPerekritie.visible){//Если видимый виджет, то...
 							Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModels. ВАЖНО!!!
-								pvKontekst.visible = false//Делаем невидимым виджет
-								fnFocus()//фокус PathView, чтоб hotkey работали.
-							})
-						} else {
-							Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModels. ВАЖНО!!!
-								pvKontekst.visible = true//Делаем видимым виджет
+								pvPerekritie.visible = false//Делаем невидимым виджет
 								fnFocus()//фокус PathView, чтоб hotkey работали.
 							})
 						}
+						else{//Если невидимый виджет, то...	
+							Qt.callLater(function(){//пауза, иначе не сработает фокус и pvModels. ВАЖНО!!!
+								pvPerekritie.visible = true//Делаем видимым виджет
+								pvPerekritie.karusel.forceActiveFocus()//фокус PathView, чтоб hotkey работали.
+							})
+						}
 					}
-					onClicked: if (pressed && !pvKontekst.pressed) fnClicked()
+					onClicked: {
+						if (pressed && !pvTemperatura.pressed
+									&& !pvPerekritie.pressed) fnClicked()
+					}
+				}
+				Text {//Содержимое файла
+					id: txtPrompt
+					text: "Промт:"
+					font.pixelSize: root.ntWidth/2 * root.ntCoff
+					color: root.clrTexta
+					font.bold: true//Жирный текст.
+					width: parent.width - parent.leftPadding - parent.rightPadding
+				}
+				DCTextEdit {
+					id: txdPrompt
+					width: parent.width - parent.leftPadding - parent.rightPadding
+					height: {
+						let ltHeight = 0//Высота рабочей области редактирования.
+						if (pvTemperatura.visible || pvPerekritie.visible){
+							ltHeight = rctSidebar.height - txtPrompt.height
+													- knopkaTemperatura.height
+													- knopkaPerekritie.height
+													- root.ntCoff * 5
+													- pvTemperatura.height
+						}else {
+							ltHeight = rctSidebar.height - txtPrompt.height
+													- knopkaTemperatura.height
+													- knopkaPerekritie.height
+													- root.ntCoff * 5
+						}
+						return ltHeight
+					}
+					ntWidth: root.ntWidth/2//Для уменьшения размера текста и ширины скролбара
+					ntCoff: root.ntCoff
+					readOnly: root.readOnly
+					enabled: root.isEnabled
+					scrollAuto: false//Ручное управление скроллом
+					clrFona: "transparent"; clrTexta: root.clrTexta
+					clrPolzunka: Qt.lighter(root.clrMenuFon, 1.3); clrBorder: root.clrTexta
+					radius: root.ntCoff / 2
+					isBorder: true//Показываем бордюр области текста.
+					textEdit.textFormat: TextEdit.RichText//HTML поддержка
+					placeholderText:"Введите финальный промпт, чтоб языковая модель могла подвести итог анализа..."
+					onTextChanged: {
+						root.strPrompt = text
+						DCSettings.orfograf_prompt = text
+					}
+					onPressed: {
+						fnCloseTemperaturaIfOpen()//Закрываем карусель температуры
+						fnClosePerekritieIfOpen()//Закрываем карусель перекрытия
+					}
+				}	
+			}
+		}
+		Rectangle {//Прямоугольник ручки,за которую можно тянуть размер боковой панели,для изменения её размер
+			id: rctRuchka
+			anchors.top: root.top
+			anchors.right: rctSidebar.left
+			width: (root.ntWidth < 3) ? 3 : root.ntWidth//В зависимости от параметра, изменяется толщина ручки.
+			height: root.height
+			color: Qt.darker(root.clrTexta, 1.3)
+			border.color: root.clrTexta
+			border.width: (root.ntWidth < 5) ? 1 : root.ntCoff/4//Чтоб была видна оконтовка ручки.
+			MouseArea {
+				id: maRuchka
+				//Свойства
+				property bool isDrag: false//Свойство перетаскивания. true - началось перетаскивание.
+				property real lastX//Переменная хранящаа предыдущее положение мыши
+				//Настройки
+				anchors.fill: rctRuchka
+				hoverEnabled: true//При наведении изменение
+				cursorShape: Qt.SizeHorCursor//Курсор в виде изменения горизонтального размера.
+				//Функции
+				onPressed: (mouse) => {//Если нажали на ручку
+					if (root.isMobile) return//Если мобильное устройство, то выходим
+					root.interactive = false;//Отключаем свайп Drawer. ВАЖНО!
+					isDrag = true//Взводим флаг при нажатии на ручку, идёт изменение размеров.
+					lastX = mouse.x//Запоминаем первоначальное положение боковой панели по координатам мыши.
+					mouse.accepted = true//Завершаем обработку эвента.
+				}
+				onReleased: {//Если отпустили кнопку мышки
+					root.interactive = true;//Включаем свайп Drawer. ВАЖНО!
+					isDrag = false//При отпускании мыши Окончание перетаскивания
+					DCSettings.orfograf_sidebar_shirina = root.__sidebarWidth / root.__parentWidth//Запись в реест
+				}
+				onCanceled: {
+					root.interactive = true;//Включаем свайп Drawer. ВАЖНО!
+					isDrag = false//Окончание перетаскивания
+					DCSettings.orfograf_sidebar_shirina = root.__sidebarWidth / root.__parentWidth//Запись в реест
+				}
+				onPositionChanged: (mouse) => {//Если позиция меняется, то...
+					if (!isDrag || root.isMobile) return//Если не перетаск. ручку или мобильное устройство,вых
+					const dX = mouse.x - lastX//Дельта Х относительно предыдущей точки Х
+					lastX = mouse.x//Запоминаем положение мыши по Х.
+					if (dX === 0) return//Если дельта не изменилась, ничего не делаем
+					let ltWidth = root.__sidebarWidth - dX//Новые размеры ширины боковой панели.
+					ltWidth=Math.max(root.__minSidebarWidth,Math.min(root.__maxSidebarWidth, ltWidth))
+					root.__sidebarWidth = ltWidth//Изменяем ширину боковой панели на новую ширину
 				}
 			}
 		}
-		Rectangle {//Область отрисовки снизу боковой панели.
+		Rectangle {//Оконтовка поверх всех прямоугольников
 			id: rctOkontovka
-			x: rctBorder.x
-			anchors.bottom: rctBorder.bottom
-			width: rctRuchka.x - rctBorder.x + rctBorder.width +
-				(rctBorder.width + rctRuchka.width) / 2 - ntCoff * 2
-			visible: pvTemperatura.visible || pvPerekritie.visible || pvKontekst.visible
-			height: parent.height / 2 + rctOkontovka.border.width +
-				(rctBorder.width + rctRuchka.width) / 2 - ntCoff * 2
+			anchors.top: root.top
+			anchors.right: rctSidebar.right
+			height: root.height
+			width: rctSidebar.width
 			color: "transparent"
-			border.width: 3
 			border.color: root.clrTexta
+			border.width: root.ntCoff/4
 		}
-		ListModel {
+		ListModel {//Модель с температурами для ИИ
 			id: modelTemperatura
-			ListElement { spisok: 0.00 }
-			ListElement { spisok: 0.05 }
-			ListElement { spisok: 0.10 }
-			ListElement { spisok: 0.15 }
-			ListElement { spisok: 0.20 }
-			ListElement { spisok: 0.25 }
-			ListElement { spisok: 0.30 }
-			ListElement { spisok: 0.35 }
-			ListElement { spisok: 0.40 }
-			ListElement { spisok: 0.45 }
-			ListElement { spisok: 0.50 }
-			ListElement { spisok: 0.55 }
-			ListElement { spisok: 0.70 }
-			ListElement { spisok: 0.75 }
-			ListElement { spisok: 0.95 }
-			ListElement { spisok: 0.98 }
-			ListElement { spisok: 0.99 }
-			ListElement { spisok: 0.995 }
-			ListElement { spisok: 0.999 }
-			ListElement { spisok: 1.00 }
+			ListElement { spisok: 0 }
+			ListElement { spisok: 0.1 }
+			ListElement { spisok: 0.2 }
+			ListElement { spisok: 0.3 }
+			ListElement { spisok: 0.4 }
+			ListElement { spisok: 0.5 }
+			ListElement { spisok: 0.6 }
+			ListElement { spisok: 0.7 }
+			ListElement { spisok: 0.8 }
+			ListElement { spisok: 0.9 }
+			ListElement { spisok: 1 }
 		}
-		DCPathView {//Карусель выбора температуры ИИ.
-			//Свойства
+		DCPathView {
 			id: pvTemperatura
-			ntWidth: root.ntWidth; ntCoff: root.ntCoff
-			//Настройки
-			z: 100
 			visible: false
-			anchors.left: rctSidebar.left; anchors.right: rctSidebar.right
-			anchors.bottom: rctSidebar.bottom
-			anchors.margins: root.ntCoff * 2
+			z: 100
+			ntWidth: root.ntWidth; ntCoff: root.ntCoff
+			anchors.left: rctSidebar.left; anchors.right: rctSidebar.right; anchors.bottom: rctSidebar.bottom
+			anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 			anchors.bottomMargin: rctOkontovka.border.width
 			clrFona: root.clrFona; clrTexta: root.clrTexta; clrMenuFon: root.clrMenuFon
 			modelData: modelTemperatura
-			//Методы
 			onClicked: function(strTemperatura) {
-				Qt.callLater(function(){//пауза, иначе не сработает visible и pvModel. ВАЖНО!!!
+				Qt.callLater(function(){//пауза, иначе не сработает фокус и pvTemperatura. ВАЖНО!!!
 					pvTemperatura.visible = false//Делаем невидимым виджет
-					//Меняем ширину боковой панели, она уменьшилась из за прокрутки карусели.
-					root.x = Math.floor(root.x + (root.__parentWidth - root.width) / 2)
-					root.rlTemperatura = Number(strTemperatura)//Меняем значение.
-					DCSettings.orfograf_temperatura = Number(strTemperatura)//Запись в настройки.
+					root.rlTemperatura = strTemperatura//Приравнываем значение полученное
+					DCSettings.orfograf_temperatura = root.rlTemperatura//Сохраняем в реестре температуру ИИ.
 				})
 			}
-			onVisibleChanged: {
-				if(!visible) fnFocus()//Возвращаем фокус на панель, hotkey работали.
+			onVisibleChanged: {//Если видимость поменялась, то...
+				if(!visible) fnFocus()//Если невидимый, то фокус на root, чтоб hotkey работали.
 			}
 		}
-		ListModel {
+		ListModel {//Модель с % перекрытия для анализа
 			id: modelPerekritie
 			ListElement { spisok: 0 }
 			ListElement { spisok: 5 }
@@ -439,90 +445,27 @@ Drawer {//Выезжающая боковая панель настроек ор
 			ListElement { spisok: 15 }
 			ListElement { spisok: 20 }
 			ListElement { spisok: 25 }
-			ListElement { spisok: 30 }
-			ListElement { spisok: 35 }
-			ListElement { spisok: 40 }
-			ListElement { spisok: 45 }
-			ListElement { spisok: 50 }
-			ListElement { spisok: 55 }
-			ListElement { spisok: 60 }
-			ListElement { spisok: 65 }
-			ListElement { spisok: 70 }
-			ListElement { spisok: 75 }
-			ListElement { spisok: 80 }
-			ListElement { spisok: 85 }
-			ListElement { spisok: 90 }
 		}
-		DCPathView {//Карусель выбора перекрытия фрагментов.
-			//Свойства
+		DCPathView {
 			id: pvPerekritie
-			ntWidth: root.ntWidth; ntCoff: root.ntCoff
-			//Настройки
 			z: 100
 			visible: false
-			anchors.left: rctSidebar.left; anchors.right: rctSidebar.right
-			anchors.bottom: rctSidebar.bottom
-			anchors.margins: root.ntCoff * 2
+			ntWidth: root.ntWidth; ntCoff: root.ntCoff
+			anchors.left: rctSidebar.left; anchors.right: rctSidebar.right; anchors.bottom: rctSidebar.bottom
+			anchors.leftMargin: root.ntCoff * 2; anchors.rightMargin: root.ntCoff * 2
 			anchors.bottomMargin: rctOkontovka.border.width
 			clrFona: root.clrFona; clrTexta: root.clrTexta; clrMenuFon: root.clrMenuFon
 			modelData: modelPerekritie
-			//Методы
 			onClicked: function(strPerekritie) {
-				Qt.callLater(function(){//пауза, иначе не сработает visible и pvModel. ВАЖНО!!!
+				Qt.callLater(function(){//пауза, иначе не сработает фокус и pvPerekritie. ВАЖНО!!!
 					pvPerekritie.visible = false//Делаем невидимым виджет
-					//Меняем ширину боковой панели, она уменьшилась из за прокрутки карусели.
-					root.x = Math.floor(root.x + (root.__parentWidth - root.width) / 2)
-					root.ntPerekritie = parseInt(strPerekritie)//Меняем значение.
-					DCSettings.orfograf_perekritie = parseInt(strPerekritie)//Запись в настройки.
+					root.ntPerekritie = strPerekritie//Приравнываем значение полученное
+					DCSettings.orfograf_perekritie = root.ntPerekritie//Сохраняем в реестре перекрытие в %.
 				})
 			}
-			onVisibleChanged: {
-				if(!visible) fnFocus()//Возвращаем фокус на панель, hotkey работали.
+			onVisibleChanged: {//Если видимость поменялась, то...
+				if(!visible) fnFocus()//Если невидимый, то фокус на root, чтоб hotkey работали.
 			}
 		}
-		ListModel {
-			id: modelKontekst
-			ListElement { spisok: 100 }
-			ListElement { spisok: 200 }
-			ListElement { spisok: 400 }
-			ListElement { spisok: 500 }
-			ListElement { spisok: 600 }
-			ListElement { spisok: 800 }
-			ListElement { spisok: 900 }
-			ListElement { spisok: 1000 }
-			ListElement { spisok: 1200 }
-			ListElement { spisok: 1500 }
-			ListElement { spisok: 1800 }
-			ListElement { spisok: 2000 }
-			ListElement { spisok: 2500 }
-			ListElement { spisok: 3000 }
-		}
-		DCPathView {//Карусель выбора размера фрагмента контекста.
-			//Свойства
-			id: pvKontekst
-			ntWidth: root.ntWidth; ntCoff: root.ntCoff
-			//Настройки
-			z: 100
-			visible: false
-			anchors.left: rctSidebar.left; anchors.right: rctSidebar.right
-			anchors.bottom: rctSidebar.bottom
-			anchors.margins: root.ntCoff * 2
-			anchors.bottomMargin: rctOkontovka.border.width
-			clrFona: root.clrFona; clrTexta: root.clrTexta; clrMenuFon: root.clrMenuFon
-			modelData: modelKontekst
-			//Методы
-			onClicked: function(strKontekst) {
-				Qt.callLater(function(){//пауза, иначе не сработает visible и pvModel. ВАЖНО!!!
-					pvKontekst.visible = false//Делаем невидимым виджет
-					//Меняем ширину боковой панели, она уменьшилась из за прокрутки карусели.
-					root.x = Math.floor(root.x + (root.__parentWidth - root.width) / 2)
-					root.ntKontekst = parseInt(strKontekst)//Меняем значение.
-					DCSettings.orfograf_kontekst = parseInt(strKontekst)//Запись в настройки.
-				})
-			}
-			onVisibleChanged: {
-				if(!visible) fnFocus()//Возвращаем фокус на панель, hotkey работали.
-			}
-		}
-	}
+	}	
 }

@@ -11,15 +11,18 @@ from pathlib import Path
 from PyQt6.QtCore import QObject, QThread, pyqtSlot, pyqtSignal
 
 # ==================== КОНСТАНТЫ ====================
-TIMEOUT_CONNECT = 15      # сек на установление TCP-соединения
-TIMEOUT_READ_CHUNK = 600  # сек максимум МЕЖДУ соседними токенами в стриме (не на весь ответ!)
-RESERV_TOKENS = 1500      # Запас токенов под системный промпт/служебку
-CHARS_PER_TOKEN = 2.5     # Эвристика: символов на токен для кириллицы
+TIMEOUT_CONNECT = 15                # сек на установление TCP-соединения
+TIMEOUT_READ_CHUNK = 600            # сек максимум МЕЖДУ соседними токенами в стриме (не на весь ответ!)
+RESERV_TOKENS = 1500                # Запас токенов под системный промпт/служебку
+CHARS_PER_TOKEN = 2.5               # Эвристика: символов на токен для кириллицы
+
+MAX_TOKENS_RETRY_MULTIPLIER = 2.5   # во сколько раз увеличиваем бюджет при повторе
+MAX_RETRY_ATTEMPTS = 2              # сколько раз пробуем увеличивать
+
 
 
 class DCOrfografWorker(QThread):
-    """Рабочий поток обработки документов (аналог DCAnalyzerWorker из PyAnalizer.py)"""
-
+    """Рабочий поток обработки документов"""
     def __init__(self, orfograf, filePaths, strPut, rlTemperatura, ntKontekst, ntPerekritieProcent):
         super().__init__()
         self.orfograf = orfograf
@@ -28,13 +31,14 @@ class DCOrfografWorker(QThread):
         self.rlTemperatura = rlTemperatura
         self.ntKontekst = ntKontekst
         self.ntPerekritieProcent = ntPerekritieProcent
-
+    # ------------------------------------------------------------------
     def run(self):
         """Выполняется в отдельном потоке"""
         self.orfograf._fnProtsitOrfografiju(
             self.filePaths, self.strPut, self.rlTemperatura,
             self.ntKontekst, self.ntPerekritieProcent
         )
+
 
 
 class DCOrfograf(QObject):
@@ -53,12 +57,13 @@ class DCOrfograf(QObject):
     ERR_JSON = 1001
     ERR_GENERIC = 1002
     ERR_ANALYSIS = 1003
-
+    # ------------------------------------------------------------------
     def __init__(self, parent=None):
         super().__init__(parent)
         self.strServerURL = "http://localhost:1234/v1"
         self.model_name = None
         self.ntMaxToken = 8192
+        self.strPrompt = ""
         self.blZapreshchen = False   # Пользователь запретил обработку
         self.blIsworking = False     # Идёт ли обработка прямо сейчас
         self.worker = None
@@ -69,7 +74,7 @@ class DCOrfograf(QObject):
         # блокирующего ожидания ответа от сервера.
         self._active_response = None
         self._response_lock = threading.Lock()
-
+    # ------------------------------------------------------------------
     @pyqtSlot(str)
     def ustServerURL(self, server_url):
         """Устанавливает URL сервера для HTTP-запросов"""
@@ -78,7 +83,7 @@ class DCOrfograf(QObject):
             server_url += '/v1'
         self.strServerURL = server_url
         self.strLog.emit(f"pyOrfograf: URL сервера обновлён: {self.strServerURL}")
-
+    # ------------------------------------------------------------------
     @pyqtSlot(str, int)
     def ustParametri(self, model_name, ntMaxToken):
         """Устанавливает текущую модель и максимальный размер контекста (в токенах)"""
@@ -88,7 +93,15 @@ class DCOrfograf(QObject):
             self.model_name = model_name
         self.ntMaxToken = ntMaxToken
         self.strLog.emit(f"Параметры обновлены: {model_name}, контекст: {ntMaxToken}")
-
+    # ------------------------------------------------------------------
+    @pyqtSlot(str)
+    def ustPrompt(self, prompt):
+        """Задаём промпт нейросети"""
+        if prompt == "":
+            self.strPrompt = ""
+        else:
+            self.strPrompt = prompt
+    # ------------------------------------------------------------------
     @pyqtSlot(list, str, float, int, int)
     def startOrfografiya(self, filePaths, strPut, rlTemperatura, ntKontekst, ntPerekritieProcent):
         """
@@ -122,7 +135,7 @@ class DCOrfograf(QObject):
         self.worker = DCOrfografWorker(self, filePaths, strPut, rlTemperatura,
                                         ntKontekst, ntPerekritieProcent)
         self.worker.start()
-
+    # ------------------------------------------------------------------
     @pyqtSlot()
     def stopOrfografiya(self):
         """
@@ -152,7 +165,6 @@ class DCOrfograf(QObject):
                 self.worker.wait()
 
         self.blIsworking = False
-
     # ------------------------------------------------------------------
     def _fnRazrezatTekst(self, strTekst, ntKontekst, ntPerekritieProcent):
         """
@@ -182,9 +194,8 @@ class DCOrfograf(QObject):
                 break
             ntNachalo = max(ntNachalo + ntShag, ntNachalo + 1)
         return fragments
-
     # ------------------------------------------------------------------
-    def _fnVichislitMaxTokens(self, strSoderjankoe):
+    def _fnVichislitMaxTokens(self, strSoderjanie):
         """
         Считает безопасный max_tokens для ОДНОГО запроса исправления фрагмента.
         ВАЖНО: современные "thinking"/reasoning модели (MoE-архитектуры типа
@@ -197,7 +208,7 @@ class DCOrfograf(QObject):
         content остаётся пустым, хотя генерация честно отработала и упёрлась
         в лимит (finish_reason: length).
         """
-        fragment_tokens = max(50, int(len(strSoderjankoe) / CHARS_PER_TOKEN))
+        fragment_tokens = max(50, int(len(strSoderjanie) / CHARS_PER_TOKEN))
         zhelaemo = int(fragment_tokens * 1.5) + 200
 
         # Фиксированный запас под возможное "размышление" модели.
@@ -215,25 +226,21 @@ class DCOrfograf(QObject):
                 f"⚠ Контекст модели ({self.ntMaxToken}) мал, ответ ограничен {final_tokens} токенами "
                 f"(запрошено бы {zhelaemo})"
             )
-        print(f"[DCOrfograf] max_tokens для фрагмента ({len(strSoderjankoe)} симв.): {final_tokens}")
+        print(f"[DCOrfograf] max_tokens для фрагмента ({len(strSoderjanie)} симв.): {final_tokens}")
         return final_tokens
-
     # ------------------------------------------------------------------
-    MAX_TOKENS_RETRY_MULTIPLIER = 2.5   # во сколько раз увеличиваем бюджет при повторе
-    MAX_RETRY_ATTEMPTS = 2              # сколько раз пробуем увеличивать
-
-    def _fnPostavitZapyt(self, strSoderjankoe, rlTemperatura):
+    def _fnPostavitZapyt(self, strSoderjanie, rlTemperatura):
         if self.blZapreshchen:
             return None
 
-        max_tokens = self._fnVichislitMaxTokens(strSoderjankoe)
+        max_tokens = self._fnVichislitMaxTokens(strSoderjanie)
         # Потолок, выше которого увеличивать бессмысленно (упираемся в контекст модели)
-        hard_ceiling = max(max_tokens, self.ntMaxToken - int(len(strSoderjankoe) / CHARS_PER_TOKEN) - 500)
+        hard_ceiling = max(max_tokens, self.ntMaxToken - int(len(strSoderjanie) / CHARS_PER_TOKEN) - 500)
 
         attempt = 0
         while True:
             result, finish_reason, reasoning_len = self._fnOdinZapros(
-                strSoderjankoe, rlTemperatura, max_tokens
+                strSoderjanie, rlTemperatura, max_tokens
             )
             if result is None:  # остановлено пользователем / сетевая ошибка
                 return None
@@ -256,25 +263,20 @@ class DCOrfograf(QObject):
             # Исчерпали попытки или ошибка другого рода
             return result
     # ------------------------------------------------------------------
-    def _fnOdinZapros(self, strSoderjankoe, rlTemperatura, max_tokens):
+    def _fnOdinZapros(self, strSoderjanie, rlTemperatura, max_tokens):
         """
         Один HTTP-запрос к LLM. Возвращает (result, finish_reason, reasoning_len).
         result может начинаться с "ОШИБКА:" — тогда вызывающий код решает, повторять или нет.
         """
+        if self.strPrompt == "":
+            self.strPrompt =  self.strPrompt = "Ты — профессиональный корректор русского языка."
         payload = {
             "messages": [
                 {
                     "role": "system",
-                    "content": (
-                        "Ты — профессиональный корректор русского языка. "
-                        "Твоя ЕДИНСТВЕННАЯ задача — найти и исправить орфографические, пунктуационные и грамматические ошибки (неправильные окончания, согласование слов, слитное/раздельное написание).\n\n"
-                        "ОБЯЗАТЕЛЬНО исправляй ошибки, даже если текст короткий или выглядит разговорным. "
-                        "НЕ оставляй текст без изменений, если в нём есть ошибки.\n\n"
-                        "Запрещено: сокращать предложения, менять смысл, стиль изложения, порядок предложений, удалять или добавлять абзацы, добавлять новые мысли.\n\n"
-                        "Ответь ТОЛЬКО исправленным текстом, без пояснений, кавычек, комментариев, разметки markdown и фразы 'вот исправленный текст'."
-                    )
+                    "content": (self.strPrompt)
                 },
-                {"role": "user", "content": f"Исправь ошибки в следующем тексте:\n\n{strSoderjankoe}"}
+                {"role": "user", "content": f"Исправь ошибки в следующем тексте:\n\n{strSoderjanie}"}
             ],
             "temperature": rlTemperatura,
             "max_tokens": max_tokens,
@@ -386,7 +388,6 @@ class DCOrfograf(QObject):
             else:
                 result += cur
         return result
-
     # ------------------------------------------------------------------
     def _fnPutDljaSohraneniya(self, strPapka, strImya):
         """Строит путь сохранения: (имя)_орфография.txt, при конфликте _1, _2..."""
@@ -398,7 +399,6 @@ class DCOrfograf(QObject):
             put = os.path.join(strPapka, f"{stem}_орфография_{nt}.txt")
             nt += 1
         return put
-
     # ------------------------------------------------------------------
     def _fnProtsitOrfografiju(self, filePaths, strPut, rlTemperatura, ntKontekst, ntPerekritieProcent):
         """
