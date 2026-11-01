@@ -18,37 +18,6 @@ Desktop-приложение с графическим интерфейсом д
 - PyQt6 (Qt 6 устанавливается автоматически вместе с ним — см. «Про Qt 6»)
 - LM Studio или Bionic (для работы с языковыми моделями)
 
-## Про Qt 6
-
-Приложение написано на QML, поэтому для запуска нужен не только Python, но и сам Qt 6.
-PyQt6 — обёртка над библиотеками Qt; при установке через pip вместе с ним автоматически
-устанавливается комплект Qt 6, отдельная установка Qt обычно НЕ нужна:
-
-```bash
-# PyQt6==6.10.2 из requirements.txt тянет за собой PyQt6-Qt6 (комплект Qt 6.10) и sip
-pip install -r requirements.txt
-```
-
-Проверка версии Qt, фактически установленного в виртуальном окружении:
-
-```bash
-# В venv — вывод версии Qt и версии PyQt (команда в одну строку, короче не сделать):
-python - <<'PYEOF'
-from PyQt6.QtCore import QT_VERSION_STR, PYQT_VERSION_STR
-print('Qt', QT_VERSION_STR, '| PyQt', PYQT_VERSION_STR)
-PYEOF
-```
-
-Правило совместимости: PyQt6-колёса с PyPI собраны под конкретный компилятор, на Windows —
-под MSVC. Смешивать Qt из установщика Qt (комплекты MinGW, llvm-mingw) и PyQt6 из pip
-нельзя: их DLL ABI-несовместимы, QML выдаёт ошибку «Cannot load library».
-Системные требования и особенности по операционным системам — в соответствующих
-подразделах главы «Установка».
-
-Отдельный Qt (Qt Creator, C++-проекты, утилиты rcc, qmllint) устанавливается только при
-необходимости: официальный онлайн-установщик https://www.qt.io/download-qt-installer или
-встроенный Maintenance Tool. Для работы КОБзоны это не требуется, достаточно pip.
-
 ## Установка
 
 ### Ubuntu 26.04
@@ -86,44 +55,7 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-5. **Создание ресурсов:**
-
-```bash
-python3.13 DCScripts/DCCompileRCC.py
-```
-
-6. **Установите LM Studio:**
-
-```bash
-# Установите libfuse2, чтоб запускать *.AppImage
-sudo apt install libfuse2
-# Скачайте LM Studio с официального сайта
-wget https://lmstudio.ai/download/linux -O lmstudio.AppImage
-chmod +x lmstudio.AppImage
-./lmstudio.AppImage --no-sandbox
-# или в песочнице
-./lmstudio.AppImage
-```
-
-7. **Настройте LM Studio или Bionic:**
-   - Запустите LM Studio или Bionic
-   - Скачайте нужную языковую модель
-   - Перейдите во вкладку "Developer" -> "Status: Running"
-   - Запустите локальный сервер "Running" (по умолчанию Base URL http://localhost:1234)
-
-8. **Запустите приложение:**
-
-```bash
-python3.13 main.py
-```
-
-9. **Установите sandbox firejail:**
-
-```bash
-# Установите firejail, чтоб запускать LM Studio или Bionic в защищённой песочнице (sandbox).
-sudo apt install firejail
-```
-
+5. **О Qt6:**
 Qt 6 из pip-колеса самодостаточен, но ему нужны системные библиотеки X11/xcb.
 Если приложение запускается, но окно пустое или падает с ошибкой xcb, установить:
 
@@ -136,6 +68,44 @@ sudo apt install -y libxcb-xinerama0 libxcb-cursor0 libxkbcommon-x11-0 libxcb-ic
 обычно они уже есть в системе. Если QML-модули не находятся, проверьте, что приложение
 не запускается из чужого окружения с переменными QT_PLUGIN_PATH / QML2_PATH от другой
 сборки Qt.
+
+6. **Создание ресурсов:**
+
+```bash
+python3.13 DCScripts/DCCompileRCC.py
+```
+
+7. **Установите LM Studio:**
+
+```bash
+# Установите libfuse2, чтоб запускать *.AppImage
+sudo apt install libfuse2
+# Скачайте LM Studio с официального сайта
+wget https://lmstudio.ai/download/linux -O lmstudio.AppImage
+chmod +x lmstudio.AppImage
+./lmstudio.AppImage --no-sandbox
+# или в песочнице
+./lmstudio.AppImage
+```
+
+8. **Настройте LM Studio или Bionic:**
+   - Запустите LM Studio или Bionic
+   - Скачайте нужную языковую модель
+   - Перейдите во вкладку "Developer" -> "Status: Running"
+   - Запустите локальный сервер "Running" (по умолчанию Base URL http://localhost:1234)
+
+9. **Запустите приложение:**
+
+```bash
+python3.13 main.py
+```
+
+10. **Установите sandbox firejail:**
+
+```bash
+# Установите firejail, чтоб запускать LM Studio или Bionic в защищённой песочнице (sandbox).
+sudo apt install firejail
+```
 
 ### Windows 10, 11
 
@@ -177,6 +147,7 @@ python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
+6. **О Qt6:**
 Qt 6 устанавливать отдельно НЕ нужно и вредно: PyQt6 из pip приносит собственный
 MSVC-комплект Qt 6. Условия корректной работы:
    - Python 3.13 обязан быть 64-битным (win_amd64-колесо PyQt6 на 32-битный Python
@@ -187,30 +158,30 @@ MSVC-комплект Qt 6. Условия корректной работы:
    - антивирус и SmartScreen иногда блокируют DLL из venv — при странных ошибках
      импорта добавьте папку проекта в исключения.
 
-6. **Создание ресурсов:**
+7. **Создание ресурсов:**
 
 ```bash
 python DCScripts/DCCompileRCC.py
 ```
 
-7. **Установите LM Studio или Bionic:**
+8. **Установите LM Studio или Bionic:**
    - Скачайте LM Studio или Bionic для Windows: https://lmstudio.ai/download
    - Запустите установщик и следуйте инструкциям
    - После установки запустите LM Studio или Bionic
 
-8. **Настройте LM Studio или Bionic:**
+9. **Настройте LM Studio или Bionic:**
    - Запустите LM Studio или Bionic
    - Скачайте нужную языковую модель (рекомендуются модели до 7B параметров)
    - Перейдите во вкладку "Developer" -> "Status: Running"
    - Запустите локальный сервер "Running" (по умолчанию Base URL http://localhost:1234)
 
-9. **Запустите приложение:**
+10. **Запустите приложение:**
 
 ```cmd
 python main.py
 ```
 
-10. **Установите sandbox Sandboxie или Sandboxie Plus:**
+11. **Установите sandbox Sandboxie или Sandboxie Plus:**
    - Установите Sandboxie или Sandboxie Plus, чтоб запускать LM Studio или Bionic
      в защищённой песочнице (sandbox).
    - Скачайте с официального сайта: https://sandboxie-plus.com/downloads/
@@ -258,6 +229,7 @@ python3 -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
+6. **О Qt6:**
 Отдельная установка Qt не нужна: pip-колесо PyQt6 (universal2 — подходит для Apple
 Silicon и для Intel) содержит весь комплект Qt 6. Если отдельный Qt необходим
 (Qt Creator, C++-проекты, утилиты rcc, qmllint), используется один из способов:
@@ -276,32 +248,32 @@ brew install qt
 библиотек через DYLD_LIBRARY_PATH / QT_PLUGIN_PATH ломает запуск QML. Для запуска
 КОБзоны используется только Qt из виртуального окружения.
 
-6. **Создание ресурсов:**
+7. **Создание ресурсов:**
 
 ```bash
 python3 DCScripts/DCCompileRCC.py
 ```
 
-7. **Установите LM Studio или Bionic:**
+8. **Установите LM Studio или Bionic:**
    - Скачайте LM Studio или Bionic для macOS (версию Universal, Apple Silicon или Intel
      в зависимости от Mac): https://lmstudio.ai/download
    - Откройте скачанный `.dmg` образ и перетащите приложение в папку «Программы» (Applications)
    - После установки запустите LM Studio или Bionic (при первом запуске macOS может
      потребовать подтвердить открытие приложения в Системных настройках)
 
-8. **Настройте LM Studio или Bionic:**
+9. **Настройте LM Studio или Bionic:**
    - Запустите LM Studio или Bionic
    - Скачайте нужную языковую модель (рекомендуются модели до 7B параметров)
    - Перейдите во вкладку "Developer" -> "Status: Running"
    - Запустите локальный сервер "Running" (по умолчанию Base URL http://localhost:1234)
 
-9. **Запустите приложение:**
+10. **Запустите приложение:**
 
 ```bash
 python3 main.py
 ```
 
-10. **Работа в sandbox:**
+11. **Работа в sandbox:**
    - Запуск LM Studio или Bionic в sandbox не поддерживается.
    - Для безопасности данных создайте отдельную учётную запись и в ней запускайте
      LM Studio или Bionic.
@@ -368,6 +340,11 @@ sudo apt install libxcb-xinerama0 libxcb-cursor0
 **«Cannot load library» / QML не запускается на Windows:**
 - Смешение DLL разных сборок Qt. Порядок PATH и комплектов — в подразделе
   «Windows 10, 11» главы «Установка».
+  Правило совместимости: PyQt6-колёса с PyPI собраны под конкретный компилятор, на Windows —
+  под MSVC. Смешивать Qt из установщика Qt (комплекты MinGW, llvm-mingw) и PyQt6 из pip
+  нельзя: их DLL ABI-несовместимы, QML выдаёт ошибку «Cannot load library».
+  Системные требования и особенности по операционным системам — в соответствующих
+  подразделах главы «Установка».
 
 **LM Studio или Bionic не подключается:**
 - Проверьте, что LM Studio или Bionic запущен
