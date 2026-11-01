@@ -13,8 +13,86 @@
 ## Требования
 
 - Python 3.13
-- PyQt6
+- PyQt6 (вместе с ним ставится и сам Qt 6 — об этом подробно в разделе «Про Qt 6» ниже)
 - LM Studio или Bionic(для работы с языковыми моделями)
+
+## Про Qt 6 — почему это важно и как его ставить
+
+Любимая КОБзона написана на QML, а значит для её запуска нужен не только Python, но и сам Qt 6.
+PyQt6 — это обёртка над библиотеками Qt, и при установке через pip вместе с ним автоматически
+скачивается свой собственный комплект Qt 6. То есть отдельная установка Qt обычно НЕ нужна:
+
+```bash
+# PyQt6==6.10.2 из requirements.txt тянет за собой PyQt6-Qt6 (комплект Qt 6.10) и sip
+pip install -r requirements.txt
+```
+
+Проверить, какой Qt реально установлен в виртуальном окружении, можно так:
+
+```bash
+# В venv — вывод версии Qt и версии PyQt (команда в одну строку, короче не сделать):
+python - <<'PYEOF'
+from PyQt6.QtCore import QT_VERSION_STR, PYQT_VERSION_STR
+print('Qt', QT_VERSION_STR, '| PyQt', PYQT_VERSION_STR)
+PYEOF
+```
+
+Главное правило, nya~: PyQt6-колёса с PyPI собраны под конкретный компилятор — на Windows это
+MSVC, а не MinGW. Поэтому никогда не смешивай Qt из установщика Qt (Kit типа llvm-mingw_64 или
+MinGW) и PyQt6 из pip — их DLL ABI-несовместимы, и QML выдаст «Cannot load library». Если в PATH
+оказывается папка с чужими Qt DLL (например QtCreator\bin или Kit MinGW выше, чем папка Python),
+Windows подхватит именно их вместо Qt из твоего venv — отсюда и эта ошибка.
+
+Когда всё-таки нужен отдельный Qt (Qt Creator, сборка C++-проектов, утилиты вроде rcc):
+ставь Qt через официальный онлайн-установщик https://www.qt.io/download-qt-installer или через
+встроенный Maintenance Tool. Для КОБзоны это не обязательно — достаточно pip.
+
+### Linux (Ubuntu)
+
+Qt из pip-колеса самодостаточен, но ему нужны системные библиотеки X11/xcb и QML-модули окружения
+рабочего стола. Если приложение запускается, но окно пустое или падает с ошибкой xcb — ставим:
+
+```bash
+sudo apt install -y libxcb-xinerama0 libxcb-cursor0 libxkbcommon-x11-0 libxcb-icccm4 \
+    libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-shape0
+```
+
+На Wayland (как в Ubuntu 26.04 по умолчанию) дополнительно нужны плагины платформ Qt — обычно они
+уже есть в системе; если QML-модули не находятся, проверь, что не запускаешь приложение из чужого
+окружения с переменными QT_PLUGIN_PATH / QML2_PATH от другой сборки Qt.
+
+### Windows 10, 11
+
+Дополнительная установка Qt НЕ нужна и даже вредна: PyQt6 из pip приносит свой MSVC-комплект Qt 6.
+Что важно проверить:
+- Python 3.13 обязан быть 64-битным (win_amd64-колесо PyQt6 не встанет на 32-битный Python).
+- Если ранее ставился Qt для Qt Creator — не добавляй его Kit-папки (особенно MinGW/llvm-mingw)
+  в PATH раньше папок Python и venv, иначе «Cannot load library» из-за смешения DLL.
+- Антивирус/SmartScreen иногда блокируют DLL из venv — при странных ошибках импорта добавь папку
+  проекта в исключения.
+
+### macOS
+
+Для КОБзоны отдельная установка Qt не нужна: pip-колесо PyQt6 (universal2 — подходит и для Apple
+Silicon, и для Intel) содержит весь комплект Qt 6. Достаточно `pip install -r requirements.txt`
+в виртуальном окружении.
+
+Если же тебе нужен отдельный Qt (Qt Creator, C++-проекты, утилиты вроде rcc или qmllint), ставь
+его одним из способов:
+
+```bash
+# Способ 1 — официальный онлайн-установщик Qt (графический, даёт Qt Creator + комплекты Qt):
+# https://www.qt.io/download-qt-installer  (выбери Qt 6.x для macOS)
+
+# Способ 2 — Homebrew (быстро, без Qt Creator):
+brew install qt
+```
+
+Проверка отдельного Qt: `qmake6 -query QT_VERSION` (Homebrew) или через Maintenance Tool
+установщика Qt. Главное правило то же, что и на других платформах: не смешивай системный Qt
+(Homebrew/установщик) и Qt из PyQt6-колеса pip — это разные сборки, и подмешивание их библиотек
+через DYLD_LIBRARY_PATH / QT_PLUGIN_PATH ломает запуск QML. Для запуска КОБзоны используй только
+Qt из своего venv.
 
 ## Установка
 
@@ -284,6 +362,11 @@ sudo apt install libxcb-xinerama0 libxcb-cursor0
 **Ошибка при установке PyQt6:**
 - Убедитесь, что используете 64-битную версию Python 3.13
 - Попробуйте обновить pip: `python -m pip install --upgrade pip`
+
+**«Cannot load library» / QML не запускается на Windows:**
+- Это смешение DLL разных сборок Qt: PyQt6 из pip собран под MSVC и несовместим с Qt-комплектами
+  MinGW/llvm-mingw из установщика Qt. Убери пути Qt Creator и Kit MinGW из PATH (или опусти их ниже
+  папок Python и venv) — подробности в разделе «Про Qt 6».
 
 **LM Studio или Bionic не подключается:**
 - Проверьте, что LM Studio или Bionic запущен
