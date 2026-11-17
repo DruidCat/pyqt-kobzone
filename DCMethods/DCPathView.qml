@@ -177,6 +177,48 @@ Item {
 			y: pthKarusel.centerY
 		}
 	}	
+	Path {//Петля для режима из двух элементов.
+		//При count==2 Qt раскладывает delegate на 0.5 петли; в pthKarusel
+		//такой сдвиг приводит оба в центр. Здесь станции в 0.25 (центр)
+		//и 0.75 (верх), текущий элемент держим highlight'ом на 0.25.
+		id: pthDva
+		property real itemHeight: root.ntWidth * root.ntCoff + root.ntCoff
+		property real centerY: root.height / 2
+		startX: root.width / 2
+		startY: pthDva.centerY + pthDva.itemHeight * 1.1//Станция 0.0 = низ
+		PathAttribute { name: "prozrachnost"; value: 0.5 }
+		PathAttribute { name: "masshtab"; value: 0.83 }
+		PathAttribute { name: "z"; value: -1 }
+		//Станция 0.25 = центр (текущий элемент)
+		PathLine {
+			x: root.width / 2
+			y: pthDva.centerY
+		}
+		PathAttribute { name: "prozrachnost"; value: 1.0 }
+		PathAttribute { name: "masshtab"; value: 0.85 }
+		PathAttribute { name: "z"; value: 1 }
+		//Станция 0.5 = низ
+		PathLine {
+			x: root.width / 2
+			y: pthDva.centerY + pthDva.itemHeight * 1.1
+		}
+		PathAttribute { name: "prozrachnost"; value: 0.5 }
+		PathAttribute { name: "masshtab"; value: 0.83 }
+		PathAttribute { name: "z"; value: -1 }
+		//Станция 0.75 = верх
+		PathLine {
+			x: root.width / 2
+			y: pthDva.centerY - pthDva.itemHeight * 1.1
+		}
+		PathAttribute { name: "prozrachnost"; value: 0.5 }
+		PathAttribute { name: "masshtab"; value: 0.83 }
+		PathAttribute { name: "z"; value: -1 }
+		//Замыкание к станции 1.0 = низ
+		PathLine {
+			x: root.width / 2
+			y: pthDva.centerY + pthDva.itemHeight * 1.1
+		}
+	}
 	PathView {//Представление модели с бесконечным скролингом.
         id: pvwKarusel
         //Свойства.
@@ -187,7 +229,7 @@ Item {
         model: root.modelData//Добавляем модель из свойства.
         currentIndex: root.currentIndex
         delegate: cmpKarusel
-        path: pthKarusel//Устанавливаем габариты и направление скролинга в представлении
+        path: pvwKarusel.count == 2 ? pthDva : pthKarusel//Для двух элементов — своя петля, см. pthDva
 		pathItemCount: 3//Максимально 3 показывать.
 		cacheItemCount: 0
         interactive: false //отключаем встроенную перетаскиваемость
@@ -224,8 +266,9 @@ Item {
         }
         //Доснап к центру, чтобы выглядело аккуратно
         snapMode: PathView.SnapOneItem
-        preferredHighlightBegin: 0.5
-		preferredHighlightEnd: 0.5
+        //Станция центра в этой петле — на 1/6 длины (длины ног 1.1+1.1+2.2+2.2)
+        preferredHighlightBegin: pvwKarusel.count == 2 ? 1 / 6 : 0.5//Текущий — центр, второй — верх
+		preferredHighlightEnd: pvwKarusel.count == 2 ? 1 / 6 : 0.5
         highlightRangeMode: PathView.StrictlyEnforceRange
         highlightMoveDuration: root.highlightMs
         //Функции
